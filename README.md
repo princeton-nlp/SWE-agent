@@ -17,6 +17,10 @@ SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix b
 
 On the full [SWE-bench](https://github.com/princeton-nlp/SWE-bench) test set, SWE-agent resolves **12.29%** of issues, achieving the state-of-the-art performance on the full test set.
 
+<p align="center">
+  <img src="assets/results+preview.png" style="width: 80%; height: auto;">
+</p>
+
 ### ✨ Agent-Computer Interface (ACI) <a name="aci"></a>
 We accomplish these results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, view, edit and execute code files. We call this an **Agent-Computer Interface** (ACI) and build the SWE-agent repository to make it easy to iterate on ACI design for repository-level coding agents.
 
