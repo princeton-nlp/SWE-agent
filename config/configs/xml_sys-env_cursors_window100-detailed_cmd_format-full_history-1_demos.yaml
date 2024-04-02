@@ -8,7 +8,7 @@ system_template: |-
   {command_docs}
 
   Please note that THE EDIT COMMAND REQUIRES PROPER INDENTATION. 
-  If you'd like to add the line '        print(x)' you must fully write that out, with all those spaces before the code! Indentation is important and code that is not idented correctly will fail and require fixing before it can be run.
+  If you'd like to add the line '        print(x)' you must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 
   RESPONSE FORMAT:
   Your shell prompt is formatted as follows:
