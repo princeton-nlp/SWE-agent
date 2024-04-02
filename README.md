@@ -6,7 +6,7 @@
 
 
 <p align="center">
-  <a href="https://www.swe-agent.com"><strong>Website & Demo</strong></a>&nbsp; | &nbsp;
+  <a href="https://swe-agent.com"><strong>Website & Demo</strong></a>&nbsp; | &nbsp;
   <a href="https://discord.gg/AVEFbBn2rH"><strong>Discord</strong></a>&nbsp; | &nbsp;
   <strong>Paper [coming April 10th]</strong>
 </p>
