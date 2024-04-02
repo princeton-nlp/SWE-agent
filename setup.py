@@ -42,7 +42,7 @@ setuptools.setup(
         'simple-parsing',
         'swebench>=1.0.1',
         'tenacity',
-        'together'
+        'together',
         'unidiff',
     ],
     include_package_data=True,
