@@ -3,7 +3,7 @@ An important way to show LMs how to use commands and interact with the environme
 
 For simplicity we just ingest demonstrations in the from of a trajectory file. However, since trajectory files are usually JSON, you can convert them to yaml using the `convert_traj_to_demo.py` script to be more human-readable and easier to edit.
 
-Demo (yaml) files are stored in the `make_demos/demos` directory by default and consist primarily of the sequence of actions that an LM would need to take to complete a task. It's important that your demo have the proper format to be parsed by SWE-agent and your config.s
+Demo (yaml) files are stored in the `make_demos/demos` directory by default and consist primarily of the sequence of actions that an LM would need to take to complete a task. It's important that your demo have the proper format to be parsed by SWE-agent and your config.
 
 Here's how you can make a demo:
 1. Find a basic trajectory that you already like and want to use as the basis for your demo.
