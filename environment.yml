@@ -19,3 +19,4 @@ dependencies:
     - unidiff
     - simple-parsing
     - together
+    - ollama

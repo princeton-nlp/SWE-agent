@@ -37,6 +37,7 @@ setuptools.setup(
         'openai>=1.0',
         'pandas',
         'rich',
+        'ollama',
         'ruamel.yaml',
         'simple-parsing',
         'swebench>=1.0.1',

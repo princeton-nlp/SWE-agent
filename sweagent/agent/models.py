@@ -4,6 +4,7 @@ import logging
 import os
 import together
 
+from collections import defaultdict
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 from dataclasses import dataclass, fields
 from openai import BadRequestError, OpenAI
@@ -28,6 +29,7 @@ class ModelArguments(FrozenSerializable):
     temperature: float = 1.0
     top_p: float = 1.0
     replay_path: str = None
+    host_url: str = "localhost:11434"
 
 
 @dataclass
@@ -92,6 +94,9 @@ class BaseModel:
         elif args.model_name.startswith("ft:"):
             ft_model = args.model_name.split(":")[1]
             self.model_metadata = MODELS[ft_model]
+        elif args.model_name.startswith("ollama:"):
+            self.api_model = args.model_name.split('ollama:', 1)[1]
+            self.model_metadata = self.MODELS[self.api_model]
         else:
             raise ValueError(f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}")
 
@@ -406,6 +411,59 @@ class AnthropicModel(BaseModel):
         return response
 
 
+class OllamaModel(BaseModel):
+    MODELS = defaultdict(lambda: {
+        "max_context": 128_000,
+        "cost_per_input_token": 0,
+        "cost_per_output_token": 0,
+    })
+
+    def __init__(self, args: ModelArguments, commands: list[Command]):
+        super().__init__(args, commands)
+        from ollama import Client
+        self.client = Client(host=args.host_url)
+
+    def history_to_messages(
+        self, history: list[dict[str, str]], is_demonstration: bool = False
+    ) -> list[dict[str, str]]:
+        """
+        Create `messages` by filtering out all keys except for role/content per `history` turn
+        """
+        # Remove system messages if it is a demonstration
+        if is_demonstration:
+            history = [entry for entry in history if entry["role"] != "system"]
+            return '\n'.join([entry["content"] for entry in history])
+        # Return history components with just role, content fields
+        return [
+            {k: v for k, v in entry.items() if k in ["role", "content"]}
+            for entry in history
+        ]
+
+    @retry(
+        wait=wait_random_exponential(min=1, max=15),
+        reraise=True,
+        stop=stop_after_attempt(3),
+        retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
+    )
+    def query(self, history: list[dict[str, str]]) -> str:
+        """
+        Query the Ollama API with the given `history` and return the response.
+        """
+        response = self.client.chat(
+            model=self.api_model,
+            messages=self.history_to_messages(history),
+            options={
+                "temperature": self.args.temperature,
+                "top_p": self.args.top_p,
+            }
+        )
+        # Calculate + update costs, return response
+        input_tokens = response["prompt_eval_count"]
+        output_tokens = response["eval_count"]
+        self.update_stats(input_tokens, output_tokens)
+        return response["message"]["content"]
+
+
 class TogetherModel(BaseModel):
     # Check https://docs.together.ai/docs/inference-models for model names, context
     # Check https://www.together.ai/pricing for pricing
@@ -626,5 +684,7 @@ def get_model(args: ModelArguments, commands: Optional[list[Command]] = None):
         return OpenAIModel(args, commands)
     elif args.model_name.startswith("claude"):
         return AnthropicModel(args, commands)
+    elif args.model_name.startswith("ollama"):
+        return OllamaModel(args, commands)
     else:
         raise ValueError(f"Invalid model name: {args.model_name}")

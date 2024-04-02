@@ -42,7 +42,7 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
     @property
     def run_name(self):
         """Generate a unique name for this run based on the arguments."""
-        model_name = args.agent.model.model_name
+        model_name = args.agent.model.model_name.replace(":", "-")
         data_stem = get_data_path_name(args.environment.data_path)
         config_stem = Path(args.agent.config_file).stem
 
