@@ -31,7 +31,6 @@ setuptools.setup(
         'config',
         'datasets',
         'docker',
-        'gnureadline',
         'gymnasium',
         'numpy',
         'openai>=1.0',
