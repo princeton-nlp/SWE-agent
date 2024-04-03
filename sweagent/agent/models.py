@@ -7,7 +7,7 @@ import together
 from collections import defaultdict
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 from dataclasses import dataclass, fields
-from openai import BadRequestError, OpenAI
+from openai import BadRequestError, OpenAI, AzureOpenAI
 from simple_parsing.helpers import FrozenSerializable, Serializable
 from sweagent.agent.commands import Command
 from tenacity import (
@@ -264,6 +264,102 @@ class OpenAIModel(BaseModel):
         self.update_stats(input_tokens, output_tokens)
         return response.choices[0].message.content
 
+class AzureOpenAIModel(BaseModel):
+    MODELS = {
+        "gpt-3.5-turbo-0125": {
+            "max_context": 16_385,
+            "cost_per_input_token": 5e-07,
+            "cost_per_output_token": 1.5e-06,
+        },
+        "gpt-3.5-turbo-1106": {
+            "max_context": 16_385,
+            "cost_per_input_token": 1.5e-06,
+            "cost_per_output_token": 2e-06,
+        },
+        "gpt-3.5-turbo-16k-0613": {
+            "max_context": 16_385,
+            "cost_per_input_token": 1.5e-06,
+            "cost_per_output_token": 2e-06,
+        },
+        "gpt-4-32k-0613": {
+            "max_context": 32_768,
+            "cost_per_input_token": 6e-05,
+            "cost_per_output_token": 0.00012,
+        },
+        "gpt-4-0613": {
+            "max_context": 8_192,
+            "cost_per_input_token": 3e-05,
+            "cost_per_output_token": 6e-05,
+        },
+        "gpt-4-1106-preview": {
+            "max_context": 128_000,
+            "cost_per_input_token": 1e-05,
+            "cost_per_output_token": 3e-05,
+        },
+        "gpt-4-0125-preview": {
+            "max_context": 128_000,
+            "cost_per_input_token": 1e-05,
+            "cost_per_output_token": 3e-05,
+        },
+    }
+
+    SHORTCUTS = {
+        "azure-gpt3": "gpt-3.5-turbo-1106",
+        "azure-gpt3-legacy": "gpt-3.5-turbo-16k-0613",
+        "azure-gpt4": "gpt-4-1106-preview",
+        "azure-gpt4-legacy": "gpt-4-0613",
+        "azure-gpt4-0125": "gpt-4-0125-preview",
+        "azure-gpt3-0125": "gpt-3.5-turbo-0125",
+    }
+
+    def __init__(self, args: ModelArguments, commands: list[Command]):
+        super().__init__(args, commands)
+
+        # Set OpenAI client
+        cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
+        self.client = AzureOpenAI(api_key=cfg["AZURE_OPENAI_API_KEY"], azure_endpoint=cfg["AZURE_OPENAI_ENDPOINT"], api_version="2024-02-01")
+
+    def history_to_messages(
+        self, history: list[dict[str, str]], is_demonstration: bool = False
+    ) -> list[dict[str, str]]:
+        """
+        Create `messages` by filtering out all keys except for role/content per `history` turn
+        """
+        # Remove system messages if it is a demonstration
+        if is_demonstration:
+            history = [entry for entry in history if entry["role"] != "system"]
+            return '\n'.join([entry["content"] for entry in history])
+        # Return history components with just role, content fields
+        return [
+            {k: v for k, v in entry.items() if k in ["role", "content"]}
+            for entry in history
+        ]
+
+    @retry(
+        wait=wait_random_exponential(min=1, max=15),
+        reraise=True,
+        stop=stop_after_attempt(3),
+        retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
+    )
+    def query(self, history: list[dict[str, str]]) -> str:
+        """
+        Query the AzureOpenAI API with the given `history` and return the response.
+        """
+        try:
+            # Perform AzureOpenAI API call
+            response = self.client.chat.completions.create(
+                messages=self.history_to_messages(history),
+                model=self.api_model,
+                temperature=self.args.temperature,
+                top_p=self.args.top_p,
+            )
+        except BadRequestError as e:
+            raise CostLimitExceededError(f"Context window ({self.model_metadata['max_context']} tokens) exceeded")
+        # Calculate + update costs, return response
+        input_tokens = response.usage.prompt_tokens
+        output_tokens = response.usage.completion_tokens
+        self.update_stats(input_tokens, output_tokens)
+        return response.choices[0].message.content
 
 class AnthropicModel(BaseModel):
     MODELS = {
@@ -680,6 +776,8 @@ def get_model(args: ModelArguments, commands: Optional[list[Command]] = None):
         return HumanThoughtModel(args, commands)
     if args.model_name == "replay":
         return ReplayModel(args, commands)
+    elif args.model_name.startswith("azure"):
+        return AzureOpenAIModel(args, commands)
     elif args.model_name.startswith("gpt") or args.model_name.startswith("ft:gpt"):
         return OpenAIModel(args, commands)
     elif args.model_name.startswith("claude"):
