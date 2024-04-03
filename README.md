@@ -64,7 +64,8 @@ _NOTE_: At this moment, there are known issues with a small number of repositori
 **Inference on *any* GitHub Issue**: Using this script, you can run SWE-agent on any GitHub issue!
 ```
 python run.py --model_name gpt4 \
-  --data_path https://github.com/pvlib/pvlib-python/issues/1603 --config_file config/default_from_url.yaml
+  --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
+  --config_file config/default_from_url.yaml
 ```
 
 **Inference on SWE-bench**: Run SWE-agent on [SWE-bench Lite](https://www.swebench.com/lite.html) and generate patches.
