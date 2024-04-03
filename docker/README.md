@@ -84,7 +84,7 @@ After successfully building the Docker image, you can run the container using th
 ```bash
 docker run -e OPENAI_API_KEY=<your_openai_api_key> -e GITHUB_TOKEN=<your_github_token> your_image_name
 ```
-Replace `<your_openai_api_key>` and `<your_github_token>` with your actual API keys. By providing them as environment variables (-e flag), you can securely inject sensitive information into the Docker container at runtime without exposing them in the Dockerfile or image.
+Replace `<your_openai_api_key>` and `<your_github_token>` with your actual API keys. By providing them as environment variables `-e flag`, you can securely inject sensitive information into the Docker container at runtime without exposing them in the Dockerfile or image.
 
 3. **Additional Configuration**:
 If your application requires additional configuration, such as specifying a different port or mounting volumes, include those instructions here.
