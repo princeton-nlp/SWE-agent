@@ -48,7 +48,7 @@ def copy_file_to_container(container, contents, container_path):
     - container: Docker SDK container object.
     - contents: The string to copy into the container.
     - container_path: The path inside the container where the string should be copied to.
-    
+
     Returns:
     - None
     """
@@ -126,7 +126,7 @@ def read_with_timeout(container, pid_func, timeout_duration):
     if time.time() >= end_time:
         raise TimeoutError("Timeout reached while reading from subprocess.\nCurrent buffer: {}\nRunning PIDs: {}".format(buffer.decode(), pids))
     return buffer.decode()
-    
+
 
 class timeout:
     def __init__(self, seconds=TIMEOUT_DURATION, error_message="Timeout"):
@@ -231,7 +231,7 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
         stdout=PIPE,
         stderr=STDOUT,
         text=True,
-        bufsize=1, # line buffered 
+        bufsize=1, # line buffered
     )
     time.sleep(START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
@@ -279,7 +279,7 @@ def get_commit(api: GhApi, owner: str, repo: str, base_commit: str = None):
 
 
 
-def get_instances(file_path: str, base_commit: str = None, split: str = None):
+def get_instances(file_path: str, base_commit: str = None, split: str = None, token: str = None):
     """
     Getter function for handling json, jsonl files
 
@@ -295,7 +295,7 @@ def get_instances(file_path: str, base_commit: str = None, split: str = None):
     # If file_path is a github issue url, fetch the issue and return a single instance
     if is_from_github_url(file_path):
         match = GITHUB_ISSUE_URL_PATTERN.search(file_path)
-        api = GhApi()
+        api = GhApi(token=token)
         if match:
             owner, repo, issue_number = match.groups()
             record = dict()
@@ -317,7 +317,7 @@ def get_instances(file_path: str, base_commit: str = None, split: str = None):
         return json.load(open(file_path))
     if file_path.endswith(".jsonl"):
         return [json.loads(x) for x in open(file_path, 'r').readlines()]
-    
+
     # Attempt load from HF datasets as a last resort
     try:
         return load_dataset(file_path, split=split)
