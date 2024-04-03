@@ -290,7 +290,7 @@ class SWEEnv(gym.Env):
             logger.warning(f"Failed to execute command: {e}\nRESTARTING PROCESS.")
             self.reset_container()
             return observation, 0, True, info
-        except BrokenPipeError:
+        except BrokenPipeError as e:
             observation += "\nBROKEN PIPE ERROR. RESTARTING PROCESS."
             info["exit_status"] = "early_exit"
             logger.error(f"Broken pipe error: {e}\nRESTARTING PROCESS.")
