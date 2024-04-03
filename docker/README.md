@@ -68,3 +68,23 @@ WORKDIR /
 ```bash
 CMD ["/bin/bash"]
 ```
+
+# Docker Configuration
+This project supports running within a Docker container. Follow the instructions below to build and run the Docker container.
+
+1. **Building the Docker Image**:
+To build the Docker image, make sure you have Docker installed on your system. Then, execute the following command in the project directory:
+```bash
+docker build -t your_image_name .
+```
+Replace `your_image_name` with the desired name for your Docker image.
+
+2. **Running the Docker Container**:
+After successfully building the Docker image, you can run the container using the following command:
+```bash
+docker run -e OPENAI_API_KEY=<your_openai_api_key> -e GITHUB_TOKEN=<your_github_token> your_image_name
+```
+Replace `<your_openai_api_key>` and `<your_github_token>` with your actual API keys. By providing them as environment variables (-e flag), you can securely inject sensitive information into the Docker container at runtime without exposing them in the Dockerfile or image.
+
+3. **Additional Configuration**:
+If your application requires additional configuration, such as specifying a different port or mounting volumes, include those instructions here.
