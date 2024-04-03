@@ -83,11 +83,6 @@ class SWEEnv(gym.Env):
             logger.warning("Failed to get commit hash for this repo")
             self.commit_sha = None
 
-        # Load Task Instances
-        self.data_path = self.args.data_path
-        self.data = get_instances(self.data_path, self.args.base_commit, self.args.split)
-        self.logger.info(f"💽 Loaded dataset from {self.data_path}")
-
         # Set GitHub Token
         self.token = os.environ.get("GITHUB_TOKEN", None)
         if (self.token is None or self.token == "") and os.path.isfile(
@@ -95,6 +90,11 @@ class SWEEnv(gym.Env):
         ):
             self.cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
             self.token = self.cfg.get("GITHUB_TOKEN", "git")
+
+        # Load Task Instances
+        self.data_path = self.args.data_path
+        self.data = get_instances(self.data_path, self.args.base_commit, self.args.split, token=self.token)
+        self.logger.info(f"💽 Loaded dataset from {self.data_path}")
 
         # Establish connection with execution container
         self.image_name = args.image_name
@@ -642,7 +642,7 @@ class SWEEnv(gym.Env):
                 pass
             else:
                 raise ValueError(f"Invalid command type: {command['type']}")
-        
+
     def interrupt(self):
         """
         Send interrupt signal to container and exhaust stdout buffer with a communicate call
