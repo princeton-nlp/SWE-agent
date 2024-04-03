@@ -82,8 +82,8 @@ python run.py --model_name gpt4 \
 ```
 * See the [`scripts/`](scripts/) folder for other useful scripts and details.
 * See the [`config/`](config/) folder for details about how you can define your own configuration!
-* See the [`swe-agent/agent/`](agent/) folder for details about the logic behind configuration based workflows.
-* See the [`swe-agent/environment/`](swe-agent/environment/) folder for details about the `SWEEnv` environment (interface + implementation).
+* See the [`sweagent/agent/`](sweagent/agent/) folder for details about the logic behind configuration based workflows.
+* See the [`sweagent/environment/`](sweagent/environment/) folder for details about the `SWEEnv` environment (interface + implementation).
 * See the [`trajectories/`](trajectories) folder for details about the output of `run.py`.
 
 ### 🧪 Evaluation <a name="evaluation"></a>
