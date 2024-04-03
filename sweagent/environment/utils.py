@@ -4,12 +4,12 @@ import logging
 import os
 import re
 import select
-import signal
 import subprocess
 import tarfile
 import tempfile
 import time
 import traceback
+import threading
 
 from datasets import load_dataset, load_from_disk
 from ghapi.all import GhApi
@@ -132,16 +132,16 @@ class timeout:
     def __init__(self, seconds=TIMEOUT_DURATION, error_message="Timeout"):
         self.seconds = seconds
         self.error_message = error_message
+        self.alarm = threading.Timer(self.seconds, self.handle_timeout)
 
     def handle_timeout(self, signum, frame):
         raise TimeoutError(self.error_message)
 
     def __enter__(self):
-        signal.signal(signal.SIGALRM, self.handle_timeout)
-        signal.alarm(self.seconds)
+        self.alarm.start()
 
     def __exit__(self, type, value, traceback):
-        signal.alarm(0)
+        self.alarm.cancel()
 
 
 def get_background_pids(container_obj):
