@@ -7,7 +7,6 @@ dependencies:
     - config
     - datasets
     - docker
-    - gnureadline
     - gymnasium
     - numpy
     - openai>=1.0
