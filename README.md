@@ -45,15 +45,16 @@ Read our paper for more details.
 ## 🚀 Setup <a name="setup"></a>
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
 2. [Install Miniconda](https://docs.anaconda.com/free/miniconda/miniconda-install/), then create the `swe-agent` environment with `conda env create -f environment.yml`
-3. Activate using `conda activate swe-agent`.
-4. Run `./setup.sh` to create the `swe-agent` docker image.
-5. Create a `keys.cfg` file at the root of this repository and fill in the following:
+3. Clone the repository with `git clone https://github.com/princeton-nlp/SWE-agent.git && cd SWE-agent`
+4. Activate using `conda activate swe-agent`.
+5. Run `./setup.sh` to build the `swe-agent` docker image.
+6. Create a `keys.cfg` file at the root of this repository and fill in the following:
 ```
 OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model (optional)'
 ANTHROPIC_API_KEY: 'Anthropic API Key Here if using Anthropic Model (optional)'
 GITHUB_TOKEN: 'GitHub Token Here (required)'
 ```
-See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) tokens.
+See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) tokens. Note that for the OpenAI key, you will need to be on a paid API plan before you generate the API token if you are using some of the default configurations named below since they use the GPT-4 model unavailable on the free limit plan and tokens.
 
 ## 💽 Usage <a name="usage"></a>
 There are two steps to the SWE-agent pipeline. First SWE-agent takes an input GitHub issue and returns a pull request that attempts to fix it. We call that step *inference*. The second step (currently, only available for issues in the SWE-bench benchmark) is to *evaluate* the pull request to verify that it has indeed fixed the issue. 
