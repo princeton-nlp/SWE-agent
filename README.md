@@ -53,7 +53,7 @@ OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model (optional)'
 ANTHROPIC_API_KEY: 'Anthropic API Key Here if using Anthropic Model (optional)'
 GITHUB_TOKEN: 'GitHub Token Here (required)'
 ```
-See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github]() tokens.
+See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) tokens.
 
 ## 💽 Usage <a name="usage"></a>
 There are two steps to the SWE-agent pipeline. First SWE-agent takes an input GitHub issue and returns a pull request that attempts to fix it. We call that step *inference*. The second step (currently, only available for issues in the SWE-bench benchmark) is to *evaluate* the pull request to verify that it has indeed fixed the issue. 
