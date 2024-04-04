@@ -1,5 +1,3 @@
-from ast import Dict, parse
-from dataclasses import dataclass
 import docker
 import json
 import logging
@@ -18,7 +16,7 @@ from ghapi.all import GhApi
 from io import BytesIO
 from pathlib import Path
 from subprocess import PIPE, STDOUT
-from typing import Any, Tuple
+from typing import Any, List, Tuple, Dict
 
 LOGGER_NAME = "intercode"
 START_UP_DELAY = 5
@@ -383,3 +381,45 @@ def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token:
         if f"fixes #{issue_number}" in message.lower() or f"closes #{issue_number}" in message.lower():
             commit_urls.append(commit.html_url)
     return commit_urls
+
+
+def remove_triple_backticks(text: str) -> str:
+    return "\n".join(line.removeprefix("```") for line in text.splitlines())
+
+
+def format_trajectory_markdown(trajectory: List[Dict[str, str]]):
+    """Format a trajectory as a markdown string for use in gh PR description."""
+    emojis = {
+        "action": "🔥",
+        "observation": "👀",
+        "response": "️🧑‍🚒",
+        "state": "🧠",
+        "thought": "💡",
+
+    }
+    prefix = [
+        "<details>",
+        "<summary>Thought process ('trajectory') of SWE-agent (click to expand)</summary>",
+        "",
+        "",
+    ]
+    steps = []
+    for i, step in enumerate(trajectory):
+        step_strs = []
+        for key, value in step.items():
+            emoji = emojis.get(key, "")
+            if emoji:
+                emoji += " "
+            step_strs.append(f"**{emoji}{key.capitalize()} ({i})**:")
+            if key in ["observation", "state", "action"]:
+                step_strs.append("```")
+                step_strs.append(remove_triple_backticks(value).strip())
+                step_strs.append("```")
+            else:
+                step_strs.append(value.strip())
+        steps.append("\n".join(step_strs))
+    suffix = [
+        "",
+        "</details>",
+    ] 
+    return "\n".join(prefix) + "\n\n---\n\n".join(steps) + "\n".join(suffix)

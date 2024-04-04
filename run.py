@@ -123,16 +123,16 @@ def main(args: ScriptArguments):
                 "test_files": test_files,
                 "tests": tests
             }
-            info = agent.run(
+            info, trajectory = agent.run(
                 setup_args=setup_args,
                 env=env,
                 observation=observation,
                 traj_dir=traj_dir,
-                return_type="info",
+                return_type="info_trajectory",
             )
             save_predictions(traj_dir, instance_id, info)
             if args.actions.open_pr and should_open_pr(args, info, token=env.token):
-                env.open_pr(args.actions)
+                env.open_pr(args.actions, info, trajectory)
 
         except KeyboardInterrupt:
             logger.info("Exiting InterCode environment...")

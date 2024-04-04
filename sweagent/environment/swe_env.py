@@ -18,6 +18,7 @@ from rich.logging import RichHandler
 from simple_parsing.helpers import FrozenSerializable
 from sweagent.environment.utils import (
     copy_file_to_container,
+    format_trajectory_markdown,
     get_container,
     get_gh_issue_data,
     get_instances,
@@ -674,7 +675,7 @@ class SWEEnv(gym.Env):
             raise RuntimeError("Failed to interrupt container")
 
 
-    def open_pr(self, action_config: "ActionsArguments"):
+    def open_pr(self, action_config: "ActionsArguments", info, trajectory):
         """Create PR to repository"""
         logger.info("Opening PR")
         # todo: have better way of handling this
@@ -732,6 +733,7 @@ class SWEEnv(gym.Env):
             f"This is a PR opened by AI tool [SWE Agent](https://github.com/princeton-nlp/SWE-agent/) " 
             f"to close [#{issue.number}]({issue_url}) ({issue.title}).\n\nCloses #{issue.number}."
         )
+        body += "\n\n" + format_trajectory_markdown(trajectory)
         api = GhApi(token=self.token)
         pr_info = api.pulls.create(
             owner=owner,

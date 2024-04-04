@@ -675,7 +675,9 @@ class Agent:
             info['model_stats'] = self.model.stats.to_dict()
             if traj_dir:
                 self.save_trajectory(trajectory, traj_dir, env, info)
+        if return_type == "info":
+            return info
+        if return_type == "info_trajectory":
+            return info, trajectory
         if return_type != "info":
             return trajectory[-1][return_type]
-        else:
-            return info
