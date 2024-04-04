@@ -1,4 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+# bash strict mode
+set -euo pipefail
 
 # Create docker image
 echo "Setting up docker image for swe-agent..."
