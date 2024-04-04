@@ -678,9 +678,9 @@ class SWEEnv(gym.Env):
         logger.info("Opening PR")
         # todo: have better way of handling this
         # Adding random string suffix to avoid name conflicts if we had a previously failed run
+        issue_url = self.args.data_path 
         issue = get_gh_issue_data(issue_url, token=self.token)
         branch_name = f"swe-agent-fix-#{issue.number}-" + str(random.random())[2:10]
-        issue_url = self.args.data_path 
 
         self.communicate_with_handling(
             input=f"rm model.patch",

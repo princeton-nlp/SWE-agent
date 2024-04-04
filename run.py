@@ -35,13 +35,23 @@ logging.getLogger("simple_parsing").setLevel(logging.WARNING)
 
 
 @dataclass(frozen=True)
+class ActionsArguments(FlattenedAccess, FrozenSerializable):
+    """Run real-life actions (opening PRs, etc.) if we can solve the issue."""
+    open_pr: bool = False  # Open a PR with the patch if we can solve the issue
+    # Skip action if there are already commits claiming to fix the issue. Please only
+    # set this to False if you are sure the commits are not fixes or if this is your
+    # own repository!
+    skip_if_commits_reference_issue: bool = True  
+
+
+@dataclass(frozen=True)
 class ScriptArguments(FlattenedAccess, FrozenSerializable):
     environment: EnvironmentArguments
     agent: AgentArguments
+    actions: ActionsArguments
     instance_filter: str = ".*"  # Only run instances that completely match this regex
     skip_existing: bool = True  # Skip instances with existing trajectories
     suffix: str = ""
-    open_pr: bool = False  # Open a PR with the patch if we can solve the issue
 
     @property
     def run_name(self):
@@ -118,7 +128,7 @@ def main(args: ScriptArguments):
                 return_type="info",
             )
             save_predictions(traj_dir, instance_id, info)
-            if should_open_pr(args, info, token=env.token):
+            if args.actions.open_pr and should_open_pr(args, info, token=env.token):
                 env.open_pr()
 
         except KeyboardInterrupt:
@@ -156,7 +166,7 @@ def should_open_pr(args, info: Dict[str, Any], *, token: str="") -> bool:
         return False
     org, repo, issue_number = parse_gh_issue_url(args.environment.data_path)
     associated_commits = get_associated_commit_urls(org, repo, issue_number, token=token) 
-    if associated_commits:
+    if args.actions.skip_if_commits_reference_issue and associated_commits:
         commit_url_strs = ", ".join(associated_commits)
         logger.info(f"Issue already has associated commits (see {commit_url_strs}). Skipping PR creation.")
         return False
@@ -243,6 +253,7 @@ if __name__ == "__main__":
             ),
             config_file="config/default.yaml",
         ),
+        actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
     )
 
     # Nicer yaml dumping of multiline strings
