@@ -26,7 +26,7 @@ We accomplish these results by designing simple LM-centric commands and feedback
 
 Just like how typical language models requires good prompt engineering, good ACI design leads to much better results when using agents. As we show in our paper, a baseline agent without a well-tuned ACI does much worse than SWE-agent.
 
-SWE-agent contains features that we discovered to be immensly helpful during the agent-computer interface design process:
+SWE-agent contains features that we discovered to be immensely helpful during the agent-computer interface design process:
 1. We add a linter that runs when an edit command is issued, and do not let the edit command go through if the code isn't syntactically correct.
 2. We supply the agent with a special-built file viewer, instead of having it just ```cat``` files. We found that this file viewer works best when displaying just 100 lines in each turn. The file editor that we built has commands for scrolling up and down and for performing a search within the file.
 3. We supply the agent with a special-built full-directory string searching command. We found that it was important for this tool to succintly list the matches- we simply list each file that had at least one match. Showing the model more context about each match proved to be too confusing for the model. 
@@ -82,8 +82,8 @@ python run.py --model_name gpt4 \
 ```
 * See the [`scripts/`](scripts/) folder for other useful scripts and details.
 * See the [`config/`](config/) folder for details about how you can define your own configuration!
-* See the [`swe-agent/agent/`](agent/) folder for details about the logic behind configuration based workflows.
-* See the [`swe-agent/environment/`](swe-agent/environment/) folder for details about the `SWEEnv` environment (interface + implementation).
+* See the [`sweagent/agent/`](sweagent/agent/) folder for details about the logic behind configuration based workflows.
+* See the [`sweagent/environment/`](sweagent/environment/) folder for details about the `SWEEnv` environment (interface + implementation).
 * See the [`trajectories/`](trajectories) folder for details about the output of `run.py`.
 
 ### 🧪 Evaluation <a name="evaluation"></a>
@@ -100,6 +100,8 @@ Replace `<predictions_path>` with the path to the model's predictions, which sho
 - If you'd like to ask questions, learn about upcoming features, and participate in future development, join our [Discord community](https://discord.gg/AVEFbBn2rH)!
 - If you'd like to contribute to the codebase, we welcome [issues](https://github.com/princeton-nlp/SWE-agent/issues) and [pull requests](https://github.com/princeton-nlp/SWE-agent/pulls)!
 - If you'd like to see a post or tutorial about some topic, please let us know via an [issue](https://github.com/princeton-nlp/SWE-agent/issues).
+
+Contact person: [John Yang](https://john-b-yang.github.io/) and [Carlos E. Jimenez](http://www.carlosejimenez.com/) (Email: {jy1682, carlosej}@princeton.edu).
 
 ## 🪪 License <a name="license"></a>
 MIT. Check `LICENSE`.
