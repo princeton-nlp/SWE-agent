@@ -3,7 +3,7 @@
 This folder contains details describing how to write your own configurations to control how agents can interact with the `SWEEnv` environment.
 A configuration is represented as a single `.yaml` file, allowing you to...
 * Define the **commands** that agents may use to traverse + modify a codebase.
-* Write **prompts** that are determiniscally/conditionally shown to the agent over the course of a single trajectory.
+* Write **prompts** that are deterministically/conditionally shown to the agent over the course of a single trajectory.
 * Control the **input/output interface** that sits between the agent and `SWEEnv`.
 
 ## Configuration File Fields
