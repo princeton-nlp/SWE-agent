@@ -46,6 +46,13 @@ class ActionsArguments(FlattenedAccess, FrozenSerializable):
     # permissions to push to the main repo), set this to the URL of the fork.
     push_gh_repo_url: str = ""
 
+    def __post_init__(self):
+        if not self.skip_if_commits_reference_issue and self.push_gh_repo_url:
+            raise ValueError(
+                "Overriding `skip_if_commits_reference_issue` when you are "
+                "pushing to a fork is not supported. You can always manually "
+                "apply the patch to the forked repository."
+            )
 
 @dataclass(frozen=True)
 class ScriptArguments(FlattenedAccess, FrozenSerializable):
