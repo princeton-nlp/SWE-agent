@@ -49,9 +49,10 @@ Read our paper for more details.
 4. Run `./setup.sh` to create the `swe-agent` docker image.
 5. Create a `keys.cfg` file at the root of this repository and fill in the following:
 ```
+GITHUB_TOKEN: 'GitHub Token Here (required)'
 OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model (optional)'
 ANTHROPIC_API_KEY: 'Anthropic API Key Here if using Anthropic Model (optional)'
-GITHUB_TOKEN: 'GitHub Token Here (required)'
+TOGETHER_API_KEY: 'Together API Key Here if using Together Model (optional)'
 ```
 See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) tokens.
 
