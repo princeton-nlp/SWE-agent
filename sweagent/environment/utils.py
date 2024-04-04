@@ -295,6 +295,15 @@ def parse_gh_issue_url(issue_url: str) -> Tuple[str, str, str]:
     return tuple(res)  # type: ignore
 
 
+def parse_gh_repo_url(repo_url: str) -> Tuple[str, str]:
+    """Return owner, repo from repo url"""
+    if not repo_url.startswith('http://') and not repo_url.startswith('https://'):
+        repo_url = 'https://' + repo_url
+    parts = repo_url.split('/')
+    owner = parts[3] 
+    repo = parts[4]
+    return owner, repo
+
 
 def get_gh_issue_data(issue_url: str, *, token: str = ""):
     """Returns github issue data in the form of a dictionary.

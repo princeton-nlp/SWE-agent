@@ -23,6 +23,7 @@ from sweagent.environment.utils import (
     get_instances,
     is_from_github_url,
     parse_gh_issue_url,
+    parse_gh_repo_url,
     read_with_timeout,
     LOGGER_NAME,
 )
@@ -673,7 +674,7 @@ class SWEEnv(gym.Env):
             raise RuntimeError("Failed to interrupt container")
 
 
-    def open_pr(self):
+    def open_pr(self, action_config: "ActionsArguments"):
         """Create PR to repository"""
         logger.info("Opening PR")
         # todo: have better way of handling this
@@ -702,9 +703,27 @@ class SWEEnv(gym.Env):
             error_msg="Failed to commit changes",
             timeout_duration=10,
         )
+        # If users want to push to a fork, we add a new remote and push to that
+        # otherwise, we push to 'origin' which has already been set up
+        remote = "origin"
+        if not action_config.push_gh_repo_url:
+            owner, repo, _ = parse_gh_issue_url(issue_url)
+        else:
+            owner, repo = parse_gh_repo_url(action_config.push_gh_repo_url)
+        if action_config.push_gh_repo_url:
+            fork_url = f"https://{self.token}@github.com/{owner}/{repo}.git"
+            self.communicate_with_handling(
+                input=f"git remote add fork {fork_url}",
+                error_msg="Failed to create new git remote",
+                timeout_duration=10,
+            )
+            remote = "fork"
         self.communicate_with_handling(
-            input=f"git push origin {branch_name}",
-            error_msg="Failed to push branch to origin",
+            input=f"git push {remote} {branch_name}",
+            error_msg=(
+                "Failed to push branch to remote. Please check your token and permissions. "
+                "You might want to push to a fork with the push_gh_repo_url option."
+            ),
             timeout_duration=10,
         )
 
@@ -714,7 +733,6 @@ class SWEEnv(gym.Env):
             f"to close [#{issue.number}]({issue_url}) ({issue.title}).\n\nCloses #{issue.number}."
         )
         api = GhApi(token=self.token)
-        owner, repo, _ = parse_gh_issue_url(issue_url)
         pr_info = api.pulls.create(
             owner=owner,
             repo=repo,
@@ -724,4 +742,8 @@ class SWEEnv(gym.Env):
             body=body,
             draft=True,
         )
-        logger.info(f"PR created as a draft at {pr_info.html_url}")
+        logger.info(
+            f"🎉 PR created as a draft at {pr_info.html_url}. Please review it carefully, push "
+            "any required changes onto the branch and then click "
+            "'Ready for Review' to bring it to the attention of the maintainers."
+        )

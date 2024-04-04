@@ -42,6 +42,9 @@ class ActionsArguments(FlattenedAccess, FrozenSerializable):
     # set this to False if you are sure the commits are not fixes or if this is your
     # own repository!
     skip_if_commits_reference_issue: bool = True  
+    # For PRs: If you want to push the branch to a fork (e.g., because you lack
+    # permissions to push to the main repo), set this to the URL of the fork.
+    push_gh_repo_url: str = ""
 
 
 @dataclass(frozen=True)
@@ -129,7 +132,7 @@ def main(args: ScriptArguments):
             )
             save_predictions(traj_dir, instance_id, info)
             if args.actions.open_pr and should_open_pr(args, info, token=env.token):
-                env.open_pr()
+                env.open_pr(args.actions)
 
         except KeyboardInterrupt:
             logger.info("Exiting InterCode environment...")
@@ -166,10 +169,17 @@ def should_open_pr(args, info: Dict[str, Any], *, token: str="") -> bool:
         return False
     org, repo, issue_number = parse_gh_issue_url(args.environment.data_path)
     associated_commits = get_associated_commit_urls(org, repo, issue_number, token=token) 
-    if args.actions.skip_if_commits_reference_issue and associated_commits:
+    if associated_commits:
         commit_url_strs = ", ".join(associated_commits)
-        logger.info(f"Issue already has associated commits (see {commit_url_strs}). Skipping PR creation.")
-        return False
+        if args.actions.skip_if_commits_reference_issue:
+            logger.info(f"Issue already has associated commits (see {commit_url_strs}). Skipping PR creation.")
+            return False
+        else:
+            logger.warning(
+                f"Proceeding with PR creation even though there are already commits "
+                "({commit_url_strs}) associated with the issue. Please only do this for your own repositories "
+                "or after verifying that the existing commits do not fix the issue."
+            )
     return True
 
 
