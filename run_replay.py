@@ -135,7 +135,7 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--action_trajs_path", help="Path to action trajectories to replay", default=None)
     parser.add_argument("--traj_path", help="Path to trajectory to replay", default=None)
-    parser.add_argument("--config_file", help="Path to template")
+    parser.add_argument("--config_file", help="Path to template", required=True)
     parser.add_argument("--data_path", help="(Optional) Path to data file containing task instances ref'ed by replay trajectories", default=None)
     parser.add_argument("--suffix", help="(Optional) Suffix argument appended to end of traj path", default=None)
     args = parser.parse_args()
