@@ -1,9 +1,12 @@
 import json
 import os
 import subprocess
+from typing import Any, Dict, List
 import yaml
 
 from argparse import ArgumentParser
+
+from sweagent.environment.utils import is_from_github_url
 
 
 def process_synthetic_trajs(action_trajs_path: str, config_file: str, suffix: str):
@@ -69,7 +72,6 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
             end="\n",
             flush=True
         )
-    replay_task_instances_path = instance_id + ".jsonl"
 
     # Get data_path from args.yaml
     if data_path is None:
@@ -81,18 +83,29 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
         data_path = args['environment']['data_path']
 
     # Identify the relevant task instance and create it
-    data = None
+
+    def create_task_instances_tmp_file(data: List[Dict[str, Any]]) -> str:
+        """Helper function to create a temporary file to write task instances to.
+        Returns path to the temporary file.
+        """
+        data = [d for d in data if d["instance_id"] == instance_id]
+        tmp_path = instance_id + ".jsonl"
+        with open(tmp_path, "w") as f:
+            for d in data:
+                print(json.dumps(d), file=f, end="\n", flush=True)
+        return replay_task_instances_path
+
+
+    is_github = False
     if data_path.endswith(".jsonl"):
-        data = [json.loads(x) for x in open(data_path, "r").readlines()]
+        replay_task_instances_path = create_task_instances_tmp_file([json.loads(x) for x in open(data_path, "r").readlines()])
     elif data_path.endswith(".json"):
-        data = json.load(open(data_path))
+        replay_task_instances_path = create_task_instances_tmp_file(json.load(open(data_path)))
+    elif is_from_github_url(data_path):
+        is_github = True
+        replay_task_instances_path = data_path
     else:
         raise ValueError("--data_path must be a .json or .jsonl")
-    data = [d for d in data if d["instance_id"] == instance_id]
-
-    with open(replay_task_instances_path, "w") as f:
-        for d in data:
-            print(json.dumps(d), file=f, end="\n", flush=True)
 
     # Call run.py via subprocess
     command = [
@@ -104,12 +117,18 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
         "--model_name", "replay",
         "--replay_path", replay_action_trajs_path,
     ]
+    if is_github:
+        # Not sure if this only applies to github urls for data_path
+        command.extend(["--skip_existing", "False"])
     if suffix is not None:
         command.extend(["--suffix", suffix])
     subprocess.run(command)
 
     os.remove(replay_action_trajs_path)
-    os.remove(replay_task_instances_path)
+    try:
+        os.remove(replay_task_instances_path)
+    except FileNotFoundError:
+        pass
 
 
 def main(
