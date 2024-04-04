@@ -15,7 +15,7 @@
 ## 👋 Overview <a name="overview"></a>
 SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix bugs and issues in real GitHub repositories.
 
-On the full [SWE-bench](https://github.com/princeton-nlp/SWE-bench) test set, SWE-agent resolves **12.29%** of issues, achieving the state-of-the-art performance on the full test set.
+On [SWE-bench](https://github.com/princeton-nlp/SWE-bench), SWE-agent resolves **12.29%** of issues, achieving the state-of-the-art performance on the full test set.
 
 <p align="center">
   <img src="assets/results+preview.png" style="width: 80%; height: auto;">
