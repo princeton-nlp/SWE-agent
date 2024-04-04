@@ -10,7 +10,6 @@ import tempfile
 import time
 import traceback
 import threading
-import signal
 
 from datasets import load_dataset, load_from_disk
 from ghapi.all import GhApi
