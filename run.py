@@ -38,6 +38,7 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
     instance_filter: str = ".*"  # Only run instances that completely match this regex
     skip_existing: bool = True  # Skip instances with existing trajectories
     suffix: str = ""
+    create_pr: bool = False
 
     @property
     def run_name(self):
@@ -114,6 +115,8 @@ def main(args: ScriptArguments):
                 return_type="info",
             )
             save_predictions(traj_dir, instance_id, info)
+            if args.create_pr:
+                env.create_pr(env.data[index]["instance_id"], info.get("submission"))
 
         except KeyboardInterrupt:
             logger.info("Exiting InterCode environment...")

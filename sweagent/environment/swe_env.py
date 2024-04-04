@@ -231,6 +231,56 @@ class SWEEnv(gym.Env):
         # Write any metadata to info if necessary
         return None, info
 
+    def create_pr(self, instance_id, diff_string):
+        # Ensure there's a diff string to apply
+        if not diff_string:
+            self.logger.error("No diff string provided.")
+            return
+
+        new_branch = f"{instance_id}_patch"
+        repo_name = self.record["repo"].replace("/", "__")
+        diff_file_path = "/tmp/diff.patch"  # Temporary file to store the diff
+
+        # Save the diff string to a file within the Docker container
+        save_diff_command = f"echo '{diff_string}' > {diff_file_path}"
+
+        # Commands to apply diff, commit, and push changes
+        commands = [
+            f"git checkout -b {new_branch}",
+            #f"git apply {diff_file_path}",  # Apply diff from the temporary file
+            f"git commit -am 'Apply changes for {instance_id}'",
+            f"git push origin {new_branch}",
+            f"rm {diff_file_path}",  # Clean up the temporary diff file
+        ]
+
+        # Execute the commands within the Docker container
+        for cmd in [save_diff_command] + commands:
+            self.communicate_with_handling(
+                input=cmd,
+                error_msg=f"Failed to execute command: {cmd}"
+            )
+
+        # Use GitHub API to create the PR
+        self._create_github_pr(new_branch, instance_id)
+
+    def _create_github_pr(self, new_branch, instance_id):
+        from ghapi.all import GhApi
+
+        title = f"Attempt to solve {instance_id}"
+        body = f"PR for changes related to {instance_id}"
+        base_branch = "main"
+
+        # Initialize the GitHub API client
+        owner, repo_name = self.record["repo"].split('/')
+        api = GhApi(owner=owner, repo=repo_name, token=self.token)
+
+        # Create the PR
+        api.pulls.create(
+            title=title,
+            head=new_branch,
+            base=base_branch,
+            body=body,
+        )
     def step(self, action: str) -> Tuple[str, int, bool, dict]:
         """
         Runs given action in environment and returns corresponding output
