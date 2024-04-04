@@ -340,7 +340,7 @@ class SWEEnv(gym.Env):
             logger.warning(f"Failed to execute command: {e}\nRESTARTING PROCESS.")
             self.reset_container()
             return observation, 0, True, info
-        except BrokenPipeError:
+        except BrokenPipeError as e:
             observation += "\nBROKEN PIPE ERROR. RESTARTING PROCESS."
             info["exit_status"] = "early_exit"
             logger.error(f"Broken pipe error: {e}\nRESTARTING PROCESS.")
@@ -418,7 +418,13 @@ class SWEEnv(gym.Env):
         self.container, self.parent_pids = get_container(
             self.container_name, self.image_name, persistent=self.persistent
         )
-        client = docker.from_env()
+        try:
+            client = docker.from_env()
+        except docker.errors.DockerException as e:
+            if "Error while fetching server API version" in str(e):
+                raise RuntimeError(
+                    "Docker is not running. Please start Docker and try again."
+                ) from e
         self.container_obj = client.containers.get(self.container_name)
         self.logger.info("🌱 Environment Initialized")
 
