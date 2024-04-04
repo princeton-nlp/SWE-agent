@@ -458,7 +458,16 @@ class OllamaModel(BaseModel):
             }
         )
         # Calculate + update costs, return response
-        input_tokens = response["prompt_eval_count"]
+        if "prompt_eval_count" in response:
+            input_tokens = response["prompt_eval_count"]
+        else:
+            logger.warning(
+                "Prompt eval count not found in response. Using 0. "
+                "This might be because the prompt has been cached. "
+                "See https://github.com/princeton-nlp/SWE-agent/issues/44 "
+                "and https://github.com/ollama/ollama/issues/3427."
+            )
+            input_tokens = 0
         output_tokens = response["eval_count"]
         self.update_stats(input_tokens, output_tokens)
         return response["message"]["content"]
