@@ -108,8 +108,8 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
         command.extend(["--suffix", suffix])
     subprocess.run(command)
 
-    os.remove(replay_action_trajs_path)
-    os.remove(replay_task_instances_path)
+    # os.remove(replay_action_trajs_path)
+    # os.remove(replay_task_instances_path)
 
 
 def main(

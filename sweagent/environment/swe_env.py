@@ -1,3 +1,4 @@
+import random
 import config
 import datetime
 import docker
@@ -10,6 +11,7 @@ import subprocess
 import traceback
 import time
 
+from ghapi.all import GhApi
 from dataclasses import dataclass
 from git import Repo
 from rich.logging import RichHandler
@@ -17,8 +19,10 @@ from simple_parsing.helpers import FrozenSerializable
 from sweagent.environment.utils import (
     copy_file_to_container,
     get_container,
+    get_gh_issue_data,
     get_instances,
     is_from_github_url,
+    parse_gh_issue_url,
     read_with_timeout,
     LOGGER_NAME,
 )
@@ -667,3 +671,56 @@ class SWEEnv(gym.Env):
             assert output.strip().endswith("interrupted"), "container health check failed"
         except TimeoutError:
             raise RuntimeError("Failed to interrupt container")
+
+
+    def open_pr(self):
+        """Create PR to repository"""
+        logger.info("Opening PR")
+        # todo: have better way of handling this
+        # Adding random string suffix to avoid name conflicts if we had a previously failed run
+        # todo: add issue number to branch name
+        branch_name = "swe-agent-patch-branch-" + str(random.random())[2:10]
+        issue_url = self.args.data_path 
+
+        logger.debug(self.communicate_with_handling(
+            input=f"rm model.patch",
+            error_msg="Failed to remove model patch",
+            timeout_duration=10,
+        ))
+        logger.debug(self.communicate_with_handling(
+            input=f"git checkout -b {branch_name}",
+            error_msg="Failed to switch to new branch",
+            timeout_duration=10,
+        ))
+        logger.debug(self.communicate_with_handling(
+            input=f"git add .",
+            error_msg="Failed to add commits",
+            timeout_duration=10,
+        ))
+        issue = get_gh_issue_data(issue_url, token=self.token)
+        logger.debug(self.communicate_with_handling(
+            input=f"git commit -m 'Fix: {issue.title}' -m 'Closes #{issue.number}' ",
+            error_msg="Failed to commit changes",
+            timeout_duration=10,
+        ))
+        logger.debug(self.communicate_with_handling(
+            input=f"git push origin {branch_name}",
+            error_msg="Failed to clone repository from mirror",
+            timeout_duration=10,
+        ))
+
+        # todo: add representation of trajectory to PR body
+        body =  (
+            f"This is a PR opened by AI tool [SWE Agent](https://github.com/princeton-nlp/SWE-agent/) " 
+            f"to close [#{issue.number}]({issue_url}) ({issue.title}).\n\nCloses #{issue.number}."
+        )
+        api = GhApi(token=self.token)
+        owner, repo, _ = parse_gh_issue_url(issue_url)
+        api.pulls.create(
+            owner=owner,
+            repo=repo,
+            title=f"SWE-agent[bot] PR to fix: {issue.title}",
+            head=branch_name,
+            base="main",
+            body=body,
+        )

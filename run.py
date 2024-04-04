@@ -1,11 +1,9 @@
 import json
 import logging
 import os
-import random
 import re
 import traceback
-from typing import Any, Dict, Optional, Tuple
-import requests
+from typing import Any, Dict
 import yaml
 
 from dataclasses import dataclass
@@ -25,7 +23,7 @@ from sweagent import (
 from swebench import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
 from unidiff import PatchSet
 
-from sweagent.environment.utils import is_from_github_url
+from sweagent.environment.utils import InvalidGithubURL, get_gh_issue_data
 
 handler = RichHandler(show_time=False, show_path=False)
 handler.setLevel(logging.DEBUG)
@@ -121,7 +119,7 @@ def main(args: ScriptArguments):
             )
             save_predictions(traj_dir, instance_id, info)
             if should_open_pr(args, info, token=env.token):
-                open_pr(env)
+                env.open_pr()
 
         except KeyboardInterrupt:
             logger.info("Exiting InterCode environment...")
@@ -142,120 +140,30 @@ def should_open_pr(args, info: Dict[str, Any], *, token: str="") -> bool:
     if info["exit_status"] != "submitted":
         logger.info("Not openening PR because exit status was %s and not submitted.", info["exit_status"])
         return False
-    if not is_from_github_url(args.environment.data_path):
+    try:
+        issue = get_gh_issue_data(args.environment.data_path, token=token)
+    except InvalidGithubURL:
         logger.info("Currently only github is supported to open githubs to. Skipping PR creation.")
         return False
-    issue_info = IssueInfo.from_issue_url(args.environment.data_path, token=token)
-    if issue_info.is_closed:
-        logger.info("Issue is already closed. Skipping PR creation.")
+    if issue.state != "open":
+        logger.info(f"Issue is not open (state={issue.state}. Skipping PR creation.")
         return False
-    if issue_info.is_assigned:
+    if issue.assignee:
         logger.info("Issue is already assigned. Skipping PR creation. Be nice :)")
         return False
+    if issue.locked:
+        logger.info("Issue is locked. Skipping PR creation.")
+        return False
+    # todo: Ideally we would want to check if there is already a PR open for this issue
+    # but that doesn't seem to be possible at the moment: https://stackoverflow.com/questions/36419105/
+    # The docs say that there should be a pull_request field in the issue info,
+    # but there isn't.
+    # Similarly, there isn't an issue field in the PR data, so we can't loop
+    # over PRs either :|
+    # The only possibility is to go through associated events by 
+    # curling https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}
+    # but it's also not implemented in ghapi yet.
     return True
-
-class GitHubApiException(RuntimeError):
-    pass
-
-
-@dataclass
-class IssueInfo:
-    title: str
-    number: int
-    is_closed: bool
-    is_assigned: bool
-    org: str
-    repo: str
-
-    @classmethod
-    def from_issue_url(cls, issue_url: str, *, token: str = "") -> "IssueInfo":
-        parse_url = issue_url.removeprefix("https://")
-        assert parse_url.startswith("github.com/")
-        org, repo  = parse_url.split("/")[1:3]
-        issue_number = issue_url.split("/")[-1]
-        issue_data = retrieve_issue_data(org, repo, issue_number, token=token)
-        if issue_data is None:
-            raise GitHubApiException(f"Failed to retrieve issue data from {issue_url}")
-        return cls(
-            title=issue_data["title"],
-            number=issue_data["number"],
-            is_closed=bool(issue_data["closed_at"]),
-            is_assigned=bool(issue_data["assignee"]) or bool(issue_data["assignees"]),
-            org=org,
-            repo=repo,
-        )
-
-def retrieve_issue_data(org: str, repo: str, issue_num: str, *, token: str="") -> Optional[Dict[str, Any]]:
-    # fixme: Authentication
-    api_url = f"https://api.github.com/repos/{org}/{repo}/issues/{issue_num}"
-    response = requests.get(api_url)
-    if not response.ok:
-        logger.warning(f"Failed to retrieve issue data from {api_url}: {response.text}")
-        return None
-    return response.json()
-
-
-def open_pr(env: SWEEnv) -> None:
-    """Create a PR with the patch."""
-    logger.info("Opening PR")
-    # todo: have better way of handling this
-    # Adding random string suffix to avoid name conflicts if we had a previously failed run
-    branch_name = "swe-agent-patch-branch-" + str(random.random())[2:10]
-    issue_url = env.args.data_path 
-    issue_info = IssueInfo.from_issue_url(issue_url, token=env.token)
-    logger.debug(env.communicate_with_handling(
-        input=f"rm model.patch",
-        error_msg="Failed to remove model patch",
-        timeout_duration=10,
-    ))
-    logger.debug(env.communicate_with_handling(
-        input=f"git checkout -b {branch_name}",
-        error_msg="Failed to switch to new branch",
-        timeout_duration=10,
-    ))
-    logger.debug(env.communicate_with_handling(
-        input=f"git add .",
-        error_msg="Failed to add commits",
-        timeout_duration=10,
-    ))
-    logger.debug(env.communicate_with_handling(
-        input=f"git commit -m 'Fix: {issue_info.title}' -m 'Closes #{issue_info.number}' ",
-        error_msg="Failed to commit changes",
-        timeout_duration=10,
-    ))
-    logger.debug(env.communicate_with_handling(
-        input=f"git push origin {branch_name}",
-        error_msg="Failed to clone repository from mirror",
-        timeout_duration=10,
-    ))
-    api_url = f"https://api.github.com/repos/{issue_info.org}/{issue_info.repo}/pulls"
-
-    headers = {
-        'Accept': 'application/vnd.github+json',
-        'Authorization': f'Bearer {env.token}',
-        'X-GitHub-Api-Version': '2022-11-28'
-    }
-    # todo: add representation of trajectory to PR body
-    data = {
-        'title': f'AI tool PR to fix: {issue_info.title}',
-        'body': f'This is a PR opened by AI tool [SWE Agent](https://github.com/princeton-nlp/SWE-agent/) to close [#{issue_info.number}]({issue_url}) ({issue_info.title}).\n\nCloses #{issue_info.number}.',
-        'head': branch_name,
-        'base': 'main'
-    }
-    print("Request data:")
-    print(data)
-    print(headers)
-    print(api_url)
-    response = requests.post(api_url, headers=headers, json=data)
-
-    if not response.ok:
-        error_message = f"Error {response.status_code}: {response.text}"
-        if response.status_code == 403:
-            raise GitHubApiException("Forbidden: " + error_message)
-        else:
-            raise GitHubApiException(error_message)
-
-    print("Success:", response.json())
 
 
 def save_arguments(traj_dir, args):

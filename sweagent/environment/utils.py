@@ -1,3 +1,5 @@
+from ast import Dict, parse
+from dataclasses import dataclass
 import docker
 import json
 import logging
@@ -16,7 +18,7 @@ from ghapi.all import GhApi
 from io import BytesIO
 from pathlib import Path
 from subprocess import PIPE, STDOUT
-from typing import Tuple
+from typing import Any, Tuple
 
 LOGGER_NAME = "intercode"
 START_UP_DELAY = 5
@@ -279,6 +281,31 @@ def get_commit(api: GhApi, owner: str, repo: str, base_commit: str = None):
 
 
 
+class InvalidGithubURL(ValueError):
+    ...
+
+
+def parse_gh_issue_url(issue_url: str) -> Tuple[str, str, str]:
+    """Return owner, repo, issue number from issue url"""
+    match = GITHUB_ISSUE_URL_PATTERN.search(issue_url)
+    if not match:
+        raise InvalidGithubURL(f"Invalid GitHub issue URL: {issue_url}")
+    res = match.groups()
+    assert len(res) == 3
+    return tuple(res)  # type: ignore
+
+
+
+def get_gh_issue_data(issue_url: str, *, token: str = ""):
+    """Returns github issue data in the form of a dictionary.
+    See https://docs.github.com/en/rest/issues/issues?apiVersion=2022-11-28#get-an-issue
+    for return format
+    """
+    owner, repo, issue_number = parse_gh_issue_url(issue_url)
+    api = GhApi(token=token)
+    return api.issues.get(owner, repo, issue_number)
+
+
 def get_instances(file_path: str, base_commit: str = None, split: str = None, token: str = None):
     """
     Getter function for handling json, jsonl files
@@ -294,11 +321,13 @@ def get_instances(file_path: str, base_commit: str = None, split: str = None, to
 
     # If file_path is a github issue url, fetch the issue and return a single instance
     if is_from_github_url(file_path):
-        match = GITHUB_ISSUE_URL_PATTERN.search(file_path)
-        api = GhApi(token=token)
-        if match:
-            owner, repo, issue_number = match.groups()
+        try: 
+            owner, repo, issue_number = parse_gh_issue_url(file_path)
+        except InvalidGithubURL:
+            pass
+        else:
             record = dict()
+            api = GhApi(token=token)
             issue = api.issues.get(owner, repo, issue_number)
             title = issue.title if issue.title else ""
             body = issue.body if issue.body else ""
@@ -326,3 +355,7 @@ def get_instances(file_path: str, base_commit: str = None, split: str = None, to
             f"Could not load instances from {file_path}. "
             "Please ensure --data_path is a GitHub URL, a SWE-bench HuggingFace dataset, or a JSON/JSONL file."
         )
+
+
+
+
