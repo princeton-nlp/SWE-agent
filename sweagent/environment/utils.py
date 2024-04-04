@@ -357,5 +357,20 @@ def get_instances(file_path: str, base_commit: str = None, split: str = None, to
         )
 
 
-
-
+def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token: str = "") -> list[str]:
+    """Return the URLs of commits that would close an issue."""
+    api = GhApi(token=token)
+    # Strangely the "pull_request" field of api.issues.get is often not set
+    # so we have to go through the events to check if there's a commit
+    events = api.issues.list_events(org, repo, issue_number)
+    commit_urls = []
+    for event in events:
+        if not event.event == "referenced":
+            continue
+        if not event.commit_id:
+            continue
+        commit = api.repos.get_commit(org, repo, event.commit_id)
+        message = commit.commit.message
+        if f"fixes #{issue_number}" in message.lower() or f"closes #{issue_number}" in message.lower():
+            commit_urls.append(commit.html_url)
+    return commit_urls

@@ -23,7 +23,7 @@ from sweagent import (
 from swebench import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
 from unidiff import PatchSet
 
-from sweagent.environment.utils import InvalidGithubURL, get_gh_issue_data
+from sweagent.environment.utils import InvalidGithubURL, get_associated_commit_urls, get_gh_issue_data, parse_gh_issue_url
 
 handler = RichHandler(show_time=False, show_path=False)
 handler.setLevel(logging.DEBUG)
@@ -154,15 +154,12 @@ def should_open_pr(args, info: Dict[str, Any], *, token: str="") -> bool:
     if issue.locked:
         logger.info("Issue is locked. Skipping PR creation.")
         return False
-    # todo: Ideally we would want to check if there is already a PR open for this issue
-    # but that doesn't seem to be possible at the moment: https://stackoverflow.com/questions/36419105/
-    # The docs say that there should be a pull_request field in the issue info,
-    # but there isn't.
-    # Similarly, there isn't an issue field in the PR data, so we can't loop
-    # over PRs either :|
-    # The only possibility is to go through associated events by 
-    # curling https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}
-    # but it's also not implemented in ghapi yet.
+    org, repo, issue_number = parse_gh_issue_url(args.environment.data_path)
+    associated_commits = get_associated_commit_urls(org, repo, issue_number, token=token) 
+    if associated_commits:
+        commit_url_strs = ", ".join(associated_commits)
+        logger.info(f"Issue already has associated commits (see {commit_url_strs}). Skipping PR creation.")
+        return False
     return True
 
 
