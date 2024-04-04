@@ -3,14 +3,10 @@ import logging
 import os
 import re
 import traceback
-import yaml
-
-from dataclasses import dataclass
-from getpass import getuser
 from pathlib import Path
+import typer
+import yaml
 from rich.logging import RichHandler
-from simple_parsing import parse
-from simple_parsing.helpers import FrozenSerializable, FlattenedAccess
 from sweagent import (
     Agent,
     AgentArguments,
@@ -20,7 +16,12 @@ from sweagent import (
     get_data_path_name,
 )
 from swebench import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
+from typing import Dict, Any, Optional
+from getpass import getuser
 from unidiff import PatchSet
+
+
+app = typer.Typer()
 
 handler = RichHandler(show_time=False, show_path=False)
 handler.setLevel(logging.DEBUG)
@@ -31,71 +32,153 @@ logger.propagate = False
 logging.getLogger("simple_parsing").setLevel(logging.WARNING)
 
 
-@dataclass(frozen=True)
-class ScriptArguments(FlattenedAccess, FrozenSerializable):
-    environment: EnvironmentArguments
-    agent: AgentArguments
-    instance_filter: str = ".*"  # Only run instances that completely match this regex
-    skip_existing: bool = True  # Skip instances with existing trajectories
-    suffix: str = ""
+def get_run_name(args: Dict[str, Any]) -> str:
+    """Generate a unique name for this run based on the arguments."""
+    model_name = args["agent"]["model"]["model_name"].replace(":", "-")
+    data_stem = get_data_path_name(args["environment"]["data_path"])
+    config_stem = Path(args["agent"]["config_file"]).stem
 
-    @property
-    def run_name(self):
-        """Generate a unique name for this run based on the arguments."""
-        model_name = args.agent.model.model_name.replace(":", "-")
-        data_stem = get_data_path_name(args.environment.data_path)
-        config_stem = Path(args.agent.config_file).stem
+    temp = args["agent"]["model"]["temperature"]
+    top_p = args["agent"]["model"]["top_p"]
+    per_instance_cost_limit = args["agent"]["model"]["per_instance_cost_limit"]
+    install_env = args["environment"]["install_environment"]
 
-        temp = args.agent.model.temperature
-        top_p = args.agent.model.top_p
-
-        per_instance_cost_limit = args.agent.model.per_instance_cost_limit
-        install_env = args.environment.install_environment
-
-        return (
-            f"{model_name}__{data_stem}__{config_stem}__t-{temp:.2f}__p-{top_p:.2f}"
-            + f"__c-{per_instance_cost_limit:.2f}__install-{int(install_env)}"
-            + (f"__{self.suffix}" if self.suffix else "")
-        )
+    suffix = args.get("suffix", "")
+    return f"{model_name}__{data_stem}__{config_stem}__t-{temp:.2f}__p-{top_p:.2f}__c-{per_instance_cost_limit:.2f}__install-{int(install_env)}{f'__{suffix}' if suffix else ''}"
 
 
-def main(args: ScriptArguments):
-    logger.info(f"📙 Arguments: {args.dumps_yaml()}")
-    agent = Agent("primary", args.agent)
+def save_arguments(traj_dir: Path, args: Dict[str, Any]):
+    log_path = traj_dir / "args.yaml"
+    if log_path.exists():
+        with open(log_path, "r") as f:
+            existing_args = yaml.safe_load(f)
+            if args != existing_args:
+                logger.warning("Found existing args.yaml with different arguments!")
+    with open(log_path, "w") as f:
+        yaml.safe_dump(args, f)
 
-    env = SWEEnv(args.environment)
 
-    traj_dir = Path("trajectories") / Path(getuser()) / args.run_name
+def should_skip(args: Dict[str, Any], traj_dir: Path, instance_id: str) -> bool:
+    if not re.match(args["instance_filter"], instance_id):
+        logger.info(f"Instance filter not matched. Skipping instance {instance_id}")
+        return True
+    if not args["skip_existing"]:
+        return False
+    log_path = traj_dir / (instance_id + ".traj")
+    if log_path.exists():
+        with open(log_path, "r") as f:
+            data = json.load(f)
+        exit_status = data["info"].get("exit_status", None)
+        if exit_status in [None, "early_exit"]:
+            logger.info(f"Removing incomplete trajectory: {log_path}")
+            os.remove(log_path)
+        else:
+            logger.info(f"Skipping existing trajectory: {log_path}")
+            return True
+    return False
+
+
+def save_predictions(traj_dir: Path, instance_id: str, info: Dict[str, Any]):
+    output_file = traj_dir / "all_preds.jsonl"
+    model_patch = info.get("submission", None)
+    datum = {
+        KEY_MODEL: traj_dir.name,
+        KEY_INSTANCE_ID: instance_id,
+        KEY_PREDICTION: model_patch,
+    }
+    with open(output_file, "a") as fp:
+        print(json.dumps(datum), file=fp)
+
+
+@app.command()
+def main(
+    environment_image_name: str = typer.Option(
+        ..., "--env-img", help="Environment image name"
+    ),
+    data_path: str = typer.Option(..., "--data-path", help="Data path"),
+    split: str = typer.Option("dev", "--split", help="Data split"),
+    verbose: bool = typer.Option(True, "--verbose", help="Verbose output"),
+    install_environment: bool = typer.Option(
+        True, "--install-env", help="Install environment flag"
+    ),
+    model_name: str = typer.Option(..., "--model-name", help="Model name"),
+    total_cost_limit: float = typer.Option(
+        0.0, "--total-cost", help="Total cost limit"
+    ),
+    per_instance_cost_limit: float = typer.Option(
+        2.0, "--per-instance-cost", help="Per instance cost limit"
+    ),
+    temperature: float = typer.Option(0.2, "--temp", help="Temperature for generation"),
+    top_p: float = typer.Option(0.95, "--top-p", help="Top P for generation"),
+    config_file: Path = typer.Option(
+        ..., "--config", help="Path to the configuration file"
+    ),
+    instance_filter: str = typer.Option(
+        ".*", "--instance-filter", help="Regex filter for instance IDs"
+    ),
+    skip_existing: bool = typer.Option(
+        True, "--skip-existing", help="Skip existing trajectories"
+    ),
+    suffix: Optional[str] = typer.Option(
+        None, "--suffix", help="Suffix for the run name"
+    ),
+):
+    # Convert command line arguments to ScriptArguments-like structure
+    environment_args = EnvironmentArguments(
+        image_name=environment_image_name,
+        data_path=data_path,
+        split=split,
+        verbose=verbose,
+        install_environment=install_environment,
+    )
+    model_args = ModelArguments(
+        model_name=model_name,
+        total_cost_limit=total_cost_limit,
+        per_instance_cost_limit=per_instance_cost_limit,
+        temperature=temperature,
+        top_p=top_p,
+    )
+    agent_args = AgentArguments(model=model_args, config_file=config_file)
+    script_args = {
+        "environment": environment_args,
+        "agent": agent_args,
+        "instance_filter": instance_filter,
+        "skip_existing": skip_existing,
+        "suffix": suffix,
+    }
+
+    logger.info(f"📙 Arguments: {yaml.safe_dump(script_args)}")
+    agent = Agent("primary", AgentArguments(**script_args["agent"]))
+    env = SWEEnv(EnvironmentArguments(**script_args["environment"]))
+
+    traj_dir = Path("trajectories") / getuser() / get_run_name(script_args)
     os.makedirs(traj_dir, exist_ok=True)
+    save_arguments(traj_dir, script_args)
 
-    save_arguments(traj_dir, args)
-
-    for index in range(len(env.data)):
+    for index, instance in enumerate(env.data):
         try:
-            # Reset environment
-            instance_id = env.data[index]["instance_id"]
-            if should_skip(args, traj_dir, instance_id):
+            instance_id = instance["instance_id"]
+            if should_skip(script_args, traj_dir, instance_id):
                 continue
-            logger.info("▶️  Beginning task " + str(index))
+            logger.info(f"▶️ Beginning task {index}")
 
             observation, info = env.reset(index)
             if info is None:
                 continue
 
-            # Get info, patch information
+            # Extracting issue information
             issue = getattr(env, "query", None)
             files = []
             if "patch" in env.record:
-                files = "\n".join(
-                    [f"- {x.path}" for x in PatchSet(env.record["patch"]).modified_files]
-                )
-            # Get test files, F2P tests information
+                files = "\n".join([f"- {x.path}" for x in PatchSet(env.record["patch"]).modified_files])
+
+            # Extracting test file modifications and additions
             test_files = []
             if "test_patch" in env.record:
                 test_patch_obj = PatchSet(env.record["test_patch"])
-                test_files = "\n".join(
-                    [f"- {x.path}" for x in test_patch_obj.modified_files + test_patch_obj.added_files]
-                )
+                test_files = "\n".join([f"- {x.path}" for x in test_patch_obj.modified_files + test_patch_obj.added_files])
+
+            # Extracting tests that changed from fail to pass
             tests = ""
             if "FAIL_TO_PASS" in env.record:
                 tests = "\n".join([f"- {x}" for x in env.record["FAIL_TO_PASS"]])
@@ -104,8 +187,10 @@ def main(args: ScriptArguments):
                 "issue": issue,
                 "files": files,
                 "test_files": test_files,
-                "tests": tests
+                "tests": tests,
             }
+
+            # Running the agent with the collected setup arguments
             info = agent.run(
                 setup_args=setup_args,
                 env=env,
@@ -113,111 +198,18 @@ def main(args: ScriptArguments):
                 traj_dir=traj_dir,
                 return_type="info",
             )
+
+            # Saving the predictions
             save_predictions(traj_dir, instance_id, info)
 
         except KeyboardInterrupt:
-            logger.info("Exiting InterCode environment...")
-            env.close()
+            logger.info("Exiting...")
             break
         except Exception as e:
             traceback.print_exc()
-            logger.warning(f"❌ Failed on {env.record['instance_id']}: {e}")
-            env.reset_container()
+            logger.warning(f"❌ Failed on {instance["instance_id"]}: {e}")
             continue
 
 
-def save_arguments(traj_dir, args):
-    """Save the arguments to a yaml file to the run's trajectory directory."""
-    log_path = traj_dir / "args.yaml"
-
-    if log_path.exists():
-        try:
-            other_args = args.load_yaml(log_path)
-            if (args.dumps_yaml() != other_args.dumps_yaml()):  # check yaml equality instead of object equality
-                logger.warning("**************************************************")
-                logger.warning("Found existing args.yaml with different arguments!")
-                logger.warning("**************************************************")
-        except Exception as e:
-            logger.warning(f"Failed to load existing args.yaml: {e}")
-
-    with log_path.open("w") as f:
-        args.dump_yaml(f)
-
-
-def should_skip(args, traj_dir, instance_id):
-    """Check if we should skip this instance based on the instance filter and skip_existing flag."""
-    # Skip instances that don't match the instance filter
-    if re.match(args.instance_filter, instance_id) is None:
-        logger.info(f"Instance filter not matched. Skipping instance {instance_id}")
-        return True
-
-    # If flag is set to False, don't skip
-    if not args.skip_existing:
-        return False
-
-    # Check if there's an existing trajectory for this instance
-    log_path = traj_dir / (instance_id + ".traj")
-    if log_path.exists():
-        with log_path.open("r") as f:
-            data = json.load(f)
-        # If the trajectory has no exit status, it's incomplete and we will redo it
-        exit_status = data["info"].get("exit_status", None)
-        if exit_status == "early_exit" or exit_status is None:
-            logger.info(f"Found existing trajectory with no exit status: {log_path}")
-            logger.info("Removing incomplete trajectory...")
-            os.remove(log_path)
-        else:
-            logger.info(f"⏭️ Skipping existing trajectory: {log_path}")
-            return True
-    return False
-
-
-def save_predictions(traj_dir, instance_id, info):
-    output_file = Path(traj_dir) / "all_preds.jsonl"
-    model_patch = info["submission"] if "submission" in info else None
-    datum = {
-        KEY_MODEL: Path(traj_dir).name,
-        KEY_INSTANCE_ID: instance_id,
-        KEY_PREDICTION: model_patch,
-    }
-    with open(output_file, "a+") as fp:
-        print(json.dumps(datum), file=fp, flush=True)
-    logger.info(f"Saved predictions to {output_file}")
-
-
 if __name__ == "__main__":
-    defaults = ScriptArguments(
-        suffix="",
-        environment=EnvironmentArguments(
-            image_name="swe-agent",
-            data_path="princeton-nlp/SWE-bench_Lite",
-            split="dev",
-            verbose=True,
-            install_environment=True,
-        ),
-        skip_existing=True,
-        agent=AgentArguments(
-            model=ModelArguments(
-                model_name="gpt4",
-                total_cost_limit=0.0,
-                per_instance_cost_limit=2.0,
-                temperature=0.2,
-                top_p=0.95,
-            ),
-            config_file="config/default.yaml",
-        ),
-    )
-
-    # Nicer yaml dumping of multiline strings
-    def multiline_representer(dumper, data):
-        """configures yaml for dumping multiline strings
-        Ref: https://stackoverflow.com/questions/8640959/how-can-i-control-what-scalar-form-pyyaml-uses-for-my-data
-        """
-        if data.count("\n") > 0:  # check for multiline string
-            return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
-        return dumper.represent_scalar("tag:yaml.org,2002:str", data)
-
-    yaml.add_representer(str, multiline_representer)
-
-    args = parse(ScriptArguments, default=defaults, add_config_path_arg=False)
-    main(args)
+    app()

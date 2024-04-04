@@ -1,3 +1,56 @@
 [build-system]
-requires = ['setuptools>=42']
-build-backend = 'setuptools.build_meta'
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sweagent"
+version = "0.1.0"  # Specify your package version here
+description = "The official SWE-agent package - an open source Agent Computer Interface for running language models as software engineers"
+authors = [
+    { name = "John Yang", email = "byjohnyang@gmail.com" },
+]
+license = {file = "LICENSE"}
+keywords = ["nlp", "agents", "code"]
+classifiers = [
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3 :: Only",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "anthropic",
+    "config",
+    "datasets",
+    "docker",
+    "gymnasium",
+    "numpy",
+    "openai>=1.0",
+    "pandas",
+    "rich",
+    "ollama",
+    "ruamel.yaml",
+    "simple-parsing",
+    "swebench>=1.0.1",
+    "tenacity",
+    "together",
+    "unidiff",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=6.0",
+    "pytest-cov",
+]
+
+[project.urls]
+homepage = "https://swe-agent.com"
+repository = "https://github.com/princeton-nlp/SWE-agent"
+documentation = "https://github.com/princeton-nlp/SWE-agent"
+
+[tool.setuptools]
+packages = ["sweagent"]
+
+[project.scripts]
+sweagent = "sweagent:main_cli"
