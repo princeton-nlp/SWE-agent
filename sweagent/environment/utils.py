@@ -133,7 +133,7 @@ def _check_stdout(container: Popen):
         logger.error(f"Unexpected container setup output: {output}")
 
 def check_container_output(p: Popen, timeout: int = TIMEOUT_DURATION):
-    t = threading.Thread(target=_check_stdout, args=[p])
+    t = threading.Thread(target=_check_stdout, args=[p], daemon=True)
     t.start()
     t.join(timeout=timeout)
 
