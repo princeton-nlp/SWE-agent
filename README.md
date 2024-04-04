@@ -26,7 +26,7 @@ We accomplish these results by designing simple LM-centric commands and feedback
 
 Just like how typical language models requires good prompt engineering, good ACI design leads to much better results when using agents. As we show in our paper, a baseline agent without a well-tuned ACI does much worse than SWE-agent.
 
-SWE-agent contains features that we discovered to be immensly helpful during the agent-computer interface design process:
+SWE-agent contains features that we discovered to be immensely helpful during the agent-computer interface design process:
 1. We add a linter that runs when an edit command is issued, and do not let the edit command go through if the code isn't syntactically correct.
 2. We supply the agent with a special-built file viewer, instead of having it just ```cat``` files. We found that this file viewer works best when displaying just 100 lines in each turn. The file editor that we built has commands for scrolling up and down and for performing a search within the file.
 3. We supply the agent with a special-built full-directory string searching command. We found that it was important for this tool to succintly list the matches- we simply list each file that had at least one match. Showing the model more context about each match proved to be too confusing for the model. 
@@ -49,13 +49,15 @@ Read our paper for more details.
 4. Run `./setup.sh` to create the `swe-agent` docker image.
 5. Create a `keys.cfg` file at the root of this repository and fill in the following:
 ```
+GITHUB_TOKEN: 'GitHub Token Here (required)'
 OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model (optional)'
 ANTHROPIC_API_KEY: 'Anthropic API Key Here if using Anthropic Model (optional)'
+TOGETHER_API_KEY: 'Together API Key Here if using Together Model (optional)'
 AZURE_OPENAI_API_KEY: 'Azure OpenAI API Key Here if using Azure OpenAI Model (optional)'
 AZURE_OPENAI_ENDPOINT: 'Azure OpenAI Endpoint Here if using Azure OpenAI Model (optional)'
-GITHUB_TOKEN: 'GitHub Token Here (required)'
+AZURE_OPENAI_DEPLOYMENT: 'Azure OpenAI Deployment Here if using Azure OpenAI Model (optional)'
 ```
-See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github]() tokens.
+See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) tokens.
 
 ## 💽 Usage <a name="usage"></a>
 There are two steps to the SWE-agent pipeline. First SWE-agent takes an input GitHub issue and returns a pull request that attempts to fix it. We call that step *inference*. The second step (currently, only available for issues in the SWE-bench benchmark) is to *evaluate* the pull request to verify that it has indeed fixed the issue. 
@@ -66,7 +68,8 @@ _NOTE_: At this moment, there are known issues with a small number of repositori
 **Inference on *any* GitHub Issue**: Using this script, you can run SWE-agent on any GitHub issue!
 ```
 python run.py --model_name gpt4 \
-  --data_path https://github.com/pvlib/pvlib-python/issues/1603 --config_file config/default_from_url.yaml
+  --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
+  --config_file config/default_from_url.yaml
 ```
 
 **Inference on SWE-bench**: Run SWE-agent on [SWE-bench Lite](https://www.swebench.com/lite.html) and generate patches.
@@ -83,8 +86,8 @@ python run.py --model_name gpt4 \
 ```
 * See the [`scripts/`](scripts/) folder for other useful scripts and details.
 * See the [`config/`](config/) folder for details about how you can define your own configuration!
-* See the [`swe-agent/agent/`](agent/) folder for details about the logic behind configuration based workflows.
-* See the [`swe-agent/environment/`](swe-agent/environment/) folder for details about the `SWEEnv` environment (interface + implementation).
+* See the [`sweagent/agent/`](sweagent/agent/) folder for details about the logic behind configuration based workflows.
+* See the [`sweagent/environment/`](sweagent/environment/) folder for details about the `SWEEnv` environment (interface + implementation).
 * See the [`trajectories/`](trajectories) folder for details about the output of `run.py`.
 
 ### 🧪 Evaluation <a name="evaluation"></a>
@@ -101,6 +104,8 @@ Replace `<predictions_path>` with the path to the model's predictions, which sho
 - If you'd like to ask questions, learn about upcoming features, and participate in future development, join our [Discord community](https://discord.gg/AVEFbBn2rH)!
 - If you'd like to contribute to the codebase, we welcome [issues](https://github.com/princeton-nlp/SWE-agent/issues) and [pull requests](https://github.com/princeton-nlp/SWE-agent/pulls)!
 - If you'd like to see a post or tutorial about some topic, please let us know via an [issue](https://github.com/princeton-nlp/SWE-agent/issues).
+
+Contact person: [John Yang](https://john-b-yang.github.io/) and [Carlos E. Jimenez](http://www.carlosejimenez.com/) (Email: {jy1682, carlosej}@princeton.edu).
 
 ## 🪪 License <a name="license"></a>
 MIT. Check `LICENSE`.
