@@ -468,7 +468,7 @@ class SWEEnv(gym.Env):
 
     def communicate_with_handling(
         self, input: str, error_msg: str, timeout_duration=25
-    ):
+    ) -> str:
         """
         Wrapper for communicate function that raises error if return code is non-zero
         """
@@ -477,6 +477,7 @@ class SWEEnv(gym.Env):
             self.logger.error(f"{error_msg}: {logs}")
             self.close()
             raise RuntimeError(f"{error_msg}: {logs}")
+        return logs
 
     def get_available_actions(self) -> list[str]:
         """

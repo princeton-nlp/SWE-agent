@@ -1,8 +1,11 @@
 import json
 import logging
 import os
+import random
 import re
 import traceback
+from typing import Any, Dict, Tuple
+import requests
 import yaml
 
 from dataclasses import dataclass
@@ -22,6 +25,8 @@ from sweagent import (
 from swebench import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
 from unidiff import PatchSet
 
+from sweagent.environment.utils import is_from_github_url
+
 handler = RichHandler(show_time=False, show_path=False)
 handler.setLevel(logging.DEBUG)
 logger = logging.getLogger("run_dev")
@@ -38,6 +43,7 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
     instance_filter: str = ".*"  # Only run instances that completely match this regex
     skip_existing: bool = True  # Skip instances with existing trajectories
     suffix: str = ""
+    open_pr: bool = False  # Open a PR with the patch if we can solve the issue
 
     @property
     def run_name(self):
@@ -114,6 +120,8 @@ def main(args: ScriptArguments):
                 return_type="info",
             )
             save_predictions(traj_dir, instance_id, info)
+            if should_open_pr(args, info):
+                open_pr(env)
 
         except KeyboardInterrupt:
             logger.info("Exiting InterCode environment...")
@@ -124,6 +132,108 @@ def main(args: ScriptArguments):
             logger.warning(f"❌ Failed on {env.record['instance_id']}: {e}")
             env.reset_container()
             continue
+
+
+def should_open_pr(args, info: Dict[str, Any]) -> bool:
+    """Does opening a PR make sense?"""
+    if not info.get("submission"):
+        logger.info("Not openening PR because submission was made.")
+        return False
+    if info["exit_status"] != "submitted":
+        logger.info("Not openening PR because exit status was %s and not submitted.", info["exit_status"])
+        return False
+    if not is_from_github_url(args.environment.data_path):
+        logger.info("Currently only github is supported to open githubs to. Skipping PR creation.")
+        return False
+    return True
+
+class GitHubApiException(RuntimeError):
+    pass
+
+
+def get_org_repo_from_gh_url(url: str) -> Tuple[str, str]:
+    parse_url = url.removeprefix("https://")
+    assert parse_url.startswith("github.com/")
+    return tuple(parse_url.split("/")[1:3])  # type: ignore
+
+def get_issue_number_from_gh_url(url: str) -> str:
+    return url.split("/")[-1]
+
+def retrieve_issue_title(org: str, repo: str, issue_num: str, token: str) -> str:
+    api_url = f"https://api.github.com/repos/{org}/{repo}/issues/{issue_num}"
+    response = requests.get(api_url)
+    if not response.ok:
+        return ""
+    issue_data = response.json()
+    return issue_data.get('title', '')
+
+
+
+def open_pr(env: SWEEnv) -> None:
+    """Create a PR with the patch."""
+    logger.info("Opening PR")
+    # todo: have better way of handling this
+    # Adding random string suffix to avoid name conflicts if we had a previously failed run
+    branch_name = "swe-agent-patch-branch-" + str(random.random())[2:10]
+    print(env.communicate_with_handling(
+        input=f"rm model.patch",
+        error_msg="Failed to clone repository from mirror",
+        timeout_duration=10,
+    ))
+    print(env.communicate_with_handling(
+        input=f"git checkout -b {branch_name}",
+        error_msg="Failed to clone repository from mirror",
+        timeout_duration=10,
+    ))
+    print(env.communicate_with_handling(
+        input=f"git add .",
+        error_msg="Failed to clone repository from mirror",
+        timeout_duration=10,
+    ))
+    print(env.communicate_with_handling(
+        input=f"git commit -m 'Solved issue'",
+        error_msg="Failed to clone repository from mirror",
+        timeout_duration=10,
+    ))
+    print(env.communicate_with_handling(
+        input=f"git push origin {branch_name}",
+        error_msg="Failed to clone repository from mirror",
+        timeout_duration=10,
+    ))
+    issue_url = env.args.data_path 
+    issue_number = get_issue_number_from_gh_url(issue_url)
+    org, repo = get_org_repo_from_gh_url(env.args.data_path)
+    issue_title = retrieve_issue_title(org, repo, issue_number, env.token)
+    api_url = f"https://api.github.com/repos/{org}/{repo}/pulls"
+
+    headers = {
+        'Accept': 'application/vnd.github+json',
+        'Authorization': f'Bearer {env.token}',
+        'X-GitHub-Api-Version': '2022-11-28'
+    }
+    # todo: retrieve issue name and add to PR title
+    # todo: add representation of trajectory to PR body
+    data = {
+        'title': f'AI tool PR to fix: {issue_title}',
+        'body': f'This is a PR opened by AI tool [SWE Agent](https://github.com/princeton-nlp/SWE-agent/) to close [#{issue_number}]({issue_url}) ({issue_title}).\n\nCloses #{issue_number}.',
+        'head': branch_name,
+        'base': 'main'
+    }
+    print("Request data:")
+    print(data)
+    print(headers)
+    print(api_url)
+    response = requests.post(api_url, headers=headers, json=data)
+
+    # Raise exception if the response was not successful
+    if not response.ok:
+        error_message = f"Error {response.status_code}: {response.text}"
+        if response.status_code == 403:
+            raise GitHubApiException("Forbidden: " + error_message)
+        else:
+            raise GitHubApiException(error_message)
+
+    print("Success:", response.json())
 
 
 def save_arguments(traj_dir, args):
