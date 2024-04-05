@@ -17,4 +17,4 @@ repos:
     rev: '4.0.1'  # Use the latest flake8 version or the one you prefer
     hooks:
       - id: flake8
-        args: ['--select=F821,F822,F831,E111,E112,E113,E999,E902']
+        args: ['--select=F821,F822,F831,E111,E112,E113,E999,E902'] 
