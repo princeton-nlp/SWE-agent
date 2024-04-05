@@ -58,6 +58,7 @@ class EnvironmentArguments(FrozenSerializable):
     timeout: int = 35
     verbose: bool = False
     no_mirror: bool = False
+    language: str = "python"
 
 
 class SWEEnv(gym.Env):
@@ -75,6 +76,7 @@ class SWEEnv(gym.Env):
         self.logger = logger
         self.persistent = args.container_name is not None
         self.returncode = None
+        self.language = args.language
         self.is_from_github_url = is_from_github_url(args.data_path)
         if not self.args.verbose:
             self.logger.disabled = True
@@ -403,6 +405,10 @@ class SWEEnv(gym.Env):
         self.communicate_with_handling(
             "export PATH=$PATH:/root/commands",
             error_msg="Failed to add commands directory to PATH",
+        )
+        self.communicate_with_handling(
+            f"export AGENT_LANG='{self.language}'",
+            error_msg="Failed to set AGENT_LANG environment variable",
         )
 
     def _communicate(

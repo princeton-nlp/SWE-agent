@@ -161,6 +161,7 @@ class AgentConfig(FrozenSerializable):
 @dataclass(frozen=True)
 class AgentArguments(FlattenedAccess, FrozenSerializable):
     model: ModelArguments = None
+    language: Optional[str] = None
 
     # Policy can only be set via config yaml file from command line
     config_file: Optional[Path] = None
@@ -168,9 +169,13 @@ class AgentArguments(FlattenedAccess, FrozenSerializable):
 
     def __post_init__(self):
         if self.config is None and self.config_file is not None:
-            # If unassigned, we load the config from the file to store its contents with the overall arguments
-            config = AgentConfig.load_yaml(self.config_file)
-            object.__setattr__(self, "config", config)
+            if self.language is not None or self.language != "python":
+                config = AgentConfig.load_yaml(self.config_file)
+                object.__setattr__(self, "config", config)
+            else:
+                # If unassigned, we load the config from the file to store its contents with the overall arguments
+                config = AgentConfig.load_yaml(self.config_file)
+                object.__setattr__(self, "config", config)
         assert self.config is not None
         for subroutine in getattr(self.config, "subroutines", {}).values():
             model_args = getattr(subroutine, "model")

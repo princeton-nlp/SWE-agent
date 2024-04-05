@@ -68,8 +68,10 @@ edit() {
     printf "%s\n" "${new_lines[@]}" >| "$CURRENT_FILE"
     
     # Run linter
-    if [[ $CURRENT_FILE == *.py ]]; then
+    if [[ $CURRENT_FILE == *.py && $AGENT_LANG == "python" ]]; then
         lint_output=$(flake8 --select=F821,F822,F831,E111,E112,E113,E999,E902 "$CURRENT_FILE" 2>&1)
+    elif [[ $CURRENT_FILE == *.js && $AGENT_LANG == "javascript" ]]; then
+        lint_output=$(npx eslint "$CURRENT_FILE" --rule 'quotes: [error, double]' -f unix 2>&1)
     else
         # do nothing
         lint_output=""

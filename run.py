@@ -258,6 +258,7 @@ if __name__ == "__main__":
             split="dev",
             verbose=True,
             install_environment=True,
+            language="python",
         ),
         skip_existing=True,
         agent=AgentArguments(
@@ -268,6 +269,7 @@ if __name__ == "__main__":
                 temperature=0.2,
                 top_p=0.95,
             ),
+            language="python",
             config_file="config/default.yaml",
         ),
         actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
