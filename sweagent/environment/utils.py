@@ -324,7 +324,10 @@ def get_instances(file_path: str, base_commit: str = None, split: str = None, to
     """
     # If file_path is a directory, attempt load from disk
     if os.path.isdir(file_path):
-        return load_from_disk(file_path, split=split)
+        dataset_or_dict = load_from_disk(file_path)
+        if isinstance(dataset_or_dict, dict):
+            return dataset_or_dict[split]
+        return dataset_or_dict
 
     # If file_path is a github issue url, fetch the issue and return a single instance
     if is_from_github_url(file_path):
