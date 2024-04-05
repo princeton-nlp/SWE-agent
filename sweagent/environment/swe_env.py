@@ -28,11 +28,7 @@ from sweagent.environment.utils import (
     read_with_timeout,
     LOGGER_NAME,
 )
-from swebench import (
-    get_environment_yml,
-    get_requirements,
-    MAP_VERSION_TO_INSTALL
-)
+from swebench import get_environment_yml, get_requirements, MAP_VERSION_TO_INSTALL
 from typing import Optional, Tuple
 
 LONG_TIMEOUT = 500
@@ -99,7 +95,9 @@ class SWEEnv(gym.Env):
 
         # Load Task Instances
         self.data_path = self.args.data_path
-        self.data = get_instances(self.data_path, self.args.base_commit, self.args.split, token=self.token)
+        self.data = get_instances(
+            self.data_path, self.args.base_commit, self.args.split, token=self.token
+        )
         self.logger.info(f"💽 Loaded dataset from {self.data_path}")
 
         # Establish connection with execution container
@@ -111,7 +109,9 @@ class SWEEnv(gym.Env):
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
 
-    def reset(self, index: int = None, apply_test_patch: bool = False) -> Tuple[str, dict]:
+    def reset(
+        self, index: int = None, apply_test_patch: bool = False
+    ) -> Tuple[str, dict]:
         """
         Function to reset container between each task instance.
         * Clones instance's repository
@@ -196,26 +196,27 @@ class SWEEnv(gym.Env):
 
         system = self.communicate("uname -s").strip().lower()
         arch = self.communicate("uname -m").strip().lower()
-        if system == 'linux' and arch == 'x86_64':
+        if system == "linux" and arch == "x86_64":
             self.communicate_with_handling(
                 f"apt update; apt install build-essential -y",
                 error_msg="Failed to install build-essential",
                 timeout_duration=LONG_TIMEOUT,
-                )
+            )
 
         # Call install environment helper function if specified
         if self.install_environment:
             if self.is_from_github_url:
-                logger.warning((
-                    "install_environment is set to True, but the data path is a GitHub URL. "
-                    "Skipping conda environment installation."
-                    ))
+                logger.warning(
+                    (
+                        "install_environment is set to True, but the data path is a GitHub URL. "
+                        "Skipping conda environment installation."
+                    )
+                )
             else:
                 self.install_env()
         # Install mypy for linting purposes
         self.communicate_with_handling(
-            f"pip install flake8",
-            error_msg="Failed to install flake8 (lint library)"
+            f"pip install flake8", error_msg="Failed to install flake8 (lint library)"
         )
 
         # Apply test patch for oracle setting
@@ -229,10 +230,9 @@ class SWEEnv(gym.Env):
             )
             self.communicate_with_handling(
                 input="git apply /root/test.patch",
-                error_msg="Failed to apply test patch correctly"
+                error_msg="Failed to apply test patch correctly",
             )
             os.remove(path_to_patch)
-
 
         # Write any metadata to info if necessary
         return None, info
@@ -258,11 +258,19 @@ class SWEEnv(gym.Env):
             observation = "Skipped"
             info["exit_status"] = "skipped"
             return observation, 0, True, info
-        if action in {"exit_context", "exit_cost", "exit_error", "exit_format", "exit_api"}:
+        if action in {
+            "exit_context",
+            "exit_cost",
+            "exit_error",
+            "exit_format",
+            "exit_api",
+        }:
             try:
                 observation = self.communicate(input="submit")
-                submission = self.get_submission('submit', observation)
-                assert submission is not None and submission.strip() != "", AssertionError('No submission found.')
+                submission = self.get_submission("submit", observation)
+                assert (
+                    submission is not None and submission.strip() != ""
+                ), AssertionError("No submission found.")
                 self.logger.info(f"Found submission: {submission}")
                 info["exit_status"] = f"submitted ({action})"
                 info["submission"] = submission
@@ -285,9 +293,13 @@ class SWEEnv(gym.Env):
                 self.interrupt()
                 observation += "\nEXECUTION TIMED OUT"
             except RuntimeError as e:
-                observation += "\nEXECUTION TIMED OUT AND INTERRUPT FAILED. RESTARTING PROCESS."
+                observation += (
+                    "\nEXECUTION TIMED OUT AND INTERRUPT FAILED. RESTARTING PROCESS."
+                )
                 info["exit_status"] = "early_exit"
-                logger.warning(f"Failed to interrupt container: {e}\nRESTARTING PROCESS.")
+                logger.warning(
+                    f"Failed to interrupt container: {e}\nRESTARTING PROCESS."
+                )
                 self.reset_container()
                 return observation, 0, True, info
         except RuntimeError as e:
@@ -432,7 +444,9 @@ class SWEEnv(gym.Env):
             self.logger.error(f"Read with timeout failed on input:\n---\n{input}\n---")
             raise e
         if not exit_code.isdigit():
-            raise RuntimeError(f"Container crashed. Failed to get exit code. Output:\n---\n{buffer}\n---")
+            raise RuntimeError(
+                f"Container crashed. Failed to get exit code. Output:\n---\n{buffer}\n---"
+            )
         self.returncode = int(exit_code)
         return buffer
 
@@ -462,7 +476,8 @@ class SWEEnv(gym.Env):
             if not valid:
                 return output  # shows syntax errors
             output = self._communicate(
-                input, timeout_duration=timeout_duration,
+                input,
+                timeout_duration=timeout_duration,
             )
             self.communicate_output = output
             return output
@@ -535,9 +550,7 @@ class SWEEnv(gym.Env):
         ]
         if env_check.strip() == "":
             self.logger.info(f"{env_name} conda env not found, creating...")
-            packages = (
-                install_configs.get("packages", "")
-            )
+            packages = install_configs.get("packages", "")
             if packages == "requirements.txt":
                 # Create conda environment
                 self.communicate_with_handling(
@@ -562,7 +575,9 @@ class SWEEnv(gym.Env):
             elif packages == "environment.yml":
                 # Write environment.yml to file
                 content_env_yml = get_environment_yml(self.record, env_name)
-                copy_file_to_container(self.container_obj, content_env_yml, PATH_TO_ENV_YML)
+                copy_file_to_container(
+                    self.container_obj, content_env_yml, PATH_TO_ENV_YML
+                )
                 if "no_use_env" in install_configs and install_configs["no_use_env"]:
                     # Create conda environment
                     self.communicate_with_handling(
@@ -574,7 +589,7 @@ class SWEEnv(gym.Env):
                     self.communicate_with_handling(
                         f"conda env update -f {PATH_TO_ENV_YML}",
                         error_msg="Failed to install environment.yml",
-                        timeout_duration=LONG_TIMEOUT
+                        timeout_duration=LONG_TIMEOUT,
                     )
                 else:
                     # Create environment + install packages
@@ -596,13 +611,13 @@ class SWEEnv(gym.Env):
                 self.communicate_with_handling(
                     f"source activate {env_name} && pip install {install_configs['pip_packages']}",
                     error_msg="Failed to install pip packages",
-                    timeout_duration=LONG_TIMEOUT
+                    timeout_duration=LONG_TIMEOUT,
                 )
 
         # Activate environment
         self.communicate_with_handling(
             f"conda activate {env_name}",
-            error_msg="Failed to activate conda environment"
+            error_msg="Failed to activate conda environment",
         )
 
         # Install repo at base commit
@@ -619,7 +634,7 @@ class SWEEnv(gym.Env):
             self.communicate_with_handling(
                 install_cmd,
                 error_msg="Install command failed to execute successfully",
-                timeout_duration=LONG_TIMEOUT
+                timeout_duration=LONG_TIMEOUT,
             )
         if "post_install" in install_configs:
             self.logger.info("Running post-install commands...")
@@ -636,21 +651,23 @@ class SWEEnv(gym.Env):
         for command in commands:
             name = command["name"]
             contents = command["contents"]
-            copy_file_to_container(self.container_obj, contents, f"/root/commands/{name}")
-            if command['type'] == "source_file":
+            copy_file_to_container(
+                self.container_obj, contents, f"/root/commands/{name}"
+            )
+            if command["type"] == "source_file":
                 self.communicate_with_handling(
                     f"source /root/commands/{name}",
                     error_msg=(
                         f"Failed to source {name}. If you meant to make a script,"
                         " start the file with a shebang (e.g. #!/usr/bin/env python)."
-                        )
+                    ),
                 )
-            elif command['type'] == "script":
+            elif command["type"] == "script":
                 self.communicate_with_handling(
                     f"chmod +x /root/commands/{name}",
                     error_msg=f"Failed to chmod {name}",
                 )
-            elif command['type'] == "utility":
+            elif command["type"] == "utility":
                 # nothing to do for utility scripts
                 pass
             else:
@@ -670,17 +687,18 @@ class SWEEnv(gym.Env):
             pass
         try:
             output = self.communicate(input="echo 'interrupted'", timeout_duration=5)
-            assert output.strip().endswith("interrupted"), "container health check failed"
+            assert output.strip().endswith(
+                "interrupted"
+            ), "container health check failed"
         except TimeoutError:
             raise RuntimeError("Failed to interrupt container")
-
 
     def open_pr(self, action_config, info, trajectory):
         """Create PR to repository"""
         logger.info("Opening PR")
         # todo: have better way of handling this
         # Adding random string suffix to avoid name conflicts if we had a previously failed run
-        issue_url = self.args.data_path 
+        issue_url = self.args.data_path
         issue = get_gh_issue_data(issue_url, token=self.token)
         branch_name = f"swe-agent-fix-#{issue.number}-" + str(random.random())[2:10]
 
@@ -729,8 +747,8 @@ class SWEEnv(gym.Env):
         )
 
         # todo: add representation of trajectory to PR body
-        body =  (
-            f"This is a PR opened by AI tool [SWE Agent](https://github.com/princeton-nlp/SWE-agent/) " 
+        body = (
+            f"This is a PR opened by AI tool [SWE Agent](https://github.com/princeton-nlp/SWE-agent/) "
             f"to close [#{issue.number}]({issue_url}) ({issue.title}).\n\nCloses #{issue.number}."
         )
         body += "\n\n" + format_trajectory_markdown(trajectory)

@@ -21,7 +21,7 @@ from typing import Any, List, Tuple, Dict
 LOGGER_NAME = "intercode"
 START_UP_DELAY = 5
 TIMEOUT_DURATION = 25
-GITHUB_ISSUE_URL_PATTERN = re.compile(r'github\.com\/(.*?)\/(.*?)\/issues\/(\d+)')
+GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -59,22 +59,26 @@ def copy_file_to_container(container, contents, container_path):
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             temp_file_name = temp_file.name
             # Write the string to the temporary file and ensure it's written to disk
-            temp_file.write(contents.encode('utf-8'))
+            temp_file.write(contents.encode("utf-8"))
             temp_file.flush()
             os.fsync(temp_file.fileno())
 
         # Create a TAR archive in memory containing the temporary file
         with tempfile.NamedTemporaryFile() as temp_tar:
-            with open(temp_file_name, 'rb') as temp_file:
+            with open(temp_file_name, "rb") as temp_file:
                 # Prepare the TAR archive
                 with BytesIO() as tar_stream:
-                    with tarfile.open(fileobj=tar_stream, mode='w') as tar:
-                        tar_info = tarfile.TarInfo(name=os.path.basename(container_path))
+                    with tarfile.open(fileobj=tar_stream, mode="w") as tar:
+                        tar_info = tarfile.TarInfo(
+                            name=os.path.basename(container_path)
+                        )
                         tar_info.size = os.path.getsize(temp_file_name)
                         tar.addfile(tarinfo=tar_info, fileobj=temp_file)
                     tar_stream.seek(0)
                     # Copy the TAR stream to the container
-                    container.put_archive(path=os.path.dirname(container_path), data=tar_stream.read())
+                    container.put_archive(
+                        path=os.path.dirname(container_path), data=tar_stream.read()
+                    )
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")
@@ -122,9 +126,17 @@ def read_with_timeout(container, pid_func, timeout_duration):
         time.sleep(0.05)  # Prevents CPU hogging
 
     if container.poll() is not None:
-        raise RuntimeError("Subprocess exited unexpectedly.\nCurrent buffer: {}".format(buffer.decode()))
+        raise RuntimeError(
+            "Subprocess exited unexpectedly.\nCurrent buffer: {}".format(
+                buffer.decode()
+            )
+        )
     if time.time() >= end_time:
-        raise TimeoutError("Timeout reached while reading from subprocess.\nCurrent buffer: {}\nRunning PIDs: {}".format(buffer.decode(), pids))
+        raise TimeoutError(
+            "Timeout reached while reading from subprocess.\nCurrent buffer: {}\nRunning PIDs: {}".format(
+                buffer.decode(), pids
+            )
+        )
     return buffer.decode()
 
 
@@ -157,7 +169,9 @@ def get_background_pids(container_obj):
     return bash_pids, other_pids
 
 
-def _get_non_persistent_container(ctr_name: str, image_name: str) -> Tuple[subprocess.Popen, set]:
+def _get_non_persistent_container(
+    ctr_name: str, image_name: str
+) -> Tuple[subprocess.Popen, set]:
     startup_cmd = [
         "docker",
         "run",
@@ -176,7 +190,7 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> Tuple[subpr
         stdout=PIPE,
         stderr=STDOUT,
         text=True,
-        bufsize=1, # line buffered
+        bufsize=1,  # line buffered
     )
     time.sleep(START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
@@ -187,10 +201,14 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> Tuple[subpr
                 logger.error(f"Unexpected container setup output: {output}")
     except TimeoutError:
         pass
-    return container, {"1", }  # bash PID is always 1 for non-persistent containers
+    return container, {
+        "1",
+    }  # bash PID is always 1 for non-persistent containers
 
 
-def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool = False) -> Tuple[subprocess.Popen, set]:
+def _get_persistent_container(
+    ctr_name: str, image_name: str, persistent: bool = False
+) -> Tuple[subprocess.Popen, set]:
     client = docker.from_env()
     containers = client.containers.list(all=True, filters={"name": ctr_name})
     if ctr_name in [c.name for c in containers]:
@@ -208,7 +226,7 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
     else:
         container_obj = client.containers.run(
             image_name,
-            command='/bin/bash -l -m',
+            command="/bin/bash -l -m",
             name=ctr_name,
             stdin_open=True,
             tty=True,
@@ -216,7 +234,7 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
             auto_remove=not persistent,
         )
         container_obj.start()
-    startup_cmd =  [
+    startup_cmd = [
         "docker",
         "exec",
         "-i",
@@ -231,7 +249,7 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
         stdout=PIPE,
         stderr=STDOUT,
         text=True,
-        bufsize=1, # line buffered
+        bufsize=1,  # line buffered
     )
     time.sleep(START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
@@ -249,11 +267,23 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
     if len(bash_pids) == 1:
         bash_pid = bash_pids[0][0]
     elif len(bash_pids) > 1 or len(other_pids) > 0:
-        raise RuntimeError(f"Detected alien processes attached or running. Please ensure that no other agents are running on this container. PIDs: {bash_pids}, {other_pids}")
-    return container, set(map(str, [bash_pid, 1, ]))
+        raise RuntimeError(
+            f"Detected alien processes attached or running. Please ensure that no other agents are running on this container. PIDs: {bash_pids}, {other_pids}"
+        )
+    return container, set(
+        map(
+            str,
+            [
+                bash_pid,
+                1,
+            ],
+        )
+    )
 
 
-def get_container(ctr_name: str, image_name: str, persistent: bool = False) -> subprocess.Popen:
+def get_container(
+    ctr_name: str, image_name: str, persistent: bool = False
+) -> subprocess.Popen:
     """
     Get a container object for a given container name and image name
 
@@ -278,9 +308,7 @@ def get_commit(api: GhApi, owner: str, repo: str, base_commit: str = None):
     return commit
 
 
-
-class InvalidGithubURL(ValueError):
-    ...
+class InvalidGithubURL(ValueError): ...
 
 
 def parse_gh_issue_url(issue_url: str) -> Tuple[str, str, str]:
@@ -295,10 +323,10 @@ def parse_gh_issue_url(issue_url: str) -> Tuple[str, str, str]:
 
 def parse_gh_repo_url(repo_url: str) -> Tuple[str, str]:
     """Return owner, repo from repo url"""
-    if not repo_url.startswith('http://') and not repo_url.startswith('https://'):
-        repo_url = 'https://' + repo_url
-    parts = repo_url.split('/')
-    owner = parts[3] 
+    if not repo_url.startswith("http://") and not repo_url.startswith("https://"):
+        repo_url = "https://" + repo_url
+    parts = repo_url.split("/")
+    owner = parts[3]
     repo = parts[4]
     return owner, repo
 
@@ -313,7 +341,9 @@ def get_gh_issue_data(issue_url: str, *, token: str = ""):
     return api.issues.get(owner, repo, issue_number)
 
 
-def get_instances(file_path: str, base_commit: str = None, split: str = None, token: str = None):
+def get_instances(
+    file_path: str, base_commit: str = None, split: str = None, token: str = None
+):
     """
     Getter function for handling json, jsonl files
 
@@ -331,7 +361,7 @@ def get_instances(file_path: str, base_commit: str = None, split: str = None, to
 
     # If file_path is a github issue url, fetch the issue and return a single instance
     if is_from_github_url(file_path):
-        try: 
+        try:
             owner, repo, issue_number = parse_gh_issue_url(file_path)
         except InvalidGithubURL:
             pass
@@ -343,19 +373,27 @@ def get_instances(file_path: str, base_commit: str = None, split: str = None, to
             body = issue.body if issue.body else ""
             text = f"{title}\n{body}\n"
             record["repo"] = f"{owner}/{repo}"
-            record["base_commit"] = base_commit if base_commit else get_commit(api, owner, repo, base_commit).sha
+            record["base_commit"] = (
+                base_commit
+                if base_commit
+                else get_commit(api, owner, repo, base_commit).sha
+            )
             record["version"] = record["base_commit"][:7]
             record["problem_statement"] = text
             record["instance_id"] = f"{owner}__{repo}-i{issue_number}"
-            return [record,]
+            return [
+                record,
+            ]
     elif base_commit is not None:
-        raise ValueError("base_commit must be None if data_path is not a github issue url")
+        raise ValueError(
+            "base_commit must be None if data_path is not a github issue url"
+        )
 
     # If file_path is a file, load the file
     if file_path.endswith(".json"):
         return json.load(open(file_path))
     if file_path.endswith(".jsonl"):
-        return [json.loads(x) for x in open(file_path, 'r').readlines()]
+        return [json.loads(x) for x in open(file_path, "r").readlines()]
 
     # Attempt load from HF datasets as a last resort
     try:
@@ -367,7 +405,9 @@ def get_instances(file_path: str, base_commit: str = None, split: str = None, to
         )
 
 
-def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token: str = "") -> list[str]:
+def get_associated_commit_urls(
+    org: str, repo: str, issue_number: str, *, token: str = ""
+) -> list[str]:
     """Return the URLs of commits that would close an issue."""
     api = GhApi(token=token)
     # Strangely the "pull_request" field of api.issues.get is often not set
@@ -381,7 +421,10 @@ def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token:
             continue
         commit = api.repos.get_commit(org, repo, event.commit_id)
         message = commit.commit.message
-        if f"fixes #{issue_number}" in message.lower() or f"closes #{issue_number}" in message.lower():
+        if (
+            f"fixes #{issue_number}" in message.lower()
+            or f"closes #{issue_number}" in message.lower()
+        ):
             commit_urls.append(commit.html_url)
     return commit_urls
 
@@ -398,7 +441,6 @@ def format_trajectory_markdown(trajectory: List[Dict[str, str]]):
         "response": "️🧑‍🚒",
         "state": "🧠",
         "thought": "💡",
-
     }
     prefix = [
         "<details>",
@@ -424,5 +466,5 @@ def format_trajectory_markdown(trajectory: List[Dict[str, str]]):
     suffix = [
         "",
         "</details>",
-    ] 
+    ]
     return "\n".join(prefix) + "\n\n---\n\n".join(steps) + "\n".join(suffix)

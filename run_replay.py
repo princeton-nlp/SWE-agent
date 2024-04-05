@@ -21,21 +21,13 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
     actions = [x["content"] for x in traj_data["history"] if x["role"] == "assistant"]
     instance_id = traj_path.split("/")[-1].split(".")[0]
     with open(replay_action_trajs_path, "w") as f:
-        print(
-            json.dumps({instance_id: actions}),
-            file=f,
-            end="\n",
-            flush=True
-        )
+        print(json.dumps({instance_id: actions}), file=f, end="\n", flush=True)
 
     # Get data_path from args.yaml
     if data_path is None:
-        args_path = os.path.join(
-            os.path.dirname(traj_path),
-            "args.yaml"
-        )
+        args_path = os.path.join(os.path.dirname(traj_path), "args.yaml")
         args = yaml.safe_load(open(args_path))
-        data_path = args['environment']['data_path']
+        data_path = args["environment"]["data_path"]
 
     # Identify the relevant task instance and create it
     def create_task_instances_tmp_file(data: List[Dict[str, Any]]) -> str:
@@ -51,9 +43,13 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
 
     is_github = False
     if data_path.endswith(".jsonl"):
-        replay_task_instances_path = create_task_instances_tmp_file([json.loads(x) for x in open(data_path, "r").readlines()])
+        replay_task_instances_path = create_task_instances_tmp_file(
+            [json.loads(x) for x in open(data_path, "r").readlines()]
+        )
     elif data_path.endswith(".json"):
-        replay_task_instances_path = create_task_instances_tmp_file(json.load(open(data_path)))
+        replay_task_instances_path = create_task_instances_tmp_file(
+            json.load(open(data_path))
+        )
     elif is_from_github_url(data_path):
         is_github = True
         replay_task_instances_path = data_path
@@ -64,11 +60,16 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
     command = [
         "python",
         "run.py",
-        "--config_file", config_file,
-        "--data_path", replay_task_instances_path,
-        "--install_environment", "True",
-        "--model_name", "replay",
-        "--replay_path", replay_action_trajs_path,
+        "--config_file",
+        config_file,
+        "--data_path",
+        replay_task_instances_path,
+        "--install_environment",
+        "True",
+        "--model_name",
+        "replay",
+        "--replay_path",
+        replay_action_trajs_path,
     ]
     if is_github:
         # Not sure if this only applies to github urls for data_path
@@ -92,11 +93,22 @@ def main(
 ):
     process_single_traj(traj_path, config_file, data_path, suffix)
 
+
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--traj_path", help="Path to trajectory to replay", default=None)
+    parser.add_argument(
+        "--traj_path", help="Path to trajectory to replay", default=None
+    )
     parser.add_argument("--config_file", help="Path to template", required=True)
-    parser.add_argument("--data_path", help="(Optional) Path to data file containing task instances ref'ed by replay trajectories", default=None)
-    parser.add_argument("--suffix", help="(Optional) Suffix argument appended to end of traj path", default=None)
+    parser.add_argument(
+        "--data_path",
+        help="(Optional) Path to data file containing task instances ref'ed by replay trajectories",
+        default=None,
+    )
+    parser.add_argument(
+        "--suffix",
+        help="(Optional) Suffix argument appended to end of traj path",
+        default=None,
+    )
     args = parser.parse_args()
     main(**vars(args))

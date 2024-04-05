@@ -18,3 +18,8 @@ repos:
     hooks:
       - id: flake8
         args: ['--select=F821,F822,F831,E111,E112,E113,E999,E902']
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: 'v0.3.5' # current Ruff version.
+    hooks:
+      - id: ruff-format # run the formatter

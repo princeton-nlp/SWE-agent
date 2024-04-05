@@ -23,7 +23,12 @@ from sweagent import (
 from swebench import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
 from unidiff import PatchSet
 
-from sweagent.environment.utils import InvalidGithubURL, get_associated_commit_urls, get_gh_issue_data, parse_gh_issue_url
+from sweagent.environment.utils import (
+    InvalidGithubURL,
+    get_associated_commit_urls,
+    get_gh_issue_data,
+    parse_gh_issue_url,
+)
 
 handler = RichHandler(show_time=False, show_path=False)
 handler.setLevel(logging.DEBUG)
@@ -37,11 +42,12 @@ logging.getLogger("simple_parsing").setLevel(logging.WARNING)
 @dataclass(frozen=True)
 class ActionsArguments(FlattenedAccess, FrozenSerializable):
     """Run real-life actions (opening PRs, etc.) if we can solve the issue."""
+
     open_pr: bool = False  # Open a PR with the patch if we can solve the issue
     # Skip action if there are already commits claiming to fix the issue. Please only
     # set this to False if you are sure the commits are not fixes or if this is your
     # own repository!
-    skip_if_commits_reference_issue: bool = True  
+    skip_if_commits_reference_issue: bool = True
     # For PRs: If you want to push the branch to a fork (e.g., because you lack
     # permissions to push to the main repo), set this to the URL of the fork.
     push_gh_repo_url: str = ""
@@ -53,6 +59,7 @@ class ActionsArguments(FlattenedAccess, FrozenSerializable):
                 "pushing to a fork is not supported. You should manually "
                 "apply the patch to the forked repository."
             )
+
 
 @dataclass(frozen=True)
 class ScriptArguments(FlattenedAccess, FrozenSerializable):
@@ -111,14 +118,21 @@ def main(args: ScriptArguments):
             files = []
             if "patch" in env.record:
                 files = "\n".join(
-                    [f"- {x.path}" for x in PatchSet(env.record["patch"]).modified_files]
+                    [
+                        f"- {x.path}"
+                        for x in PatchSet(env.record["patch"]).modified_files
+                    ]
                 )
             # Get test files, F2P tests information
             test_files = []
             if "test_patch" in env.record:
                 test_patch_obj = PatchSet(env.record["test_patch"])
                 test_files = "\n".join(
-                    [f"- {x.path}" for x in test_patch_obj.modified_files + test_patch_obj.added_files]
+                    [
+                        f"- {x.path}"
+                        for x in test_patch_obj.modified_files
+                        + test_patch_obj.added_files
+                    ]
                 )
             tests = ""
             if "FAIL_TO_PASS" in env.record:
@@ -128,7 +142,7 @@ def main(args: ScriptArguments):
                 "issue": issue,
                 "files": files,
                 "test_files": test_files,
-                "tests": tests
+                "tests": tests,
             }
             info, trajectory = agent.run(
                 setup_args=setup_args,
@@ -152,18 +166,23 @@ def main(args: ScriptArguments):
             continue
 
 
-def should_open_pr(args, info: Dict[str, Any], *, token: str="") -> bool:
+def should_open_pr(args, info: Dict[str, Any], *, token: str = "") -> bool:
     """Does opening a PR make sense?"""
     if not info.get("submission"):
         logger.info("Not openening PR because submission was made.")
         return False
     if info["exit_status"] != "submitted":
-        logger.info("Not openening PR because exit status was %s and not submitted.", info["exit_status"])
+        logger.info(
+            "Not openening PR because exit status was %s and not submitted.",
+            info["exit_status"],
+        )
         return False
     try:
         issue = get_gh_issue_data(args.environment.data_path, token=token)
     except InvalidGithubURL:
-        logger.info("Currently only github is supported to open PRs to. Skipping PR creation.")
+        logger.info(
+            "Currently only github is supported to open PRs to. Skipping PR creation."
+        )
         return False
     if issue.state != "open":
         logger.info(f"Issue is not open (state={issue.state}. Skipping PR creation.")
@@ -175,11 +194,15 @@ def should_open_pr(args, info: Dict[str, Any], *, token: str="") -> bool:
         logger.info("Issue is locked. Skipping PR creation.")
         return False
     org, repo, issue_number = parse_gh_issue_url(args.environment.data_path)
-    associated_commits = get_associated_commit_urls(org, repo, issue_number, token=token) 
+    associated_commits = get_associated_commit_urls(
+        org, repo, issue_number, token=token
+    )
     if associated_commits:
         commit_url_strs = ", ".join(associated_commits)
         if args.actions.skip_if_commits_reference_issue:
-            logger.info(f"Issue already has associated commits (see {commit_url_strs}). Skipping PR creation.")
+            logger.info(
+                f"Issue already has associated commits (see {commit_url_strs}). Skipping PR creation."
+            )
             return False
         else:
             logger.warning(
@@ -197,7 +220,9 @@ def save_arguments(traj_dir, args):
     if log_path.exists():
         try:
             other_args = args.load_yaml(log_path)
-            if (args.dumps_yaml() != other_args.dumps_yaml()):  # check yaml equality instead of object equality
+            if (
+                args.dumps_yaml() != other_args.dumps_yaml()
+            ):  # check yaml equality instead of object equality
                 logger.warning("**************************************************")
                 logger.warning("Found existing args.yaml with different arguments!")
                 logger.warning("**************************************************")
