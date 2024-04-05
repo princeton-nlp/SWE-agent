@@ -129,15 +129,6 @@ def read_with_timeout(container, pid_func, timeout_duration):
         raise TimeoutError("Timeout reached while reading from subprocess.\nCurrent buffer: {}\nRunning PIDs: {}".format(buffer.decode(), pids))
     return buffer.decode()
 
-    
-def check_container_output(container: Popen, timeout: int = TIMEOUT_DURATION):
-    try:
-        output = container.stdout.read()
-        if output:
-            logger.error(f"Unexpected container setup output: {output}")
-    except BlockingIOError:
-        return
-
 def get_background_pids(container_obj):
     pids = (
         container_obj.exec_run("ps -eo pid,comm --no-headers")
@@ -175,7 +166,9 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> Tuple[subpr
     os.set_blocking(container.stdout.fileno(), False)
     time.sleep(START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
-    check_container_output(container, timeout=2)
+    output = read_with_timeout(container, lambda: list(), timeout_duration=2)
+    if output:
+        logger.error(f"Unexpected container setup output: {output}")
 
     return container, {"1", }  # bash PID is always 1 for non-persistent containers
 
@@ -226,7 +219,9 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
     os.set_blocking(container.stdout.fileno(), False)
     time.sleep(START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
-    check_container_output(container, timeout=2)
+    output = read_with_timeout(container, lambda: list(), timeout_duration=2)
+    if output:
+        logger.error(f"Unexpected container setup output: {output}")
 
     # Get the process IDs of the container
     # There should be at least a head process and possibly one child bash process
