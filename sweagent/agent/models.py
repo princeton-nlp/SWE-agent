@@ -257,7 +257,7 @@ class OpenAIModel(BaseModel):
                 top_p=self.args.top_p,
             )
         except BadRequestError as e:
-            raise CostLimitExceededError(f"Context window ({self.model_metadata['max_context']} tokens) exceeded")
+            raise CostLimitExceededError(f"Context window ({self.model_metadata['max_context']} tokens) exceeded") from e
         # Calculate + update costs, return response
         input_tokens = response.usage.prompt_tokens
         output_tokens = response.usage.completion_tokens
@@ -656,7 +656,7 @@ class ReplayModel(BaseModel):
     def __init__(self, args: ModelArguments, commands: list[Command]):
         super().__init__(args, commands)
 
-        if self.args.replay_path == None or not os.path.exists(self.args.replay_path):
+        if self.args.replay_path is None or not os.path.exists(self.args.replay_path):
             raise ValueError(
                 "--replay_path must point to a file that exists to run a replay policy"
             )
@@ -690,17 +690,22 @@ def get_model(args: ModelArguments, commands: Optional[list[Command]] = None):
     if commands is None:
         commands = []
 
-    if args.model_name == "human":
-        return HumanModel(args, commands)
-    if args.model_name == "human_thought":
-        return HumanThoughtModel(args, commands)
-    if args.model_name == "replay":
-        return ReplayModel(args, commands)
-    elif args.model_name.startswith("gpt") or args.model_name.startswith("ft:gpt"):
+    models = {
+        "human": HumanModel,
+        "human_thought": HumanThoughtModel,
+        "replay": ReplayModel,
+        "gpt": OpenAIModel,
+        "ft:gpt": OpenAIModel,
+        "claude": AnthropicModel,
+        "ollama": OllamaModel,
+        "together": TogetherModel,
+    }
+
+    if args.model_name in models:
+        return models[args.model_name](args, commands)
+    elif args.model_name.startswith("ft:"):
         return OpenAIModel(args, commands)
-    elif args.model_name.startswith("claude"):
-        return AnthropicModel(args, commands)
-    elif args.model_name.startswith("ollama"):
+    elif args.model_name.startswith("ollama:"):
         return OllamaModel(args, commands)
     else:
         raise ValueError(f"Invalid model name: {args.model_name}")
