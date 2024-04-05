@@ -675,7 +675,7 @@ class SWEEnv(gym.Env):
             raise RuntimeError("Failed to interrupt container")
 
 
-    def open_pr(self, action_config: "ActionsArguments", info, trajectory):
+    def open_pr(self, action_config, info, trajectory):
         """Create PR to repository"""
         logger.info("Opening PR")
         # todo: have better way of handling this
