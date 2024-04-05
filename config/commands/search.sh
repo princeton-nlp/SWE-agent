@@ -27,7 +27,7 @@ search_dir() {
         return
     fi
     dir=$(realpath "$dir")
-    local matches=$(find "$dir" -type f ! -path '*/.*' -exec grep -nIH "$search_term" {} + | cut -d: -f1 | sort | uniq -c)
+    local matches=$(find "$dir" -type f ! -path '*/.*' -exec grep -nIH -- "$search_term" {} + | cut -d: -f1 | sort | uniq -c)
     # if no matches, return
     if [ -z "$matches" ]; then
         echo "No matches found for \"$search_term\" in $dir"
@@ -87,7 +87,7 @@ search_file() {
     local search_term="$1"
     file=$(realpath "$file")
     # Use grep to directly get the desired formatted output
-    local matches=$(grep -nH "$search_term" "$file")
+    local matches=$(grep -nH -- "$search_term" "$file")
     # Check if no matches were found
     if [ -z "$matches" ]; then
         echo "No matches found for \"$search_term\" in $file"
