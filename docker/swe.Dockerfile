@@ -5,6 +5,7 @@ ARG MINICONDA_URL
 # Install third party tools
 RUN apt-get update && \
     apt-get install -y bash gcc git jq wget g++ make && \
+    apt-get install -y nodejs npm && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

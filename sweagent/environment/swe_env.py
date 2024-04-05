@@ -218,6 +218,11 @@ class SWEEnv(gym.Env):
             f"pip install flake8",
             error_msg="Failed to install flake8 (lint library)"
         )
+        if self.language == "javascript":
+            self.communicate_with_handling(
+                "npm install -g eslint",
+                error_msg="Failed to install eslint (type checker)"
+            )
 
         # Apply test patch for oracle setting
         if apply_test_patch:
