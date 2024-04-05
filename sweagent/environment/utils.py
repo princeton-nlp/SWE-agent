@@ -4,19 +4,19 @@ import logging
 import os
 import re
 import select
-import signal
 import subprocess
 import tarfile
 import tempfile
 import time
 import traceback
+import threading
 
 from datasets import load_dataset, load_from_disk
 from ghapi.all import GhApi
 from io import BytesIO
 from pathlib import Path
-from subprocess import PIPE, STDOUT
-from typing import Any, List, Tuple, Dict
+from subprocess import PIPE, STDOUT, Popen
+from typing import List, Tuple, Dict
 
 LOGGER_NAME = "intercode"
 START_UP_DELAY = 5
@@ -127,22 +127,15 @@ def read_with_timeout(container, pid_func, timeout_duration):
         raise TimeoutError("Timeout reached while reading from subprocess.\nCurrent buffer: {}\nRunning PIDs: {}".format(buffer.decode(), pids))
     return buffer.decode()
 
+def _check_stdout(container: Popen):
+    output = container.stdout.read()
+    if output:
+        logger.error(f"Unexpected container setup output: {output}")
 
-class timeout:
-    def __init__(self, seconds=TIMEOUT_DURATION, error_message="Timeout"):
-        self.seconds = seconds
-        self.error_message = error_message
-
-    def handle_timeout(self, signum, frame):
-        raise TimeoutError(self.error_message)
-
-    def __enter__(self):
-        signal.signal(signal.SIGALRM, self.handle_timeout)
-        signal.alarm(self.seconds)
-
-    def __exit__(self, type, value, traceback):
-        signal.alarm(0)
-
+def check_container_output(p: Popen, timeout: int = TIMEOUT_DURATION):
+    t = threading.Thread(target=_check_stdout, args=[p], daemon=True)
+    t.start()
+    t.join(timeout=timeout)
 
 def get_background_pids(container_obj):
     pids = (
@@ -180,13 +173,8 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> Tuple[subpr
     )
     time.sleep(START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
-    try:
-        with timeout(seconds=2):
-            output = container.stdout.read()
-            if output:
-                logger.error(f"Unexpected container setup output: {output}")
-    except TimeoutError:
-        pass
+    check_container_output(container, timeout=2)
+
     return container, {"1", }  # bash PID is always 1 for non-persistent containers
 
 
@@ -235,13 +223,8 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
     )
     time.sleep(START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
-    try:
-        with timeout(seconds=2):
-            output = container.stdout.read()
-            if output:
-                logger.error(f"Unexpected container setup output: {output}")
-    except TimeoutError:
-        pass
+    check_container_output(container, timeout=2)
+
     # Get the process IDs of the container
     # There should be at least a head process and possibly one child bash process
     bash_pids, other_pids = get_background_pids(container_obj)
