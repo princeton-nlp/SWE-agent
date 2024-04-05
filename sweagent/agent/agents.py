@@ -157,6 +157,15 @@ class AgentConfig(FrozenSerializable):
             HistoryProcessor.get(self.history_processor, **self.history_processor_args)
             )
 
+@dataclass(frozen=True)
+class LanguageConfig(FrozenSerializable):
+    interactive_command: str
+    script_command:str
+
+@dataclass(frozen=True)
+class LanguagesConfig(FrozenSerializable):
+    python: LanguageConfig
+    javascript: LanguageConfig
 
 @dataclass(frozen=True)
 class AgentArguments(FlattenedAccess, FrozenSerializable):
@@ -169,8 +178,15 @@ class AgentArguments(FlattenedAccess, FrozenSerializable):
 
     def __post_init__(self):
         if self.config is None and self.config_file is not None:
-            if self.language is not None or self.language != "python":
-                config = AgentConfig.load_yaml(self.config_file)
+            if self.language is not None:
+                logger.info(f"Loading config {self.config_file} with language {self.language}")
+
+                languages = LanguagesConfig.load_yaml("config/languages.yaml")
+                lang: LanguageConfig = getattr(languages, self.language)
+                with open(self.config_file, "r") as f:
+                    config_yaml = f.read().replace("$LANGUAGE$", self.language).replace("$INVOKE_COMMAND$", lang.script_command).replace("$INTERACTIVE$", lang.interactive_command)
+                config = AgentConfig.loads_yaml(config_yaml)
+                logger.info(f"Loaded config {config}")
                 object.__setattr__(self, "config", config)
             else:
                 # If unassigned, we load the config from the file to store its contents with the overall arguments

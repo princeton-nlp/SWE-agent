@@ -1,0 +1,6 @@
+python:
+  interactive_command: python
+  script_command: python <script_name>.py
+javascript:
+  interactive_command: node
+  script_command: node <script_name>.js

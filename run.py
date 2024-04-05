@@ -87,7 +87,7 @@ def main(args: ScriptArguments):
     logger.info(f"📙 Arguments: {args.dumps_yaml()}")
     agent = Agent("primary", args.agent)
 
-    env = SWEEnv(args.environment)
+    env = SWEEnv(args.environment, args.agent.language)
 
     traj_dir = Path("trajectories") / Path(getuser()) / args.run_name
     os.makedirs(traj_dir, exist_ok=True)
@@ -258,7 +258,6 @@ if __name__ == "__main__":
             split="dev",
             verbose=True,
             install_environment=True,
-            language="python",
         ),
         skip_existing=True,
         agent=AgentArguments(
@@ -269,7 +268,6 @@ if __name__ == "__main__":
                 temperature=0.2,
                 top_p=0.95,
             ),
-            language="python",
             config_file="config/default.yaml",
         ),
         actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),

@@ -58,7 +58,6 @@ class EnvironmentArguments(FrozenSerializable):
     timeout: int = 35
     verbose: bool = False
     no_mirror: bool = False
-    language: str = "python"
 
 
 class SWEEnv(gym.Env):
@@ -66,7 +65,7 @@ class SWEEnv(gym.Env):
 
     name = "swe_main"
 
-    def __init__(self, args: EnvironmentArguments):
+    def __init__(self, args: EnvironmentArguments, language: Optional[str]):
         super().__init__()
         self.args = args
         self.base_commit = None
@@ -76,7 +75,7 @@ class SWEEnv(gym.Env):
         self.logger = logger
         self.persistent = args.container_name is not None
         self.returncode = None
-        self.language = args.language
+        self.language = language
         self.is_from_github_url = is_from_github_url(args.data_path)
         if not self.args.verbose:
             self.logger.disabled = True
