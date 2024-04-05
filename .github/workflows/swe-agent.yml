@@ -1,0 +1,49 @@
+name: SWE-agent
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  setup_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          architecture: x64
+      - name: Clone SWE-agent
+        run: |
+          git clone https://github.com/princeton-nlp/SWE-agent
+        shell: bash
+      - name: Create environment
+        run: |
+          cd SWE-agent
+          conda env create -f environment.yml
+        shell: bash
+      - name: Run setup script and create keys.cfg
+        run: |
+          source $(conda info --base)/etc/profile.d/conda.sh
+          conda activate swe-agent
+          cd SWE-agent
+          chmod +x setup.sh
+          ./setup.sh
+          echo "GITHUB_TOKEN: '${{ secrets.GITHUB_ACCESS_TOKEN }}'" > keys.cfg
+          echo "OPENAI_API_KEY: '${{ secrets.OPENAI_API_KEY }}'" >> keys.cfg
+          echo "ANTHROPIC_API_KEY: ''" >> keys.cfg
+          echo "TOGETHER_API_KEY: ''" >> keys.cfg
+        shell: bash
+      - name: Run script with environment variables
+        env:
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: |
+          source $(conda info --base)/etc/profile.d/conda.sh
+          conda activate swe-agent
+          cd SWE-agent
+          python run.py --model_name gpt4 \
+            --data_path $ISSUE_URL \
+            --config_file config/default_from_url.yaml \
+            --open_pr true \
+            --per_instance_cost_limit 3.0
+        shell: bash
