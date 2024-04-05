@@ -90,13 +90,13 @@ def convert_experiments_to_rows(folder_name, runs_max):
                 continue
             
             try:
-              if "run-" in run:
-                run = int(run.split("run-")[-1].split("-")[0].replace("_", "").strip())
-              else:
-                run = int(run.split("run")[-1].split("-")[0].replace("_", "").strip())
+                if "run-" in run:
+                    run = int(run.split("run-")[-1].split("-")[0].replace("_", "").strip())
+                else:
+                    run = int(run.split("run")[-1].split("-")[0].replace("_", "").strip())
             except Exception as e:
-              print(run)
-              raise e
+                print(run)
+                raise e
             
             if runs_max is not None and run > runs_max:
                 continue

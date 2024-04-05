@@ -549,12 +549,12 @@ class Agent:
         try:
             output = env.communicate(commands)
             if env.returncode != 0:
-               raise RuntimeError(f"Nonzero return code: {env.returncode}\nOutput: {output}")
+                raise RuntimeError(f"Nonzero return code: {env.returncode}\nOutput: {output}")
         except KeyboardInterrupt:
-            raise
+                raise
         except Exception as e:
-            logger.warning("Failed to set environment variables")
-            raise e
+                logger.warning("Failed to set environment variables")
+                raise e
         command_files = list()
         for file in self.config.command_files:
             datum = dict()
