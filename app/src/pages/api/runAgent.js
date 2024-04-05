@@ -8,8 +8,6 @@ export default function handler(req, res) {
         config_filename,
     } = req.body;
 
-    // Construct the command to run your Python script within the Conda environment
-    // Note: Adjust 'myenv' to your Conda environment's name
     const command = [
         `conda run -n swe-agent python run.py`,
         `--model_name gpt4`,
@@ -23,29 +21,24 @@ export default function handler(req, res) {
         .filter((notFalsy) => !!notFalsy)
         .join(" ");
 
-    // Use spawn with shell=true to execute the command in a shell, allowing for Conda environment usage
     const agent = spawn(command, {
         shell: true,
         cwd: "../",
         env: {
-            ...process.env, // Include existing environment variables
-            OPENAI_API_KEY: openai_api_key, // Pass additional variables
+            ...process.env,
+            OPENAI_API_KEY: openai_api_key,
             GITHUB_API_KEY: github_api_key,
         },
     });
 
-    // Directly stream stdout and stderr to the HTTP response
     agent.stdout.pipe(res);
-    agent.stderr.pipe(res); // You might want to handle stderr differently depending on your needs
+    agent.stderr.pipe(res);
 
     agent.on("close", (code) => {
         console.log(`Agent exited with code ${code}`);
         if (code !== 0) {
-            // Optionally, handle non-zero exit codes explicitly
-            // For example, you could end the response with a specific error message
             res.status(500).send(`Agent exited with code ${code}`);
         } else {
-            // Ensure the response is properly closed when the process ends successfully
             res.end();
         }
     });

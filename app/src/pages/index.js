@@ -51,10 +51,9 @@ export default function Home() {
 
         setOutput(""); // Clear the output state
 
-        // Use the Response.body.getReader() method to read the stream
         const reader = response.body.getReader();
         let receivedLength = 0; // length at the moment
-        let chunks = []; // array of received binary chunks (comprises the body)
+        let chunks = [];
         while (true) {
             const { done, value } = await reader.read();
 
@@ -79,7 +78,7 @@ export default function Home() {
             setValidationError(null);
             const response = await makeRequest({ formData });
         } catch (error) {
-            // Show validation or toher error message to user
+            // Show validation or other error message to user
             console.error(error);
             if (error && typeof error === "string") {
                 setValidationError(error);
