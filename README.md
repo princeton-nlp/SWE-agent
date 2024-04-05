@@ -45,7 +45,7 @@ Read our paper for more details.
 ## 🚀 Setup <a name="setup"></a>
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
 2. Clone the repository with `git clone https://github.com/princeton-nlp/SWE-agent.git && cd SWE-agent`
-3. [Install Miniconda](https://docs.anaconda.com/free/miniconda/miniconda-install/), then create the `swe-agent` environment with `conda env create -f environment.yml`
+3. [Install Miniconda](https://docs.anaconda.com/free/miniconda/#quick-command-line-install), then create the `swe-agent` environment with `conda env create -f environment.yml`
 4. Activate using `conda activate swe-agent`.
 5. Run `./setup.sh` to build the `swe-agent` docker image.
 6. Create a `keys.cfg` file at the root of this repository and fill in the following:
