@@ -15,6 +15,7 @@ export default function handler(req, res) {
     // Use spawn with shell=true to execute the command in a shell, allowing for Conda environment usage
     const agent = spawn(command, {
         shell: true,
+        cwd: "../",
         env: {
             ...process.env, // Include existing environment variables
             OPENAI_API_KEY: openai_api_key, // Pass additional variables
