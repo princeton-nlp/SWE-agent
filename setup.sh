@@ -20,3 +20,4 @@ echo "Setting up docker image for evaluation..."
 docker build -t swe-eval -f docker/eval.Dockerfile .
 
 echo "Done with setup!"
+
