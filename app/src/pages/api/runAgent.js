@@ -10,7 +10,18 @@ export default function handler(req, res) {
 
     // Construct the command to run your Python script within the Conda environment
     // Note: Adjust 'myenv' to your Conda environment's name
-    const command = `conda run -n swe-agent python run.py --model_name gpt4 --data_path ${github_issue_link} --config_file ${config_filename}`;
+    const command = [
+        `conda run -n swe-agent python run.py`,
+        `--model_name gpt4`,
+        github_issue_link ? `--data_path ${github_issue_link}` : null,
+        config_filename ===
+        `--instance_filter marshmallow-code__marshmallow-1359`
+            ? `--instance_filter marshmallow-code__marshmallow-1359`
+            : `--config_file ${config_filename}`,
+        `--per_instance_cost_limit 2.00`,
+    ]
+        .filter((notFalsy) => !!notFalsy)
+        .join(" ");
 
     // Use spawn with shell=true to execute the command in a shell, allowing for Conda environment usage
     const agent = spawn(command, {
@@ -39,7 +50,7 @@ export default function handler(req, res) {
         }
     });
 
-    agent.on('error', (error) => {
+    agent.on("error", (error) => {
         console.error(`Failed to start subprocess: ${error}`);
         res.status(500).send(`Failed to start subprocess: ${error}`);
     });

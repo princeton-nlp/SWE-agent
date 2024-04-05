@@ -15,9 +15,9 @@ const validateFormData = async ({ formData }) => {
     if (!formData["github_api_key"]) {
         throw Error("Github API Key is required");
     }
-    if (!formData["github_issue_link"]) {
-        throw Error("Github Issue Link is required");
-    }
+    // if (!formData["github_issue_link"]) {
+    //     throw Error("Github Issue Link is required");
+    // }
     if (!formData["config_filename"]) {
         throw Error("Config is required");
     }
@@ -126,10 +126,18 @@ export default function Home() {
 
                 <>
                     <h3>Pre-configured settings</h3>
-                    <select name="config_filename">
-                        <option value="1">Config 1</option>
-                        <option value="2">Config 2</option>
-                        <option value="3">Config 3</option>
+                    <select
+                        name="config_filename"
+                        defaultValue={
+                            "--instance_filter marshmallow-code__marshmallow-1359"
+                        }
+                    >
+                        <option value="--instance_filter marshmallow-code__marshmallow-1359">
+                            marshmallow-code__marshmallow-1359
+                        </option>
+                        <option value="config/default.yaml">
+                            config/default.yaml
+                        </option>
                     </select>
                 </>
 
