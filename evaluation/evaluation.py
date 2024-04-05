@@ -151,15 +151,21 @@ def main(predictions_path, log_dir, swe_bench_tasks, testbed, skip_existing, tim
         resolution_status = get_resolution_status(report)
         scorecard["statuses"].append(resolution_status)
 
-        diff_obj = PatchSet(p[KEY_PREDICTION])
-        scorecard["patch_files"] = [
-            x.path
-            for x in diff_obj.modified_files
-            + diff_obj.added_files
-            + diff_obj.removed_files
-        ]
-        scorecard["patch_lines_add"] = sum([f.added for f in diff_obj])
-        scorecard["patch_lines_del"] = sum([f.removed for f in diff_obj])
+        try:
+            diff_obj = PatchSet(p[KEY_PREDICTION])
+            scorecard["patch_files"] = [
+                x.path
+                for x in diff_obj.modified_files
+                + diff_obj.added_files
+                + diff_obj.removed_files
+            ]
+            scorecard["patch_lines_add"] = sum([f.added for f in diff_obj])
+            scorecard["patch_lines_del"] = sum([f.removed for f in diff_obj])
+        except Exception as e:
+            print(f"[{p[KEY_INSTANCE_ID]}] Error parsing prediction diff: {e}")
+            scorecard["patch_files"] = []
+            scorecard["patch_lines_add"] = 0
+            scorecard["patch_lines_del"] = 0
         scorecards.append(scorecard)
 
     # Calculate cumulative results
