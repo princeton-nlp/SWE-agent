@@ -50,7 +50,7 @@ class ActionsArguments(FlattenedAccess, FrozenSerializable):
         if not self.skip_if_commits_reference_issue and self.push_gh_repo_url:
             raise ValueError(
                 "Overriding `skip_if_commits_reference_issue` when you are "
-                "pushing to a fork is not supported. You can always manually "
+                "pushing to a fork is not supported. You should manually "
                 "apply the patch to the forked repository."
             )
 
@@ -163,7 +163,7 @@ def should_open_pr(args, info: Dict[str, Any], *, token: str="") -> bool:
     try:
         issue = get_gh_issue_data(args.environment.data_path, token=token)
     except InvalidGithubURL:
-        logger.info("Currently only github is supported to open githubs to. Skipping PR creation.")
+        logger.info("Currently only github is supported to open PRs to. Skipping PR creation.")
         return False
     if issue.state != "open":
         logger.info(f"Issue is not open (state={issue.state}. Skipping PR creation.")
