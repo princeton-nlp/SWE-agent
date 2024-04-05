@@ -1,4 +1,3 @@
-import { OutputView } from "@/components/OutputView";
 import { useState } from "react";
 
 const LOCAL_API_RUN_AGENT_ENDPOINT = "/api/runAgent";
@@ -24,26 +23,54 @@ const validateFormData = async ({ formData }) => {
     }
 };
 
-const makeRequest = async ({ formData }) => {
-    // Make fetch request to backend
-    const response = await fetch(LOCAL_API_RUN_AGENT_ENDPOINT, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-    });
-
-    if (!response.ok || response.status >= 400) {
-        throw Error(response.statusText);
-    }
-
-    const data = await response.json();
-    return data;
+const OutputView = ({ output }) => {
+    return (
+        <div className="bg-gray-100 p-4 rounded-md">
+            <pre>{output}</pre>
+        </div>
+    );
 };
 
 export default function Home() {
     const [validationError, setValidationError] = useState(null);
+    const [output, setOutput] = useState(null);
+
+    const makeRequest = async ({ formData }) => {
+        // Make fetch request to backend
+        const response = await fetch(LOCAL_API_RUN_AGENT_ENDPOINT, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(formData),
+        });
+
+        if (!response.ok || response.status >= 400) {
+            throw Error(response.statusText);
+        }
+
+        setOutput(""); // Clear the output state
+
+        // Use the Response.body.getReader() method to read the stream
+        const reader = response.body.getReader();
+        let receivedLength = 0; // length at the moment
+        let chunks = []; // array of received binary chunks (comprises the body)
+        while (true) {
+            const { done, value } = await reader.read();
+
+            if (done) {
+                break;
+            }
+
+            chunks.push(value);
+            receivedLength += value.length;
+
+            // Decode the chunk and append it to the output state
+            let chunkText = new TextDecoder("utf-8").decode(value);
+            setOutput((prevOutput) => prevOutput + chunkText);
+        }
+    };
+
     const handleSubmit = async (formEvent) => {
         try {
             formEvent.preventDefault();
@@ -76,13 +103,25 @@ export default function Home() {
                 <h2>Config</h2>
                 <>
                     <h3>Tokens</h3>
-                    <input type="text" placeholder="OpenAI API Key" name="openai_api_key" />
-                    <input type="text" placeholder="Gituhb API Key" name="github_api_key" />
+                    <input
+                        type="text"
+                        placeholder="OpenAI API Key"
+                        name="openai_api_key"
+                    />
+                    <input
+                        type="text"
+                        placeholder="Gituhb API Key"
+                        name="github_api_key"
+                    />
                 </>
 
                 <>
                     <h3>Issue</h3>
-                    <input type="text" placeholder="Github Issue Link" name="github_issue_link" />
+                    <input
+                        type="text"
+                        placeholder="Github Issue Link"
+                        name="github_issue_link"
+                    />
                 </>
 
                 <>
@@ -96,7 +135,7 @@ export default function Home() {
 
                 <>
                     <h3>Tail Output</h3>
-                    {/* <OutputView /> */}
+                    <OutputView output={output} />
                 </>
 
                 <button type="submit">Run</button>
