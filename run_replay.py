@@ -1,56 +1,11 @@
 import json
 import os
 import subprocess
-from typing import Any, Dict, List
 import yaml
 
 from argparse import ArgumentParser
-
 from sweagent.environment.utils import is_from_github_url
-
-
-def process_synthetic_trajs(action_trajs_path: str, config_file: str, suffix: str):
-    # Load action trajectories, task instances
-    action_trajs = [json.loads(x) for x in open(action_trajs_path, "r").readlines()]
-    task_instances = [x["task_instance"] for x in action_trajs]
-    file_name = action_trajs_path.rsplit("/", 1)[-1]
-
-    # Temporary file names
-    replay_action_trajs_path = "temp_actions.jsonl"
-    replay_task_instances_path = file_name
-
-    # Write task_instances to file for data_path
-    with open(replay_task_instances_path, "w") as f:
-        for t in task_instances:
-            print(json.dumps(t), file=f, end="\n", flush=True)
-
-    # Write action trajectories to a file
-    with open(replay_action_trajs_path, "w") as f:
-        for t in action_trajs:
-            print(
-                json.dumps({t["task_instance"]["instance_id"]: t["actions"]}),
-                file=f,
-                end="\n",
-                flush=True,
-            )
-
-    # Call run.py via subprocess
-    command = [
-        "python",
-        "run.py",
-        "--config_file", config_file,
-        "--data_path", replay_task_instances_path,
-        "--install_environment", "True",
-        "--model_name", "replay",
-        "--replay_path", replay_action_trajs_path
-    ]
-    if suffix is not None:
-        command.extend(["--suffix", suffix])
-
-    subprocess.run(command)
-
-    os.remove(replay_action_trajs_path)
-    os.remove(replay_task_instances_path)
+from typing import Any, Dict, List
 
 
 def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix: str):
@@ -83,7 +38,6 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
         data_path = args['environment']['data_path']
 
     # Identify the relevant task instance and create it
-
     def create_task_instances_tmp_file(data: List[Dict[str, Any]]) -> str:
         """Helper function to create a temporary file to write task instances to.
         Returns path to the temporary file.
@@ -94,7 +48,6 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
             for d in data:
                 print(json.dumps(d), file=f, end="\n", flush=True)
         return replay_task_instances_path
-
 
     is_github = False
     if data_path.endswith(".jsonl"):
@@ -132,27 +85,15 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
 
 
 def main(
-    action_trajs_path: str,
     traj_path: str,
     config_file: str,
     data_path: str,
     suffix: str,
 ):
-    if action_trajs_path is not None:
-        process_synthetic_trajs(action_trajs_path, config_file, suffix)
-    elif traj_path is not None:
-        process_single_traj(traj_path, config_file, data_path, suffix)
-    else:
-        print(
-            "No replays generated.\n"
-            "You must either provide one of the following. Either...\n"
-            "\t* --action_trajs_path for replaying synthetic trajectories\n"
-            "\t* --traj_path for replaying SWE-agent style trajectories (from ./trajectories folder)\n"
-        )
+    process_single_traj(traj_path, config_file, data_path, suffix)
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--action_trajs_path", help="Path to action trajectories to replay", default=None)
     parser.add_argument("--traj_path", help="Path to trajectory to replay", default=None)
     parser.add_argument("--config_file", help="Path to template", required=True)
     parser.add_argument("--data_path", help="(Optional) Path to data file containing task instances ref'ed by replay trajectories", default=None)
