@@ -7,7 +7,7 @@ import together
 from collections import defaultdict
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 from dataclasses import dataclass, fields
-from openai import BadRequestError, OpenAI
+from openai import BadRequestError, OpenAI, AzureOpenAI
 from simple_parsing.helpers import FrozenSerializable, Serializable
 from sweagent.agent.commands import Command
 from tenacity import (
@@ -97,6 +97,9 @@ class BaseModel:
         elif args.model_name.startswith("ollama:"):
             self.api_model = args.model_name.split('ollama:', 1)[1]
             self.model_metadata = self.MODELS[self.api_model]
+        elif args.model_name.startswith("azure:"):
+            azure_model = args.model_name.split("azure:", 1)[1]
+            self.model_metadata = MODELS[azure_model]
         else:
             raise ValueError(f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}")
 
@@ -220,7 +223,11 @@ class OpenAIModel(BaseModel):
 
         # Set OpenAI key
         cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
-        self.client = OpenAI(api_key=cfg["OPENAI_API_KEY"])
+        if self.args.model_name.startswith("azure"):
+            self.api_model = cfg["AZURE_OPENAI_DEPLOYMENT"]
+            self.client = AzureOpenAI(api_key=cfg["AZURE_OPENAI_API_KEY"], azure_endpoint=cfg["AZURE_OPENAI_ENDPOINT"], api_version=cfg.get("AZURE_OPENAI_API_VERSION", "2024-02-01"))
+        else:
+            self.client = OpenAI(api_key=cfg["OPENAI_API_KEY"])
 
     def history_to_messages(
         self, history: list[dict[str, str]], is_demonstration: bool = False
@@ -263,7 +270,6 @@ class OpenAIModel(BaseModel):
         output_tokens = response.usage.completion_tokens
         self.update_stats(input_tokens, output_tokens)
         return response.choices[0].message.content
-
 
 class AnthropicModel(BaseModel):
     MODELS = {
@@ -696,7 +702,7 @@ def get_model(args: ModelArguments, commands: Optional[list[Command]] = None):
         return HumanThoughtModel(args, commands)
     if args.model_name == "replay":
         return ReplayModel(args, commands)
-    elif args.model_name.startswith("gpt") or args.model_name.startswith("ft:gpt"):
+    elif args.model_name.startswith("gpt") or args.model_name.startswith("ft:gpt") or args.model_name.startswith("azure:gpt"):
         return OpenAIModel(args, commands)
     elif args.model_name.startswith("claude"):
         return AnthropicModel(args, commands)
