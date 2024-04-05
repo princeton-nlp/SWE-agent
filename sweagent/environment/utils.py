@@ -8,13 +8,12 @@ import tarfile
 import tempfile
 import time
 import traceback
-import threading
 
 from datasets import load_dataset, load_from_disk
 from ghapi.all import GhApi
 from io import BytesIO
 from pathlib import Path
-from subprocess import PIPE, STDOUT, Popen
+from subprocess import PIPE, STDOUT
 from typing import List, Tuple, Dict
 
 LOGGER_NAME = "intercode"
