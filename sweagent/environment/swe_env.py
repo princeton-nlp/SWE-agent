@@ -1,3 +1,4 @@
+import random
 import config
 import datetime
 import docker
@@ -10,15 +11,20 @@ import subprocess
 import traceback
 import time
 
+from ghapi.all import GhApi
 from dataclasses import dataclass
 from git import Repo
 from rich.logging import RichHandler
 from simple_parsing.helpers import FrozenSerializable
 from sweagent.environment.utils import (
     copy_file_to_container,
+    format_trajectory_markdown,
     get_container,
+    get_gh_issue_data,
     get_instances,
     is_from_github_url,
+    parse_gh_issue_url,
+    parse_gh_repo_url,
     read_with_timeout,
     LOGGER_NAME,
 )
@@ -468,7 +474,7 @@ class SWEEnv(gym.Env):
 
     def communicate_with_handling(
         self, input: str, error_msg: str, timeout_duration=25
-    ):
+    ) -> str:
         """
         Wrapper for communicate function that raises error if return code is non-zero
         """
@@ -477,6 +483,7 @@ class SWEEnv(gym.Env):
             self.logger.error(f"{error_msg}: {logs}")
             self.close()
             raise RuntimeError(f"{error_msg}: {logs}")
+        return logs
 
     def get_available_actions(self) -> list[str]:
         """
@@ -666,3 +673,79 @@ class SWEEnv(gym.Env):
             assert output.strip().endswith("interrupted"), "container health check failed"
         except TimeoutError:
             raise RuntimeError("Failed to interrupt container")
+
+
+    def open_pr(self, action_config, info, trajectory):
+        """Create PR to repository"""
+        logger.info("Opening PR")
+        # todo: have better way of handling this
+        # Adding random string suffix to avoid name conflicts if we had a previously failed run
+        issue_url = self.args.data_path 
+        issue = get_gh_issue_data(issue_url, token=self.token)
+        branch_name = f"swe-agent-fix-#{issue.number}-" + str(random.random())[2:10]
+
+        self.communicate_with_handling(
+            input=f"rm model.patch",
+            error_msg="Failed to remove model patch",
+            timeout_duration=10,
+        )
+        self.communicate_with_handling(
+            input=f"git checkout -b {branch_name}",
+            error_msg="Failed to switch to new branch",
+            timeout_duration=10,
+        )
+        self.communicate_with_handling(
+            input=f"git add .",
+            error_msg="Failed to add commits",
+            timeout_duration=10,
+        )
+        self.communicate_with_handling(
+            input=f"git commit -m 'Fix: {issue.title}' -m 'Closes #{issue.number}' ",
+            error_msg="Failed to commit changes",
+            timeout_duration=10,
+        )
+        # If users want to push to a fork, we add a new remote and push to that
+        # otherwise, we push to 'origin' which has already been set up
+        remote = "origin"
+        if not action_config.push_gh_repo_url:
+            owner, repo, _ = parse_gh_issue_url(issue_url)
+        else:
+            owner, repo = parse_gh_repo_url(action_config.push_gh_repo_url)
+        if action_config.push_gh_repo_url:
+            fork_url = f"https://{self.token}@github.com/{owner}/{repo}.git"
+            self.communicate_with_handling(
+                input=f"git remote add fork {fork_url}",
+                error_msg="Failed to create new git remote",
+                timeout_duration=10,
+            )
+            remote = "fork"
+        self.communicate_with_handling(
+            input=f"git push {remote} {branch_name}",
+            error_msg=(
+                "Failed to push branch to remote. Please check your token and permissions. "
+                "You might want to push to a fork with the push_gh_repo_url option."
+            ),
+            timeout_duration=10,
+        )
+
+        # todo: add representation of trajectory to PR body
+        body =  (
+            f"This is a PR opened by AI tool [SWE Agent](https://github.com/princeton-nlp/SWE-agent/) " 
+            f"to close [#{issue.number}]({issue_url}) ({issue.title}).\n\nCloses #{issue.number}."
+        )
+        body += "\n\n" + format_trajectory_markdown(trajectory)
+        api = GhApi(token=self.token)
+        pr_info = api.pulls.create(
+            owner=owner,
+            repo=repo,
+            title=f"SWE-agent[bot] PR to fix: {issue.title}",
+            head=branch_name,
+            base="main",
+            body=body,
+            draft=True,
+        )
+        logger.info(
+            f"🎉 PR created as a draft at {pr_info.html_url}. Please review it carefully, push "
+            "any required changes onto the branch and then click "
+            "'Ready for Review' to bring it to the attention of the maintainers."
+        )

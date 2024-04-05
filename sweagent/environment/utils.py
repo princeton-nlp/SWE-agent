@@ -16,7 +16,7 @@ from ghapi.all import GhApi
 from io import BytesIO
 from pathlib import Path
 from subprocess import PIPE, STDOUT
-from typing import Tuple
+from typing import Any, List, Tuple, Dict
 
 LOGGER_NAME = "intercode"
 START_UP_DELAY = 5
@@ -279,6 +279,40 @@ def get_commit(api: GhApi, owner: str, repo: str, base_commit: str = None):
 
 
 
+class InvalidGithubURL(ValueError):
+    ...
+
+
+def parse_gh_issue_url(issue_url: str) -> Tuple[str, str, str]:
+    """Return owner, repo, issue number from issue url"""
+    match = GITHUB_ISSUE_URL_PATTERN.search(issue_url)
+    if not match:
+        raise InvalidGithubURL(f"Invalid GitHub issue URL: {issue_url}")
+    res = match.groups()
+    assert len(res) == 3
+    return tuple(res)  # type: ignore
+
+
+def parse_gh_repo_url(repo_url: str) -> Tuple[str, str]:
+    """Return owner, repo from repo url"""
+    if not repo_url.startswith('http://') and not repo_url.startswith('https://'):
+        repo_url = 'https://' + repo_url
+    parts = repo_url.split('/')
+    owner = parts[3] 
+    repo = parts[4]
+    return owner, repo
+
+
+def get_gh_issue_data(issue_url: str, *, token: str = ""):
+    """Returns github issue data in the form of a dictionary.
+    See https://docs.github.com/en/rest/issues/issues?apiVersion=2022-11-28#get-an-issue
+    for return format
+    """
+    owner, repo, issue_number = parse_gh_issue_url(issue_url)
+    api = GhApi(token=token)
+    return api.issues.get(owner, repo, issue_number)
+
+
 def get_instances(file_path: str, base_commit: str = None, split: str = None, token: str = None):
     """
     Getter function for handling json, jsonl files
@@ -294,11 +328,13 @@ def get_instances(file_path: str, base_commit: str = None, split: str = None, to
 
     # If file_path is a github issue url, fetch the issue and return a single instance
     if is_from_github_url(file_path):
-        match = GITHUB_ISSUE_URL_PATTERN.search(file_path)
-        api = GhApi(token=token)
-        if match:
-            owner, repo, issue_number = match.groups()
+        try: 
+            owner, repo, issue_number = parse_gh_issue_url(file_path)
+        except InvalidGithubURL:
+            pass
+        else:
             record = dict()
+            api = GhApi(token=token)
             issue = api.issues.get(owner, repo, issue_number)
             title = issue.title if issue.title else ""
             body = issue.body if issue.body else ""
@@ -326,3 +362,64 @@ def get_instances(file_path: str, base_commit: str = None, split: str = None, to
             f"Could not load instances from {file_path}. "
             "Please ensure --data_path is a GitHub URL, a SWE-bench HuggingFace dataset, or a JSON/JSONL file."
         )
+
+
+def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token: str = "") -> list[str]:
+    """Return the URLs of commits that would close an issue."""
+    api = GhApi(token=token)
+    # Strangely the "pull_request" field of api.issues.get is often not set
+    # so we have to go through the events to check if there's a commit
+    events = api.issues.list_events(org, repo, issue_number)
+    commit_urls = []
+    for event in events:
+        if not event.event == "referenced":
+            continue
+        if not event.commit_id:
+            continue
+        commit = api.repos.get_commit(org, repo, event.commit_id)
+        message = commit.commit.message
+        if f"fixes #{issue_number}" in message.lower() or f"closes #{issue_number}" in message.lower():
+            commit_urls.append(commit.html_url)
+    return commit_urls
+
+
+def remove_triple_backticks(text: str) -> str:
+    return "\n".join(line.removeprefix("```") for line in text.splitlines())
+
+
+def format_trajectory_markdown(trajectory: List[Dict[str, str]]):
+    """Format a trajectory as a markdown string for use in gh PR description."""
+    emojis = {
+        "action": "🔥",
+        "observation": "👀",
+        "response": "️🧑‍🚒",
+        "state": "🧠",
+        "thought": "💡",
+
+    }
+    prefix = [
+        "<details>",
+        "<summary>Thought process ('trajectory') of SWE-agent (click to expand)</summary>",
+        "",
+        "",
+    ]
+    steps = []
+    for i, step in enumerate(trajectory):
+        step_strs = []
+        for key, value in step.items():
+            emoji = emojis.get(key, "")
+            if emoji:
+                emoji += " "
+            step_strs.append(f"**{emoji}{key.capitalize()} ({i})**:")
+            if key in ["observation", "state", "action"]:
+                step_strs.append("```")
+                step_strs.append(remove_triple_backticks(value).strip())
+                step_strs.append("```")
+            else:
+                step_strs.append(value.strip())
+        steps.append("\n".join(step_strs))
+    suffix = [
+        "",
+        "</details>",
+    ] 
+    return "\n".join(prefix) + "\n\n---\n\n".join(steps) + "\n".join(suffix)
