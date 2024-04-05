@@ -32,7 +32,7 @@ SWE-agent contains features that we discovered to be immensely helpful during th
 3. We supply the agent with a special-built full-directory string searching command. We found that it was important for this tool to succintly list the matches- we simply list each file that had at least one match. Showing the model more context about each match proved to be too confusing for the model. 
 4. When commands have an empty output we return a message saying "Your command ran successfully and did not produce any output."
 
-Read our paper for more details.
+Read our paper for more details [coming soon!].
 
 ```
 @misc{yang2024sweagent,
