@@ -63,3 +63,4 @@ python run.py --model_name gpt4 --temperature 0.5 --top_p 0.8
 - `run_and_eval.sh`: Runs SWE-agent inference and evaluation on a specified dataset N times. You can specify the `dataset_path`, `num_runs`, `template`, and `suffix` arguments.
 - `run_jsonl.sh`: Run SWE-agent inference from a `.jsonl` file that contains a SWE-bench style task instance.
 - `run_replay.sh`: Run SWE-agent inference from a `.traj` file. This is useful for automatically creating a new demonstration for a new config from an existing sequence of actions.
+
