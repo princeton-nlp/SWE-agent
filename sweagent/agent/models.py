@@ -703,9 +703,9 @@ def get_model(args: ModelArguments, commands: Optional[list[Command]] = None):
 
     if args.model_name in models:
         return models[args.model_name](args, commands)
-    elif args.model_name.startswith("ft:"):
+    elif args.model_name.startswith("ft:gpt"):
         return OpenAIModel(args, commands)
-    elif args.model_name.startswith("ollama:"):
+    elif args.model_name.startswith("ollama"):
         return OllamaModel(args, commands)
     else:
         raise ValueError(f"Invalid model name: {args.model_name}")
