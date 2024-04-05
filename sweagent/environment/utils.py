@@ -1,3 +1,4 @@
+import shlex
 import docker
 import json
 import logging
@@ -170,6 +171,7 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> Tuple[subpr
         "-l",
         "-m",
     ]
+    logger.debug(f"Starting container with command: %s", shlex.join(startup_cmd))
     container = subprocess.Popen(
         startup_cmd,
         stdin=PIPE,
@@ -225,6 +227,7 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
         "-l",
         "-m",
     ]
+    logger.debug(f"Starting container with command: %s", shlex.join(startup_cmd))
     container = subprocess.Popen(
         startup_cmd,
         stdin=PIPE,
