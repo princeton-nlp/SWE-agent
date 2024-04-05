@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import re
-import select
 import subprocess
 import tarfile
 import tempfile
@@ -105,20 +104,23 @@ def read_with_timeout(container, pid_func, timeout_duration):
     fd = container.stdout.fileno()
     end_time = time.time() + timeout_duration
 
+    os.set_blocking(fd, False)
+
     while time.time() < end_time:
         pids = pid_func()
         if len(pids) > 0:
             # There are still PIDs running
             time.sleep(0.05)
             continue
-        ready_to_read, _, _ = select.select([fd], [], [], 0.1)
-        if ready_to_read:
+        try:
             data = os.read(fd, 4096)
             if data:
                 buffer += data
-        else:
-            # No more data to read
-            break
+            else:
+                break  # No more data to read
+        except BlockingIOError:
+            break  # No more data to read
+        
         time.sleep(0.05)  # Prevents CPU hogging
 
     if container.poll() is not None:
@@ -127,15 +129,14 @@ def read_with_timeout(container, pid_func, timeout_duration):
         raise TimeoutError("Timeout reached while reading from subprocess.\nCurrent buffer: {}\nRunning PIDs: {}".format(buffer.decode(), pids))
     return buffer.decode()
 
-def _check_stdout(container: Popen):
-    output = container.stdout.read()
-    if output:
-        logger.error(f"Unexpected container setup output: {output}")
-
-def check_container_output(p: Popen, timeout: int = TIMEOUT_DURATION):
-    t = threading.Thread(target=_check_stdout, args=[p], daemon=True)
-    t.start()
-    t.join(timeout=timeout)
+    
+def check_container_output(container: Popen, timeout: int = TIMEOUT_DURATION):
+    try:
+        output = container.stdout.read()
+        if output:
+            logger.error(f"Unexpected container setup output: {output}")
+    except BlockingIOError:
+        return
 
 def get_background_pids(container_obj):
     pids = (
@@ -171,6 +172,7 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> Tuple[subpr
         text=True,
         bufsize=1, # line buffered
     )
+    os.set_blocking(container.stdout.fileno(), False)
     time.sleep(START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
     check_container_output(container, timeout=2)
@@ -221,6 +223,7 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
         text=True,
         bufsize=1, # line buffered
     )
+    os.set_blocking(container.stdout.fileno(), False)
     time.sleep(START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
     check_container_output(container, timeout=2)
