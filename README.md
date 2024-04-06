@@ -132,7 +132,7 @@ See the following links for tutorials on obtaining [Anthropic](https://docs.anth
 ## 🔥 Quickstart: Solve real-life GitHub issues! <a name="real-life"></a>
 
 Using this script, you can run SWE-agent on any GitHub issue!
-```
+```bash
 python run.py --model_name gpt4 \
   --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
   --config_file config/default_from_url.yaml
@@ -163,21 +163,21 @@ There are two steps to the SWE-agent pipeline. First SWE-agent takes an input Gi
 **Inference on *any* GitHub Issue**: See [above](#-quickstart-solve-real-life-github-issues-).
 
 **Inference on SWE-bench**: Run SWE-agent on [SWE-bench Lite](https://www.swebench.com/lite.html) and generate patches.
-```
+```bash
 python run.py --model_name gpt4 \
   --per_instance_cost_limit 2.00 \
   --config_file ./config/default.yaml
 ```
 
 If you'd like to run on a *single* issue from SWE-bench, use the `--instance_filter` option as follows:
-```
+```bash
 python run.py --model_name gpt4 \
   --instance_filter marshmallow-code__marshmallow-1359
 ```
 
 ### 🧪 Evaluation <a name="evaluation"></a>
 This step is only available for issues from the SWE-bench set. To evaluate generated pull requests:
-```
+```bash
 cd evaluation/
 ./run_eval.sh <predictions_path>
 ```
