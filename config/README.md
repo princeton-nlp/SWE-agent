@@ -60,7 +60,7 @@ history_processor: Reference to functionality for controlling agent's message hi
 parse_function: Parser run on agent output
 ```
 
-We recommend looking at...
+In this directory, we recommend looking at...
 * `configs/` for examples of properly formatted configuration files. Each configuration differs in its set of commands, input/output format, demonstrations, etc.
 * `commands/` for the bash implementations of the custom commands that SWE-agent uses to navigate + edit the codebase.
 
@@ -76,3 +76,17 @@ Possible variables that can be used in templates are:
 - any variable extracted as json as part of the `state_command` function
 - the last observation `{observation}` 
 - ... this list will grow as we implement more features!
+
+## Template Workflow
+The following diagram illustrates where each template is shown within a single episode of solving one task instance.
+
+<p align="center">
+  <img src="../assets/template_workflow.png" alt="Template Workflow">
+</p>
+
+One of three templates can be shown per turn:
+* "Next Step" (`next_step_template`): Displayed if the model's action successfully runs. The output and a prompt for the next action is shown
+* "Next Step (No Output)" (`next_step_no_output_template`): Displayed if the model's action successfully runs, but does not produce any standard output (e.g. `rm`, `cd`)
+* "Format Error" (`format_error_template`): Displayed if the model's response is malformed. Over the next two turns...
+  * If one of the model's next response is correct, the message history is updated such that the "Format Error" turn is not kept. The episode continues.
+  * If the model's next two responses are both malformed, the episode terminates.
