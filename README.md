@@ -129,7 +129,7 @@ python run.py --model_name gpt4 \
   --config_file config/default_from_url.yaml
 ```
 
-> [!HINT]
+> [!TIP]
 > Run `python run.py --help` to see all available options.
 
 * See the [`scripts/`](scripts/) folder for other useful scripts and details.
@@ -142,7 +142,7 @@ python run.py --model_name gpt4 \
 
 There are two steps to the SWE-agent pipeline. First SWE-agent takes an input GitHub issue and returns a pull request that attempts to fix it. We call that step *inference*. The second step (currently, only available for issues in the SWE-bench benchmark) is to *evaluate* the pull request to verify that it has indeed fixed the issue. 
 
-> [!NOTE]
+> [!WARNING]
 > At this moment, there are known issues with a small number of repositories that don't install properly for `arm64` / `aarch64` architecture computers. We're working on a fix, but if you'd like to run and evaluate on the entirety of SWE-bench, the easiest way is by using an `x86` machine.
 
 ### 👩‍💻 Inference <a name="inference"></a>
