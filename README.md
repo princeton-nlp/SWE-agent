@@ -138,6 +138,11 @@ python run.py --model_name gpt4 \
   --config_file config/default_from_url.yaml
 ```
 
+
+> [!TIP]
+> You can have the agent automatically open a PR if the issue has been solved by supplying the `--open_pr`
+> flag. Please use this feature responsibly (on your own repositories or after careful consideration).
+
 > [!TIP]
 > Run `python run.py --help` to see all available options.
 
