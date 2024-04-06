@@ -1,5 +1,5 @@
-name: Documentation improvement
-description: Create a report to help us improve the documentation or add new documentation.
+name: Question
+description: Ask a question about SWE-agent or request documentation that is missing.
 labels: ['documentation']
 
 body:
@@ -7,12 +7,12 @@ body:
   attributes:
     label: Describe the issue
     description: >
-      Tell us about the confusion introduced in the documentation *or*
+      Tell us about the confusion you have about SWE-agent *or*
       the information that is missing in the documentation.
   validations:
     required: true
 - type: textarea
   attributes:
-    label: Suggest a potential alternative/fix
+    label: Suggest an improvement to documentation
     description: >
       Tell us how we could improve the documentation in this regard.
