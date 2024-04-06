@@ -417,7 +417,7 @@ class SWEEnv(gym.Env):
         try:
             self.returncode = None
             cmd = input if input.endswith("\n") else input + "\n"
-            self.container.stdin.write(cmd)
+            os.write(self.container.stdin.fileno(), cmd.encode())
             time.sleep(0.1)
             self.container.stdin.flush()
         except BrokenPipeError:
