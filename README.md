@@ -62,7 +62,11 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
   # the rest of the command as shown below
 ```
 
-For more information on the different API keys/tokens, see below.
+> [!TIP]
+> * For more information on the different API keys/tokens, see [below](#-add-your-api-keystokens).
+> * If you're using docker on Windows, use `-v //var/run/docker.sock:/var/run/docker.sock`
+>   (double slash) to escape it ([more information](https://stackoverflow.com/a/47229180/)).
+> * For a complete command example, expand the fold-out directly below this box. 
 
 <details>
 <summary>🔎 Example: Running on a github issue</summary>
@@ -78,10 +82,6 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
     --config_file config/default_from_url.yaml  --skip_existing=False
 ```
 </details>
-
-> [!HINT]
-> If you're using docker on windows, use `-v //var/run/docker.sock:/var/run/docker.sock`
-> (double slash) to escape it ([more information](https://stackoverflow.com/a/47229180/)).
 
 ### 🐍 Setup with conda (development version) 
 
