@@ -61,31 +61,22 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
   -e OPENAI_API_KEY="your openai API key if you're using GPT" \
   sweagent/swe-agent-run:latest \
   python run.py --image_name=sweagent/swe-agent:latest \
-  # the rest of the command as shown below
+  # the rest of the command as shown in the quickstart/benchmarking section,
+  # for example to run on a specific github issue
+  --model_name gpt4 \
+  --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
+  --config_file config/default_from_url.yaml  --skip_existing=False
 ```
 
 > [!TIP]
 > * For more information on the different API keys/tokens, see [below](#-add-your-api-keystokens).
 > * If you're using docker on Windows, use `-v //var/run/docker.sock:/var/run/docker.sock`
 >   (double slash) to escape it ([more information](https://stackoverflow.com/a/47229180/)).
-> * For a complete command example, expand the fold-out directly below this box. 
-
-<details>
-<summary>🔎 Example: Running on a github issue</summary>
-
-```bash
-docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
-    -e GITHUB_TOKEN="your github token here" \
-    -e OPENAI_API_KEY="your openai API key if you're using GPT" \
-    sweagent/swe-agent-run:latest \
-    python run.py --image_name=sweagent/swe-agent:latest \
-    --model_name gpt4 \
-    ---data_path https://github.com/pvlib/pvlib-python/issues/1603 \
-    --config_file config/default_from_url.yaml  --skip_existing=False
-```
-</details>
+> * For a complete command example, expand the fold-out directly below this box.
 
 ### 🐍 Setup with conda (development version) 
+
+To install the development version:
 
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
 2. Clone this repository
@@ -94,12 +85,12 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 5. Run `./setup.sh` to create the `swe-agent` docker image.
 6. Create a `keys.cfg` file at the root of this repository (see below)
 
-
 > [!WARNING]
 > Expect some issues with Windows (we're working on them).
 > In the meantime, simply use Docker (see above).
 > If you want the latest version, you can also build your own `swe-agent-run`
-> container with the `Dockerfile` at the root of this repository.
+> container with the `Dockerfile` at the root of this repository by running
+> `docker built -t sweagent/swe-agent-run:latest .`
 
 ### 🔑 Add your API keys/tokens
 
