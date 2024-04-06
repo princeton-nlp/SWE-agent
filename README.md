@@ -52,13 +52,15 @@ You can run the software directly using Docker.
 
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
 2. Run `docker pull sweagent/swe-agent:latest`
+3. Add your API tokens to a file `keys.cfg` as explained [below](#-add-your-api-keystokens)
 
 Then run
 
 ```bash
+# Please remove all comments (lines starting with '#') before running this command!
 docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
-  -e GITHUB_TOKEN="your github token here" \
-  -e OPENAI_API_KEY="your openai API key if you're using GPT" \
+  # replace /xxxx/keys.cfg with the paths to your keys
+  -v /xxxx/keys.cfg:/app/keys.cfg
   sweagent/swe-agent-run:latest \
   python run.py --image_name=sweagent/swe-agent:latest \
   # the rest of the command as shown in the quickstart/benchmarking section,
@@ -82,7 +84,7 @@ To install the development version:
 3. [Install Miniconda](https://docs.anaconda.com/free/miniconda/miniconda-install/), then create the `swe-agent` environment with `conda env create -f environment.yml`
 4. Activate using `conda activate swe-agent`.
 5. Run `./setup.sh` to create the `swe-agent` docker image.
-6. Create a `keys.cfg` file at the root of this repository (see below)
+6. Create a `keys.cfg` file at the root of this repository ([see below](#-add-your-api-keystokens))
 
 > [!WARNING]
 > Expect some issues with Windows (we're working on them).
