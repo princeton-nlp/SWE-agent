@@ -92,6 +92,13 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 5. Run `./setup.sh` to create the `swe-agent` docker image.
 6. Create a `keys.cfg` file at the root of this repository (see below)
 
+
+> [!WARNING]
+> Expect some issues with Windows (we're working on them).
+> In the meantime, simply use Docker (see above).
+> If you want the latest version, you can also build your own `swe-agent-run`
+> container with the `Dockerfile` at the root of this repository.
+
 ### 🔑 Add your API keys/tokens
 
 For the conda setup, create a `keys.cfg` file at the root of this repository and populate it with your API keys.
