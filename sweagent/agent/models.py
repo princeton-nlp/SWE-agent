@@ -271,6 +271,80 @@ class OpenAIModel(BaseModel):
         self.update_stats(input_tokens, output_tokens)
         return response.choices[0].message.content
 
+class GroqModel(BaseModel):
+    MODELS = {
+        "llama2-70b-4096": {
+            "max_context": 4096,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        },
+        "mixtral-8x7b-32768": {
+            "max_context": 32768,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        },
+        "gemma-7b-it": {
+            "max_context": 8192,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        },
+    }
+
+    SHORTCUTS = {
+        "groq-llama70b": "llama2-70b-4096",
+        "groq-mixtral8x7b": "mixtral-8x7b-32768",
+        "groq-gemma7b": "gemma-7b-it",
+    }
+
+    def __init__(self, args: ModelArguments, commands: list[Command]):
+        super().__init__(args, commands)
+
+        # Set Groq key
+        cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
+        self.client = OpenAI(api_key=cfg["GROQ_API_KEY"], base_url="https://api.groq.com/openai/v1/")
+
+    def history_to_messages(
+        self, history: list[dict[str, str]], is_demonstration: bool = False
+    ) -> list[dict[str, str]]:
+        """
+        Create `messages` by filtering out all keys except for role/content per `history` turn
+        """
+        # Remove system messages if it is a demonstration
+        if is_demonstration:
+            history = [entry for entry in history if entry["role"] != "system"]
+            return '\n'.join([entry["content"] for entry in history])
+        # Return history components with just role, content fields
+        return [
+            {k: v for k, v in entry.items() if k in ["role", "content"]}
+            for entry in history
+        ]
+
+    @retry(
+        wait=wait_random_exponential(min=1, max=15),
+        reraise=True,
+        stop=stop_after_attempt(3),
+        retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
+    )
+    def query(self, history: list[dict[str, str]]) -> str:
+        """
+        Query the Groq API with the given `history` and return the response.
+        """
+        try:
+            # Perform Groq API call
+            response = self.client.chat.completions.create(
+                messages=self.history_to_messages(history),
+                model=self.api_model,
+                temperature=self.args.temperature,
+                top_p=self.args.top_p,
+            )
+        except BadRequestError as e:
+            raise CostLimitExceededError(f"Context window ({self.model_metadata['max_context']} tokens) exceeded")
+        # Calculate + update costs, return response
+        input_tokens = response.usage.prompt_tokens
+        output_tokens = response.usage.completion_tokens
+        self.update_stats(input_tokens, output_tokens)
+        return response.choices[0].message.content
+
 class AnthropicModel(BaseModel):
     MODELS = {
         "claude-instant": {
@@ -708,5 +782,7 @@ def get_model(args: ModelArguments, commands: Optional[list[Command]] = None):
         return AnthropicModel(args, commands)
     elif args.model_name.startswith("ollama"):
         return OllamaModel(args, commands)
+    elif args.model_name.startswith("groq"):
+        return GroqModel(args, commands)
     else:
         raise ValueError(f"Invalid model name: {args.model_name}")
