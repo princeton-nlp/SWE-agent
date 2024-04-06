@@ -26,7 +26,7 @@ These arguments configure the script's behavior:
 
 #### Environment Arguments
 These arguments are related to the environment configuration:
-* `--data_path <str>` 💡: Path to the data file -or- a GitHub issue URL.
+* `--data_path <str>` 💡: Path to the data file -or- a Hugging Face dataset -or- a GitHub issue URL.
 * `--base_commit <str>`: You can specify the base commit sha to checkout. This is determined automatically for instances in SWE-bench.
 * `--image_name <str>`: Name of the Docker image to use. Default is swe-agent.
 * `--noinstall_environment, --install_environment`: [Do not] install the environment. Default is True.
@@ -42,10 +42,10 @@ Configure agent behavior:
 #### ModelArguments
 Configure model parameters:
 * `--model_name <str>` 💡: Name of the model. Default is `gpt4`.
-* `--per_instance_cost_limit <float>` 💡: Per-instance cost limit (interactive loop will automatically terminate when cost limit is hit). Default is 2.0.
-* `--temperature <float>` 💡: Model temperature. Default is 0.2.
+* `--per_instance_cost_limit <float>` 💡: Per-instance cost limit (interactive loop will automatically terminate when cost limit is hit). Default is 3.0.
+* `--temperature <float>` 💡: Model temperature. Default is 0.0.
 * `--top_p <float>` 💡: Top p filtering. Default is 0.95.
-* `--total_cost_limit <float>`: Total cost limit. Default is 0.0.
+* `--total_cost_limit <float>`: Total cost limit. Default is 0.0 (unlimited).
 
 ### 📙 Example Usage
 Run with custom data path and verbose mode:
@@ -55,7 +55,7 @@ python run.py --data_path /path/to/data.json --verbose
 
 Specify a model and adjust the temperature and top_p parameters:
 ```bash
-python run.py --model_name gpt4 --temperature 0.5 --top_p 0.8
+python run.py --model_name gpt4 --temperature 0.2 --top_p 0.9
 ```
 
 ## 🛠️ Miscellaneous Scripts
