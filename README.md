@@ -65,10 +65,6 @@ python run.py --model_name gpt4 \
   --config_file config/default_from_url.yaml
 ```
 
-> [!NOTE]
-> Add the `--open-pr` option to create a PR with the fix if successful.
-> Please use this feature responsibly (on your own repositories or after careful consideration).
-
 > [!HINT]
 > Run `python run.py --help` to see all available options.
 
