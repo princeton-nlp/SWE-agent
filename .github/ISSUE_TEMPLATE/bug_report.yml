@@ -19,13 +19,11 @@ body:
   attributes:
     label: Steps/Code to Reproduce
     description: >
-      Add a minimal code/script example that can reproduce the error when running it if applicable.
-      Be as succinct as possible.
-      If reproduction requires external data files, please make it available and provide a donwload link.
-      On our side, *we will copy-paste your code* to run it to reproduce the error you are facing.
+      **Please add the full command that you were running as well as how you set up the software (docker, conda, etc.)**
+      Please always copy code as text and not as a screenshot.
     placeholder: |
       ```
-      Sample code/script to reproduce the problem
+      Sample code/commands to reproduce the problem
       ```
   validations:
     required: true
