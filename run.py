@@ -264,8 +264,8 @@ if __name__ == "__main__":
             model=ModelArguments(
                 model_name="gpt4",
                 total_cost_limit=0.0,
-                per_instance_cost_limit=2.0,
-                temperature=0.2,
+                per_instance_cost_limit=3.0,
+                temperature=0.0,
                 top_p=0.95,
             ),
             config_file="config/default.yaml",
