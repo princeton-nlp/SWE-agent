@@ -46,14 +46,14 @@ Read our paper for more details [coming soon!].
 
 ## 🚀 Setup <a name="setup"></a>
 
-### 🐋 Setup using docker (easiest) 
+### 🏎️ Express Setup + Run
 
 You can run the software directly using Docker. 
 
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
 2. Run `docker pull sweagent/swe-agent:latest`
 
-Then, instead of directly running `python run.py` as in the examples below, run
+Then run
 
 ```bash
 docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
