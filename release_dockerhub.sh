@@ -52,6 +52,9 @@ fi
 # Check if the tags already exist on Docker Hub
 IMAGES=("sweagent/swe-agent:${VERSION_STR}" "sweagent/swe-agent:latest" "sweagent/swe-eval:${VERSION_STR}" "sweagent/swe-eval:latest" "sweagent/swe-agent-run:${VERSION_STR}" "sweagent/swe-agent-run:latest")
 for image in "${IMAGES[@]}"; do
+    if [[ $image == *"latest"* ]]; then
+        continue
+    fi
     IMAGE_NAME="${image%:*}"
     TAG="${image##*:}"
     URL="https://hub.docker.com/v2/repositories/${IMAGE_NAME}/tags/${TAG}/"

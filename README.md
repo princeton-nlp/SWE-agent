@@ -72,7 +72,6 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 > * For more information on the different API keys/tokens, see [below](#-add-your-api-keystokens).
 > * If you're using docker on Windows, use `-v //var/run/docker.sock:/var/run/docker.sock`
 >   (double slash) to escape it ([more information](https://stackoverflow.com/a/47229180/)).
-> * For a complete command example, expand the fold-out directly below this box.
 
 ### 🐍 Setup with conda (development version) 
 
