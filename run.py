@@ -253,7 +253,7 @@ if __name__ == "__main__":
     defaults = ScriptArguments(
         suffix="",
         environment=EnvironmentArguments(
-            image_name="swe-agent",
+            image_name="sweagent/swe-agent:latest",
             data_path="princeton-nlp/SWE-bench_Lite",
             split="dev",
             verbose=True,
