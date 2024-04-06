@@ -60,7 +60,7 @@ Then run
 # Please remove all comments (lines starting with '#') before running this command!
 docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
   # replace /xxxx/keys.cfg with the paths to your keys
-  -v /xxxx/keys.cfg:/app/keys.cfg
+  -v /xxxx/keys.cfg:/app/keys.cfg \
   sweagent/swe-agent-run:latest \
   python run.py --image_name=sweagent/swe-agent:latest \
   # the rest of the command as shown in the quickstart/benchmarking section,
