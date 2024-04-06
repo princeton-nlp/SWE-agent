@@ -120,18 +120,33 @@ AZURE_OPENAI_API_VERSION: 'Azure OpenAI API Version Here if using Azure OpenAI M
 
 See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) tokens.
 
-## 💽 Usage <a name="usage"></a>
-There are two steps to the SWE-agent pipeline. First SWE-agent takes an input GitHub issue and returns a pull request that attempts to fix it. We call that step *inference*. The second step (currently, only available for issues in the SWE-bench benchmark) is to *evaluate* the pull request to verify that it has indeed fixed the issue. 
+## 🔥 Quickstart: Solve real-life GitHub issues! <a name="real-life"></a>
 
-_NOTE_: At this moment, there are known issues with a small number of repositories that don't install properly for `arm64` / `aarch64` architecture computers. We're working on a fix, but if you'd like to run and evaluate on the entirety of SWE-bench, the easiest way is by using an `x86` machine.
-
-### 👩‍💻 Inference <a name="inference"></a>
-**Inference on *any* GitHub Issue**: Using this script, you can run SWE-agent on any GitHub issue!
+Using this script, you can run SWE-agent on any GitHub issue!
 ```
 python run.py --model_name gpt4 \
   --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
   --config_file config/default_from_url.yaml
 ```
+
+> [!HINT]
+> Run `python run.py --help` to see all available options.
+
+* See the [`scripts/`](scripts/) folder for other useful scripts and details.
+* See the [`config/`](config/) folder for details about how you can define your own configuration!
+* See the [`sweagent/agent/`](sweagent/agent/) folder for details about the logic behind configuration based workflows.
+* See the [`sweagent/environment/`](sweagent/environment/) folder for details about the `SWEEnv` environment (interface + implementation).
+* See the [`trajectories/`](trajectories) folder for details about the output of `run.py`.
+
+## 💽 Benchmarking <a name="benchmarking"></a>
+
+There are two steps to the SWE-agent pipeline. First SWE-agent takes an input GitHub issue and returns a pull request that attempts to fix it. We call that step *inference*. The second step (currently, only available for issues in the SWE-bench benchmark) is to *evaluate* the pull request to verify that it has indeed fixed the issue. 
+
+> [!NOTE]
+> At this moment, there are known issues with a small number of repositories that don't install properly for `arm64` / `aarch64` architecture computers. We're working on a fix, but if you'd like to run and evaluate on the entirety of SWE-bench, the easiest way is by using an `x86` machine.
+
+### 👩‍💻 Inference <a name="inference"></a>
+**Inference on *any* GitHub Issue**: See [above](#-quickstart-solve-real-life-github-issues-).
 
 **Inference on SWE-bench**: Run SWE-agent on [SWE-bench Lite](https://www.swebench.com/lite.html) and generate patches.
 ```
@@ -145,11 +160,6 @@ If you'd like to run on a *single* issue from SWE-bench, use the `--instance_fil
 python run.py --model_name gpt4 \
   --instance_filter marshmallow-code__marshmallow-1359
 ```
-* See the [`scripts/`](scripts/) folder for other useful scripts and details.
-* See the [`config/`](config/) folder for details about how you can define your own configuration!
-* See the [`sweagent/agent/`](sweagent/agent/) folder for details about the logic behind configuration based workflows.
-* See the [`sweagent/environment/`](sweagent/environment/) folder for details about the `SWEEnv` environment (interface + implementation).
-* See the [`trajectories/`](trajectories) folder for details about the output of `run.py`.
 
 ### 🧪 Evaluation <a name="evaluation"></a>
 This step is only available for issues from the SWE-bench set. To evaluate generated pull requests:
