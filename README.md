@@ -50,22 +50,27 @@ You can run the software directly using Docker.
 
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
 2. Run `docker pull sweagent/swe-agent:latest`
-3. Create a `keys.cfg` file at the root of this repository (see below)
 
 Then, instead of directly running `python run.py` as in the examples below, run
 
 ```bash
 docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
+  -e GITHUB_TOKEN="your github token here" \
+  -e OPENAI_API_KEY="your openai API key if you're using GPT" \
   sweagent/swe-agent-run:latest \
   python run.py --image_name=sweagent/swe-agent:latest \
   # the rest of the command as shown below
 ```
+
+For more information on the different API keys/tokens, see below.
 
 <details>
 <summary>🔎 Example: Running on a github issue</summary>
 
 ```bash
 docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
+    -e GITHUB_TOKEN="your github token here" \
+    -e OPENAI_API_KEY="your openai API key if you're using GPT" \
     sweagent/swe-agent-run:latest \
     python run.py --image_name=sweagent/swe-agent:latest \
     --model_name gpt4 \
@@ -73,6 +78,10 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
     --config_file config/default_from_url.yaml  --skip_existing=False
 ```
 </details>
+
+> [!HINT]
+> If you're using docker on windows, use `-v //var/run/docker.sock:/var/run/docker.sock`
+> (double slash) to escape it ([more information](https://stackoverflow.com/a/47229180/)).
 
 ### 🐍 Setup with conda (development version) 
 
@@ -83,14 +92,16 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 5. Run `./setup.sh` to create the `swe-agent` docker image.
 6. Create a `keys.cfg` file at the root of this repository (see below)
 
-### 🔑 Add your API keys
+### 🔑 Add your API keys/tokens
 
-Create a `keys.cfg` file at the root of this repository and populate it with your API keys.
+For the conda setup, create a `keys.cfg` file at the root of this repository and populate it with your API keys.
 
 ```
 GITHUB_TOKEN: 'GitHub Token Here (required)'
 OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model (optional)'
 ```
+
+If you're using docker, pass the key with the [`-e` option](https://stackoverflow.com/a/30494145/) to the docker container. 
 
 <details>
 <summary>🔎 More options for different keys (click to unfold)</summary>
