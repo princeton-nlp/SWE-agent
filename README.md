@@ -43,11 +43,58 @@ Read our paper for more details [coming soon!].
 ```
 
 ## 🚀 Setup <a name="setup"></a>
+
+### 🐋 Setup using docker (easiest) 
+
+You can run the software directly using Docker. 
+
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
-2. [Install Miniconda](https://docs.anaconda.com/free/miniconda/miniconda-install/), then create the `swe-agent` environment with `conda env create -f environment.yml`
-3. Activate using `conda activate swe-agent`.
-4. Run `./setup.sh` to create the `swe-agent` docker image.
-5. Create a `keys.cfg` file at the root of this repository and fill in the following:
+2. Run `docker pull sweagent/swe-agent:latest`
+3. Create a `keys.cfg` file at the root of this repository (see below)
+
+Then, instead of directly running `python run.py` as in the examples below, run
+
+```bash
+docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
+  sweagent/swe-agent-run:latest \
+  python run.py --image_name=sweagent/swe-agent:latest \
+  # the rest of the command as shown below
+```
+
+<details>
+<summary>🔎 Example: Running on a github issue</summary>
+
+```bash
+docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
+    sweagent/swe-agent-run:latest \
+    python run.py --image_name=sweagent/swe-agent:latest \
+    --model_name gpt4 \
+    ---data_path https://github.com/pvlib/pvlib-python/issues/1603 \
+    --config_file config/default_from_url.yaml  --skip_existing=False
+```
+</details>
+
+### 🐍 Setup with conda (development version) 
+
+1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
+2. Clone this repository
+3. [Install Miniconda](https://docs.anaconda.com/free/miniconda/miniconda-install/), then create the `swe-agent` environment with `conda env create -f environment.yml`
+4. Activate using `conda activate swe-agent`.
+5. Run `./setup.sh` to create the `swe-agent` docker image.
+6. Create a `keys.cfg` file at the root of this repository (see below)
+
+### 🔑 Add your API keys
+
+Create a `keys.cfg` file at the root of this repository and populate it with your API keys.
+
+```
+GITHUB_TOKEN: 'GitHub Token Here (required)'
+OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model (optional)'
+```
+
+<details>
+<summary>🔎 More options for different keys (click to unfold)</summary>
+
 ```
 GITHUB_TOKEN: 'GitHub Token Here (required)'
 OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model (optional)'
@@ -57,7 +104,9 @@ AZURE_OPENAI_API_KEY: 'Azure OpenAI API Key Here if using Azure OpenAI Model (op
 AZURE_OPENAI_ENDPOINT: 'Azure OpenAI Endpoint Here if using Azure OpenAI Model (optional)'
 AZURE_OPENAI_DEPLOYMENT: 'Azure OpenAI Deployment Here if using Azure OpenAI Model (optional)'
 AZURE_OPENAI_API_VERSION: 'Azure OpenAI API Version Here if using Azure OpenAI Model (optional)'
-```
+```  
+</details>
+
 See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) tokens.
 
 ## 💽 Usage <a name="usage"></a>
