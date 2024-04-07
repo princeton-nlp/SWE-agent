@@ -112,11 +112,17 @@ def main(
 ):
     process_single_traj(traj_path, config_file, data_path, suffix, forward_args=forward_args)
 
-if __name__ == "__main__":
+
+def get_args(args=None):
     parser = ArgumentParser(description=__doc__)
     parser.add_argument("--traj_path", help="Path to trajectory to replay", default=None)
     parser.add_argument("--config_file", help="Path to template", required=True)
     parser.add_argument("--data_path", help="(Optional) Path to data file containing task instances ref'ed by replay trajectories", default=None)
     parser.add_argument("--suffix", help="(Optional) Suffix argument appended to end of traj path", default=None)
-    args, remaining_args = parser.parse_known_args()
+    args, remaining_args = parser.parse_known_args(args=args)
+    return args, remaining_args
+
+
+if __name__ == "__main__":
+    args, remaining_args = get_args()
     main(**vars(args), forward_args=remaining_args)
