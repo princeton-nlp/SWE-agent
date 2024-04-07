@@ -227,9 +227,8 @@ class OpenAIModel(BaseModel):
             self.api_model = cfg["AZURE_OPENAI_DEPLOYMENT"]
             self.client = AzureOpenAI(api_key=cfg["AZURE_OPENAI_API_KEY"], azure_endpoint=cfg["AZURE_OPENAI_ENDPOINT"], api_version=cfg.get("AZURE_OPENAI_API_VERSION", "2024-02-01"))
         else:
-            self.api_base_url = cfg.get("OPENAI_BASE_URL", None)
-            self.api_model = cfg.get("OPENAI_MODEL_NAME", None)
-            self.client = OpenAI(api_key=cfg["OPENAI_API_KEY"], base_url=self.api_base_url)
+            api_base_url: Optional[str] = cfg.get("OPENAI_API_BASE_URL", None)
+            self.client = OpenAI(api_key=cfg["OPENAI_API_KEY"], base_url=api_base_url)
 
     def history_to_messages(
         self, history: list[dict[str, str]], is_demonstration: bool = False
