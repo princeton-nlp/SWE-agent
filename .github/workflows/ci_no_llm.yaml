@@ -1,0 +1,38 @@
+
+name: Tests (no LLM)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  setup_job:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          architecture: x64
+          activate-environment: swe-agent
+          environment-file: environment.yml
+      - name: Run setup script and create keys.cfg
+        run: |
+          ./setup.sh
+          touch keys.cfg
+        shell: bash
+      - name: Install test dependencies
+        run: |
+            pip install pytest
+      - name: Run pytest
+        run: |
+            pytest
