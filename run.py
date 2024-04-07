@@ -68,15 +68,15 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
     @property
     def run_name(self):
         """Generate a unique name for this run based on the arguments."""
-        model_name = args.agent.model.model_name.replace(":", "-")
-        data_stem = get_data_path_name(args.environment.data_path)
-        config_stem = Path(args.agent.config_file).stem
+        model_name = self.agent.model.model_name.replace(":", "-")
+        data_stem = get_data_path_name(self.environment.data_path)
+        config_stem = Path(self.agent.config_file).stem
 
-        temp = args.agent.model.temperature
-        top_p = args.agent.model.top_p
+        temp = self.agent.model.temperature
+        top_p = self.agent.model.top_p
 
-        per_instance_cost_limit = args.agent.model.per_instance_cost_limit
-        install_env = args.environment.install_environment
+        per_instance_cost_limit = self.agent.model.per_instance_cost_limit
+        install_env = self.environment.install_environment
 
         return (
             f"{model_name}__{data_stem}__{config_stem}__t-{temp:.2f}__p-{top_p:.2f}"
