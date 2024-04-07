@@ -1,3 +1,5 @@
+"""Replay a trajectory"""
+
 import json
 import os
 import subprocess
@@ -8,7 +10,22 @@ from sweagent.environment.utils import is_from_github_url
 from typing import Any, Dict, List
 
 
-def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix: str):
+def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix: str, *, forward_args: List[str]):
+    """
+
+    Args:
+        traj_path (str): _description_
+        config_file (str): _description_
+        data_path (str): _description_
+        suffix (str): _description_
+        forward_args (List[str]): Passed to run.py
+
+    Raises:
+        ValueError: Incorrect paths or other config issue
+
+    Returns:
+        None
+    """
     replay_action_trajs_path = "temp_replay.jsonl"
 
     # Open trajectory file, extract responses as actions
@@ -69,6 +86,7 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
         "--install_environment", "True",
         "--model_name", "replay",
         "--replay_path", replay_action_trajs_path,
+        *forward_args,
     ]
     if is_github:
         # Not sure if this only applies to github urls for data_path
@@ -89,14 +107,16 @@ def main(
     config_file: str,
     data_path: str,
     suffix: str,
+    *,
+    forward_args: List[str],
 ):
-    process_single_traj(traj_path, config_file, data_path, suffix)
+    process_single_traj(traj_path, config_file, data_path, suffix, forward_args=forward_args)
 
 if __name__ == "__main__":
-    parser = ArgumentParser()
+    parser = ArgumentParser(description=__doc__)
     parser.add_argument("--traj_path", help="Path to trajectory to replay", default=None)
     parser.add_argument("--config_file", help="Path to template", required=True)
     parser.add_argument("--data_path", help="(Optional) Path to data file containing task instances ref'ed by replay trajectories", default=None)
     parser.add_argument("--suffix", help="(Optional) Suffix argument appended to end of traj path", default=None)
-    args = parser.parse_args()
-    main(**vars(args))
+    args, remaining_args = parser.parse_known_args()
+    main(**vars(args), forward_args=remaining_args)
