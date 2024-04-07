@@ -12,7 +12,8 @@
 </p>
 
 <div align="center">
-  
+
+[![Tests (no LLM)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/ci_no_llm.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/ci_no_llm.yaml)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/princeton-nlp/SWE-agent/main.svg)](https://results.pre-commit.ci/latest/github/princeton-nlp/SWE-agent/main)
 [![Markdown links](https://github.com/princeton-nlp/SWE-agent/actions/workflows/check-links.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/check-links.yaml)
 
