@@ -32,6 +32,7 @@ setuptools.setup(
         'datasets',
         'docker',
         'gymnasium',
+        'npx',
         'numpy',
         'openai>=1.0',
         'pandas',
