@@ -8,6 +8,7 @@ import yaml
 from argparse import ArgumentParser
 from sweagent.environment.utils import is_from_github_url
 from typing import Any, Dict, List
+import run as runscript
 
 
 def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix: str, *, forward_args: List[str]):
@@ -78,9 +79,7 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
         raise ValueError("--data_path must be a .json or .jsonl")
 
     # Call run.py via subprocess
-    command = [
-        "python",
-        "run.py",
+    run_args = [
         "--config_file", config_file,
         "--data_path", replay_task_instances_path,
         "--install_environment", "True",
@@ -90,10 +89,11 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
     ]
     if is_github:
         # Not sure if this only applies to github urls for data_path
-        command.extend(["--skip_existing", "False"])
+        run_args.extend(["--skip_existing", "False"])
     if suffix is not None:
-        command.extend(["--suffix", suffix])
-    subprocess.run(command)
+        run_args.extend(["--suffix", suffix])
+    script_args = runscript.get_args(run_args)
+    runscript.main(script_args)
 
     os.remove(replay_action_trajs_path)
     try:

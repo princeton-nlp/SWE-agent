@@ -253,7 +253,12 @@ def save_predictions(traj_dir, instance_id, info):
     logger.info(f"Saved predictions to {output_file}")
 
 
-if __name__ == "__main__":
+def get_args(args=None) -> ScriptArguments:
+    """Parse command line arguments and return a ScriptArguments object.
+    
+    Args:
+        args: Optional list of arguments to parse. If not provided, uses sys.argv.
+    """
     defaults = ScriptArguments(
         suffix="",
         environment=EnvironmentArguments(
@@ -288,5 +293,9 @@ if __name__ == "__main__":
 
     yaml.add_representer(str, multiline_representer)
 
-    args = parse(ScriptArguments, default=defaults, add_config_path_arg=False)
+    return parse(ScriptArguments, default=defaults, add_config_path_arg=False, args=args)
+
+
+if __name__ == "__main__":
+    args = get_args()
     main(args)
