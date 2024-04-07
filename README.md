@@ -116,6 +116,8 @@ AZURE_OPENAI_API_KEY: 'Azure OpenAI API Key Here if using Azure OpenAI Model (op
 AZURE_OPENAI_ENDPOINT: 'Azure OpenAI Endpoint Here if using Azure OpenAI Model (optional)'
 AZURE_OPENAI_DEPLOYMENT: 'Azure OpenAI Deployment Here if using Azure OpenAI Model (optional)'
 AZURE_OPENAI_API_VERSION: 'Azure OpenAI API Version Here if using Azure OpenAI Model (optional)'
+OPENAI_BASE_URL: 'LLM base URL here if using Local or alternative api Endpoint (optional)'
+OPENAI_MODEL_NAME: 'LLM model name here if using Local or alternative api Endpoint (optional)'
 ```  
 </details>
 
