@@ -62,6 +62,8 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
     instance_filter: str = ".*"  # Only run instances that completely match this regex
     skip_existing: bool = True  # Skip instances with existing trajectories
     suffix: str = ""
+    # Raise unhandled exceptions during the run (useful for debugging)
+    raise_exceptions: bool = False
 
     @property
     def run_name(self):
@@ -148,6 +150,8 @@ def main(args: ScriptArguments):
         except Exception as e:
             traceback.print_exc()
             logger.warning(f"❌ Failed on {env.record['instance_id']}: {e}")
+            if args.raise_exceptions:
+                raise e
             env.reset_container()
             continue
 
