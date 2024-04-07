@@ -11,6 +11,12 @@
   <strong>Paper [coming April 10th]</strong>
 </p>
 
+<div align="center">
+  
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/princeton-nlp/SWE-agent/main.svg)](https://results.pre-commit.ci/latest/github/princeton-nlp/SWE-agent/main)
+
+</div>
+
 
 ## 👋 Overview <a name="overview"></a>
 SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix bugs and issues in real GitHub repositories.
