@@ -48,6 +48,11 @@ Read our paper for more details [coming soon!].
 
 ### 🏎️ Express Setup + Run
 
+> [!WARNING]
+> Our containers on dockerhub are currently only provided for arm64.
+> If you run on another architecture, please use the instructions for the setup
+> with conda (next section).
+
 You can run the software directly using Docker. 
 
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
