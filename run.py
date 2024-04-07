@@ -3,7 +3,7 @@ import logging
 import os
 import re
 import traceback
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import yaml
 
 from dataclasses import dataclass
@@ -92,7 +92,7 @@ def main(args: ScriptArguments):
     env = SWEEnv(args.environment)
 
     traj_dir = Path("trajectories") / Path(getuser()) / args.run_name
-    os.makedirs(traj_dir, exist_ok=True)
+    traj_dir.mkdir(parents=True, exist_ok=True)
 
     save_arguments(traj_dir, args)
 
@@ -100,6 +100,7 @@ def main(args: ScriptArguments):
         try:
             # Reset environment
             instance_id = env.data[index]["instance_id"]
+            assert isinstance(instance_id, str)  # mypy
             if should_skip(args, traj_dir, instance_id):
                 continue
             logger.info("▶️  Beginning task " + str(index))
@@ -140,6 +141,7 @@ def main(args: ScriptArguments):
                 return_type="info_trajectory",
             )
             save_predictions(traj_dir, instance_id, info)
+            save_patch(traj_dir, instance_id, info)
             if args.actions.open_pr and should_open_pr(args, info, token=env.token):
                 env.open_pr(args.actions, info, trajectory)
 
@@ -156,7 +158,7 @@ def main(args: ScriptArguments):
             continue
 
 
-def should_open_pr(args, info: Dict[str, Any], *, token: str="") -> bool:
+def should_open_pr(args: ScriptArguments, info: Dict[str, Any], *, token: str="") -> bool:
     """Does opening a PR make sense?"""
     if not info.get("submission"):
         logger.info("Not openening PR because submission was made.")
@@ -194,7 +196,7 @@ def should_open_pr(args, info: Dict[str, Any], *, token: str="") -> bool:
     return True
 
 
-def save_arguments(traj_dir, args):
+def save_arguments(traj_dir: Path, args: ScriptArguments) -> None:
     """Save the arguments to a yaml file to the run's trajectory directory."""
     log_path = traj_dir / "args.yaml"
 
@@ -212,7 +214,7 @@ def save_arguments(traj_dir, args):
         args.dump_yaml(f)
 
 
-def should_skip(args, traj_dir, instance_id):
+def should_skip(args: ScriptArguments, traj_dir: Path, instance_id: str) -> bool:
     """Check if we should skip this instance based on the instance filter and skip_existing flag."""
     # Skip instances that don't match the instance filter
     if re.match(args.instance_filter, instance_id) is None:
@@ -240,8 +242,8 @@ def should_skip(args, traj_dir, instance_id):
     return False
 
 
-def save_predictions(traj_dir, instance_id, info):
-    output_file = Path(traj_dir) / "all_preds.jsonl"
+def save_predictions(traj_dir: Path, instance_id: str, info):
+    output_file = traj_dir / "all_preds.jsonl"
     model_patch = info["submission"] if "submission" in info else None
     datum = {
         KEY_MODEL: Path(traj_dir).name,
@@ -251,6 +253,24 @@ def save_predictions(traj_dir, instance_id, info):
     with open(output_file, "a+") as fp:
         print(json.dumps(datum), file=fp, flush=True)
     logger.info(f"Saved predictions to {output_file}")
+
+
+def save_patch(traj_dir: Path, instance_id: str, info) -> Optional[Path]:
+    """Create patch files that can be applied with `git am`.
+    
+    Returns:
+        The path to the patch file, if it was saved. Otherwise, returns None.
+    """
+    patch_output_dir = traj_dir / "patches"
+    patch_output_dir.mkdir(exist_ok=True, parents=True)
+    patch_output_file = patch_output_dir / f"{instance_id}.patch"
+    if not "submission" in info:
+        logger.info("No patch to save.")
+        return
+    model_patch = info["submission"]
+    patch_output_file.write_text(model_patch)
+    logger.info(f"Saved patch to {patch_output_file}")
+    return patch_output_file
 
 
 def get_args(args=None) -> ScriptArguments:
