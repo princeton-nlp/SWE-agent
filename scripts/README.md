@@ -11,7 +11,7 @@ A single `run.py` call will generate a `trajectory/<username>/<experiment name>`
 
 The following is a comprehensive guide to using the provided `run.py` script, detailing available command-line arguments, their purposes, and default values. Flags that you might find helpful have been marked with a 💡.
 
-The code and explanation of the implementations for *configuration based workflows* are explained in [`agent/`](../agent/README.md).
+The code and explanation of the implementations for *configuration based workflows* are explained in [`agent/`](../sweagent/agent/README.md).
 
 Run `python run.py --help` to view this documentation on the command line.
 
