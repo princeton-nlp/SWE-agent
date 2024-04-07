@@ -57,8 +57,11 @@ You can run the software directly using Docker.
 
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
 2. Run `docker pull sweagent/swe-agent:latest`
-3. Add your API tokens to a file `keys.cfg` as explained [below](#-add-your-api-keystokens)
+3. Copy the `example_cfg.key` to `keys.cfg` and add your API tokens as explained [below](#-add-your-api-keystokens). You can do this with the following command:
 
+   ```bash
+   cp example_keys.cfg keys.cfg
+   ```
 Then run
 
 ```bash
@@ -100,7 +103,7 @@ To install the development version:
 
 ### 🔑 Add your API keys/tokens
 
-For the conda setup, create a `keys.cfg` file at the root of this repository and populate it with your API keys.
+For the conda setup, copy the `example_cfg.key` to a new file named `keys.cfg` at the root of this repository and populate it with your actual API keys. You can use the command `cp example_keys.cfg keys.cfg` to copy the file.
 
 ```
 GITHUB_TOKEN: 'GitHub Token Here (required)'
