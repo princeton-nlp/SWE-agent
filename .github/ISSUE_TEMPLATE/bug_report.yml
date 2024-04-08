@@ -17,42 +17,52 @@ body:
     required: true
 - type: textarea
   attributes:
-    label: Steps/Code to Reproduce
+    label: Steps/commands/code to Reproduce
     description: >
       **Please add the full command that you were running as well as how you set up the software (docker, conda, etc.)**
       Please always copy code as text and not as a screenshot.
+      Enclose code/commands/log output in triple backticks.
     placeholder: |
       ```
-      Sample code/commands to reproduce the problem
+      Sample code/commands to reproduce the problem. 
+      Enclose code in triple backticks.
       ```
   validations:
     required: true
 - type: textarea
   attributes:
-    label: Expected Results
+    label: Error message/results
     description: >
       Please paste or describe the expected results.
+      Use triple backticks around log/error messages
     placeholder: >
-      Example: No error is thrown.
+      ```
+      some error message here
+      ```
   validations:
     required: true
-- type: textarea
-  attributes:
-    label: Actual Results
-    description: >
-      Please paste or describe the results you observe instead of the expected results.
-      If you observe an error, please paste the error message including the exception traceback.
-    placeholder: >
-      Please paste or specifically describe the actual output or traceback.
-  validations:
-    required: true
+- type: 
 - type: textarea
   attributes:
     label: System Information
     description: |
-      Please tell us what OS you are using, your Python version, and the `swebench` package version if applicable.
+      Please tell us what OS and processor architecture you are using, your Python version, and the `swebench` package version if applicable.
     placeholder: >
-      e.g. MacOS, Python 3.9, swebench 1.0.1
+      e.g. MacOS M1, Python 3.9, swebench 1.0.1
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      description: We can only help you if you have done the following
+      options:
+        - label: I have copied the full command/code that I ran
+          required: true
+        - label: I have copied the **full** log file/error message that was the result (if applicable)
+          required: true
+        - label: I have enclosed code/log messages in triple backticks ([docs](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax))
+          required: true
 - type: markdown
   attributes:
     value: >
