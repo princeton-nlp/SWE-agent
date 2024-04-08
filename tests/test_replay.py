@@ -1,3 +1,4 @@
+import subprocess
 from run_replay import get_args, main
 import pytest
 
@@ -15,3 +16,12 @@ def test_model_replay():
     ]
     args, remaining_args = get_args(args)
     main(**vars(args), forward_args=remaining_args)
+
+
+def test_run_cli_help():
+    args = [
+        "python",
+        "run_replay.py",
+        "--help",
+    ]
+    subprocess.run(args, check=True)

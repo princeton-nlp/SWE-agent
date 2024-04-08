@@ -392,17 +392,15 @@ def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token:
 def remove_triple_backticks(text: str) -> str:
     return "\n".join(line.removeprefix("```") for line in text.splitlines())
 
+_MARKDOWN_TRAJECTORY_EMOJI_MAPPING = {
+    "observation": "👀",
+    "response": "️🧑‍🚒",
+    "state": "🧠",
+    "thought": "💡",
 
+}
 def format_trajectory_markdown(trajectory: List[Dict[str, str]]):
     """Format a trajectory as a markdown string for use in gh PR description."""
-    emojis = {
-        "action": "🔥",
-        "observation": "👀",
-        "response": "️🧑‍🚒",
-        "state": "🧠",
-        "thought": "💡",
-
-    }
     prefix = [
         "<details>",
         "<summary>Thought process ('trajectory') of SWE-agent (click to expand)</summary>",
@@ -413,7 +411,7 @@ def format_trajectory_markdown(trajectory: List[Dict[str, str]]):
     for i, step in enumerate(trajectory):
         step_strs = []
         for key, value in step.items():
-            emoji = emojis.get(key, "")
+            emoji = _MARKDOWN_TRAJECTORY_EMOJI_MAPPING.get(key, "")
             if emoji:
                 emoji += " "
             step_strs.append(f"**{emoji}{key.capitalize()} ({i})**:")
