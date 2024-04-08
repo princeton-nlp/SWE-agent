@@ -57,9 +57,9 @@ Read our paper for more details [coming soon!].
 ### 🏎️ Express Setup + Run
 
 > [!WARNING]
-> Our containers on dockerhub are currently only provided for arm64.
-> If you run on another architecture, please use the instructions for the setup
-> with conda (next section).
+> Our official containers on dockerhub are currently only provided for `arm64`.
+> If you're on `amd64`, you can try out the experimental support following the instructions in [#107](https://github.com/princeton-nlp/SWE-agent/issues/107)
+> or follow the development version setup below.
 
 You can run the software directly using Docker. 
 
