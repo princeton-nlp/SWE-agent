@@ -84,6 +84,7 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 ```
 
 > [!TIP]
+> * if you use Azure OpenAI, model_name argument should have "azure:" prefix like `azure:gpt-4`
 > * For more information on the different API keys/tokens, see [below](#-add-your-api-keystokens).
 > * If you're using docker on Windows, use `-v //var/run/docker.sock:/var/run/docker.sock`
 >   (double slash) to escape it ([more information](https://stackoverflow.com/a/47229180/)).
