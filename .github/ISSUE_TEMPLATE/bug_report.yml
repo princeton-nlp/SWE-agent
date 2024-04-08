@@ -41,7 +41,6 @@ body:
       ```
   validations:
     required: true
-- type: 
 - type: textarea
   attributes:
     label: System Information
