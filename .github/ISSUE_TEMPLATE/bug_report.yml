@@ -21,7 +21,7 @@ body:
     description: >
       **Please add the full command that you were running as well as how you set up the software (docker, conda, etc.)**
       Please always copy code as text and not as a screenshot.
-      Enclose code/commands/log output in triple backticks.
+      Enclose code/commands/log output in [triple backticks](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#quoting-code).
     placeholder: |
       ```
       Sample code/commands to reproduce the problem. 
@@ -34,10 +34,11 @@ body:
     label: Error message/results
     description: >
       Please paste or describe the expected results.
-      Use triple backticks around log/error messages
+      Use [triple backticks](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#quoting-code) around log/error messages.
     placeholder: >
       ```
-      some error message here
+      some error message here.
+      Enclose it in triple backticks.
       ```
   validations:
     required: true
@@ -60,7 +61,7 @@ body:
         required: true
       - label: I have copied the **full** log file/error message that was the result (if applicable)
         required: true
-      - label: I have enclosed code/log messages in triple backticks ([docs](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax))
+      - label: I have enclosed code/log messages in triple backticks ([docs](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#quoting-code))
         required: true
 - type: markdown
   attributes:
