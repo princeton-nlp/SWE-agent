@@ -48,8 +48,8 @@ body:
       Please tell us what OS and processor architecture you are using, your Python version, and the `swebench` package version if applicable.
     placeholder: >
       e.g. MacOS M1, Python 3.9, swebench 1.0.1
-    validations:
-      required: true
+  validations:
+    required: true
 - type: checkboxes
   id: checks
   attributes:
