@@ -50,18 +50,18 @@ body:
       e.g. MacOS M1, Python 3.9, swebench 1.0.1
     validations:
       required: true
-  - type: checkboxes
-    id: checks
-    attributes:
-      label: Checklist
-      description: We can only help you if you have done the following
-      options:
-        - label: I have copied the full command/code that I ran
-          required: true
-        - label: I have copied the **full** log file/error message that was the result (if applicable)
-          required: true
-        - label: I have enclosed code/log messages in triple backticks ([docs](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax))
-          required: true
+- type: checkboxes
+  id: checks
+  attributes:
+    label: Checklist
+    description: We can only help you if you have done the following
+    options:
+      - label: I have copied the full command/code that I ran
+        required: true
+      - label: I have copied the **full** log file/error message that was the result (if applicable)
+        required: true
+      - label: I have enclosed code/log messages in triple backticks ([docs](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax))
+        required: true
 - type: markdown
   attributes:
     value: >
