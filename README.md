@@ -48,15 +48,10 @@ Read our paper for more details [coming soon!].
 
 ### 🏎️ Express Setup + Run
 
-> [!WARNING]
-> Our official containers on dockerhub are currently only provided for `arm64`.
-> If you're on `amd64`, you can try out the experimental support following the instructions in [#107](https://github.com/princeton-nlp/SWE-agent/issues/107)
-> or follow the development version setup below.
-
 You can run the software directly using Docker. 
 
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
-2. Run `docker pull sweagent/swe-agent:latest`
+2. Run `docker pull --platform=linux/arm64 sweagent/swe-agent:latest` (replace `arm64` with `amd64` if you're running on x86)
 3. Add your API tokens to a file `keys.cfg` as explained [below](#-add-your-api-keystokens)
 
 Then run
@@ -66,6 +61,8 @@ Then run
 docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
   # replace /xxxx/keys.cfg with the paths to your keys
   -v /xxxx/keys.cfg:/app/keys.cfg \
+  # replace with your architecture, either arm64 or amd64
+  --platform=linux/arm64 \
   sweagent/swe-agent-run:latest \
   python run.py --image_name=sweagent/swe-agent:latest \
   # the rest of the command as shown in the quickstart/benchmarking section,
