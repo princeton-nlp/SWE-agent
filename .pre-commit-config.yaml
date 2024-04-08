@@ -3,7 +3,7 @@ ci:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: "v4.5.0"
+    rev: "v4.6.0"
     hooks:
       - id: check-added-large-files
       - id: check-case-conflict
@@ -14,7 +14,7 @@ repos:
       - id: check-ast
 
   - repo: https://github.com/pycqa/flake8
-    rev: '4.0.1'  # Use the latest flake8 version or the one you prefer
+    rev: '7.0.0'  # Use the latest flake8 version or the one you prefer
     hooks:
       - id: flake8
         args: ['--select=F821,F822,F831,E111,E112,E113,E999,E902']
