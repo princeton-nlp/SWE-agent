@@ -8,7 +8,7 @@
 <p align="center">
   <a href="https://swe-agent.com"><strong>Website & Demo</strong></a>&nbsp; | &nbsp;
   <a href="https://discord.gg/AVEFbBn2rH"><strong>Discord</strong></a>&nbsp; | &nbsp;
-  <strong>Paper [coming April 10th]</strong>
+  <strong>Paper [coming April 2024]</strong>
 </p>
 
 
@@ -48,17 +48,24 @@ Read our paper for more details [coming soon!].
 
 ### 🏎️ Express Setup + Run
 
+> [!WARNING]
+> Our official containers on dockerhub are currently only provided for `arm64`.
+> If you're on `amd64`, you can try out the experimental support following the instructions in [#107](https://github.com/princeton-nlp/SWE-agent/issues/107)
+> or follow the development version setup below.
+
 You can run the software directly using Docker. 
 
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
 2. Run `docker pull sweagent/swe-agent:latest`
+3. Add your API tokens to a file `keys.cfg` as explained [below](#-add-your-api-keystokens)
 
 Then run
 
 ```bash
+# Please remove all comments (lines starting with '#') before running this command!
 docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
-  -e GITHUB_TOKEN="your github token here" \
-  -e OPENAI_API_KEY="your openai API key if you're using GPT" \
+  # replace /xxxx/keys.cfg with the paths to your keys
+  -v /xxxx/keys.cfg:/app/keys.cfg \
   sweagent/swe-agent-run:latest \
   python run.py --image_name=sweagent/swe-agent:latest \
   # the rest of the command as shown in the quickstart/benchmarking section,
@@ -72,7 +79,6 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 > * For more information on the different API keys/tokens, see [below](#-add-your-api-keystokens).
 > * If you're using docker on Windows, use `-v //var/run/docker.sock:/var/run/docker.sock`
 >   (double slash) to escape it ([more information](https://stackoverflow.com/a/47229180/)).
-> * For a complete command example, expand the fold-out directly below this box.
 
 ### 🐍 Setup with conda (development version) 
 
@@ -83,7 +89,7 @@ To install the development version:
 3. [Install Miniconda](https://docs.anaconda.com/free/miniconda/miniconda-install/), then create the `swe-agent` environment with `conda env create -f environment.yml`
 4. Activate using `conda activate swe-agent`.
 5. Run `./setup.sh` to create the `swe-agent` docker image.
-6. Create a `keys.cfg` file at the root of this repository (see below)
+6. Create a `keys.cfg` file at the root of this repository ([see below](#-add-your-api-keystokens))
 
 > [!WARNING]
 > Expect some issues with Windows (we're working on them).
@@ -116,6 +122,7 @@ AZURE_OPENAI_API_KEY: 'Azure OpenAI API Key Here if using Azure OpenAI Model (op
 AZURE_OPENAI_ENDPOINT: 'Azure OpenAI Endpoint Here if using Azure OpenAI Model (optional)'
 AZURE_OPENAI_DEPLOYMENT: 'Azure OpenAI Deployment Here if using Azure OpenAI Model (optional)'
 AZURE_OPENAI_API_VERSION: 'Azure OpenAI API Version Here if using Azure OpenAI Model (optional)'
+OPENAI_API_BASE_URL: 'LLM base URL here if using Local or alternative api Endpoint (optional)'
 ```  
 </details>
 
@@ -186,3 +193,11 @@ Contact person: [John Yang](https://john-b-yang.github.io/) and [Carlos E. Jimen
 
 ## 🪪 License <a name="license"></a>
 MIT. Check `LICENSE`.
+
+<div align="center">
+
+[![Tests (no LLM)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/ci_no_llm.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/ci_no_llm.yaml)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/princeton-nlp/SWE-agent/main.svg)](https://results.pre-commit.ci/latest/github/princeton-nlp/SWE-agent/main)
+[![Markdown links](https://github.com/princeton-nlp/SWE-agent/actions/workflows/check-links.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/check-links.yaml)
+
+</div>

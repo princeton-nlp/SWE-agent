@@ -679,5 +679,4 @@ class Agent:
             return info
         if return_type == "info_trajectory":
             return info, trajectory
-        if return_type != "info":
-            return trajectory[-1][return_type]
+        return trajectory[-1][return_type]
