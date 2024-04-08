@@ -32,7 +32,14 @@ jobs:
         shell: bash
       - name: Install test dependencies
         run: |
-            pip install pytest
+            pip install pytest pytest-cov
       - name: Run pytest
         run: |
-            pytest
+            pytest --cov
+      - name: Explicitly convert coverage to xml
+        run: coverage xml
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: princeton-nlp/SWE-agent
