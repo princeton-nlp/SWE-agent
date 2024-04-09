@@ -93,7 +93,7 @@ To install the development version:
 > In the meantime, simply use Docker (see above).
 > If you want the latest version, you can also build your own `swe-agent-run`
 > container with the `Dockerfile` at the root of this repository by running
-> `docker built -t sweagent/swe-agent-run:latest .`
+> `docker build -t sweagent/swe-agent-run:latest .`
 
 ### 🔑 Add your API keys/tokens
 
