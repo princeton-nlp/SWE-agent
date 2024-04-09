@@ -147,6 +147,19 @@ python run.py --model_name gpt4 \
 * See the [`sweagent/environment/`](sweagent/environment/) folder for details about the `SWEEnv` environment (interface + implementation).
 * See the [`trajectories/`](trajectories) folder for details about the output of `run.py`.
 
+<details>
+<summary> Ollama Support</summary>
+
+Models served with an ollama server can be used by specifying `--model` with `ollama:model_name` and `--host_url` to point to the url used to serve ollama (`http://localhost:11434` by default).
+
+```bash
+python run.py --model_name ollama:deepseek-coder:6.7b-instruct \
+  --host_url http://localhost:11434 \
+  --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
+  --config_file config/default_from_url.yaml
+```
+</details>
+
 ## 💽 Benchmarking <a name="benchmarking"></a>
 
 There are two steps to the SWE-agent pipeline. First SWE-agent takes an input GitHub issue and returns a pull request that attempts to fix it. We call that step *inference*. The second step (currently, only available for issues in the SWE-bench benchmark) is to *evaluate* the pull request to verify that it has indeed fixed the issue. 
