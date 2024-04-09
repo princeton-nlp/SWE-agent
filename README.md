@@ -118,7 +118,7 @@ AZURE_OPENAI_API_KEY: 'Azure OpenAI API Key Here if using Azure OpenAI Model (op
 AZURE_OPENAI_ENDPOINT: 'Azure OpenAI Endpoint Here if using Azure OpenAI Model (optional)'
 AZURE_OPENAI_DEPLOYMENT: 'Azure OpenAI Deployment Here if using Azure OpenAI Model (optional)'
 AZURE_OPENAI_API_VERSION: 'Azure OpenAI API Version Here if using Azure OpenAI Model (optional)'
-OPENAI_API_BASE_URL: 'LLM base URL here if using Local or alternative api Endpoint (optional)'
+OPENAI_API_BASE_URL: 'LM base URL here if using Local or alternative api Endpoint (optional)'
 ```  
 </details>
 
@@ -192,7 +192,7 @@ MIT. Check `LICENSE`.
 
 <div align="center">
 
-[![Tests (no LLM)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/ci_no_llm.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/ci_no_llm.yaml)
+[![Tests (no LM)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/ci_no_llm.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/ci_no_llm.yaml)
 [![codecov](https://codecov.io/gh/princeton-nlp/SWE-agent/graph/badge.svg?token=18XAVDK365)](https://codecov.io/gh/princeton-nlp/SWE-agent)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/princeton-nlp/SWE-agent/main.svg)](https://results.pre-commit.ci/latest/github/princeton-nlp/SWE-agent/main)
 [![Markdown links](https://github.com/princeton-nlp/SWE-agent/actions/workflows/check-links.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/check-links.yaml)
