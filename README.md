@@ -149,10 +149,11 @@ python run.py --model_name gpt4 \
 
 ## Ollama Support
 
-Using `--model` with `ollama:[model_name]` enables the use of local LLMs 
+Models served with an ollama server can be used by specifying `--model` with `ollama:model_name` and `--host_url` to point to the url used to serve ollama (`http://localhost:11434` by default).
 
 ```bash
 python run.py --model_name ollama:deepseek-coder:6.7b-instruct \
+  --host_url http://localhost:11434 \
   --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
   --config_file config/default_from_url.yaml
 ```
