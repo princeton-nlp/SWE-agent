@@ -150,7 +150,7 @@ python run.py --model_name gpt4 \
 <details>
 <summary> Ollama Support</summary>
 
-Models served with an ollama server can be used by specifying `--model` with `ollama:model_name` and `--host_url` to point to the url used to serve ollama (`http://localhost:11434` by default).
+Models served with an ollama server can be used by specifying `--model` with `ollama:model_name` and `--host_url` to point to the url used to serve ollama (`http://localhost:11434` by default). See more details about using ollama [here](https://github.com/ollama/ollama/tree/main/docs).
 
 ```bash
 python run.py --model_name ollama:deepseek-coder:6.7b-instruct \
