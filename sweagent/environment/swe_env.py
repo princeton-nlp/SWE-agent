@@ -63,6 +63,7 @@ class EnvironmentArguments(FrozenSerializable):
     # Custom environment setup. Currently only used when data_path is a GitHub URL.
     # This needs to be either a string pointing to a yaml file (with yaml, yml file extension)
     # or a shell script (with sh extension).
+    # See https://github.com/princeton-nlp/SWE-agent/pull/153 for more information
     environment_setup: Optional[str] = None
 
 
