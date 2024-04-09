@@ -679,8 +679,14 @@ class SWEEnv(gym.Env):
             raise RuntimeError("Failed to interrupt container")
 
 
-    def open_pr(self, action_config, info, trajectory):
-        """Create PR to repository"""
+    def open_pr(self, *, trajectory, push_gh_repo_url: Optional[str] = None, _dry_run: bool=False):
+        """Create PR to repository
+        
+        Args:
+            trajectory: Trajectory of actions taken by the agent
+            push_gh_repo_url: URL of the repository to push the PR branch to
+            _dry_run: Whether to actually push anything or just simulate it
+        """
         logger.info("Opening PR")
         # todo: have better way of handling this
         # Adding random string suffix to avoid name conflicts if we had a previously failed run
@@ -689,7 +695,7 @@ class SWEEnv(gym.Env):
         branch_name = f"swe-agent-fix-#{issue.number}-" + str(random.random())[2:10]
 
         self.communicate_with_handling(
-            input=f"rm model.patch",
+            input=f"rm -f model.patch",
             error_msg="Failed to remove model patch",
             timeout_duration=10,
         )
@@ -703,19 +709,20 @@ class SWEEnv(gym.Env):
             error_msg="Failed to add commits",
             timeout_duration=10,
         )
+        dry_run_flag = "--allow-empty" if _dry_run else ""
         self.communicate_with_handling(
-            input=f"git commit -m 'Fix: {issue.title}' -m 'Closes #{issue.number}' ",
+            input=f"git commit -m 'Fix: {issue.title}' -m 'Closes #{issue.number}' {dry_run_flag}",
             error_msg="Failed to commit changes",
             timeout_duration=10,
         )
         # If users want to push to a fork, we add a new remote and push to that
         # otherwise, we push to 'origin' which has already been set up
         remote = "origin"
-        if not action_config.push_gh_repo_url:
+        if not push_gh_repo_url:
             owner, repo, _ = parse_gh_issue_url(issue_url)
         else:
-            owner, repo = parse_gh_repo_url(action_config.push_gh_repo_url)
-        if action_config.push_gh_repo_url:
+            owner, repo = parse_gh_repo_url(push_gh_repo_url)
+        if push_gh_repo_url:
             fork_url = f"https://{self.token}@github.com/{owner}/{repo}.git"
             self.communicate_with_handling(
                 input=f"git remote add fork {fork_url}",
@@ -723,8 +730,9 @@ class SWEEnv(gym.Env):
                 timeout_duration=10,
             )
             remote = "fork"
+        dry_run_prefix = "echo " if _dry_run else ""
         self.communicate_with_handling(
-            input=f"git push {remote} {branch_name}",
+            input=f"{dry_run_prefix} git push {remote} {branch_name}",
             error_msg=(
                 "Failed to push branch to remote. Please check your token and permissions. "
                 "You might want to push to a fork with the push_gh_repo_url option."
@@ -739,17 +747,18 @@ class SWEEnv(gym.Env):
         )
         body += "\n\n" + format_trajectory_markdown(trajectory)
         api = GhApi(token=self.token)
-        pr_info = api.pulls.create(
-            owner=owner,
-            repo=repo,
-            title=f"SWE-agent[bot] PR to fix: {issue.title}",
-            head=branch_name,
-            base="main",
-            body=body,
-            draft=True,
-        )
-        logger.info(
-            f"🎉 PR created as a draft at {pr_info.html_url}. Please review it carefully, push "
-            "any required changes onto the branch and then click "
-            "'Ready for Review' to bring it to the attention of the maintainers."
-        )
+        if not _dry_run:
+            pr_info = api.pulls.create(
+                owner=owner,
+                repo=repo,
+                title=f"SWE-agent[bot] PR to fix: {issue.title}",
+                head=branch_name,
+                base="main",
+                body=body,
+                draft=True,
+            )
+            logger.info(
+                f"🎉 PR created as a draft at {pr_info.html_url}. Please review it carefully, push "
+                "any required changes onto the branch and then click "
+                "'Ready for Review' to bring it to the attention of the maintainers."
+            )

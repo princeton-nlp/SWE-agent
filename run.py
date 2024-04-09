@@ -143,7 +143,7 @@ def main(args: ScriptArguments):
             save_predictions(traj_dir, instance_id, info)
             save_patch(traj_dir, instance_id, info)
             if args.actions.open_pr and should_open_pr(args, info, token=env.token):
-                env.open_pr(args.actions, info, trajectory)
+                env.open_pr(trajectory=trajectory, push_gh_repo_url=args.actions.push_gh_repo_url)
 
         except KeyboardInterrupt:
             logger.info("Exiting InterCode environment...")
