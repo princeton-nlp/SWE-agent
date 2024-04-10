@@ -303,7 +303,7 @@ class SWEEnv(gym.Env):
             logger.error(f"Broken pipe error: {e}\nRESTARTING PROCESS.")
             self.reset_container()
             return observation, 0, True, info
-        except Exception as e:
+        except Exception:
             observation += "\nEXECUTION FAILED OR COMMAND MALFORMED"
 
         # Record submission and end episode if `submit` keyword found

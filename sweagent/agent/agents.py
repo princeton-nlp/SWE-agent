@@ -496,7 +496,7 @@ class Agent:
                 )
             except KeyboardInterrupt:
                 raise
-            except FormatError as e:
+            except FormatError:
                 format_fails += 1
                 output = self.retry_after_format_fail(output)
                 continue
@@ -520,10 +520,10 @@ class Agent:
                 "exit_error",
                 f"exit due to runtime error: {e}",
             )
-        except ContextWindowExceededError as e:
+        except ContextWindowExceededError:
             logger.warning(f"Context window exceeded")
             return "Exit due to context window", "exit_context", "Exit due to context window"
-        except CostLimitExceededError as e:
+        except CostLimitExceededError:
             logger.warning(f"Cost limit exceeded")
             return "Exit due to cost limit", "exit_cost", "Exit due to cost limit"
         except RetryError as e:

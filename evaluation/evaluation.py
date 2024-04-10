@@ -71,7 +71,6 @@ def main(predictions_path, log_dir, swe_bench_tasks, testbed, skip_existing, tim
         print("✅ Finished evaluation")
     except Exception as e:
         print(f"❌ Evaluation failed: {e}\n{traceback.format_exc()}")
-        pass
     print("==================================")
     os.remove(pred_path_temp)
 
