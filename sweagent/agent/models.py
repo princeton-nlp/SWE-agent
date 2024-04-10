@@ -8,7 +8,7 @@ from collections import defaultdict
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 from dataclasses import dataclass, fields
 from openai import BadRequestError, OpenAI, AzureOpenAI
-from simple_parsing.helpers import FrozenSerializable, Serializable
+from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
 from sweagent.agent.commands import Command
 from tenacity import (
     retry,
