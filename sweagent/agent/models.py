@@ -110,7 +110,7 @@ class BaseModel:
         else:
             self.stats = other
 
-    def update_stats(self, input_tokens, output_tokens):
+    def update_stats(self, input_tokens: int, output_tokens: int) -> float:
         """
         Calculates the cost of a response from the openai API.
 
@@ -223,6 +223,8 @@ class OpenAIModel(BaseModel):
 
         # Set OpenAI key
         cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
+        print(">>>>>>>>", cfg)
+        print(">>>>>>", OpenAI)
         if self.args.model_name.startswith("azure"):
             self.api_model = cfg["AZURE_OPENAI_DEPLOYMENT"]
             self.client = AzureOpenAI(api_key=cfg["AZURE_OPENAI_API_KEY"], azure_endpoint=cfg["AZURE_OPENAI_ENDPOINT"], api_version=cfg.get("AZURE_OPENAI_API_VERSION", "2024-02-01"))
