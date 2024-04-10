@@ -11,7 +11,8 @@ from getpass import getuser
 from pathlib import Path
 from rich.logging import RichHandler
 from simple_parsing import parse
-from simple_parsing.helpers import FrozenSerializable, FlattenedAccess
+from simple_parsing.helpers.serialization.serializable import FrozenSerializable
+from simple_parsing.helpers.flatten import FlattenedAccess
 from sweagent import (
     Agent,
     AgentArguments,
@@ -189,8 +190,8 @@ def should_open_pr(args: ScriptArguments, info: Dict[str, Any], *, token: str=""
             return False
         else:
             logger.warning(
-                f"Proceeding with PR creation even though there are already commits "
-                "({commit_url_strs}) associated with the issue. Please only do this for your own repositories "
+                "Proceeding with PR creation even though there are already commits "
+                f"({commit_url_strs}) associated with the issue. Please only do this for your own repositories "
                 "or after verifying that the existing commits do not fix the issue."
             )
     return True

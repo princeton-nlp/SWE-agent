@@ -16,7 +16,7 @@ from ghapi.all import GhApi
 from dataclasses import dataclass
 from git import Repo
 from rich.logging import RichHandler
-from simple_parsing.helpers import FrozenSerializable
+from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 import yaml
 from sweagent.environment.utils import (
     copy_file_to_container,

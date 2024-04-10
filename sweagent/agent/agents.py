@@ -4,7 +4,9 @@ import logging
 
 from dataclasses import dataclass
 from pathlib import Path
-from simple_parsing.helpers import field, FrozenSerializable, FlattenedAccess
+from simple_parsing.helpers.fields import field
+from simple_parsing.helpers.serialization.serializable import FrozenSerializable
+from simple_parsing.helpers.flatten import FlattenedAccess
 from sweagent.agent.commands import Command, ParseCommand
 from sweagent.agent.history_processors import HistoryProcessor
 from sweagent.agent.models import (
