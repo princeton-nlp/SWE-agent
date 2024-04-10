@@ -1,3 +1,4 @@
+from pathlib import Path
 import random
 import config
 import datetime
@@ -16,6 +17,7 @@ from dataclasses import dataclass
 from git import Repo
 from rich.logging import RichHandler
 from simple_parsing.helpers import FrozenSerializable
+import yaml
 from sweagent.environment.utils import (
     copy_file_to_container,
     format_trajectory_markdown,
@@ -58,6 +60,11 @@ class EnvironmentArguments(FrozenSerializable):
     timeout: int = 35
     verbose: bool = False
     no_mirror: bool = False
+    # Custom environment setup. Currently only used when data_path is a GitHub URL.
+    # This needs to be either a string pointing to a yaml file (with yaml, yml file extension)
+    # or a shell script (with sh extension).
+    # See https://github.com/princeton-nlp/SWE-agent/pull/153 for more information
+    environment_setup: Optional[str] = None
 
 
 class SWEEnv(gym.Env):
@@ -205,13 +212,7 @@ class SWEEnv(gym.Env):
 
         # Call install environment helper function if specified
         if self.install_environment:
-            if self.is_from_github_url:
-                logger.warning((
-                    "install_environment is set to True, but the data path is a GitHub URL. "
-                    "Skipping conda environment installation."
-                    ))
-            else:
-                self.install_env()
+            self.install_env()
         # Install mypy for linting purposes
         self.communicate_with_handling(
             f"pip install flake8",
@@ -524,19 +525,71 @@ class SWEEnv(gym.Env):
             return None
         return match.group(1)
 
+    def run_shell_script(self, script_path: Path, *, location: str) -> None:
+        """Run custom script supplied by user at `script_path`
+
+        Args:
+            location: location of script file 'host' or 'container'
+        """
+        if location == "host":
+            return self._run_shell_script_host(script_path)
+        elif location == "container":
+            raise NotImplementedError
+        raise ValueError(f"Invalid 'location': {location}")
+    
+    def _run_shell_script_host(self, script_path: Path) -> None:
+        """Run shell script file (located on host) in container""" 
+        if not script_path.is_file():
+            raise FileNotFoundError(f"Script not found at {script_path}")
+        shell_commands = Path(script_path).read_text().splitlines()
+        for i, cmd in enumerate(shell_commands):
+            self.communicate_with_handling(
+                cmd,
+                error_msg=f"Failed to execute line {i}.",
+                timeout_duration=LONG_TIMEOUT,
+            )
+
     def install_env(self) -> None:
         """
         Creates conda environment and installs third party dependencies to allow code execution
         """
+        if self.is_from_github_url and self.args.environment_setup is None:
+            logger.warning((
+                "install_environment is set to True, but the data path is a GitHub URL "
+                "without an environment config file (environment_config key/flag). "
+                "Skipping conda environment installation."
+                ))
+            return
         repo_name = self.record["repo"].replace("/", "__")
+        if self.args.environment_setup is not None:
+            assert isinstance(self.args.environment_setup, (str, os.PathLike))
+            if Path(self.args.environment_setup).suffix in [".yml", ".yaml"]:
+                try:
+                    install_configs = yaml.safe_load(Path(self.args.environment_setup).read_text())
+                except Exception as e:
+                    msg = "Environment config file needs to be a yaml file"
+                    raise ValueError(msg) from e
+            elif Path(self.args.environment_setup).suffix == ".sh":
+                self.run_shell_script(Path(self.args.environment_setup), location="host")
+                return
+            else:
+                raise ValueError("Environment config file needs to be a yaml file or shell script")
+        else:
+            try:
+                install_configs = MAP_VERSION_TO_INSTALL[self.record["repo"]][
+                    str(self.record["version"])
+                ]
+            except KeyError as e:
+                msg = (
+                    "Tried to look up install configs in swe-bench, but failed. "
+                    "You can set a custom environment config with the environment_config key/flag."
+                )
+                raise ValueError(msg) from e
         # Create environment if does not exist yet
         env_name = f"{repo_name}__{self.record['version']}"
         env_check = self.communicate(
             f"conda env list | grep {env_name}", timeout_duration=LONG_TIMEOUT
         )
-        install_configs = MAP_VERSION_TO_INSTALL[self.record["repo"]][
-            str(self.record["version"])
-        ]
         if env_check.strip() == "":
             self.logger.info(f"{env_name} conda env not found, creating...")
             packages = (
