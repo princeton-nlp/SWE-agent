@@ -204,6 +204,7 @@ class ParseCommandDetailed(ParseCommandBash):
     #     arg1 (type) [required]: "description"
     #     arg2 (type) [optional]: "description"
     """
+    @staticmethod
     def get_signature(cmd):
         signature = cmd.name
         if "arguments" in cmd.__dict__ and cmd.arguments is not None:
