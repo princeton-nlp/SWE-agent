@@ -271,7 +271,7 @@ def get_container(ctr_name: str, image_name: str, persistent: bool = False) -> T
     try:
         client = docker.from_env()
     except docker.errors.DockerException as e:
-        if "connection aborted" in str(e):
+        if "connection aborted" in str(e).lower() or "connection refused" in str(e).lower():
             msg = (
                 "Probably the Docker daemon is not running. Please start the Docker daemon and try again. "
                 "You might need to allow the use of the docker socket "
