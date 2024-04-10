@@ -5,7 +5,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
-from simple_parsing.helpers import FrozenSerializable
+from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 
 
 @dataclass(frozen=True)

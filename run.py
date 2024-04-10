@@ -11,7 +11,8 @@ from getpass import getuser
 from pathlib import Path
 from rich.logging import RichHandler
 from simple_parsing import parse
-from simple_parsing.helpers import FrozenSerializable, FlattenedAccess
+from simple_parsing.helpers.serialization.serializable import FrozenSerializable
+from simple_parsing.helpers.flatten import FlattenedAccess
 from sweagent import (
     Agent,
     AgentArguments,
