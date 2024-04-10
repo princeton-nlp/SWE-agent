@@ -3,7 +3,6 @@ import json
 import os
 import traceback
 
-from datasets import load_dataset, load_from_disk
 from collections import Counter
 from rich import print
 from swebench import (
