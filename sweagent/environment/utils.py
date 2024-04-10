@@ -17,7 +17,7 @@ from ghapi.all import GhApi
 from io import BytesIO
 from pathlib import Path
 from subprocess import PIPE, STDOUT
-from typing import Any, List, Set, Tuple, Dict
+from typing import List, Set, Tuple, Dict
 
 LOGGER_NAME = "intercode"
 START_UP_DELAY = 5
