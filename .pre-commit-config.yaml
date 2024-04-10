@@ -13,8 +13,11 @@ repos:
       - id: detect-private-key
       - id: check-ast
 
-  - repo: https://github.com/pycqa/flake8
-    rev: '7.0.0'  # Use the latest flake8 version or the one you prefer
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.5
     hooks:
-      - id: flake8
-        args: ['--select=F821,F822,F831,E111,E112,E113,E999,E902']
+      # Run the linter.
+      - id: ruff
+      # Run the formatter.
+      # - id: ruff-format
+

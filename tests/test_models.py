@@ -1,6 +1,5 @@
-from tkinter.filedialog import Open
 from unittest.mock import MagicMock, Mock, patch
-from sweagent.agent.models import OpenAIModel, ModelArguments, AnthropicModel
+from sweagent.agent.models import OpenAIModel, ModelArguments
 import pytest
 
 

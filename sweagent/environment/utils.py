@@ -17,7 +17,7 @@ from ghapi.all import GhApi
 from io import BytesIO
 from pathlib import Path
 from subprocess import PIPE, STDOUT
-from typing import Any, List, Set, Tuple, Dict
+from typing import List, Set, Tuple, Dict
 
 LOGGER_NAME = "intercode"
 START_UP_DELAY = 5
@@ -65,7 +65,7 @@ def copy_file_to_container(container, contents, container_path):
             os.fsync(temp_file.fileno())
 
         # Create a TAR archive in memory containing the temporary file
-        with tempfile.NamedTemporaryFile() as temp_tar:
+        with tempfile.NamedTemporaryFile():
             with open(temp_file_name, 'rb') as temp_file:
                 # Prepare the TAR archive
                 with BytesIO() as tar_stream:

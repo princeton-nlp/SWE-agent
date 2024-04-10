@@ -266,8 +266,8 @@ class OpenAIModel(BaseModel):
                 temperature=self.args.temperature,
                 top_p=self.args.top_p,
             )
-        except BadRequestError as e:
-            raise CostLimitExceededError(f"Context window ({self.model_metadata['max_context']} tokens) exceeded") from e
+        except BadRequestError:
+            raise CostLimitExceededError(f"Context window ({self.model_metadata['max_context']} tokens) exceeded")
         # Calculate + update costs, return response
         input_tokens = response.usage.prompt_tokens
         output_tokens = response.usage.completion_tokens
