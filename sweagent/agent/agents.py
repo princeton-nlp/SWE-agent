@@ -5,7 +5,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 from simple_parsing.helpers import field, FrozenSerializable, FlattenedAccess
-from sweagent.agent.commands import Command, ParseCommand
+from sweagent.agent.commands import Command, ParseCommand, ParseCommandBash
 from sweagent.agent.history_processors import HistoryProcessor
 from sweagent.agent.models import (
     APIStats,
@@ -14,11 +14,11 @@ from sweagent.agent.models import (
     ModelArguments,
     get_model,
 )
-from sweagent.agent.parsing import ParseFunction, FormatError
+from sweagent.agent.parsing import ParseFunction, FormatError, ThoughtActionParser
 from sweagent.environment.utils import LOGGER_NAME
 from sweagent.environment.swe_env import SWEEnv
 from tenacity import RetryError
-from typing import Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -27,9 +27,8 @@ logger = logging.getLogger(LOGGER_NAME)
 class Subroutine(FrozenSerializable):
     name: str
     agent_file: str
-    return_type: str = (
-        None  # one of "action", "observation", "response", "state", "thought"
-    )
+    # one of "action", "observation", "response", "state", "thought"
+    return_type: str = None  # type: ignore
     init_observation: Optional[str] = None
     end_name: Optional[str] = None
     signature: Optional[str] = None
@@ -42,30 +41,31 @@ class Subroutine(FrozenSerializable):
 class AgentConfig(FrozenSerializable):
     system_template: str
     instance_template: str
-    next_step_template: Optional[str] = None  # defaults to instance_template
-    next_step_no_output_template: Optional[str] = None  # defaults to next_step_template
+    # defaults to instance_template
+    next_step_template: str = None  # type: ignore
+    # defaults to next_step_template
+    next_step_no_output_template: str = None  # type: ignore
     strategy_template: Optional[str] = None
     demonstration_template: Optional[str] = None
     demonstrations: list[str] = field(default_factory=list)
     put_demos_in_history: bool = (
         False  # if True, add demonstration to history instead of as a single message
     )
-    format_error_template: str = (
-        None  # defaults to format_error_template in ParseFunction
-    )
+    # defaults to format_error_template in ParseFunction
+    format_error_template: str = None  # type: ignore
     command_files: list[str] = field(default_factory=list)
     env_variables: dict[str, str] = field(default_factory=dict)
     util_functions: list[str] = field(default_factory=list)
     submit_command: str = "submit"
-    parse_function: str = "ThoughtActionParser"
-    parse_command: str = "ParseCommandBash"
-    history_processor: str = "DefaultHistoryProcessor"
+    parse_function: ParseFunction = ThoughtActionParser()
+    parse_command: ParseCommand = ParseCommandBash()
+    history_processor: HistoryProcessor = "DefaultHistoryProcessor"  # type: ignore
     history_processor_args: dict[str, Any] = field(default_factory=dict)
-    command_docs: str = None
+    command_docs: Optional[str] = None
     blocklist_error_template: str = (
         "Interactive operation '{name}' is not supported by this environment"
     )
-    blocklist: Tuple[str] = (
+    blocklist: Tuple[str, ...] = (
         "vim",
         "vi",
         "emacs",
@@ -73,7 +73,7 @@ class AgentConfig(FrozenSerializable):
         "nohup",
         "git",
     )
-    blocklist_standalone: Tuple[str] = (
+    blocklist_standalone: Tuple[str, ...] = (
         "python",
         "python3",
         "ipython",
@@ -179,11 +179,11 @@ class AgentConfig(FrozenSerializable):
 
 @dataclass(frozen=True)
 class AgentArguments(FlattenedAccess, FrozenSerializable):
-    model: ModelArguments = None
+    model: ModelArguments
 
     # Policy can only be set via config yaml file from command line
-    config_file: Optional[Path] = None
-    config: Optional[AgentConfig] = field(default=None, cmd=False)
+    config_file: Optional[Path]
+    config: AgentConfig = field(default=None, cmd=False)  # type: ignore
 
     def __post_init__(self):
         if self.config is None and self.config_file is not None:
@@ -218,7 +218,7 @@ class Agent:
         }
         self.instance_args = None
         self._parse_command_patterns()
-        self.history = []
+        self.history: List[Dict[str, Any]] = []
         self.last_container_id = None
 
     def setup(self, instance_args, init_model_stats=None) -> None:
