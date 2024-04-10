@@ -29,9 +29,8 @@ logger = logging.getLogger(LOGGER_NAME)
 class Subroutine(FrozenSerializable):
     name: str
     agent_file: str
-    return_type: str = (
-        None  # one of "action", "observation", "response", "state", "thought"
-    )
+    # one of "action", "observation", "response", "state", "thought"
+    return_type: str = None  # type: ignore
     init_observation: Optional[str] = None
     end_name: Optional[str] = None
     signature: Optional[str] = None
@@ -52,9 +51,8 @@ class AgentConfig(FrozenSerializable):
     put_demos_in_history: bool = (
         False  # if True, add demonstration to history instead of as a single message
     )
-    format_error_template: str = (
-        None  # defaults to format_error_template in ParseFunction
-    )
+    # defaults to format_error_template in ParseFunction
+    format_error_template: str = None  # type: ignore
     command_files: list[str] = field(default_factory=list)
     env_variables: dict[str, str] = field(default_factory=dict)
     util_functions: list[str] = field(default_factory=list)
@@ -63,11 +61,11 @@ class AgentConfig(FrozenSerializable):
     parse_command: str = "ParseCommandBash"
     history_processor: str = "DefaultHistoryProcessor"
     history_processor_args: dict[str, Any] = field(default_factory=dict)
-    command_docs: str = None
+    command_docs: str = None  # type: ignore
     blocklist_error_template: str = (
         "Interactive operation '{name}' is not supported by this environment"
     )
-    blocklist: Tuple[str] = (
+    blocklist: Tuple[str, ...] = (
         "vim",
         "vi",
         "emacs",
@@ -75,7 +73,7 @@ class AgentConfig(FrozenSerializable):
         "nohup",
         "git",
     )
-    blocklist_standalone: Tuple[str] = (
+    blocklist_standalone: Tuple[str, ...] = (
         "python",
         "python3",
         "ipython",
