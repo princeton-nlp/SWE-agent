@@ -17,7 +17,7 @@ from ghapi.all import GhApi
 from io import BytesIO
 from pathlib import Path
 from subprocess import PIPE, STDOUT
-from typing import Any, List, Tuple, Dict
+from typing import Any, List, Set, Tuple, Dict
 
 LOGGER_NAME = "intercode"
 START_UP_DELAY = 5
@@ -192,7 +192,7 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> Tuple[subpr
     return container, {"1", }  # bash PID is always 1 for non-persistent containers
 
 
-def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool = False) -> Tuple[subprocess.Popen, set]:
+def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool = False) -> Tuple[subprocess.Popen, Set]:
     client = docker.from_env()
     containers = client.containers.list(all=True, filters={"name": ctr_name})
     if ctr_name in [c.name for c in containers]:
@@ -256,7 +256,7 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
     return container, set(map(str, [bash_pid, 1, ]))
 
 
-def get_container(ctr_name: str, image_name: str, persistent: bool = False) -> subprocess.Popen:
+def get_container(ctr_name: str, image_name: str, persistent: bool = False) -> Tuple[subprocess.Popen, Set]:
     """
     Get a container object for a given container name and image name
 
@@ -267,6 +267,37 @@ def get_container(ctr_name: str, image_name: str, persistent: bool = False) -> s
     Returns:
         Container object
     """
+    # Let's first check that the image exists and give some better error messages
+    try:
+        client = docker.from_env()
+    except docker.errors.DockerException as e:
+        if "connection aborted" in str(e):
+            msg = (
+                "Probably the Docker daemon is not running. Please start the Docker daemon and try again. "
+                "You might need to allow the use of the docker socket "
+                "(https://github.com/princeton-nlp/SWE-agent/issues/159) or symlink the socket "
+                "if it's at a non-standard location "
+                "(https://github.com/princeton-nlp/SWE-agent/issues/20#issuecomment-2047506005)."
+            )
+            raise RuntimeError(msg) from e
+        raise
+    filterred_images = client.images.list(filters={'reference': image_name})
+    if len(filterred_images) == 0:
+        msg = (
+            f"Image {image_name} not found. Please ensure it is built and available. "
+            "Please double-check that you followed all installation/setup instructions from the "
+            "readme."
+        )
+        raise RuntimeError(msg)
+    elif len(filterred_images) > 1:
+        logger.warning(f"Multiple images found for {image_name}, that's weird.")
+    attrs = filterred_images[0].attrs 
+    if attrs is not None:
+        logger.info(
+            f"Found image {image_name} with tags: {attrs['RepoTags']}, created: {attrs['Created']} "
+            f"for {attrs['Os']} {attrs['Architecture']}."
+        )
+
     if persistent:
         return _get_persistent_container(ctr_name, image_name)
     else:
