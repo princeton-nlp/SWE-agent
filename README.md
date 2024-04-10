@@ -76,6 +76,8 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 > * For more information on the different API keys/tokens, see [below](#-add-your-api-keystokens).
 > * If you're using docker on Windows, use `-v //var/run/docker.sock:/var/run/docker.sock`
 >   (double slash) to escape it ([more information](https://stackoverflow.com/a/47229180/)).
+> * See the [installation issues section](#-installation-issues) for more help if you run into
+>   trouble.
 
 ### 🐍 Setup with conda (development version) 
 
@@ -94,6 +96,9 @@ To install the development version:
 > If you want the latest version, you can also build your own `swe-agent-run`
 > container with the `Dockerfile` at the root of this repository by running
 > `docker build -t sweagent/swe-agent-run:latest .`
+
+> [!TIP]
+> If you run into docker issues, see the [installation issues section](#-installation-issues) for more help
 
 ### 🔑 Add your API keys/tokens
 
@@ -124,6 +129,15 @@ OPENAI_API_BASE_URL: 'LM base URL here if using Local or alternative api Endpoin
 
 See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) tokens.
 
+### More installation tips
+
+If you seem to be having issues with running docker
+
+* Make sure that you use the default socket. In Docker desktop, click *Settings* > *Advanced* > *Allow the default Docker socket to be used (requires password)*
+* If your docker installation uses a different socket, you might have to symlink them, see [this command for example](https://github.com/princeton-nlp/SWE-agent/issues/20#issuecomment-2047506005)
+
+Any remaining issues? Please [open a GitHub issue](https://github.com/princeton-nlp/SWE-agent/issues/new/choose)!
+
 ## 🔥 Quickstart: Solve real-life GitHub issues! <a name="real-life"></a>
 
 Using this script, you can run SWE-agent on any GitHub issue!
@@ -132,7 +146,6 @@ python run.py --model_name gpt4 \
   --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
   --config_file config/default_from_url.yaml
 ```
-
 
 > [!TIP]
 > You can have the agent automatically open a PR if the issue has been solved by supplying the `--open_pr`
