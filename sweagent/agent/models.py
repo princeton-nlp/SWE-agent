@@ -226,7 +226,7 @@ class OpenAIModel(BaseModel):
         print(">>>>>>>>", cfg)
         print(">>>>>>", OpenAI)
         if self.args.model_name.startswith("azure"):
-            self.api_model = self.args.model_name.split("azure")[1] 
+            self.api_model = self.args.model_name.split("azure:")[1] 
             self.client = AzureOpenAI(api_key=cfg["AZURE_OPENAI_API_KEY"], azure_endpoint=cfg["AZURE_OPENAI_ENDPOINT"], api_version=cfg.get("AZURE_OPENAI_API_VERSION", "2024-02-01"))
         else:
             api_base_url: Optional[str] = cfg.get("OPENAI_API_BASE_URL", None)
