@@ -53,6 +53,8 @@ logger.propagate = False
 class EnvironmentArguments(FrozenSerializable):
     """Configure data sources and setup instructions for th environment in which we solve the tasks.
     """
+    # Path to a data file or directory, or github issue url, or github repo url
+    # with specified 'problem_statement'
     data_path: str
     image_name: str
     split: str = "dev"
@@ -67,6 +69,13 @@ class EnvironmentArguments(FrozenSerializable):
     # or a shell script (with sh extension).
     # See https://github.com/princeton-nlp/SWE-agent/pull/153 for more information
     environment_setup: Optional[str] = None
+    # Problem statement (takes the place of an issue text). Only used when data_path is a GitHub URL.
+    # Can be path to file.
+    problem_statement: str = ""
+
+    def __post_init__(self):
+        if self.problem_statement and len(self.problem_statement) < 200 and Path(self.problem_statement).is_file():
+            object.__setattr__(self, "problem_statement",  Path(self.problem_statement).read_text())
 
 
 class SWEEnv(gym.Env):
@@ -107,7 +116,7 @@ class SWEEnv(gym.Env):
 
         # Load Task Instances
         self.data_path = self.args.data_path
-        self.data = get_instances(self.data_path, self.args.base_commit, self.args.split, token=self._github_token)
+        self.data = get_instances(self.data_path, self.args.base_commit, self.args.split, token=self._github_token, problem_statement=self.args.problem_statement)
         #: Instance we're currently processing. Gets set in self.reset.
         self.record = None
         self.logger.info(f"💽 Loaded dataset from {self.data_path}")
