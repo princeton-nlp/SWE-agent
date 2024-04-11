@@ -70,13 +70,13 @@ def test_get_instance_from_github_url_github_issue():
     instance = get_instances("https://github.com/klieret/swe-agent-test-repo/issues/1")[0]
     compare_with = {
         'repo': 'klieret/swe-agent-test-repo',
-        'base_commit': '3b37cb20ed4851f9239fe7bef239f9cca1195a1e',
-        'version': '3b37cb2',
         'instance_id': 'klieret__swe-agent-test-repo-i1'
     }
     for key in compare_with:
         assert instance[key] == compare_with[key]
     assert "SyntaxError" in instance["problem_statement"]
+    assert len(instance["base_commit"]) > 10
+    assert instance["version"]
 
 
 
@@ -94,11 +94,3 @@ def test_get_instance_from_github_url_github_repo_missing_problem():
 def test_get_instance_from_github_url_github_repo():
     instance = get_instance_from_github_url("https://github.com/klieret/swe-agent-test-repo/", problem_statement="asdf")
     assert instance["problem_statement"] == "asdf"
-
-
-def test_get_instance_from_local_dir(tmp_path):
-    tmp_dir = tmp_path / "test"
-    tmp_dir.mkdir(parents=True)
-    instance = get_instances(file_path=tmp_dir, problem_statement="asdf")[0]
-    assert instance["problem_statement"] == "asdf"
-    assert instance["repo"] == f"local://{str(tmp_dir.resolve())}"

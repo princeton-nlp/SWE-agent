@@ -5,7 +5,6 @@ import os
 import yaml
 
 from argparse import ArgumentParser
-from sweagent.environment.utils import is_github_issue_url
 from typing import Any, Dict, List
 import run as runscript
 
@@ -66,16 +65,15 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
                 print(json.dumps(d), file=f, end="\n", flush=True)
         return replay_task_instances_path
 
-    is_github = False
+    is_other = False
     if data_path.endswith(".jsonl"):
         replay_task_instances_path = create_task_instances_tmp_file([json.loads(x) for x in open(data_path, "r").readlines()])
     elif data_path.endswith(".json"):
         replay_task_instances_path = create_task_instances_tmp_file(json.load(open(data_path)))
-    elif is_github_issue_url(data_path):
-        is_github = True
-        replay_task_instances_path = data_path
     else:
-        raise ValueError("--data_path must be a .json or .jsonl")
+        # Assume data_path is a github url or local url
+        is_other = True
+        replay_task_instances_path = data_path
 
     # Call run.py via subprocess
     run_args = [
@@ -86,7 +84,7 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
         "--replay_path", replay_action_trajs_path,
         *forward_args,
     ]
-    if is_github:
+    if is_other:
         # Not sure if this only applies to github urls for data_path
         run_args.extend(["--skip_existing", "False"])
     if suffix is not None:
@@ -95,11 +93,8 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
     runscript.main(script_args)
 
     os.remove(replay_action_trajs_path)
-    try:
+    if not is_other:
         os.remove(replay_task_instances_path)
-    except FileNotFoundError:
-        pass
-
 
 def main(
     traj_path: str,
