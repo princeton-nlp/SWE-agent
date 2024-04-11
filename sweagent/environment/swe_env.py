@@ -238,7 +238,7 @@ class SWEEnv(gym.Env):
         # Write any metadata to info if necessary
         return None, info
 
-    def step(self, action: str) -> Tuple[str, int, bool, dict]:
+    def step(self, action: str) -> Tuple[Optional[str], int, bool, dict]:
         """
         Runs given action in environment and returns corresponding output
 
@@ -327,6 +327,8 @@ class SWEEnv(gym.Env):
             raise
         except:
             pass
+        assert self.container is not None
+        assert self.container_obj is not None
         self.container.terminate()
         if self.persistent:
             if self.container_obj.status not in {"paused", "exited"}:
@@ -441,7 +443,7 @@ class SWEEnv(gym.Env):
         self.returncode = int(exit_code)
         return buffer
 
-    def _check_syntax(self, input: str) -> None:
+    def _check_syntax(self, input: str):
         """
         Saves environment variables to file
         """
