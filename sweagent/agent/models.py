@@ -8,7 +8,7 @@ from collections import defaultdict
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 from dataclasses import dataclass, fields
 from openai import BadRequestError, OpenAI, AzureOpenAI
-from simple_parsing.helpers import FrozenSerializable, Serializable
+from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
 from sweagent.agent.commands import Command
 from tenacity import (
     retry,
@@ -23,6 +23,7 @@ logger = logging.getLogger("api_models")
 
 @dataclass(frozen=True)
 class ModelArguments(FrozenSerializable):
+    """Arguments configuring the model and its behavior."""
     model_name: str
     per_instance_cost_limit: float = 0.0
     total_cost_limit: float = 0.0
@@ -103,14 +104,14 @@ class BaseModel:
         else:
             raise ValueError(f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}")
 
-    def reset_stats(self, other: APIStats = None):
+    def reset_stats(self, other: Optional[APIStats] = None):
         if other is None:
             self.stats = APIStats(total_cost=self.stats.total_cost)
             logger.info("Resetting model stats")
         else:
             self.stats = other
 
-    def update_stats(self, input_tokens, output_tokens):
+    def update_stats(self, input_tokens: int, output_tokens: int) -> float:
         """
         Calculates the cost of a response from the openai API.
 
@@ -227,7 +228,8 @@ class OpenAIModel(BaseModel):
             self.api_model = cfg["AZURE_OPENAI_DEPLOYMENT"]
             self.client = AzureOpenAI(api_key=cfg["AZURE_OPENAI_API_KEY"], azure_endpoint=cfg["AZURE_OPENAI_ENDPOINT"], api_version=cfg.get("AZURE_OPENAI_API_VERSION", "2024-02-01"))
         else:
-            self.client = OpenAI(api_key=cfg["OPENAI_API_KEY"])
+            api_base_url: Optional[str] = cfg.get("OPENAI_API_BASE_URL", None)
+            self.client = OpenAI(api_key=cfg["OPENAI_API_KEY"], base_url=api_base_url)
 
     def history_to_messages(
         self, history: list[dict[str, str]], is_demonstration: bool = False
@@ -263,7 +265,7 @@ class OpenAIModel(BaseModel):
                 temperature=self.args.temperature,
                 top_p=self.args.top_p,
             )
-        except BadRequestError as e:
+        except BadRequestError:
             raise CostLimitExceededError(f"Context window ({self.model_metadata['max_context']} tokens) exceeded")
         # Calculate + update costs, return response
         input_tokens = response.usage.prompt_tokens
@@ -662,7 +664,7 @@ class ReplayModel(BaseModel):
     def __init__(self, args: ModelArguments, commands: list[Command]):
         super().__init__(args, commands)
 
-        if self.args.replay_path == None or not os.path.exists(self.args.replay_path):
+        if self.args.replay_path is None or not os.path.exists(self.args.replay_path):
             raise ValueError(
                 "--replay_path must point to a file that exists to run a replay policy"
             )
@@ -708,5 +710,7 @@ def get_model(args: ModelArguments, commands: Optional[list[Command]] = None):
         return AnthropicModel(args, commands)
     elif args.model_name.startswith("ollama"):
         return OllamaModel(args, commands)
+    elif args.model_name in TogetherModel.SHORTCUTS:
+        return TogetherModel(args, commands)
     else:
         raise ValueError(f"Invalid model name: {args.model_name}")

@@ -2,7 +2,8 @@
 
 This README contains documentation for the main inference script `run.sh` along with some miscellaneous scripts that may be helpful.
 
-> ⚠️ These scripts have been written to be invoked from the root of this codebase (i.e. `./scripts/run.sh`).
+> [!WARNING]
+>  These scripts have been written to be invoked from the root of this codebase (i.e. `./scripts/run.sh`).
 
 ## 🏃 Inference Script
 The `./run.sh` script has been provided as an example of how to invoke `run.py`.
@@ -11,9 +12,10 @@ A single `run.py` call will generate a `trajectory/<username>/<experiment name>`
 
 The following is a comprehensive guide to using the provided `run.py` script, detailing available command-line arguments, their purposes, and default values. Flags that you might find helpful have been marked with a 💡.
 
-The code and explanation of the implementations for *configuration based workflows* are explained in [`agent/`](../agent/README.md).
+The code and explanation of the implementations for *configuration based workflows* are explained in [`agent/`](../sweagent/agent/README.md).
 
-Run `python run.py --help` to view this documentation on the command line.
+> [!TIP]
+> Run `python run.py --help` to view the most up-to-date documentation of the arguments.
 
 #### Optional Arguments
 * `-h, --help`: Show the help message and exit.
@@ -26,14 +28,16 @@ These arguments configure the script's behavior:
 
 #### Environment Arguments
 These arguments are related to the environment configuration:
-* `--data_path <str>` 💡: Path to the data file -or- a GitHub issue URL.
+* `--data_path <str>` 💡: Path to the data file -or- a Hugging Face dataset -or- a GitHub issue URL.
 * `--base_commit <str>`: You can specify the base commit sha to checkout. This is determined automatically for instances in SWE-bench.
 * `--image_name <str>`: Name of the Docker image to use. Default is swe-agent.
 * `--noinstall_environment, --install_environment`: [Do not] install the environment. Default is True.
 * `--noverbose, --verbose`: Enable verbose output. Default is False.
 * `--timeout <int>`: Timeout in seconds. Default is 35.
 * `--container_name <str>` 💡: Name of the Docker container if you would like to create a persistent container. Optional.
-> ⚠️ If you specify a container name, do not run multiple instances of `run.py` with the same container name!
+
+> [!WARNING]
+> If you specify a container name, do not run multiple instances of `run.py` with the same container name!
 
 #### AgentArguments
 Configure agent behavior:
@@ -42,10 +46,10 @@ Configure agent behavior:
 #### ModelArguments
 Configure model parameters:
 * `--model_name <str>` 💡: Name of the model. Default is `gpt4`.
-* `--per_instance_cost_limit <float>` 💡: Per-instance cost limit (interactive loop will automatically terminate when cost limit is hit). Default is 2.0.
-* `--temperature <float>` 💡: Model temperature. Default is 0.2.
+* `--per_instance_cost_limit <float>` 💡: Per-instance cost limit (interactive loop will automatically terminate when cost limit is hit). Default is 3.0.
+* `--temperature <float>` 💡: Model temperature. Default is 0.0.
 * `--top_p <float>` 💡: Top p filtering. Default is 0.95.
-* `--total_cost_limit <float>`: Total cost limit. Default is 0.0.
+* `--total_cost_limit <float>`: Total cost limit. Default is 0.0 (unlimited).
 
 ### 📙 Example Usage
 Run with custom data path and verbose mode:
@@ -55,7 +59,7 @@ python run.py --data_path /path/to/data.json --verbose
 
 Specify a model and adjust the temperature and top_p parameters:
 ```bash
-python run.py --model_name gpt4 --temperature 0.5 --top_p 0.8
+python run.py --model_name gpt4 --temperature 0.2 --top_p 0.9
 ```
 
 ## 🛠️ Miscellaneous Scripts

@@ -5,7 +5,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
-from simple_parsing.helpers import FrozenSerializable
+from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 
 
 @dataclass(frozen=True)
@@ -72,7 +72,6 @@ class ParseCommand(metaclass=ParseCommandMeta):
 
 class ParseCommandBash(ParseCommand):
     def parse_command_file(self, path: str) -> List[Command]:
-        print('Parsing command file:', path)
         contents = open(path, "r").read()
         if contents.strip().startswith("#!"):
             commands = self.parse_script(path, contents)
@@ -204,6 +203,7 @@ class ParseCommandDetailed(ParseCommandBash):
     #     arg1 (type) [required]: "description"
     #     arg2 (type) [optional]: "description"
     """
+    @staticmethod
     def get_signature(cmd):
         signature = cmd.name
         if "arguments" in cmd.__dict__ and cmd.arguments is not None:

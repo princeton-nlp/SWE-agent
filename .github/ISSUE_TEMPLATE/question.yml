@@ -1,0 +1,18 @@
+name: Question
+description: Ask an open-ended question about SWE-agent (e.g., "How do I do ...?"). If you get an error message or think that something went wrong, please open a bug issue instead!
+labels: ['question']
+
+body:
+- type: textarea
+  attributes:
+    label: Describe the issue
+    description: >
+      Tell us about the confusion you have about SWE-agent *or*
+      the information that is missing in the documentation.
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Suggest an improvement to documentation
+    description: >
+      Tell us how we could improve the documentation in this regard.

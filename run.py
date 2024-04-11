@@ -3,7 +3,7 @@ import logging
 import os
 import re
 import traceback
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import yaml
 
 from dataclasses import dataclass
@@ -11,7 +11,8 @@ from getpass import getuser
 from pathlib import Path
 from rich.logging import RichHandler
 from simple_parsing import parse
-from simple_parsing.helpers import FrozenSerializable, FlattenedAccess
+from simple_parsing.helpers.serialization.serializable import FrozenSerializable
+from simple_parsing.helpers.flatten import FlattenedAccess
 from sweagent import (
     Agent,
     AgentArguments,
@@ -56,25 +57,28 @@ class ActionsArguments(FlattenedAccess, FrozenSerializable):
 
 @dataclass(frozen=True)
 class ScriptArguments(FlattenedAccess, FrozenSerializable):
+    """Configure the control flow of the run.py script"""
     environment: EnvironmentArguments
     agent: AgentArguments
     actions: ActionsArguments
     instance_filter: str = ".*"  # Only run instances that completely match this regex
     skip_existing: bool = True  # Skip instances with existing trajectories
     suffix: str = ""
+    # Raise unhandled exceptions during the run (useful for debugging)
+    raise_exceptions: bool = False
 
     @property
     def run_name(self):
         """Generate a unique name for this run based on the arguments."""
-        model_name = args.agent.model.model_name.replace(":", "-")
-        data_stem = get_data_path_name(args.environment.data_path)
-        config_stem = Path(args.agent.config_file).stem
+        model_name = self.agent.model.model_name.replace(":", "-")
+        data_stem = get_data_path_name(self.environment.data_path)
+        config_stem = Path(self.agent.config_file).stem
 
-        temp = args.agent.model.temperature
-        top_p = args.agent.model.top_p
+        temp = self.agent.model.temperature
+        top_p = self.agent.model.top_p
 
-        per_instance_cost_limit = args.agent.model.per_instance_cost_limit
-        install_env = args.environment.install_environment
+        per_instance_cost_limit = self.agent.model.per_instance_cost_limit
+        install_env = self.environment.install_environment
 
         return (
             f"{model_name}__{data_stem}__{config_stem}__t-{temp:.2f}__p-{top_p:.2f}"
@@ -90,7 +94,7 @@ def main(args: ScriptArguments):
     env = SWEEnv(args.environment)
 
     traj_dir = Path("trajectories") / Path(getuser()) / args.run_name
-    os.makedirs(traj_dir, exist_ok=True)
+    traj_dir.mkdir(parents=True, exist_ok=True)
 
     save_arguments(traj_dir, args)
 
@@ -98,6 +102,7 @@ def main(args: ScriptArguments):
         try:
             # Reset environment
             instance_id = env.data[index]["instance_id"]
+            assert isinstance(instance_id, str)  # mypy
             if should_skip(args, traj_dir, instance_id):
                 continue
             logger.info("▶️  Beginning task " + str(index))
@@ -138,8 +143,9 @@ def main(args: ScriptArguments):
                 return_type="info_trajectory",
             )
             save_predictions(traj_dir, instance_id, info)
-            if args.actions.open_pr and should_open_pr(args, info, token=env.token):
-                env.open_pr(args.actions, info, trajectory)
+            save_patch(traj_dir, instance_id, info)
+            if args.actions.open_pr and should_open_pr(args, info, token=env._github_token):
+                env.open_pr(trajectory=trajectory, push_gh_repo_url=args.actions.push_gh_repo_url)
 
         except KeyboardInterrupt:
             logger.info("Exiting InterCode environment...")
@@ -148,11 +154,13 @@ def main(args: ScriptArguments):
         except Exception as e:
             traceback.print_exc()
             logger.warning(f"❌ Failed on {env.record['instance_id']}: {e}")
+            if args.raise_exceptions:
+                raise e
             env.reset_container()
             continue
 
 
-def should_open_pr(args, info: Dict[str, Any], *, token: str="") -> bool:
+def should_open_pr(args: ScriptArguments, info: Dict[str, Any], *, token: str="") -> bool:
     """Does opening a PR make sense?"""
     if not info.get("submission"):
         logger.info("Not openening PR because submission was made.")
@@ -183,14 +191,14 @@ def should_open_pr(args, info: Dict[str, Any], *, token: str="") -> bool:
             return False
         else:
             logger.warning(
-                f"Proceeding with PR creation even though there are already commits "
-                "({commit_url_strs}) associated with the issue. Please only do this for your own repositories "
+                "Proceeding with PR creation even though there are already commits "
+                f"({commit_url_strs}) associated with the issue. Please only do this for your own repositories "
                 "or after verifying that the existing commits do not fix the issue."
             )
     return True
 
 
-def save_arguments(traj_dir, args):
+def save_arguments(traj_dir: Path, args: ScriptArguments) -> None:
     """Save the arguments to a yaml file to the run's trajectory directory."""
     log_path = traj_dir / "args.yaml"
 
@@ -208,7 +216,7 @@ def save_arguments(traj_dir, args):
         args.dump_yaml(f)
 
 
-def should_skip(args, traj_dir, instance_id):
+def should_skip(args: ScriptArguments, traj_dir: Path, instance_id: str) -> bool:
     """Check if we should skip this instance based on the instance filter and skip_existing flag."""
     # Skip instances that don't match the instance filter
     if re.match(args.instance_filter, instance_id) is None:
@@ -236,8 +244,8 @@ def should_skip(args, traj_dir, instance_id):
     return False
 
 
-def save_predictions(traj_dir, instance_id, info):
-    output_file = Path(traj_dir) / "all_preds.jsonl"
+def save_predictions(traj_dir: Path, instance_id: str, info):
+    output_file = traj_dir / "all_preds.jsonl"
     model_patch = info["submission"] if "submission" in info else None
     datum = {
         KEY_MODEL: Path(traj_dir).name,
@@ -249,11 +257,34 @@ def save_predictions(traj_dir, instance_id, info):
     logger.info(f"Saved predictions to {output_file}")
 
 
-if __name__ == "__main__":
+def save_patch(traj_dir: Path, instance_id: str, info) -> Optional[Path]:
+    """Create patch files that can be applied with `git am`.
+    
+    Returns:
+        The path to the patch file, if it was saved. Otherwise, returns None.
+    """
+    patch_output_dir = traj_dir / "patches"
+    patch_output_dir.mkdir(exist_ok=True, parents=True)
+    patch_output_file = patch_output_dir / f"{instance_id}.patch"
+    if not "submission" in info:
+        logger.info("No patch to save.")
+        return
+    model_patch = info["submission"]
+    patch_output_file.write_text(model_patch)
+    logger.info(f"Saved patch to {patch_output_file}")
+    return patch_output_file
+
+
+def get_args(args=None) -> ScriptArguments:
+    """Parse command line arguments and return a ScriptArguments object.
+    
+    Args:
+        args: Optional list of arguments to parse. If not provided, uses sys.argv.
+    """
     defaults = ScriptArguments(
         suffix="",
         environment=EnvironmentArguments(
-            image_name="swe-agent",
+            image_name="sweagent/swe-agent:latest",
             data_path="princeton-nlp/SWE-bench_Lite",
             split="dev",
             verbose=True,
@@ -264,8 +295,8 @@ if __name__ == "__main__":
             model=ModelArguments(
                 model_name="gpt4",
                 total_cost_limit=0.0,
-                per_instance_cost_limit=2.0,
-                temperature=0.2,
+                per_instance_cost_limit=3.0,
+                temperature=0.0,
                 top_p=0.95,
             ),
             config_file="config/default.yaml",
@@ -284,5 +315,9 @@ if __name__ == "__main__":
 
     yaml.add_representer(str, multiline_representer)
 
-    args = parse(ScriptArguments, default=defaults, add_config_path_arg=False)
+    return parse(ScriptArguments, default=defaults, add_config_path_arg=False, args=args)
+
+
+if __name__ == "__main__":
+    args = get_args()
     main(args)

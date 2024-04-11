@@ -8,7 +8,7 @@
 <p align="center">
   <a href="https://swe-agent.com"><strong>Website & Demo</strong></a>&nbsp; | &nbsp;
   <a href="https://discord.gg/AVEFbBn2rH"><strong>Discord</strong></a>&nbsp; | &nbsp;
-  <strong>Paper [coming April 10th]</strong>
+  <strong>Paper [coming April 2024]</strong>
 </p>
 
 
@@ -16,6 +16,8 @@
 SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix bugs and issues in real GitHub repositories.
 
 On [SWE-bench](https://github.com/princeton-nlp/SWE-bench), SWE-agent resolves **12.29%** of issues, achieving the state-of-the-art performance on the full test set.
+
+SWE-agent is built and maintained by researchers from Princeton University. 
 
 <p align="center">
   <img src="assets/results+preview.png" style="width: 80%; height: auto;">
@@ -32,7 +34,7 @@ SWE-agent contains features that we discovered to be immensely helpful during th
 3. We supply the agent with a special-built full-directory string searching command. We found that it was important for this tool to succintly list the matches- we simply list each file that had at least one match. Showing the model more context about each match proved to be too confusing for the model. 
 4. When commands have an empty output we return a message saying "Your command ran successfully and did not produce any output."
 
-Read our paper for more details.
+Read our paper for more details [coming soon!].
 
 ```
 @misc{yang2024sweagent,
@@ -43,57 +45,162 @@ Read our paper for more details.
 ```
 
 ## 🚀 Setup <a name="setup"></a>
+
+### 🏎️ Express Setup + Run
+
+You can run the software directly using Docker. 
+
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
-2. [Install Miniconda](https://docs.anaconda.com/free/miniconda/miniconda-install/), then create the `swe-agent` environment with `conda env create -f environment.yml`
-3. Activate using `conda activate swe-agent`.
-4. Run `./setup.sh` to create the `swe-agent` docker image.
-5. Create a `keys.cfg` file at the root of this repository and fill in the following:
+2. Run `docker pull --platform=linux/arm64 sweagent/swe-agent:latest` (replace `arm64` with `amd64` if you're running on x86)
+3. Add your API tokens to a file `keys.cfg` as explained [below](#-add-your-api-keystokens)
+
+Then run
+
+```bash
+# Please remove all comments (lines starting with '#') before running this command!
+docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
+  # replace /xxxx/keys.cfg with the paths to your keys
+  -v /xxxx/keys.cfg:/app/keys.cfg \
+  # replace with your architecture, either arm64 or amd64
+  --platform=linux/arm64 \
+  sweagent/swe-agent-run:latest \
+  python run.py --image_name=sweagent/swe-agent:latest \
+  # the rest of the command as shown in the quickstart/benchmarking section,
+  # for example to run on a specific github issue
+  --model_name gpt4 \
+  --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
+  --config_file config/default_from_url.yaml  --skip_existing=False
+```
+
+> [!TIP]
+> * For more information on the different API keys/tokens, see [below](#-add-your-api-keystokens).
+> * If you're using docker on Windows, use `-v //var/run/docker.sock:/var/run/docker.sock`
+>   (double slash) to escape it ([more information](https://stackoverflow.com/a/47229180/)).
+> * See the [installation issues section](#-installation-issues) for more help if you run into
+>   trouble.
+
+### 🐍 Setup with conda (development version) 
+
+To install the development version:
+
+1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
+2. Clone this repository
+3. [Install Miniconda](https://docs.anaconda.com/free/miniconda/miniconda-install/), then create the `swe-agent` environment with `conda env create -f environment.yml`
+4. Activate using `conda activate swe-agent`.
+5. Run `./setup.sh` to create the `swe-agent` docker image.
+6. Create a `keys.cfg` file at the root of this repository ([see below](#-add-your-api-keystokens))
+
+> [!WARNING]
+> Expect some issues with Windows (we're working on them).
+> In the meantime, simply use Docker (see above).
+> If you want the latest version, you can also build your own `swe-agent-run`
+> container with the `Dockerfile` at the root of this repository by running
+> `docker build -t sweagent/swe-agent-run:latest .`
+
+> [!TIP]
+> If you run into docker issues, see the [installation issues section](#-installation-issues) for more help
+
+### 🔑 Add your API keys/tokens
+
+For the conda setup, create a `keys.cfg` file at the root of this repository and populate it with your API keys.
+
 ```
 GITHUB_TOKEN: 'GitHub Token Here (required)'
 OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model (optional)'
-ANTHROPIC_API_KEY: 'Anthropic API Key Here if using Anthropic Model (optional)'
-TOGETHER_API_KEY: 'Together API Key Here if using Together Model (optional)'
-AZURE_OPENAI_API_KEY: 'Azure OpenAI API Key Here if using Azure OpenAI Model (optional)'
-AZURE_OPENAI_ENDPOINT: 'Azure OpenAI Endpoint Here if using Azure OpenAI Model (optional)'
-AZURE_OPENAI_DEPLOYMENT: 'Azure OpenAI Deployment Here if using Azure OpenAI Model (optional)'
-AZURE_OPENAI_API_VERSION: 'Azure OpenAI API Version Here if using Azure OpenAI Model (optional)'
 ```
+
+If you're using docker, pass the key with the [`-e` option](https://stackoverflow.com/a/30494145/) to the docker container. 
+
+<details>
+<summary>🔎 More options for different keys (click to unfold)</summary>
+
+All keys are optional.
+
+```
+GITHUB_TOKEN: 'GitHub Token Here'
+OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model'
+ANTHROPIC_API_KEY: 'Anthropic API Key Here if using Anthropic Model'
+TOGETHER_API_KEY: 'Together API Key Here if using Together Model'
+AZURE_OPENAI_API_KEY: 'Azure OpenAI API Key Here if using Azure OpenAI Model'
+AZURE_OPENAI_ENDPOINT: 'Azure OpenAI Endpoint Here if using Azure OpenAI Model'
+AZURE_OPENAI_DEPLOYMENT: 'Azure OpenAI Deployment Here if using Azure OpenAI Model'
+AZURE_OPENAI_API_VERSION: 'Azure OpenAI API Version Here if using Azure OpenAI Model'
+OPENAI_API_BASE_URL: 'LM base URL here if using Local or alternative api Endpoint'
+```  
+</details>
+
 See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) tokens.
 
-## 💽 Usage <a name="usage"></a>
-There are two steps to the SWE-agent pipeline. First SWE-agent takes an input GitHub issue and returns a pull request that attempts to fix it. We call that step *inference*. The second step (currently, only available for issues in the SWE-bench benchmark) is to *evaluate* the pull request to verify that it has indeed fixed the issue. 
+### More installation tips
 
-_NOTE_: At this moment, there are known issues with a small number of repositories that don't install properly for `arm64` / `aarch64` architecture computers. We're working on a fix, but if you'd like to run and evaluate on the entirety of SWE-bench, the easiest way is by using an `x86` machine.
+If you seem to be having issues with running docker
 
-### 👩‍💻 Inference <a name="inference"></a>
-**Inference on *any* GitHub Issue**: Using this script, you can run SWE-agent on any GitHub issue!
-```
+* Make sure that you allow the use of the Docker socket. In Docker desktop, click *Settings* > *Advanced* > *Allow the default Docker socket to be used (requires password)*
+* If your docker installation uses a different socket, you might have to symlink them, see [this command for example](https://github.com/princeton-nlp/SWE-agent/issues/20#issuecomment-2047506005)
+
+Any remaining issues? Please [open a GitHub issue](https://github.com/princeton-nlp/SWE-agent/issues/new/choose)!
+
+## 🔥 Quickstart: Solve real-life GitHub issues! <a name="real-life"></a>
+
+Using this script, you can run SWE-agent on any GitHub issue!
+```bash
 python run.py --model_name gpt4 \
   --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
   --config_file config/default_from_url.yaml
 ```
 
-**Inference on SWE-bench**: Run SWE-agent on [SWE-bench Lite](https://www.swebench.com/lite.html) and generate patches.
-```
-python run.py --model_name gpt4 \
-  --per_instance_cost_limit 2.00 \
-  --config_file ./config/default.yaml
-```
+> [!TIP]
+> You can have the agent automatically open a PR if the issue has been solved by supplying the `--open_pr`
+> flag. Please use this feature responsibly (on your own repositories or after careful consideration).
 
-If you'd like to run on a *single* issue from SWE-bench, use the `--instance_filter` option as follows:
-```
-python run.py --model_name gpt4 \
-  --instance_filter marshmallow-code__marshmallow-1359
-```
+> [!TIP]
+> Run `python run.py --help` to see all available options.
+
 * See the [`scripts/`](scripts/) folder for other useful scripts and details.
 * See the [`config/`](config/) folder for details about how you can define your own configuration!
 * See the [`sweagent/agent/`](sweagent/agent/) folder for details about the logic behind configuration based workflows.
 * See the [`sweagent/environment/`](sweagent/environment/) folder for details about the `SWEEnv` environment (interface + implementation).
 * See the [`trajectories/`](trajectories) folder for details about the output of `run.py`.
 
+<details>
+<summary> Ollama Support</summary>
+
+Models served with an ollama server can be used by specifying `--model` with `ollama:model_name` and `--host_url` to point to the url used to serve ollama (`http://localhost:11434` by default). See more details about using ollama [here](https://github.com/ollama/ollama/tree/main/docs).
+
+```bash
+python run.py --model_name ollama:deepseek-coder:6.7b-instruct \
+  --host_url http://localhost:11434 \
+  --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
+  --config_file config/default_from_url.yaml
+```
+</details>
+
+## 💽 Benchmarking <a name="benchmarking"></a>
+
+There are two steps to the SWE-agent pipeline. First SWE-agent takes an input GitHub issue and returns a pull request that attempts to fix it. We call that step *inference*. The second step (currently, only available for issues in the SWE-bench benchmark) is to *evaluate* the pull request to verify that it has indeed fixed the issue. 
+
+> [!WARNING]
+> At this moment, there are known issues with a small number of repositories that don't install properly for `arm64` / `aarch64` architecture computers. We're working on a fix, but if you'd like to run and evaluate on the entirety of SWE-bench, the easiest way is by using an `x86` machine.
+
+### 👩‍💻 Inference <a name="inference"></a>
+**Inference on *any* GitHub Issue**: See [above](#-quickstart-solve-real-life-github-issues-).
+
+**Inference on SWE-bench**: Run SWE-agent on [SWE-bench Lite](https://www.swebench.com/lite.html) and generate patches.
+```bash
+python run.py --model_name gpt4 \
+  --per_instance_cost_limit 2.00 \
+  --config_file ./config/default.yaml
+```
+
+If you'd like to run on a *single* issue from SWE-bench, use the `--instance_filter` option as follows:
+```bash
+python run.py --model_name gpt4 \
+  --instance_filter marshmallow-code__marshmallow-1359
+```
+
 ### 🧪 Evaluation <a name="evaluation"></a>
 This step is only available for issues from the SWE-bench set. To evaluate generated pull requests:
-```
+```bash
 cd evaluation/
 ./run_eval.sh <predictions_path>
 ```
@@ -110,3 +217,12 @@ Contact person: [John Yang](https://john-b-yang.github.io/) and [Carlos E. Jimen
 
 ## 🪪 License <a name="license"></a>
 MIT. Check `LICENSE`.
+
+<div align="center">
+
+[![Tests (no LM)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/ci_no_llm.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/ci_no_llm.yaml)
+[![codecov](https://codecov.io/gh/princeton-nlp/SWE-agent/graph/badge.svg?token=18XAVDK365)](https://codecov.io/gh/princeton-nlp/SWE-agent)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/princeton-nlp/SWE-agent/main.svg)](https://results.pre-commit.ci/latest/github/princeton-nlp/SWE-agent/main)
+[![Markdown links](https://github.com/princeton-nlp/SWE-agent/actions/workflows/check-links.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/check-links.yaml)
+
+</div>
