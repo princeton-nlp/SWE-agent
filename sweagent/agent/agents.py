@@ -20,7 +20,7 @@ from sweagent.agent.parsing import ParseFunction, FormatError
 from sweagent.environment.utils import LOGGER_NAME
 from sweagent.environment.swe_env import SWEEnv
 from tenacity import RetryError
-from typing import Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -190,7 +190,7 @@ class AgentArguments(FlattenedAccess, FrozenSerializable):
             # If unassigned, we load the config from the file to store its contents with the overall arguments
             config = AgentConfig.load_yaml(self.config_file)
             object.__setattr__(self, "config", config)
-        assert self.config is not None
+        assert self.config is not None  # mypy
         for subroutine in getattr(self.config, "subroutines", {}).values():
             model_args = getattr(subroutine, "model")
             object.__setattr__(
@@ -212,6 +212,7 @@ class Agent:
             args.model, args.config._commands + args.config.subroutine_types
         )
         self.config = args.config
+        assert self.config is not None  # mypy
         self.system_args = {
             "command_docs": self.config.command_docs,
             **self.config.env_variables,
@@ -221,15 +222,17 @@ class Agent:
         self.history = []
         self.last_container_id = None
 
+
     def setup(self, instance_args, init_model_stats=None) -> None:
         """Setup the agent for a new instance."""
+        assert self.config is not None  # mypy
         self.model.reset_stats(init_model_stats)
         self.instance_args = instance_args
 
         system_msg = self.config.system_template.format(**self.system_args)
         logger.info(f"SYSTEM ({self.name})\n{system_msg}")
 
-        self.history = [
+        self.history: List[Dict[str, Any]] = [
             {"role": "system", "content": system_msg, "agent": self.name},
         ]
 
@@ -309,6 +312,7 @@ class Agent:
 
     def _get_first_match(self, action: str, pattern_type: str) -> Optional[re.Match]:
         """Return the first match of a command pattern in the action string."""
+        assert self.config is not None  # mypy
         if pattern_type == "subroutine":
             patterns = {k: v for k, v in self.subroutine_patterns.items()}
         elif pattern_type == "multi_line":
@@ -373,7 +377,7 @@ class Agent:
                 rem_action = ""
         return "\n".join(parsed_action)
 
-    def split_actions(self, action: str, pattern_type="subroutine") -> list[str]:
+    def split_actions(self, action: str, pattern_type="subroutine") -> List[Dict[str, Any]]:
         """Split an action into a list of actions in a greedy manner, each of which is a subroutine call or a single command."""
         parsed_action = list()
         rem_action = action
@@ -413,6 +417,7 @@ class Agent:
         return parsed_action
 
     def _parse_command_patterns(self):
+        assert self.config is not None  # mypy
         self.command_patterns = dict()
         for command in self.config._commands:
             if command.end_name is not None:
@@ -471,10 +476,11 @@ class Agent:
         """Query the model with the current state and observation with the appropriate template.
 
         Returns the model output."""
+        assert self.config is not None  # mypy
 
         state_vars = json.loads(state)
 
-        templates = []
+        templates: List[str] = []
         # Determine observation template based on what prior observation was
         if self.history[-1]["role"] == "system" or self.history[-1].get(
             "is_demo", False
@@ -595,6 +601,9 @@ class Agent:
     def forward_with_error_check(
         self, observation: str, state: str
     ) -> Tuple[str, str, str]:
+        """Wrapper around `self.forward_model` that handles errors and retries
+        due to format errors or blocked actions. 
+        """
         try:
             output = self.forward_model(observation, state)
         except KeyboardInterrupt:
@@ -625,6 +634,7 @@ class Agent:
         self.set_environment_vars(env, self.config.env_variables)
 
     def set_environment_vars(self, env, env_variables):
+        assert self.config is not None  # mypy
         commands_to_execute = (
             [self.config.state_command.code]
             +
@@ -675,12 +685,14 @@ class Agent:
         env.add_commands(command_files)
 
     def get_environment_vars(self, env):
+        assert self.config is not None  # mypy
         env_vars = dict()
         for var in self.config.env_variables:
             env_vars[var] = env.communicate(f"echo ${var}").strip()
         return env_vars
 
     def call_subroutine(self, agent_name, sub_action, env):
+        assert self.config is not None  # mypy
         env_vars = self.get_environment_vars(env)
         cwd = env.communicate("pwd -P").strip()
         init_observation = self.config._subroutines[agent_name].init_observation
@@ -710,9 +722,9 @@ class Agent:
 
     def run(
         self,
-        setup_args,
+        setup_args: Dict[str, Any],
         env: SWEEnv,
-        observation: str = None,
+        observation: Optional[str] = None,
         traj_dir: Optional[Path] = None,
         return_type: Optional[str] = "info",
         init_model_stats: Optional[APIStats] = None,
@@ -722,6 +734,8 @@ class Agent:
         Return the final value of the specified return type.
         """
         done = False
+        assert env.container_obj is not None
+        assert self.config is not None  # mypy
 
         if env.container_obj.id != self.last_container_id:
             logger.info(

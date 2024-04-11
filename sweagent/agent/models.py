@@ -103,7 +103,7 @@ class BaseModel:
         else:
             raise ValueError(f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}")
 
-    def reset_stats(self, other: APIStats = None):
+    def reset_stats(self, other: Optional[APIStats] = None):
         if other is None:
             self.stats = APIStats(total_cost=self.stats.total_cost)
             logger.info("Resetting model stats")
