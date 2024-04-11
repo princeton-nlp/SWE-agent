@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+import subprocess
 import traceback
 from typing import Any, Dict, Optional
 import yaml
@@ -39,13 +40,15 @@ logging.getLogger("simple_parsing").setLevel(logging.WARNING)
 class ActionsArguments(FlattenedAccess, FrozenSerializable):
     """Run real-life actions (opening PRs, etc.) if we can solve the issue."""
     open_pr: bool = False  # Open a PR with the patch if we can solve the issue
-    # Skip action if there are already commits claiming to fix the issue. Please only
-    # set this to False if you are sure the commits are not fixes or if this is your
-    # own repository!
+    # Option to be used with open_pr: Skip action if there are already commits claiming 
+    # to fix the issue. Please only set this to False if you are sure the commits are 
+    # not fixes or if this is your own repository!
     skip_if_commits_reference_issue: bool = True  
     # For PRs: If you want to push the branch to a fork (e.g., because you lack
     # permissions to push to the main repo), set this to the URL of the fork.
     push_gh_repo_url: str = ""
+    # When working with local repository
+    apply_patch_locally: bool = True
 
     def __post_init__(self):
         if not self.skip_if_commits_reference_issue and self.push_gh_repo_url:
@@ -114,6 +117,7 @@ def main(args: ScriptArguments):
             # Get info, patch information
             issue = getattr(env, "query", None)
             files = []
+            assert env.record is not None  # mypy
             if "patch" in env.record:
                 files = "\n".join(
                     [f"- {x.path}" for x in PatchSet(env.record["patch"]).modified_files]
@@ -143,9 +147,11 @@ def main(args: ScriptArguments):
                 return_type="info_trajectory",
             )
             save_predictions(traj_dir, instance_id, info)
-            save_patch(traj_dir, instance_id, info)
+            patch_path = save_patch(traj_dir, instance_id, info)
             if args.actions.open_pr and should_open_pr(args, info, token=env._github_token):
                 env.open_pr(trajectory=trajectory, push_gh_repo_url=args.actions.push_gh_repo_url)
+            if args.actions.apply_patch_locally and patch_path is not None and env.record["repo"].startswith("local://"):
+                apply_patch(Path(args.environment.data_path.removeprefix("local://")), patch_file=patch_path)
 
         except KeyboardInterrupt:
             logger.info("Exiting InterCode environment...")
@@ -273,6 +279,21 @@ def save_patch(traj_dir: Path, instance_id: str, info) -> Optional[Path]:
     patch_output_file.write_text(model_patch)
     logger.info(f"Saved patch to {patch_output_file}")
     return patch_output_file
+
+
+def apply_patch(local_dir: Path, patch_file: Path) -> None:
+    """Apply a patch to a local directory."""
+    assert local_dir.is_dir()
+    assert patch_file.exists()
+    # The resolve() is important, because we're gonna run the cmd
+    # somewhere else
+    cmd = ["git", "apply", str(patch_file.resolve())]
+    try:
+        subprocess.run(cmd, cwd=local_dir, check=True)
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to apply patch {patch_file} to {local_dir}: {e}")
+        return
+    logger.info(f"Applied patch {patch_file} to {local_dir}")
 
 
 def get_args(args=None) -> ScriptArguments:
