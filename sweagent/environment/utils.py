@@ -322,10 +322,7 @@ def get_commit(api: GhApi, owner: str, repo: str, base_commit: str = None):
 
 def get_azuredevops_commit(connection: Connection, organization: str, project: str, repo: str, base_commit: str = None):
     repo_client = connection.clients.get_git_client()
-    repos = repo_client.get_repositories(project)
-
     refs = repo_client.get_refs(repo, project)
-
     if refs:
         commit = refs[0].object_id
     else:
