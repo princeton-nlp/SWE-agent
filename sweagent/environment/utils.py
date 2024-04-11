@@ -17,7 +17,7 @@ from ghapi.all import GhApi
 from io import BytesIO
 from pathlib import Path
 from subprocess import PIPE, STDOUT
-from typing import List, Set, Tuple, Dict
+from typing import List, Optional, Set, Tuple, Dict
 
 LOGGER_NAME = "intercode"
 START_UP_DELAY = 5
@@ -37,7 +37,7 @@ def get_data_path_name(data_path: str):
     return Path(data_path).stem
 
 
-def is_from_github_url(data_path: str):
+def is_github_issue_url(data_path: str):
     return GITHUB_ISSUE_URL_PATTERN.search(data_path) is not None
 
 
@@ -347,7 +347,7 @@ def get_gh_issue_data(issue_url: str, *, token: str = ""):
     return api.issues.get(owner, repo, issue_number)
 
 
-def get_instances(file_path: str, base_commit: str = None, split: str = None, token: str = None):
+def get_instances(file_path: str, base_commit: Optional[str] = None, split: Optional[str] = None, token: Optional[str] = None):
     """
     Getter function for handling json, jsonl files
 
@@ -364,7 +364,7 @@ def get_instances(file_path: str, base_commit: str = None, split: str = None, to
         return dataset_or_dict
 
     # If file_path is a github issue url, fetch the issue and return a single instance
-    if is_from_github_url(file_path):
+    if is_github_issue_url(file_path):
         try: 
             owner, repo, issue_number = parse_gh_issue_url(file_path)
         except InvalidGithubURL:

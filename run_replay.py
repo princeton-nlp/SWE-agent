@@ -5,7 +5,7 @@ import os
 import yaml
 
 from argparse import ArgumentParser
-from sweagent.environment.utils import is_from_github_url
+from sweagent.environment.utils import is_github_issue_url
 from typing import Any, Dict, List
 import run as runscript
 
@@ -71,7 +71,7 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
         replay_task_instances_path = create_task_instances_tmp_file([json.loads(x) for x in open(data_path, "r").readlines()])
     elif data_path.endswith(".json"):
         replay_task_instances_path = create_task_instances_tmp_file(json.load(open(data_path)))
-    elif is_from_github_url(data_path):
+    elif is_github_issue_url(data_path):
         is_github = True
         replay_task_instances_path = data_path
     else:

@@ -24,7 +24,7 @@ from sweagent.environment.utils import (
     get_container,
     get_gh_issue_data,
     get_instances,
-    is_from_github_url,
+    is_github_issue_url,
     parse_gh_issue_url,
     parse_gh_repo_url,
     read_with_timeout,
@@ -84,7 +84,7 @@ class SWEEnv(gym.Env):
         self.logger = logger
         self.persistent = args.container_name is not None
         self.returncode = None
-        self.is_from_github_url = is_from_github_url(args.data_path)
+        self.is_from_github_url = is_github_issue_url(args.data_path)
         if not self.args.verbose:
             self.logger.disabled = True
 
@@ -108,6 +108,8 @@ class SWEEnv(gym.Env):
         # Load Task Instances
         self.data_path = self.args.data_path
         self.data = get_instances(self.data_path, self.args.base_commit, self.args.split, token=self._github_token)
+        #: Instance we're currently processing. Gets set in self.reset.
+        self.record = None
         self.logger.info(f"💽 Loaded dataset from {self.data_path}")
 
         # Establish connection with execution container
@@ -119,7 +121,7 @@ class SWEEnv(gym.Env):
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
 
-    def reset(self, index: int = None, apply_test_patch: bool = False) -> Tuple[str, dict]:
+    def reset(self, index: Optional[int] = None, apply_test_patch: bool = False) -> Tuple[str, dict]:
         """
         Function to reset container between each task instance.
         * Clones instance's repository
