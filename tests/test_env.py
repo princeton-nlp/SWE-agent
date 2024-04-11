@@ -36,6 +36,12 @@ def test_init_swe_env(test_env_args):
     env.reset()
 
 
+@pytest.mark.slow
+def test_init_swe_env_persistent(test_env_args):
+    test_env_args = dataclasses.replace(test_env_args, container_name="test-container")
+    env = SWEEnv(test_env_args)
+    env.reset()
+
 
 @pytest.mark.slow
 def test_execute_setup_script(tmp_path, test_env_args):
