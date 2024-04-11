@@ -114,16 +114,18 @@ If you're using docker, pass the key with the [`-e` option](https://stackoverflo
 <details>
 <summary>🔎 More options for different keys (click to unfold)</summary>
 
+All keys are optional.
+
 ```
-GITHUB_TOKEN: 'GitHub Token Here (required)'
-OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model (optional)'
-ANTHROPIC_API_KEY: 'Anthropic API Key Here if using Anthropic Model (optional)'
-TOGETHER_API_KEY: 'Together API Key Here if using Together Model (optional)'
-AZURE_OPENAI_API_KEY: 'Azure OpenAI API Key Here if using Azure OpenAI Model (optional)'
-AZURE_OPENAI_ENDPOINT: 'Azure OpenAI Endpoint Here if using Azure OpenAI Model (optional)'
-AZURE_OPENAI_DEPLOYMENT: 'Azure OpenAI Deployment Here if using Azure OpenAI Model (optional)'
-AZURE_OPENAI_API_VERSION: 'Azure OpenAI API Version Here if using Azure OpenAI Model (optional)'
-OPENAI_API_BASE_URL: 'LM base URL here if using Local or alternative api Endpoint (optional)'
+GITHUB_TOKEN: 'GitHub Token Here'
+OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model'
+ANTHROPIC_API_KEY: 'Anthropic API Key Here if using Anthropic Model'
+TOGETHER_API_KEY: 'Together API Key Here if using Together Model'
+AZURE_OPENAI_API_KEY: 'Azure OpenAI API Key Here if using Azure OpenAI Model'
+AZURE_OPENAI_ENDPOINT: 'Azure OpenAI Endpoint Here if using Azure OpenAI Model'
+AZURE_OPENAI_DEPLOYMENT: 'Azure OpenAI Deployment Here if using Azure OpenAI Model'
+AZURE_OPENAI_API_VERSION: 'Azure OpenAI API Version Here if using Azure OpenAI Model'
+OPENAI_API_BASE_URL: 'LM base URL here if using Local or alternative api Endpoint'
 ```  
 </details>
 

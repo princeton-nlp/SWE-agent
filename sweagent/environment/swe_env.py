@@ -86,7 +86,8 @@ class SWEEnv(gym.Env):
         if not self.args.verbose:
             self.logger.disabled = True
 
-        # Get commit hash
+        #: The commit hash of the swe-agent repository
+        self.commit_sha = None
         try:
             repo = Repo(search_parent_directories=True)
             self.commit_sha = repo.head.object.hexsha
@@ -94,19 +95,17 @@ class SWEEnv(gym.Env):
             raise
         except:
             logger.warning("Failed to get commit hash for this repo")
-            self.commit_sha = None
 
-        # Set GitHub Token
-        self.token = os.environ.get("GITHUB_TOKEN", None)
-        if (self.token is None or self.token == "") and os.path.isfile(
+        self._github_token = os.environ.get("GITHUB_TOKEN", None)
+        if not self._github_token and os.path.isfile(
             os.path.join(os.getcwd(), "keys.cfg")
         ):
-            self.cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
-            self.token = self.cfg.get("GITHUB_TOKEN", None)
+            cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
+            self._github_token = cfg.get("GITHUB_TOKEN", None)
 
         # Load Task Instances
         self.data_path = self.args.data_path
-        self.data = get_instances(self.data_path, self.args.base_commit, self.args.split, token=self.token)
+        self.data = get_instances(self.data_path, self.args.base_commit, self.args.split, token=self._github_token)
         self.logger.info(f"💽 Loaded dataset from {self.data_path}")
 
         # Establish connection with execution container
@@ -152,17 +151,20 @@ class SWEEnv(gym.Env):
         folders = self.communicate(input="ls").split("\n")
         repo_name = self.record["repo"].replace("/", "__")
         if repo_name not in folders:
+            token_prefix = ""
+            if self._github_token:
+                token_prefix = f"{self._github_token}@"
             if not self.args.no_mirror and not self.is_from_github_url:
                 self.logger.info(f"{repo_name} not found in container, cloning...")
                 self.communicate_with_handling(
-                    input=f"git clone https://{self.token}@github.com/swe-bench/{repo_name}.git",
+                    input=f"git clone https://{token_prefix}github.com/swe-bench/{repo_name}.git",
                     error_msg="Failed to clone repository from mirror",
                     timeout_duration=LONG_TIMEOUT,
                 )
             else:
                 logger.info(f"Trying to clone from non-mirror...")
                 self.communicate_with_handling(
-                    input=f"git clone https://{self.token}@github.com/{self.record['repo']}.git {repo_name}",
+                    input=f"git clone https://{token_prefix}github.com/{self.record['repo']}.git {repo_name}",
                     error_msg="Failed to clone repository from non-mirror",
                     timeout_duration=LONG_TIMEOUT,
                 )
@@ -746,7 +748,7 @@ class SWEEnv(gym.Env):
         # todo: have better way of handling this
         # Adding random string suffix to avoid name conflicts if we had a previously failed run
         issue_url = self.args.data_path 
-        issue = get_gh_issue_data(issue_url, token=self.token)
+        issue = get_gh_issue_data(issue_url, token=self._github_token)
         branch_name = f"swe-agent-fix-#{issue.number}-" + str(random.random())[2:10]
 
         self.communicate_with_handling(
@@ -778,7 +780,10 @@ class SWEEnv(gym.Env):
         else:
             owner, repo = parse_gh_repo_url(push_gh_repo_url)
         if push_gh_repo_url:
-            fork_url = f"https://{self.token}@github.com/{owner}/{repo}.git"
+            token_prefix = ""
+            if self._github_token:
+                token_prefix = f"{self._github_token}@"
+            fork_url = f"https://{token_prefix}github.com/{owner}/{repo}.git"
             self.communicate_with_handling(
                 input=f"git remote add fork {fork_url}",
                 error_msg="Failed to create new git remote",
@@ -801,7 +806,7 @@ class SWEEnv(gym.Env):
             f"to close [#{issue.number}]({issue_url}) ({issue.title}).\n\nCloses #{issue.number}."
         )
         body += "\n\n" + format_trajectory_markdown(trajectory)
-        api = GhApi(token=self.token)
+        api = GhApi(token=self._github_token)
         if not _dry_run:
             pr_info = api.pulls.create(
                 owner=owner,
