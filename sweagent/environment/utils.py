@@ -14,6 +14,8 @@ import traceback
 
 from datasets import load_dataset, load_from_disk
 from ghapi.all import GhApi
+from azure.devops.connection import Connection
+from msrest.authentication import BasicAuthentication
 from io import BytesIO
 from pathlib import Path
 from subprocess import PIPE, STDOUT
@@ -23,6 +25,7 @@ LOGGER_NAME = "intercode"
 START_UP_DELAY = 5
 TIMEOUT_DURATION = 25
 GITHUB_ISSUE_URL_PATTERN = re.compile(r'github\.com\/(.*?)\/(.*?)\/issues\/(\d+)')
+AZUREDEVOPS_ISSUE_URL_PATTERN = re.compile(r'dev\.azure\.com\/(.*?)\/(.*?)\/_workitems\/edit\/(\d+)')
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -34,12 +37,18 @@ def get_data_path_name(data_path: str):
     if match:
         owner, repo, issue_number = match.groups()
         return f"{owner}__{repo}"
+    match = AZUREDEVOPS_ISSUE_URL_PATTERN.search(data_path)
+    if match:
+        owner, repo, issue_number = match.groups()
+        return f"{owner}__{repo}"
     return Path(data_path).stem
 
 
 def is_from_github_url(data_path: str):
     return GITHUB_ISSUE_URL_PATTERN.search(data_path) is not None
 
+def is_from_azuredevops_url(data_path: str):
+    return AZUREDEVOPS_ISSUE_URL_PATTERN.search(data_path) is not None
 
 def copy_file_to_container(container, contents, container_path):
     """
@@ -311,6 +320,17 @@ def get_commit(api: GhApi, owner: str, repo: str, base_commit: str = None):
         commit = api.repos.list_commits(owner, repo)[0]
     return commit
 
+def get_azuredevops_commit(connection: Connection, organization: str, project: str, repo: str, base_commit: str = None):
+    repo_client = connection.clients.get_git_client()
+    repos = repo_client.get_repositories(project)
+
+    refs = repo_client.get_refs(repo, project)
+
+    if refs:
+        commit = refs[0].object_id
+    else:
+        raise ValueError("No commits found in the repository")
+    return commit
 
 
 class InvalidGithubURL(ValueError):
@@ -322,6 +342,15 @@ def parse_gh_issue_url(issue_url: str) -> Tuple[str, str, str]:
     match = GITHUB_ISSUE_URL_PATTERN.search(issue_url)
     if not match:
         raise InvalidGithubURL(f"Invalid GitHub issue URL: {issue_url}")
+    res = match.groups()
+    assert len(res) == 3
+    return tuple(res)  # type: ignore
+
+def parse_azuredevops_issue_url(issue_url: str) -> Tuple[str, str, str]:
+    """Return organization, project, issue number from issue url"""
+    match = AZUREDEVOPS_ISSUE_URL_PATTERN.search(issue_url)
+    if not match:
+        raise InvalidGithubURL(f"Invalid Azure DevOps issue URL: {issue_url}")
     res = match.groups()
     assert len(res) == 3
     return tuple(res)  # type: ignore
@@ -347,7 +376,7 @@ def get_gh_issue_data(issue_url: str, *, token: str = ""):
     return api.issues.get(owner, repo, issue_number)
 
 
-def get_instances(file_path: str, base_commit: str = None, split: str = None, token: str = None):
+def get_instances(file_path: str, base_commit: str = None, split: str = None, token: str = None, az_repo: str = None, az_token: str = None):
     """
     Getter function for handling json, jsonl files
 
@@ -381,6 +410,39 @@ def get_instances(file_path: str, base_commit: str = None, split: str = None, to
             record["version"] = record["base_commit"][:7]
             record["problem_statement"] = text
             record["instance_id"] = f"{owner}__{repo}-i{issue_number}"
+            return [record,]
+    elif is_from_azuredevops_url(file_path):
+        print ("Azure DevOps URL")
+        if az_repo is None:
+            raise ValueError("az_repo must be provided if data_path is an Azure DevOps URL")
+        if az_token is None:
+            raise ValueError("az_token must be provided if data_path is an Azure DevOps URL")
+        try:
+            organization, project, issue_number = parse_azuredevops_issue_url(file_path)
+        except InvalidGithubURL:
+            pass
+        else:
+            organization_url = f"https://dev.azure.com/{organization}"
+            credentials = BasicAuthentication('', az_token)
+            connection = Connection(base_url=organization_url, creds=credentials)
+            wit_client = connection.clients.get_work_item_tracking_client()
+            record = dict()
+            issue = wit_client.get_work_item(int(issue_number))
+            title = issue.fields["System.Title"] if issue.fields["System.Title"] else ""
+            body = issue.fields["System.Description"] if issue.fields["System.Description"] else ""
+            text = f"{title}\n{body}\n"
+
+            # get Repo base commit
+            
+            record["type"] = "azuredevops"
+            record["organization"] = organization
+            record["project"] = project
+            record["issue_number"] = issue_number
+            record["base_commit"] = base_commit if base_commit else get_azuredevops_commit(connection, organization, project, az_repo, base_commit)
+            record["az_repo"] = az_repo
+            record["repo"] = f"{organization}/{project}/{az_repo}"
+            record["problem_statement"] = text
+            record["instance_id"] = f"{organization}__{project}-i{issue_number}"
             return [record,]
     elif base_commit is not None:
         raise ValueError("base_commit must be None if data_path is not a github issue url")

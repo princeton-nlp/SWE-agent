@@ -286,6 +286,8 @@ def get_args(args=None) -> ScriptArguments:
         environment=EnvironmentArguments(
             image_name="sweagent/swe-agent:latest",
             data_path="princeton-nlp/SWE-bench_Lite",
+            # Azure repo argument
+            az_repo="",
             split="dev",
             verbose=True,
             install_environment=True,
