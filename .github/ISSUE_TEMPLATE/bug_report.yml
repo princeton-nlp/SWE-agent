@@ -57,11 +57,15 @@ body:
     label: Checklist
     description: We can only help you if you have done the following
     options:
+      - label: I'm running with the latest docker container/on the latest development version
+        required: true
+      - label: I've searched the other issues for a duplicate
+        required: true
       - label: I have copied the full command/code that I ran
         required: true
       - label: I have copied the **full** log file/error message that was the result (if applicable)
         required: true
-      - label: I have enclosed code/log messages in triple backticks ([docs](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#quoting-code))
+      - label: I have enclosed code/log messages in triple backticks ([docs](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#quoting-code)) and clicked "Preview" to make sure it's displayed correctly.
         required: true
 - type: markdown
   attributes:

@@ -1,3 +1,4 @@
+from pathlib import Path
 import random
 import config
 import datetime
@@ -15,7 +16,8 @@ from ghapi.all import GhApi
 from dataclasses import dataclass
 from git import Repo
 from rich.logging import RichHandler
-from simple_parsing.helpers import FrozenSerializable
+from simple_parsing.helpers.serialization.serializable import FrozenSerializable
+import yaml
 from sweagent.environment.utils import (
     copy_file_to_container,
     format_trajectory_markdown,
@@ -58,6 +60,11 @@ class EnvironmentArguments(FrozenSerializable):
     timeout: int = 35
     verbose: bool = False
     no_mirror: bool = False
+    # Custom environment setup. Currently only used when data_path is a GitHub URL.
+    # This needs to be either a string pointing to a yaml file (with yaml, yml file extension)
+    # or a shell script (with sh extension).
+    # See https://github.com/princeton-nlp/SWE-agent/pull/153 for more information
+    environment_setup: Optional[str] = None
 
 
 class SWEEnv(gym.Env):
@@ -79,7 +86,8 @@ class SWEEnv(gym.Env):
         if not self.args.verbose:
             self.logger.disabled = True
 
-        # Get commit hash
+        #: The commit hash of the swe-agent repository
+        self.commit_sha = None
         try:
             repo = Repo(search_parent_directories=True)
             self.commit_sha = repo.head.object.hexsha
@@ -87,19 +95,17 @@ class SWEEnv(gym.Env):
             raise
         except:
             logger.warning("Failed to get commit hash for this repo")
-            self.commit_sha = None
 
-        # Set GitHub Token
-        self.token = os.environ.get("GITHUB_TOKEN", None)
-        if (self.token is None or self.token == "") and os.path.isfile(
+        self._github_token = os.environ.get("GITHUB_TOKEN", None)
+        if not self._github_token and os.path.isfile(
             os.path.join(os.getcwd(), "keys.cfg")
         ):
-            self.cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
-            self.token = self.cfg.get("GITHUB_TOKEN", None)
+            cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
+            self._github_token = cfg.get("GITHUB_TOKEN", None)
 
         # Load Task Instances
         self.data_path = self.args.data_path
-        self.data = get_instances(self.data_path, self.args.base_commit, self.args.split, token=self.token)
+        self.data = get_instances(self.data_path, self.args.base_commit, self.args.split, token=self._github_token)
         self.logger.info(f"💽 Loaded dataset from {self.data_path}")
 
         # Establish connection with execution container
@@ -145,17 +151,20 @@ class SWEEnv(gym.Env):
         folders = self.communicate(input="ls").split("\n")
         repo_name = self.record["repo"].replace("/", "__")
         if repo_name not in folders:
+            token_prefix = ""
+            if self._github_token:
+                token_prefix = f"{self._github_token}@"
             if not self.args.no_mirror and not self.is_from_github_url:
                 self.logger.info(f"{repo_name} not found in container, cloning...")
                 self.communicate_with_handling(
-                    input=f"git clone https://{self.token}@github.com/swe-bench/{repo_name}.git",
+                    input=f"git clone https://{token_prefix}github.com/swe-bench/{repo_name}.git",
                     error_msg="Failed to clone repository from mirror",
                     timeout_duration=LONG_TIMEOUT,
                 )
             else:
                 logger.info(f"Trying to clone from non-mirror...")
                 self.communicate_with_handling(
-                    input=f"git clone https://{self.token}@github.com/{self.record['repo']}.git {repo_name}",
+                    input=f"git clone https://{token_prefix}github.com/{self.record['repo']}.git {repo_name}",
                     error_msg="Failed to clone repository from non-mirror",
                     timeout_duration=LONG_TIMEOUT,
                 )
@@ -205,13 +214,7 @@ class SWEEnv(gym.Env):
 
         # Call install environment helper function if specified
         if self.install_environment:
-            if self.is_from_github_url:
-                logger.warning((
-                    "install_environment is set to True, but the data path is a GitHub URL. "
-                    "Skipping conda environment installation."
-                    ))
-            else:
-                self.install_env()
+            self.install_env()
         # Install mypy for linting purposes
         self.communicate_with_handling(
             f"pip install flake8",
@@ -237,7 +240,7 @@ class SWEEnv(gym.Env):
         # Write any metadata to info if necessary
         return None, info
 
-    def step(self, action: str) -> Tuple[str, int, bool, dict]:
+    def step(self, action: str) -> Tuple[Optional[str], int, bool, dict]:
         """
         Runs given action in environment and returns corresponding output
 
@@ -302,7 +305,7 @@ class SWEEnv(gym.Env):
             logger.error(f"Broken pipe error: {e}\nRESTARTING PROCESS.")
             self.reset_container()
             return observation, 0, True, info
-        except Exception as e:
+        except Exception:
             observation += "\nEXECUTION FAILED OR COMMAND MALFORMED"
 
         # Record submission and end episode if `submit` keyword found
@@ -326,6 +329,8 @@ class SWEEnv(gym.Env):
             raise
         except:
             pass
+        assert self.container is not None
+        assert self.container_obj is not None
         self.container.terminate()
         if self.persistent:
             if self.container_obj.status not in {"paused", "exited"}:
@@ -440,7 +445,7 @@ class SWEEnv(gym.Env):
         self.returncode = int(exit_code)
         return buffer
 
-    def _check_syntax(self, input: str) -> None:
+    def _check_syntax(self, input: str):
         """
         Saves environment variables to file
         """
@@ -524,19 +529,71 @@ class SWEEnv(gym.Env):
             return None
         return match.group(1)
 
+    def run_shell_script(self, script_path: Path, *, location: str) -> None:
+        """Run custom script supplied by user at `script_path`
+
+        Args:
+            location: location of script file 'host' or 'container'
+        """
+        if location == "host":
+            return self._run_shell_script_host(script_path)
+        elif location == "container":
+            raise NotImplementedError
+        raise ValueError(f"Invalid 'location': {location}")
+    
+    def _run_shell_script_host(self, script_path: Path) -> None:
+        """Run shell script file (located on host) in container""" 
+        if not script_path.is_file():
+            raise FileNotFoundError(f"Script not found at {script_path}")
+        shell_commands = Path(script_path).read_text().splitlines()
+        for i, cmd in enumerate(shell_commands):
+            self.communicate_with_handling(
+                cmd,
+                error_msg=f"Failed to execute line {i}.",
+                timeout_duration=LONG_TIMEOUT,
+            )
+
     def install_env(self) -> None:
         """
         Creates conda environment and installs third party dependencies to allow code execution
         """
+        if self.is_from_github_url and self.args.environment_setup is None:
+            logger.warning((
+                "install_environment is set to True, but the data path is a GitHub URL "
+                "without an environment config file (environment_config key/flag). "
+                "Skipping conda environment installation."
+                ))
+            return
         repo_name = self.record["repo"].replace("/", "__")
+        if self.args.environment_setup is not None:
+            assert isinstance(self.args.environment_setup, (str, os.PathLike))
+            if Path(self.args.environment_setup).suffix in [".yml", ".yaml"]:
+                try:
+                    install_configs = yaml.safe_load(Path(self.args.environment_setup).read_text())
+                except Exception as e:
+                    msg = "Environment config file needs to be a yaml file"
+                    raise ValueError(msg) from e
+            elif Path(self.args.environment_setup).suffix == ".sh":
+                self.run_shell_script(Path(self.args.environment_setup), location="host")
+                return
+            else:
+                raise ValueError("Environment config file needs to be a yaml file or shell script")
+        else:
+            try:
+                install_configs = MAP_VERSION_TO_INSTALL[self.record["repo"]][
+                    str(self.record["version"])
+                ]
+            except KeyError as e:
+                msg = (
+                    "Tried to look up install configs in swe-bench, but failed. "
+                    "You can set a custom environment config with the environment_config key/flag."
+                )
+                raise ValueError(msg) from e
         # Create environment if does not exist yet
         env_name = f"{repo_name}__{self.record['version']}"
         env_check = self.communicate(
             f"conda env list | grep {env_name}", timeout_duration=LONG_TIMEOUT
         )
-        install_configs = MAP_VERSION_TO_INSTALL[self.record["repo"]][
-            str(self.record["version"])
-        ]
         if env_check.strip() == "":
             self.logger.info(f"{env_name} conda env not found, creating...")
             packages = (
@@ -679,17 +736,23 @@ class SWEEnv(gym.Env):
             raise RuntimeError("Failed to interrupt container")
 
 
-    def open_pr(self, action_config, info, trajectory):
-        """Create PR to repository"""
+    def open_pr(self, *, trajectory, push_gh_repo_url: Optional[str] = None, _dry_run: bool=False):
+        """Create PR to repository
+        
+        Args:
+            trajectory: Trajectory of actions taken by the agent
+            push_gh_repo_url: URL of the repository to push the PR branch to
+            _dry_run: Whether to actually push anything or just simulate it
+        """
         logger.info("Opening PR")
         # todo: have better way of handling this
         # Adding random string suffix to avoid name conflicts if we had a previously failed run
         issue_url = self.args.data_path 
-        issue = get_gh_issue_data(issue_url, token=self.token)
+        issue = get_gh_issue_data(issue_url, token=self._github_token)
         branch_name = f"swe-agent-fix-#{issue.number}-" + str(random.random())[2:10]
 
         self.communicate_with_handling(
-            input=f"rm model.patch",
+            input=f"rm -f model.patch",
             error_msg="Failed to remove model patch",
             timeout_duration=10,
         )
@@ -703,28 +766,33 @@ class SWEEnv(gym.Env):
             error_msg="Failed to add commits",
             timeout_duration=10,
         )
+        dry_run_flag = "--allow-empty" if _dry_run else ""
         self.communicate_with_handling(
-            input=f"git commit -m 'Fix: {issue.title}' -m 'Closes #{issue.number}' ",
+            input=f"git commit -m 'Fix: {issue.title}' -m 'Closes #{issue.number}' {dry_run_flag}",
             error_msg="Failed to commit changes",
             timeout_duration=10,
         )
         # If users want to push to a fork, we add a new remote and push to that
         # otherwise, we push to 'origin' which has already been set up
         remote = "origin"
-        if not action_config.push_gh_repo_url:
+        if not push_gh_repo_url:
             owner, repo, _ = parse_gh_issue_url(issue_url)
         else:
-            owner, repo = parse_gh_repo_url(action_config.push_gh_repo_url)
-        if action_config.push_gh_repo_url:
-            fork_url = f"https://{self.token}@github.com/{owner}/{repo}.git"
+            owner, repo = parse_gh_repo_url(push_gh_repo_url)
+        if push_gh_repo_url:
+            token_prefix = ""
+            if self._github_token:
+                token_prefix = f"{self._github_token}@"
+            fork_url = f"https://{token_prefix}github.com/{owner}/{repo}.git"
             self.communicate_with_handling(
                 input=f"git remote add fork {fork_url}",
                 error_msg="Failed to create new git remote",
                 timeout_duration=10,
             )
             remote = "fork"
+        dry_run_prefix = "echo " if _dry_run else ""
         self.communicate_with_handling(
-            input=f"git push {remote} {branch_name}",
+            input=f"{dry_run_prefix} git push {remote} {branch_name}",
             error_msg=(
                 "Failed to push branch to remote. Please check your token and permissions. "
                 "You might want to push to a fork with the push_gh_repo_url option."
@@ -738,18 +806,19 @@ class SWEEnv(gym.Env):
             f"to close [#{issue.number}]({issue_url}) ({issue.title}).\n\nCloses #{issue.number}."
         )
         body += "\n\n" + format_trajectory_markdown(trajectory)
-        api = GhApi(token=self.token)
-        pr_info = api.pulls.create(
-            owner=owner,
-            repo=repo,
-            title=f"SWE-agent[bot] PR to fix: {issue.title}",
-            head=branch_name,
-            base="main",
-            body=body,
-            draft=True,
-        )
-        logger.info(
-            f"🎉 PR created as a draft at {pr_info.html_url}. Please review it carefully, push "
-            "any required changes onto the branch and then click "
-            "'Ready for Review' to bring it to the attention of the maintainers."
-        )
+        api = GhApi(token=self._github_token)
+        if not _dry_run:
+            pr_info = api.pulls.create(
+                owner=owner,
+                repo=repo,
+                title=f"SWE-agent[bot] PR to fix: {issue.title}",
+                head=branch_name,
+                base="main",
+                body=body,
+                draft=True,
+            )
+            logger.info(
+                f"🎉 PR created as a draft at {pr_info.html_url}. Please review it carefully, push "
+                "any required changes onto the branch and then click "
+                "'Ready for Review' to bring it to the attention of the maintainers."
+            )

@@ -2,7 +2,6 @@
 
 import json
 import os
-import subprocess
 import yaml
 
 from argparse import ArgumentParser

@@ -48,15 +48,10 @@ Read our paper for more details [coming soon!].
 
 ### 🏎️ Express Setup + Run
 
-> [!WARNING]
-> Our official containers on dockerhub are currently only provided for `arm64`.
-> If you're on `amd64`, you can try out the experimental support following the instructions in [#107](https://github.com/princeton-nlp/SWE-agent/issues/107)
-> or follow the development version setup below.
-
 You can run the software directly using Docker. 
 
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
-2. Run `docker pull sweagent/swe-agent:latest`
+2. Run `docker pull --platform=linux/arm64 sweagent/swe-agent:latest` (replace `arm64` with `amd64` if you're running on x86)
 3. Add your API tokens to a file `keys.cfg` as explained [below](#-add-your-api-keystokens)
 
 Then run
@@ -66,6 +61,8 @@ Then run
 docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
   # replace /xxxx/keys.cfg with the paths to your keys
   -v /xxxx/keys.cfg:/app/keys.cfg \
+  # replace with your architecture, either arm64 or amd64
+  --platform=linux/arm64 \
   sweagent/swe-agent-run:latest \
   python run.py --image_name=sweagent/swe-agent:latest \
   # the rest of the command as shown in the quickstart/benchmarking section,
@@ -79,6 +76,8 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 > * For more information on the different API keys/tokens, see [below](#-add-your-api-keystokens).
 > * If you're using docker on Windows, use `-v //var/run/docker.sock:/var/run/docker.sock`
 >   (double slash) to escape it ([more information](https://stackoverflow.com/a/47229180/)).
+> * See the [installation issues section](#-installation-issues) for more help if you run into
+>   trouble.
 
 ### 🐍 Setup with conda (development version) 
 
@@ -96,7 +95,10 @@ To install the development version:
 > In the meantime, simply use Docker (see above).
 > If you want the latest version, you can also build your own `swe-agent-run`
 > container with the `Dockerfile` at the root of this repository by running
-> `docker built -t sweagent/swe-agent-run:latest .`
+> `docker build -t sweagent/swe-agent-run:latest .`
+
+> [!TIP]
+> If you run into docker issues, see the [installation issues section](#-installation-issues) for more help
 
 ### 🔑 Add your API keys/tokens
 
@@ -112,21 +114,32 @@ If you're using docker, pass the key with the [`-e` option](https://stackoverflo
 <details>
 <summary>🔎 More options for different keys (click to unfold)</summary>
 
+All keys are optional.
+
 ```
-GITHUB_TOKEN: 'GitHub Token Here (required)'
-OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model (optional)'
-ANTHROPIC_API_KEY: 'Anthropic API Key Here if using Anthropic Model (optional)'
-TOGETHER_API_KEY: 'Together API Key Here if using Together Model (optional)'
-GROQ_API_KEY: 'Groq API Key Here if using Groq Model (optional)'
-AZURE_OPENAI_API_KEY: 'Azure OpenAI API Key Here if using Azure OpenAI Model (optional)'
-AZURE_OPENAI_ENDPOINT: 'Azure OpenAI Endpoint Here if using Azure OpenAI Model (optional)'
-AZURE_OPENAI_DEPLOYMENT: 'Azure OpenAI Deployment Here if using Azure OpenAI Model (optional)'
-AZURE_OPENAI_API_VERSION: 'Azure OpenAI API Version Here if using Azure OpenAI Model (optional)'
-OPENAI_API_BASE_URL: 'LLM base URL here if using Local or alternative api Endpoint (optional)'
+GITHUB_TOKEN: 'GitHub Token Here'
+OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model'
+ANTHROPIC_API_KEY: 'Anthropic API Key Here if using Anthropic Model'
+TOGETHER_API_KEY: 'Together API Key Here if using Together Model'
+GROQ_API_KEY: 'Groq API Key Here if using Groq Model'
+AZURE_OPENAI_API_KEY: 'Azure OpenAI API Key Here if using Azure OpenAI Model'
+AZURE_OPENAI_ENDPOINT: 'Azure OpenAI Endpoint Here if using Azure OpenAI Model'
+AZURE_OPENAI_DEPLOYMENT: 'Azure OpenAI Deployment Here if using Azure OpenAI Model'
+AZURE_OPENAI_API_VERSION: 'Azure OpenAI API Version Here if using Azure OpenAI Model'
+OPENAI_API_BASE_URL: 'LM base URL here if using Local or alternative api Endpoint'
 ```  
 </details>
 
 See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) tokens.
+
+### More installation tips
+
+If you seem to be having issues with running docker
+
+* Make sure that you allow the use of the Docker socket. In Docker desktop, click *Settings* > *Advanced* > *Allow the default Docker socket to be used (requires password)*
+* If your docker installation uses a different socket, you might have to symlink them, see [this command for example](https://github.com/princeton-nlp/SWE-agent/issues/20#issuecomment-2047506005)
+
+Any remaining issues? Please [open a GitHub issue](https://github.com/princeton-nlp/SWE-agent/issues/new/choose)!
 
 ## 🔥 Quickstart: Solve real-life GitHub issues! <a name="real-life"></a>
 
@@ -136,7 +149,6 @@ python run.py --model_name gpt4 \
   --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
   --config_file config/default_from_url.yaml
 ```
-
 
 > [!TIP]
 > You can have the agent automatically open a PR if the issue has been solved by supplying the `--open_pr`
@@ -150,6 +162,19 @@ python run.py --model_name gpt4 \
 * See the [`sweagent/agent/`](sweagent/agent/) folder for details about the logic behind configuration based workflows.
 * See the [`sweagent/environment/`](sweagent/environment/) folder for details about the `SWEEnv` environment (interface + implementation).
 * See the [`trajectories/`](trajectories) folder for details about the output of `run.py`.
+
+<details>
+<summary> Ollama Support</summary>
+
+Models served with an ollama server can be used by specifying `--model` with `ollama:model_name` and `--host_url` to point to the url used to serve ollama (`http://localhost:11434` by default). See more details about using ollama [here](https://github.com/ollama/ollama/tree/main/docs).
+
+```bash
+python run.py --model_name ollama:deepseek-coder:6.7b-instruct \
+  --host_url http://localhost:11434 \
+  --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
+  --config_file config/default_from_url.yaml
+```
+</details>
 
 ## 💽 Benchmarking <a name="benchmarking"></a>
 
@@ -196,7 +221,8 @@ MIT. Check `LICENSE`.
 
 <div align="center">
 
-[![Tests (no LLM)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/ci_no_llm.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/ci_no_llm.yaml)
+[![Tests (no LM)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/ci_no_llm.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/ci_no_llm.yaml)
+[![codecov](https://codecov.io/gh/princeton-nlp/SWE-agent/graph/badge.svg?token=18XAVDK365)](https://codecov.io/gh/princeton-nlp/SWE-agent)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/princeton-nlp/SWE-agent/main.svg)](https://results.pre-commit.ci/latest/github/princeton-nlp/SWE-agent/main)
 [![Markdown links](https://github.com/princeton-nlp/SWE-agent/actions/workflows/check-links.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/check-links.yaml)
 

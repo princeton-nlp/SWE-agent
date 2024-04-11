@@ -1,6 +1,6 @@
 FROM ubuntu:jammy
 
-ARG MINICONDA_URL
+ARG TARGETARCH
 
 # Install third party tools
 RUN apt-get update && \
@@ -27,7 +27,9 @@ RUN echo "alias ls='ls -F'" >> /root/.bashrc
 # Install miniconda
 ENV PATH="/root/miniconda3/bin:${PATH}"
 ARG PATH="/root/miniconda3/bin:${PATH}"
-RUN wget ${MINICONDA_URL} -O miniconda.sh \
+COPY docker/getconda.sh .
+RUN bash getconda.sh ${TARGETARCH} \
+    && rm getconda.sh \
     && mkdir /root/.conda \
     && bash miniconda.sh -b \
     && rm -f miniconda.sh
