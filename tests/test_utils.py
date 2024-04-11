@@ -1,5 +1,5 @@
 import pytest
-from sweagent.environment.utils import InvalidGithubURL, format_trajectory_markdown, _MARKDOWN_TRAJECTORY_EMOJI_MAPPING, get_instance_from_github_url, is_github_repo_url, remove_triple_backticks, parse_gh_repo_url, parse_gh_issue_url, is_github_issue_url, get_associated_commit_urls
+from sweagent.environment.utils import InvalidGithubURL, format_trajectory_markdown, _MARKDOWN_TRAJECTORY_EMOJI_MAPPING, get_instance_from_github_url, get_instances, is_github_repo_url, remove_triple_backticks, parse_gh_repo_url, parse_gh_issue_url, is_github_issue_url, get_associated_commit_urls
 
 def test_format_trajectory_markdown(test_trajectory):
     formatted = format_trajectory_markdown(test_trajectory["trajectory"])
@@ -67,7 +67,7 @@ def test_get_associated_commit_urls():
 
 
 def test_get_instance_from_github_url_github_issue():
-    instance = get_instance_from_github_url("https://github.com/klieret/swe-agent-test-repo/issues/1")
+    instance = get_instances("https://github.com/klieret/swe-agent-test-repo/issues/1")[0]
     compare_with = {
         'repo': 'klieret/swe-agent-test-repo',
         'base_commit': '3b37cb20ed4851f9239fe7bef239f9cca1195a1e',
@@ -81,7 +81,7 @@ def test_get_instance_from_github_url_github_issue():
 
 
 def test_get_instance_from_github_url_github_issue_overrides():
-    instance = get_instance_from_github_url("https://github.com/klieret/swe-agent-test-repo/issues/1", problem_statement="asdf", base_commit="1234")
+    instance = get_instances("https://github.com/klieret/swe-agent-test-repo/issues/1", problem_statement="asdf", base_commit="1234")[0]
     assert instance["problem_statement"] == "asdf"
     assert instance["base_commit"] == "1234"
 
@@ -94,3 +94,11 @@ def test_get_instance_from_github_url_github_repo_missing_problem():
 def test_get_instance_from_github_url_github_repo():
     instance = get_instance_from_github_url("https://github.com/klieret/swe-agent-test-repo/", problem_statement="asdf")
     assert instance["problem_statement"] == "asdf"
+
+
+def test_get_instance_from_local_dir(tmp_path):
+    tmp_dir = tmp_path / "test"
+    tmp_dir.mkdir(parents=True)
+    instance = get_instances(file_path=tmp_dir, problem_statement="asdf")[0]
+    assert instance["problem_statement"] == "asdf"
+    assert instance["repo"] == f"local://{str(tmp_dir.resolve())}"

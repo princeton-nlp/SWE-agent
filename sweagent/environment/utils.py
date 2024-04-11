@@ -18,7 +18,9 @@ from ghapi.all import GhApi
 from io import BytesIO
 from pathlib import Path
 from subprocess import PIPE, STDOUT
-from typing import Any, List, Optional, Set, Tuple, Dict
+from typing import Any, List, Optional, Set, Tuple, Dict, Union
+
+from git import InvalidGitRepositoryError, Repo
 
 LOGGER_NAME = "intercode"
 START_UP_DELAY = 5
@@ -52,6 +54,7 @@ def is_github_repo_url(data_path: str) -> bool:
     return GITHUB_REPO_URL_PATTERN.search(data_path) is not None
 
 
+# todo: Why not just use copy_anything_to_container?
 def copy_file_to_container(container, contents, container_path):
     """
     Copies a given string into a Docker container at a specified path.
@@ -95,6 +98,23 @@ def copy_file_to_container(container, contents, container_path):
         # Cleanup: Remove the temporary file if it was created
         if temp_file_name and os.path.exists(temp_file_name):
             os.remove(temp_file_name)
+
+
+def copy_anything_to_container(container, host_path: str, container_path: str) -> None:
+    """Copy files or directories from host to container
+    
+    Note: Will need to set ownership on the copied files in the container.
+    """
+    if not Path(host_path).exists():
+        msg = f"Path {host_path} does not exist, cannot copy it to container."
+        raise FileNotFoundError(msg)
+    cmd = ["docker", "cp", host_path, f"{container.id}:{container_path}"]
+    logger.debug(f"Copying {host_path} to container at {container_path} with command: {shlex.join(cmd)}")
+    try:
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        msg = f"Error copying {host_path} to container at {container_path}: {e}"
+        raise RuntimeError(msg) from e
 
 
 def read_with_timeout(container, pid_func, timeout_duration):
@@ -399,6 +419,35 @@ def get_instance_from_github_url(url: str, *, base_commit: Optional[str]=None, p
     return record
 
 
+def get_instance_from_local_dir(data_path: Union[str, os.PathLike], *, problem_statement: str) -> Dict[str, Any]:
+    """Get task instance from a local directory"""
+    if not problem_statement:
+        msg = "Problem statement must be provided if data_path is a local directory."
+        raise ValueError(msg)
+    data_path = Path(data_path).resolve()
+    if not data_path.is_dir():
+        msg = "data_path must be a directory"
+        raise ValueError(msg)
+    try:
+        repo = Repo(data_path, search_parent_directories=True)
+    except InvalidGitRepositoryError as e:
+        msg = "data_path must be a git repository"
+        raise ValueError(msg) from e
+    # The instance id is made up of the hash of the parent directory, the sanitized directory name
+    # and the hash of the problem statement
+    iid = hashlib.sha256(str(data_path.parent).encode()).hexdigest()[:6]
+    iid += "__"+ "".join(x for x in data_path.stem if x.isalnum())
+    iid += "-" + hashlib.sha256(problem_statement.encode()).hexdigest()[:6]
+    base_commit = repo.head.object.hexsha
+    return {
+        "repo": f"local://{data_path}",
+        "base_commit": base_commit,
+        "version": base_commit[:7],
+        "problem_statement": problem_statement,
+        "instance_id": iid,
+    }
+
+
 def get_instances(
         file_path: str, 
         base_commit: Optional[str] = None, 
@@ -406,7 +455,7 @@ def get_instances(
         token: Optional[str] = None,
         *,
         problem_statement: str = "",
-    ):
+    ) -> List[Dict[str, Any]]:
     """
     Getter function for handling json, jsonl files
 
@@ -418,12 +467,23 @@ def get_instances(
     Returns:
         List of instances
     """
+
     # If file_path is a directory, attempt load from disk
     if os.path.isdir(file_path):
-        dataset_or_dict = load_from_disk(file_path)
-        if isinstance(dataset_or_dict, dict):
-            return dataset_or_dict[split]
-        return dataset_or_dict
+        try:
+            dataset_or_dict = load_from_disk(file_path)
+            if isinstance(dataset_or_dict, dict):
+                return dataset_or_dict[split]
+            return dataset_or_dict
+        except FileNotFoundError:
+            # Raised by load_from_disk if the directory is not a dataset directory
+            pass
+    
+    if Path(file_path).is_dir():
+        if base_commit is not None:
+            msg = "base_commit must be None if data_path is a local directory"
+            raise ValueError(msg)
+        return [get_instance_from_local_dir(file_path, problem_statement=problem_statement)]
 
     # If file_path is a github issue url, fetch the issue and return a single instance
     if is_github_repo_url(file_path):
