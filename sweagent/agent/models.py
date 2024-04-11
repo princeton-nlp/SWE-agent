@@ -23,6 +23,7 @@ logger = logging.getLogger("api_models")
 
 @dataclass(frozen=True)
 class ModelArguments(FrozenSerializable):
+    """Arguments configuring the model and its behavior."""
     model_name: str
     per_instance_cost_limit: float = 0.0
     total_cost_limit: float = 0.0

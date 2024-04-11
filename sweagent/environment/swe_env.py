@@ -51,6 +51,8 @@ logger.propagate = False
 
 @dataclass(frozen=True)
 class EnvironmentArguments(FrozenSerializable):
+    """Configure data sources and setup instructions for th environment in which we solve the tasks.
+    """
     data_path: str
     image_name: str
     split: str = "dev"
