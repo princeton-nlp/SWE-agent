@@ -179,6 +179,7 @@ class AgentConfig(FrozenSerializable):
 
 @dataclass(frozen=True)
 class AgentArguments(FlattenedAccess, FrozenSerializable):
+    """Configure the agent's behaviour (templates, parse functions, blocklists, ...)."""
     model: ModelArguments = None
 
     # Policy can only be set via config yaml file from command line

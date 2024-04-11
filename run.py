@@ -57,6 +57,7 @@ class ActionsArguments(FlattenedAccess, FrozenSerializable):
 
 @dataclass(frozen=True)
 class ScriptArguments(FlattenedAccess, FrozenSerializable):
+    """Configure the control flow of the run.py script"""
     environment: EnvironmentArguments
     agent: AgentArguments
     actions: ActionsArguments
