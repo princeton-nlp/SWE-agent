@@ -161,6 +161,19 @@ python run.py --model_name gpt4 \
 * See the [`trajectories/`](trajectories) folder for details about the output of `run.py`.
 
 <details>
+<summary> Azure OpenAI support</summary>
+
+Azure OpenAI models can be used by specifying `--model` with `azure:azure_deployment_name`.
+
+```bash
+python run.py --model_name azure:my-gpt-35-turbo \
+  --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
+  --config_file config/default_from_url.yaml
+```
+
+</details>
+
+<details>
 <summary> Ollama Support</summary>
 
 Models served with an ollama server can be used by specifying `--model` with `ollama:model_name` and `--host_url` to point to the url used to serve ollama (`http://localhost:11434` by default). See more details about using ollama [here](https://github.com/ollama/ollama/tree/main/docs).
@@ -172,6 +185,7 @@ python run.py --model_name ollama:deepseek-coder:6.7b-instruct \
   --config_file config/default_from_url.yaml
 ```
 </details>
+
 
 ## 💽 Benchmarking <a name="benchmarking"></a>
 
