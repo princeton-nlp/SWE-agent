@@ -210,21 +210,9 @@ def main(predictions_path, log_dir, swe_bench_tasks, testbed, skip_existing, tim
     report = get_model_report(
         directory_name, pred_path_orig, swe_bench_tasks, log_dir
     )
-    by_outcome = {}
-    by_outcome_func = lambda status: len(
-        [
-            instance_id
-            for _, v in report.items()
-            if isinstance(v, dict)
-            for instance_id in v[status]
-        ]
-    )
-    by_outcome["# Not Generated"] = by_outcome_func("none")
-    by_outcome["# Generated"] = by_outcome_func("generated")
-    by_outcome["# Applied"] = by_outcome_func("applied")
-    by_outcome["# Resolved"] = by_outcome_func("resolved")
-    by_outcome["# Install Fail"] = by_outcome_func("install_fail")
-    print(f"Reference Report:\n{by_outcome}")
+    print(f"Reference Report:")
+    for k, v in report.items():
+        print(f"- {k}: {len(v)}")
 
 
 if __name__ == "__main__":
