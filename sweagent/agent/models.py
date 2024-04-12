@@ -5,7 +5,7 @@ import os
 import together
 
 from collections import defaultdict
-from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
+from anthropic import Anthropic, AnthropicBedrock, HUMAN_PROMPT, AI_PROMPT
 from dataclasses import dataclass, fields
 from openai import BadRequestError, OpenAI, AzureOpenAI
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
@@ -101,6 +101,9 @@ class BaseModel:
         elif args.model_name.startswith("azure:"):
             azure_model = args.model_name.split("azure:", 1)[1]
             self.model_metadata = MODELS[azure_model]
+        elif args.model_name.startswith("bedrock:"):
+            self.api_model = args.model_name.split("bedrock:", 1)[1]
+            self.model_metadata = MODELS[self.api_model]
         else:
             raise ValueError(f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}")
 
@@ -425,6 +428,157 @@ class AnthropicModel(BaseModel):
         response = "\n".join([x.text for x in response.content])
         return response
 
+class BedrockModel(BaseModel):
+    MODELS = {
+        "anthropic.claude-instant-v1": {
+            "max_context": 100_000,
+            "cost_per_input_token": 8e-07,
+            "cost_per_output_token": 2.4e-06,
+        },
+        "anthropic.claude-v2": {
+            "max_context": 100_000,
+            "cost_per_input_token": 8e-06,
+            "cost_per_output_token": 2.4e-05,
+        },
+        "anthropic.claude-v2:1": {
+            "max_context": 100_000,
+            "cost_per_input_token": 8e-06,
+            "cost_per_output_token": 2.4e-05,
+        },
+        "anthropic.claude-3-sonnet-20240229-v1:0": {
+            "max_context": 200_000,
+            "max_tokens": 4096,  # Max tokens to generate for Claude 3 models
+            "cost_per_input_token": 3e-06,
+            "cost_per_output_token": 1.5e-05,
+        },
+        "anthropic.claude-3-haiku-20240307-v1:0": {
+            "max_context": 200_000,
+            "max_tokens": 4096,
+            "cost_per_input_token": 2.5e-07,
+            "cost_per_output_token": 1.25e-06,
+        },
+    }
+
+    def __init__(self, args: ModelArguments, commands: list[Command]):
+        super().__init__(args, commands)
+
+        model_provider = self.api_model.split('.')[0]
+        if model_provider == "anthropic":
+            # Note: this assumes AWS credentials are already configured.
+            # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
+            self.api = AnthropicBedrock()
+        else:
+            raise NotImplementedError
+
+    def history_to_messages(
+        self, history: list[dict[str, str]], is_demonstration: bool = False
+    ) -> list[dict[str, str]]:
+        """
+        Create `prompt` by filtering out all keys except for role/content per `history` turn
+        Reference: https://docs.anthropic.com/claude/reference/complete_post
+        """
+        model_provider = self.api_model.split('.')[0]
+        # Adapted from the AnthropicModel implementation
+        if model_provider == "anthropic":
+            # Preserve behavior for older models
+            if self.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]:
+                # Remove system messages if it is a demonstration
+                if is_demonstration:
+                    history = [entry for entry in history if entry["role"] != "system"]
+                # Map history to Claude format
+                prompt = "\n\n"
+                for entry in history:
+                    if entry["role"] in {"user", "system"}:
+                        prompt += f'{HUMAN_PROMPT} {entry["content"]}\n\n'
+                    elif entry["role"] == "assistant":
+                        prompt += f'{AI_PROMPT} {entry["content"]}\n\n'
+                prompt += AI_PROMPT
+                return prompt
+
+            # Remove system messages if it is a demonstration
+            if is_demonstration:
+                history = [entry for entry in history if entry["role"] != "system"]
+                return '\n'.join([entry["content"] for entry in history])
+
+            # Return history components with just role, content fields (no system message)
+            messages = [
+                {
+                    k: v for k, v in entry.items()
+                    if k in ["role", "content"]
+                }
+                for entry in history if entry["role"] != "system"
+            ]
+            compiled_messages = []  # Combine messages from the same role
+            last_role = None
+            for message in reversed(messages):
+                if last_role == message["role"]:
+                    compiled_messages[-1]["content"] = message["content"] + "\n" + compiled_messages[-1]["content"]
+                else:
+                    compiled_messages.append(message)
+                last_role = message["role"]
+            compiled_messages = list(reversed(compiled_messages))
+            # Replace any empty content values with a "(No output)"
+            for message in compiled_messages:
+                if message["content"].strip() == "":
+                    message["content"] = "(No output)"
+            return compiled_messages
+        else:
+            raise NotImplementedError
+
+    @retry(
+        wait=wait_random_exponential(min=1, max=15),
+        reraise=True,
+        stop=stop_after_attempt(3),
+        retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
+    )
+    def query(self, history: list[dict[str, str]]) -> str:
+        """
+        Query Amazon Bedrock with the given `history` and return the response.
+        """
+        model_provider = self.api_model.split('.')[0]
+        if model_provider == "anthropic":
+            # Preserve behavior for older models
+            if self.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]:
+                # Perform Amazon Bedrock API call
+                prompt = self.history_to_messages(history)
+                input_tokens = self.api.count_tokens(prompt)
+                completion = self.api.completions.create(
+                    model=self.api_model,
+                    prompt=prompt,
+                    max_tokens_to_sample=self.model_metadata["max_context"] - input_tokens,
+                    temperature=self.args.temperature,
+                    top_p=self.args.top_p,
+                )
+                # Calculate + update costs, return response
+                response = completion.completion
+                output_tokens = self.api.count_tokens(response)
+                self.update_stats(input_tokens, output_tokens)
+                return response
+
+            # Get system message(s)
+            system_message = "\n".join([
+                entry["content"] for entry in history if entry["role"] == "system"
+            ])
+            messages = self.history_to_messages(history)
+            # Perform Amazon Bedrock API call
+            response = self.api.messages.create(
+                messages=messages,
+                max_tokens=self.model_metadata["max_tokens"],
+                model=self.api_model,
+                temperature=self.args.temperature,
+                top_p=self.args.top_p,
+                system=system_message,
+            )
+
+            # Calculate + update costs, return response
+            self.update_stats(
+                response.usage.input_tokens,
+                response.usage.output_tokens
+            )
+            response = "\n".join([x.text for x in response.content])
+            return response
+        else:
+            raise NotImplementedError
 
 class OllamaModel(BaseModel):
     MODELS = defaultdict(lambda: {
@@ -708,6 +862,8 @@ def get_model(args: ModelArguments, commands: Optional[list[Command]] = None):
         return OpenAIModel(args, commands)
     elif args.model_name.startswith("claude"):
         return AnthropicModel(args, commands)
+    elif args.model_name.startswith("bedrock"):
+        return BedrockModel(args, commands)
     elif args.model_name.startswith("ollama"):
         return OllamaModel(args, commands)
     elif args.model_name in TogetherModel.SHORTCUTS:
