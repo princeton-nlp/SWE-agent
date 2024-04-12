@@ -4,6 +4,10 @@ import os
 import re
 import traceback
 from typing import Any, Dict, Optional
+import rich.console
+import rich.markdown
+import rich.panel
+import rich.markdown
 import yaml
 
 from dataclasses import dataclass
@@ -257,6 +261,8 @@ def save_predictions(traj_dir: Path, instance_id: str, info):
     logger.info(f"Saved predictions to {output_file}")
 
 
+
+
 def save_patch(traj_dir: Path, instance_id: str, info) -> Optional[Path]:
     """Create patch files that can be applied with `git am`.
     
@@ -271,8 +277,26 @@ def save_patch(traj_dir: Path, instance_id: str, info) -> Optional[Path]:
         return
     model_patch = info["submission"]
     patch_output_file.write_text(model_patch)
-    logger.info(f"Saved patch to {patch_output_file}")
+    _print_patch_message(patch_output_file)
     return patch_output_file
+
+
+def _print_patch_message(patch_output_file: Path):
+    console = rich.console.Console()
+    content = [
+        f"The patch has been saved at `{patch_output_file.resolve()}`.",
+        "You can apply it with ",
+        "```",
+        f"cd <repo_root>",
+        f"git apply {patch_output_file.resolve()}",
+        "```",
+    ]
+    panel = rich.panel.Panel.fit(
+        rich.markdown.Markdown("\n".join(content)),
+        title="Submission successful",
+        width=60,
+    )
+    console.print(panel)
 
 
 def get_args(args=None) -> ScriptArguments:
