@@ -59,8 +59,7 @@ Then run
 ```bash
 # Please remove all comments (lines starting with '#') before running this command!
 docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
-  # replace /xxxx/keys.cfg with the paths to your keys
-  -v /xxxx/keys.cfg:/app/keys.cfg \
+  -v $(pwd)/keys.cfg:/app/keys.cfg \
   # replace with your architecture, either arm64 or amd64
   --platform=linux/arm64 \
   sweagent/swe-agent-run:latest \
