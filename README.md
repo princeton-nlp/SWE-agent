@@ -51,7 +51,7 @@ Read our paper for more details [coming soon!].
 You can run the software directly using Docker. 
 
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
-2. Run `docker pull --platform=linux/arm64 sweagent/swe-agent:latest` (replace `arm64` with `amd64` if you're running on x86)
+2. Run `docker pull sweagent/swe-agent:latest`
 3. Add your API tokens to a file `keys.cfg` as explained [below](#-add-your-api-keystokens)
 
 Then run
