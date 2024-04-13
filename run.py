@@ -163,15 +163,15 @@ def main(args: ScriptArguments):
 def should_open_pr(args: ScriptArguments, info: Dict[str, Any], *, token: str="") -> bool:
     """Does opening a PR make sense?"""
     if not info.get("submission"):
-        logger.info("Not openening PR because submission was made.")
+        logger.info("Not opening PR because submission was made.")
         return False
     if info["exit_status"] != "submitted":
-        logger.info("Not openening PR because exit status was %s and not submitted.", info["exit_status"])
+        logger.info("Not opening PR because exit status was %s and not submitted.", info["exit_status"])
         return False
     try:
         issue = get_gh_issue_data(args.environment.data_path, token=token)
     except InvalidGithubURL:
-        logger.info("Currently only github is supported to open PRs to. Skipping PR creation.")
+        logger.info("Currently only GitHub is supported to open PRs to. Skipping PR creation.")
         return False
     if issue.state != "open":
         logger.info(f"Issue is not open (state={issue.state}. Skipping PR creation.")
