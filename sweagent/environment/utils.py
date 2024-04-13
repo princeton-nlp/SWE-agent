@@ -12,7 +12,6 @@ import tarfile
 import tempfile
 import time
 import traceback
-import dataclasses
 
 from datasets import load_dataset, load_from_disk
 from ghapi.all import GhApi
@@ -390,30 +389,6 @@ def get_problem_statement_from_github_issue(owner: str, repo: str, issue_number:
     return f"{title}\n{body}\n"
 
 
-@dataclasses.dataclass
-class Instance:
-    repo: str
-    base_commit: str
-    version: str
-    problem_statement: str
-    instance_id: str
-    # todo: This field is only needed while swe_env is using some questionable logic
-    # to determine whether to clone from a mirror or not. This should be removed in the future.
-    # Values: 'swe-bench' (loaded from json/jsonl for swe-bench style inference),
-    # 'online' (loaded from github issue or similar) or 'local' (loaded from local file)
-    problem_statement_source: str = "swe-bench"
-    repo_type: str = "github"
-
-    def _validate(self):
-        if self.repo_type not in {"github", "local"}:
-            raise ValueError(f"Invalid repo type: {self.repo_type=}")
-        if self.repo_type == "github" and self.repo.count("/") != 1:
-            raise ValueError(f"Invalid repo format for {self.repo_type=}: {self.repo=}")
-
-    def __post_init__(self):
-        self._validate()
-
-
 class InstanceBuilder:
     def __init__(self, token: Optional[str] = None):
         """This helper class is used to build the data for an instance object, 
@@ -481,7 +456,41 @@ class InstanceBuilder:
         else:
             raise ValueError(f"Could not determine repo path from {repo=}.")
     
-    def build(self) -> Instance: return Instance(**self.args)
+    def set_from_dict(self, instance_dict: Dict[str, Any]):
+        self.args |= instance_dict
+    
+    def set_missing_fields(self):
+        # todo: This field is only needed while swe_env is using some questionable logic
+        # to determine whether to clone from a mirror or not. This should be removed in the future.
+        # Values: 'swe-bench' (loaded from json/jsonl for swe-bench style inference),
+        # 'online' (loaded from github issue or similar) or 'local' (loaded from local file)
+        if "problem_statement_source" not in self.args:
+            self.args["problem_statement_source"] = "swe-bench"
+        if "repo_type" not in self.args: 
+            self.args["repo_type"] = "github"
+    
+    def validate(self):
+        required_fields = [
+            "problem_statement",
+            "instance_id",
+            "repo",
+            "repo_type",
+            "base_commit",
+            "version",
+            "problem_statement_source",
+        ]
+        if not all(x in self.args for x in required_fields):
+            missing = set(required_fields) - set(self.args.keys())
+            raise ValueError(f"Missing required fields: {missing=}")
+        if self.args["repo_type"] not in {"github", "local"}:
+            raise ValueError(f"Invalid repo type: {self.args['repo_type']=}")
+        if self.args["repo_type"] == "github" and self.args["repo"].count("/") != 1:
+            raise ValueError(f"Invalid repo format for {self.args['repo_type']=}: {self.args['repo']=}")
+    
+    def build(self) -> Dict[str, Any]:
+        self.set_missing_fields()
+        self.validate()
+        return self.args
     
 
 def get_instances(
@@ -501,8 +510,13 @@ def get_instances(
     Returns:
         List of instances as dictionaries
     """
-    def set_missing_keys(instances):
-        return [dataclasses.asdict(Instance(**inst)) for inst in instances]
+    def instance_from_dict(instances):
+        ib = InstanceBuilder(token=token)
+        ib.set_from_dict(instances)
+        return ib.build()
+
+    def postproc_instance_list(instances):
+        return [instance_from_dict(x) for x in instances]
 
 
     # If file_path is a directory, attempt load from disk
@@ -510,8 +524,8 @@ def get_instances(
         try:
             dataset_or_dict = load_from_disk(file_path)
             if isinstance(dataset_or_dict, dict):
-                return set_missing_keys(dataset_or_dict[split])
-            return set_missing_keys(dataset_or_dict)
+                return postproc_instance_list(dataset_or_dict[split])
+            return postproc_instance_list(dataset_or_dict)
         except FileNotFoundError:
             # Raised by load_from_disk if the directory is not a dataset directory
             pass
@@ -527,16 +541,16 @@ def get_instances(
         else:
             raise ValueError(f"Could not determine repo path from {file_path=}, {repo_path=}")
 
-        return [dataclasses.asdict(ib.build())]
+        return [ib.build()]
     
     if base_commit is not None:
         raise ValueError("base_commit must be None if data_path is not a github issue url")
 
     # If file_path is a file, load the file
     if file_path.endswith(".json"):
-        return set_missing_keys(json.load(open(file_path)))
+        return postproc_instance_list(json.load(open(file_path)))
     if file_path.endswith(".jsonl"):
-        return set_missing_keys([json.loads(x) for x in open(file_path, 'r').readlines()])
+        return postproc_instance_list([json.loads(x) for x in open(file_path, 'r').readlines()])
 
     if repo_path:
         msg = "repo_path must be empty if data_path is not a github url or local repo url"
@@ -544,7 +558,7 @@ def get_instances(
 
     # Attempt load from HF datasets as a last resort
     try:
-        return set_missing_keys(load_dataset(file_path, split=split))
+        return postproc_instance_list(load_dataset(file_path, split=split))
     except:
         raise ValueError(
             f"Could not load instances from {file_path}. "

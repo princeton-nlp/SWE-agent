@@ -140,3 +140,10 @@ def test_get_instance_gh_issue_gh_repo(tmp_path):
     assert "SyntaxError" in instance["problem_statement"]
     assert len(instance["base_commit"]) > 10
     assert instance["version"]
+
+
+def test_load_instances(test_data_path, caplog):
+    test_data_sources = test_data_path / "data_sources"
+    examples = list(test_data_sources.iterdir())
+    for example in examples:
+        get_instances(file_path=str(example))
