@@ -58,11 +58,10 @@ Then run
 
 ```bash
 # NOTE:
-# replace 'linux/arm64' with your architecture, either arm64 or amd64
+# This assumes that keys.cfg is in your current directory (else fix the path below)
 # This command is equivalent to the script shown in the quickstart 
 docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
   -v $(pwd)/keys.cfg:/app/keys.cfg \
-  --platform=linux/arm64 \
   sweagent/swe-agent-run:latest \
   python run.py --image_name=sweagent/swe-agent:latest \
   --model_name gpt4 \
