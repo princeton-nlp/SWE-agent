@@ -7,3 +7,7 @@ def test_run_cli_help():
         "--help",
     ]
     subprocess.run(args, check=True)
+
+
+def test_run_obsolete():
+    ...

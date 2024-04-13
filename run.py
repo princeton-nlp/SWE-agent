@@ -47,17 +47,12 @@ class ActionsArguments(FlattenedAccess, FrozenSerializable):
     # to fix the issue. Please only set this to False if you are sure the commits are 
     # not fixes or if this is your own repository!
     skip_if_commits_reference_issue: bool = True  
-    # For PRs: If you want to push the branch to a fork (e.g., because you lack
-    # permissions to push to the main repo), set this to the URL of the fork.
+    # OBSOLETE. Do not use, will raise error.
     push_gh_repo_url: str = ""
 
     def __post_init__(self):
-        if not self.skip_if_commits_reference_issue and self.push_gh_repo_url:
-            raise ValueError(
-                "Overriding `skip_if_commits_reference_issue` when you are "
-                "pushing to a fork is not supported. You should manually "
-                "apply the patch to the forked repository."
-            )
+        if self.push_gh_repo_url:
+            raise ValueError("push_gh_repo_url is obsolete. Use repo_path instead")
 
 @dataclass(frozen=True)
 class ScriptArguments(FlattenedAccess, FrozenSerializable):
@@ -151,8 +146,8 @@ def main(args: ScriptArguments):
             patch_path = save_patch(traj_dir, instance_id, info)
             if args.actions.open_pr and should_open_pr(args, info, token=env._github_token):
                 env.open_pr(trajectory=trajectory, push_gh_repo_url=args.actions.push_gh_repo_url)
-            if args.actions.apply_patch_locally and patch_path is not None and env.record["repo"].startswith("local://"):
-                apply_patch(Path(args.environment.data_path.removeprefix("local://")), patch_file=patch_path)
+            if args.actions.apply_patch_locally and patch_path is not None and env.record["repo_type"] == "local":
+                apply_patch(Path(args.environment.repo_path), patch_file=patch_path)
 
         except KeyboardInterrupt:
             logger.info("Exiting InterCode environment...")

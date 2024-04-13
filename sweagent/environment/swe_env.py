@@ -25,7 +25,6 @@ from sweagent.environment.utils import (
     get_container,
     get_gh_issue_data,
     get_instances,
-    is_github_issue_url,
     parse_gh_issue_url,
     parse_gh_repo_url,
     read_with_timeout,
@@ -66,7 +65,7 @@ class EnvironmentArguments(FrozenSerializable):
     timeout: int = 35
     verbose: bool = False
     no_mirror: bool = False
-    # Custom environment setup. Currently only used when data_path is a GitHub URL.
+    # Custom environment setup. Currently only used when data_path points to a single issue.
     # This needs to be either a string pointing to a yaml file (with yaml, yml file extension)
     # or a shell script (with sh extension).
     # See https://github.com/princeton-nlp/SWE-agent/pull/153 for more information
@@ -90,7 +89,6 @@ class SWEEnv(gym.Env):
         self.logger = logger
         self.persistent = args.container_name is not None
         self.returncode = None
-        self.problem_statement_from_github_issue = is_github_issue_url(args.data_path)
         if not self.args.verbose:
             self.logger.disabled = True
 
@@ -132,7 +130,7 @@ class SWEEnv(gym.Env):
         """Name of the local copy of the repository"""
         assert self.record is not None
         return self.record["repo"].replace("/", "__")
-        
+    
     def _copy_repo(self) -> str:
         """Clone/copy repository/codebase in container
         Returns:
@@ -150,7 +148,8 @@ class SWEEnv(gym.Env):
         token_prefix = ""
         if self._github_token:
             token_prefix = f"{self._github_token}@"
-        if not self.args.no_mirror and not self.problem_statement_from_github_issue:
+        # fixme: This if statement is brittle and should probably be replaced with better logic
+        if not self.args.no_mirror and self.record["problem_statement_source"] == "swe-bench":
             self.logger.info(f"{self._repo_name} not found in container, cloning...")
             self.communicate_with_handling(
                 input=f"git clone https://{token_prefix}github.com/swe-bench/{self._repo_name}.git",
@@ -591,7 +590,8 @@ class SWEEnv(gym.Env):
         Creates conda environment and installs third party dependencies to allow code execution
         """
         assert self.record is not None  # mypy
-        if (self.problem_statement_from_github_issue or self.record["repo_type"] == "local") and self.args.environment_setup is None:
+        if (self.record["problem_statement_source"] != "swe-bench" or \
+            self.record["repo_type"] == "local") and self.args.environment_setup is None:
             logger.warning((
                 "install_environment is set to True, but the data path is a GitHub URL "
                 "without an environment config file (environment_config key/flag). "

@@ -397,6 +397,11 @@ class Instance:
     version: str
     problem_statement: str
     instance_id: str
+    # todo: This field is only needed while swe_env is using some questionable logic
+    # to determine whether to clone from a mirror or not. This should be removed in the future.
+    # Values: 'swe-bench' (loaded from json/jsonl for swe-bench style inference),
+    # 'online' (loaded from github issue or similar) or 'local' (loaded from local file)
+    problem_statement_source: str = "swe-bench"
     repo_type: str = "github"
 
     def _validate(self):
@@ -424,10 +429,12 @@ class InstanceBuilder:
         owner, repo, issue_number = parse_gh_issue_url(issue_url)
         self.args["problem_statement"] = get_problem_statement_from_github_issue(owner, repo, issue_number, token=self.token)
         self.args["instance_id"] = f"{owner}__{repo}-i{issue_number}"
+        self.args["problem_statement_source"] = "online"
     
     def set_problem_statement_from_file(self, file_path: str):
         self.args["problem_statement"] = Path(file_path).read_text()
         self.args["instance_id"] = hashlib.sha256(self.args["problem_statement"].encode()).hexdigest()[:6]
+        self.args["problem_statement_source"] = "local"
 
     def set_problem_statement(self, data_path: str ):
         """Get problem statement for a single instance from a github issue url or a 
@@ -494,14 +501,17 @@ def get_instances(
     Returns:
         List of instances as dictionaries
     """
+    def set_missing_keys(instances):
+        return [dataclasses.asdict(Instance(**inst)) for inst in instances]
+
 
     # If file_path is a directory, attempt load from disk
     if os.path.isdir(file_path):
         try:
             dataset_or_dict = load_from_disk(file_path)
             if isinstance(dataset_or_dict, dict):
-                return dataset_or_dict[split]
-            return dataset_or_dict
+                return set_missing_keys(dataset_or_dict[split])
+            return set_missing_keys(dataset_or_dict)
         except FileNotFoundError:
             # Raised by load_from_disk if the directory is not a dataset directory
             pass
@@ -524,9 +534,9 @@ def get_instances(
 
     # If file_path is a file, load the file
     if file_path.endswith(".json"):
-        return json.load(open(file_path))
+        return set_missing_keys(json.load(open(file_path)))
     if file_path.endswith(".jsonl"):
-        return [json.loads(x) for x in open(file_path, 'r').readlines()]
+        return set_missing_keys([json.loads(x) for x in open(file_path, 'r').readlines()])
 
     if repo_path:
         msg = "repo_path must be empty if data_path is not a github url or local repo url"
@@ -534,7 +544,7 @@ def get_instances(
 
     # Attempt load from HF datasets as a last resort
     try:
-        return load_dataset(file_path, split=split)
+        return set_missing_keys(load_dataset(file_path, split=split))
     except:
         raise ValueError(
             f"Could not load instances from {file_path}. "
