@@ -283,20 +283,27 @@ def save_patch(traj_dir: Path, instance_id: str, info) -> Optional[Path]:
 
 def _print_patch_message(patch_output_file: Path):
     console = rich.console.Console()
-    content = [
-        f"The patch has been saved at `{patch_output_file.resolve()}`.",
-        "You can apply it with ",
-        "```",
-        f"cd <repo_root>",
-        f"git apply {patch_output_file.resolve()}",
-        "```",
+    msg = [
+        "SWE-agent has produced a patch that it believes will solve the issue you submitted!",
+        "Use the code snippet below to inspect or apply it!"
     ]
     panel = rich.panel.Panel.fit(
-        rich.markdown.Markdown("\n".join(content)),
-        title="Submission successful",
-        width=60,
+        "\n".join(msg),
+        title="🎉 Submission successful 🎉",
     )
     console.print(panel)
+    content = [
+        "```bash",
+        f"# The patch has been saved to your local filesystem at:",
+        f"PATCH_FILE_PATH='{patch_output_file.resolve()}'",
+        "# Inspect it:",
+        "cat \"${PATCH_FILE_PATH}\"",
+        "# Apply it to a local repository:",
+        f"cd <your local repo root>",
+        "git apply \"${PATCH_FILE_PATH}\"",
+        "```",
+    ]
+    console.print(rich.markdown.Markdown("\n".join(content)))
 
 
 def get_args(args=None) -> ScriptArguments:
