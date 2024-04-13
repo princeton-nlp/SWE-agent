@@ -39,7 +39,10 @@ logging.getLogger("simple_parsing").setLevel(logging.WARNING)
 @dataclass(frozen=True)
 class ActionsArguments(FlattenedAccess, FrozenSerializable):
     """Run real-life actions (opening PRs, etc.) if we can solve the issue."""
-    open_pr: bool = False  # Open a PR with the patch if we can solve the issue
+    # Open a PR with the patch if we can solve the issue
+    open_pr: bool = False  
+    # When working with local repository: Apply patch
+    apply_patch_locally: bool = False
     # Option to be used with open_pr: Skip action if there are already commits claiming 
     # to fix the issue. Please only set this to False if you are sure the commits are 
     # not fixes or if this is your own repository!
@@ -47,8 +50,6 @@ class ActionsArguments(FlattenedAccess, FrozenSerializable):
     # For PRs: If you want to push the branch to a fork (e.g., because you lack
     # permissions to push to the main repo), set this to the URL of the fork.
     push_gh_repo_url: str = ""
-    # When working with local repository
-    apply_patch_locally: bool = True
 
     def __post_init__(self):
         if not self.skip_if_commits_reference_issue and self.push_gh_repo_url:

@@ -12,15 +12,17 @@ import tarfile
 import tempfile
 import time
 import traceback
+import dataclasses
 
 from datasets import load_dataset, load_from_disk
 from ghapi.all import GhApi
 from io import BytesIO
 from pathlib import Path
 from subprocess import PIPE, STDOUT
-from typing import Any, List, Optional, Set, Tuple, Dict, Union
+from typing import Any, List, Optional, Set, Tuple, Dict
 
 from git import InvalidGitRepositoryError, Repo
+
 
 LOGGER_NAME = "intercode"
 START_UP_DELAY = 5
@@ -388,65 +390,92 @@ def get_problem_statement_from_github_issue(owner: str, repo: str, issue_number:
     return f"{title}\n{body}\n"
 
 
-def get_instance_from_github_url(url: str, *, base_commit: Optional[str]=None, problem_statement: str="", token: Optional[str] = None) -> dict[str, Any]:
-    """Get instance from a github URL (either issue or repo)"""
-    try: 
-        owner, repo, issue_number = parse_gh_issue_url(url)
-    except InvalidGithubURL:
-        owner, repo = parse_gh_repo_url(url)
-        issue_number = None
-    record = dict()
-    record["repo"] = f"{owner}/{repo}"
-    if base_commit:
-        record["base_commit"] = base_commit
-    else:
-        api = GhApi(token=token)
-        record["base_commit"] = get_commit(api, owner, repo, base_commit).sha
-    record["version"] = record["base_commit"][:7]
-    if not problem_statement:
-        if not issue_number:
-            msg = "Problem statement must be provided if data_path is a github repo url without an issue number."
+@dataclasses.dataclass
+class Instance:
+    repo: str
+    base_commit: str
+    version: str
+    problem_statement: str
+    instance_id: str
+    repo_type: str = "github"
+
+    def _validate(self):
+        if self.repo_type not in {"github", "local"}:
+            raise ValueError(f"Invalid repo type: {self.repo_type=}")
+        if self.repo_type == "github" and self.repo.count("/") != 1:
+            raise ValueError(f"Invalid repo format for {self.repo_type=}: {self.repo=}")
+
+    def __post_init__(self):
+        self._validate()
+
+
+class InstanceBuilder:
+    def __init__(self, token: Optional[str] = None):
+        """This helper class is used to build the data for an instance object, 
+        retrieving problem statements from github issues or local files and setting
+        repo paths from github urls or local paths.
+        """
+        # Args that will be passed to the Instance constructor
+        self.args = {}
+        self.token = token
+        self._instance_id_problem_suffix = ""
+
+    def set_problem_statement_from_gh_issue(self, issue_url: str):
+        owner, repo, issue_number = parse_gh_issue_url(issue_url)
+        self.args["problem_statement"] = get_problem_statement_from_github_issue(owner, repo, issue_number, token=self.token)
+        self.args["instance_id"] = f"{owner}__{repo}-i{issue_number}"
+    
+    def set_problem_statement_from_file(self, file_path: str):
+        self.args["problem_statement"] = Path(file_path).read_text()
+        self.args["instance_id"] = hashlib.sha256(self.args["problem_statement"].encode()).hexdigest()[:6]
+
+    def set_problem_statement(self, data_path: str ):
+        """Get problem statement for a single instance from a github issue url or a 
+        path to a markdown or text file.
+        """
+        if is_github_issue_url(data_path):
+            self.set_problem_statement_from_gh_issue(data_path)
+        elif Path(data_path).is_file():
+            self.set_problem_statement_from_file(data_path)
+        else:
+            msg = f"Not sure how to get problem statement from {data_path=}."
             raise ValueError(msg)
-        record["problem_statement"] = get_problem_statement_from_github_issue(owner, repo, issue_number, token=token)
-    else:
-        record["problem_statement"] = problem_statement
-    if issue_number is not None:
-        record["instance_id"] = f"{owner}__{repo}-i{issue_number}"
-    else:
-        # Get a unique ID by hashing the problem statement
-        ps_hash = hashlib.sha256(problem_statement.encode()).hexdigest()[:6]
-        record["instance_id"] = f"{owner}__{repo}-{ps_hash}"
-    return record
-
-
-def get_instance_from_local_dir(data_path: Union[str, os.PathLike], *, problem_statement: str) -> Dict[str, Any]:
-    """Get task instance from a local directory"""
-    if not problem_statement:
-        msg = "Problem statement must be provided if data_path is a local directory."
-        raise ValueError(msg)
-    data_path = Path(data_path).resolve()
-    if not data_path.is_dir():
-        msg = "data_path must be a directory"
-        raise ValueError(msg)
-    try:
-        repo = Repo(data_path, search_parent_directories=True)
-    except InvalidGitRepositoryError as e:
-        msg = "data_path must be a git repository"
-        raise ValueError(msg) from e
-    # The instance id is made up of the hash of the parent directory, the sanitized directory name
-    # and the hash of the problem statement
-    iid = hashlib.sha256(str(data_path.parent).encode()).hexdigest()[:6]
-    iid += "__"+ "".join(x for x in data_path.stem if x.isalnum())
-    iid += "-" + hashlib.sha256(problem_statement.encode()).hexdigest()[:6]
-    base_commit = repo.head.object.hexsha
-    return {
-        "repo": f"local://{data_path}",
-        "base_commit": base_commit,
-        "version": base_commit[:7],
-        "problem_statement": problem_statement,
-        "instance_id": iid,
-    }
-
+    
+    def set_repo_info_from_gh_url(self, url: str, base_commit: Optional[str] = None):
+        owner, repo = parse_gh_repo_url(url)
+        self.args["repo"] = f"{owner}/{repo}"
+        self.args["repo_type"] = "github"
+        if base_commit:
+            self.args["base_commit"] = base_commit
+        else:
+            api = GhApi(token=self.token)
+            self.args["base_commit"] = get_commit(api, owner, repo, base_commit).sha
+        self.args["version"] = self.args["base_commit"][:7]
+    
+    def set_repo_info_from_local_path(self, path: str, base_commit: Optional[str] = None):
+        self.args["repo"] = str(Path(path).resolve())
+        self.args["repo_type"] = "local"
+        if base_commit:
+            self.args["base_commit"] = base_commit
+        else:
+            try:
+                repo = Repo(path, search_parent_directories=True)
+            except InvalidGitRepositoryError as e:
+                msg = f"Could not find git repository at {path=}."
+                raise ValueError(msg) from e
+            self.args["base_commit"] = repo.head.object.hexsha
+        self.args["version"] = self.args["base_commit"][:7]
+    
+    def set_repo_info(self, repo: str, base_commit: Optional[str] = None):
+        if is_github_repo_url(repo):
+            self.set_repo_info_from_gh_url(repo, base_commit=base_commit)
+        elif Path(repo).is_dir():
+            self.set_repo_info_from_local_path(repo, base_commit=base_commit)
+        else:
+            raise ValueError(f"Could not determine repo path from {repo=}.")
+    
+    def build(self) -> Instance: return Instance(**self.args)
+    
 
 def get_instances(
         file_path: str, 
@@ -454,18 +483,16 @@ def get_instances(
         split: Optional[str] = None, 
         token: Optional[str] = None,
         *,
-        problem_statement: str = "",
+        repo_path: str = "",
     ) -> List[Dict[str, Any]]:
     """
     Getter function for handling json, jsonl files
 
     Args:
         file_path (str): Path to file
-        problem_statement: Problem statement when running on github repository URL
-            or local path. If running on github issue, will replace issue content.
 
     Returns:
-        List of instances
+        List of instances as dictionaries
     """
 
     # If file_path is a directory, attempt load from disk
@@ -478,17 +505,19 @@ def get_instances(
         except FileNotFoundError:
             # Raised by load_from_disk if the directory is not a dataset directory
             pass
-    
-    if Path(file_path).is_dir():
-        if base_commit is not None:
-            msg = "base_commit must be None if data_path is a local directory"
-            raise ValueError(msg)
-        return [get_instance_from_local_dir(file_path, problem_statement=problem_statement)]
 
-    # If file_path is a github issue url, fetch the issue and return a single instance
-    if is_github_repo_url(file_path):
-        record = get_instance_from_github_url(file_path, base_commit=base_commit, problem_statement=problem_statement, token=token)
-        return [record,]
+    # The next if statement is very brittle logic to determine if we're processing a single instance
+    if (Path(file_path).is_file() and Path(file_path).suffix in ['.md', '.txt']) or is_github_issue_url(file_path):
+        ib = InstanceBuilder(token=token)
+        ib.set_problem_statement(file_path)
+        if repo_path:
+            ib.set_repo_info(repo_path, base_commit=base_commit)
+        elif is_github_repo_url(file_path):
+            ib.set_repo_info_from_gh_url(file_path)
+        else:
+            raise ValueError(f"Could not determine repo path from {file_path=}, {repo_path=}")
+
+        return [dataclasses.asdict(ib.build())]
     
     if base_commit is not None:
         raise ValueError("base_commit must be None if data_path is not a github issue url")
@@ -499,8 +528,8 @@ def get_instances(
     if file_path.endswith(".jsonl"):
         return [json.loads(x) for x in open(file_path, 'r').readlines()]
 
-    if problem_statement:
-        msg = "problem_statement must be empty if data_path is not a github url or local repo url"
+    if repo_path:
+        msg = "repo_path must be empty if data_path is not a github url or local repo url"
         raise ValueError(msg)
 
     # Attempt load from HF datasets as a last resort

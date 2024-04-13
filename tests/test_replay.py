@@ -39,11 +39,11 @@ def test_model_replay_local_repo(tmp_path):
     run_cmd = [
         "--traj_path",
         "tests/test_data/trajectories/gpt4__swe-agent-test-repo__default_from_url__t-0.00__p-0.95__c-3.00__install-1/6e44b9__sweagenttestrepo-1c2844.traj",     
-        "--data_path",
+        "--repo_path",
         str(local_repo_path),
         "--config_file",
         "config/default_from_url.yaml", 
-        "--problem_statement",
+        "--data_path",
         str(problem_statement_path),
     ]
     args, remaing_args = get_args(run_cmd)

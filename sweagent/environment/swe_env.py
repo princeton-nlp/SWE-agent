@@ -54,8 +54,9 @@ logger.propagate = False
 class EnvironmentArguments(FrozenSerializable):
     """Configure data sources and setup instructions for th environment in which we solve the tasks.
     """
-    # Path to a data file or directory, or github issue url, or github repo url
-    # with specified 'problem_statement'
+    # Source of issue statement/problem statement. To run over a batch of issues: Path to a data file 
+    # (`json`, `jsonl`) or directory. To run over single issue: github issue url or path to markdown file
+    # with problem statement.
     data_path: str
     image_name: str
     split: str = "dev"
@@ -70,13 +71,8 @@ class EnvironmentArguments(FrozenSerializable):
     # or a shell script (with sh extension).
     # See https://github.com/princeton-nlp/SWE-agent/pull/153 for more information
     environment_setup: Optional[str] = None
-    # Problem statement (takes the place of an issue text). Only used when data_path is a GitHub URL.
-    # Can be path to file.
-    problem_statement: str = ""
-
-    def __post_init__(self):
-        if self.problem_statement and len(self.problem_statement) < 200 and Path(self.problem_statement).is_file():
-            object.__setattr__(self, "problem_statement",  Path(self.problem_statement).read_text())
+    # Only used when running on single issue. Path to local repository or github repository. 
+    repo_path: str = ""
 
 
 class SWEEnv(gym.Env):
@@ -94,7 +90,7 @@ class SWEEnv(gym.Env):
         self.logger = logger
         self.persistent = args.container_name is not None
         self.returncode = None
-        self.is_from_github_url = is_github_issue_url(args.data_path)
+        self.problem_statement_from_github_issue = is_github_issue_url(args.data_path)
         if not self.args.verbose:
             self.logger.disabled = True
 
@@ -117,7 +113,7 @@ class SWEEnv(gym.Env):
 
         # Load Task Instances
         self.data_path = self.args.data_path
-        self.data = get_instances(self.data_path, self.args.base_commit, self.args.split, token=self._github_token, problem_statement=self.args.problem_statement)
+        self.data = get_instances(self.data_path, self.args.base_commit, self.args.split, token=self._github_token, repo_path=self.args.repo_path)
         #: Instance we're currently processing. Gets set in self.reset.
         self.record = None
         self.logger.info(f"💽 Loaded dataset from {self.data_path}")
@@ -135,10 +131,7 @@ class SWEEnv(gym.Env):
     def _repo_name(self) -> str:
         """Name of the local copy of the repository"""
         assert self.record is not None
-        if not self.record["repo"].startswith("local://"):
-            return self.record["repo"].replace("/", "__")
-        else:
-            return self.record["repo"].removeprefix("local://").replace("/", "__")
+        return self.record["repo"].replace("/", "__")
         
     def _copy_repo(self) -> str:
         """Clone/copy repository/codebase in container
@@ -146,17 +139,18 @@ class SWEEnv(gym.Env):
             folder name of clone
         """
         assert self.record is not None  # mypy
-        if self.record["repo"].startswith("local://"):
+        if self.record["repo_type"] == "local":
             copy_anything_to_container(self.container_obj, self.record["repo"].removeprefix("local://"), "/"+self._repo_name)
             self.communicate_with_handling(
                 input=f"chown -R root:root {self._repo_name}",
                 error_msg="Failed to change permissions on copied repository",
             )
             return self._repo_name
+        assert self.record["repo_type"] == "github"
         token_prefix = ""
         if self._github_token:
             token_prefix = f"{self._github_token}@"
-        if not self.args.no_mirror and not self.is_from_github_url:
+        if not self.args.no_mirror and not self.problem_statement_from_github_issue:
             self.logger.info(f"{self._repo_name} not found in container, cloning...")
             self.communicate_with_handling(
                 input=f"git clone https://{token_prefix}github.com/swe-bench/{self._repo_name}.git",
@@ -597,7 +591,7 @@ class SWEEnv(gym.Env):
         Creates conda environment and installs third party dependencies to allow code execution
         """
         assert self.record is not None  # mypy
-        if (self.is_from_github_url or self.record["repo"].startswith("local://")) and self.args.environment_setup is None:
+        if (self.problem_statement_from_github_issue or self.record["repo_type"] == "local") and self.args.environment_setup is None:
             logger.warning((
                 "install_environment is set to True, but the data path is a GitHub URL "
                 "without an environment config file (environment_config key/flag). "
