@@ -1,4 +1,3 @@
-import dataclasses
 from pathlib import Path
 import random
 import config
@@ -20,7 +19,6 @@ from rich.logging import RichHandler
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 import yaml
 from sweagent.environment.utils import (
-    Instance,
     copy_anything_to_container,
     copy_file_to_container,
     format_trajectory_markdown,
@@ -37,7 +35,7 @@ from swebench import (
     get_requirements,
     MAP_VERSION_TO_INSTALL
 )
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 LONG_TIMEOUT = 500
 PATH_TO_REQS = "/root/requirements.txt"
@@ -113,9 +111,9 @@ class SWEEnv(gym.Env):
 
         # Load Task Instances
         self.data_path = self.args.data_path
-        self.data: List[Instance] = get_instances(self.data_path, self.args.base_commit, self.args.split, token=self._github_token, repo_path=self.args.repo_path)
+        self.data = get_instances(self.data_path, self.args.base_commit, self.args.split, token=self._github_token, repo_path=self.args.repo_path)
         #: Instance we're currently processing. Gets set in self.reset.
-        self.record: Optional[Instance] = None
+        self.record = None
         self.logger.info(f"💽 Loaded dataset from {self.data_path}")
 
         # Establish connection with execution container
@@ -131,7 +129,7 @@ class SWEEnv(gym.Env):
     def _repo_name(self) -> str:
         """Name of the local copy of the repository"""
         assert self.record is not None
-        return self.record.repo.replace("/", "__")
+        return self.record["repo"].replace("/", "__")
     
     def _copy_repo(self) -> str:
         """Clone/copy repository/codebase in container
@@ -139,19 +137,19 @@ class SWEEnv(gym.Env):
             folder name of clone
         """
         assert self.record is not None  # mypy
-        if self.record.repo_type == "local":
-            copy_anything_to_container(self.container_obj, self.record.repo, "/"+self._repo_name)
+        if self.record["repo_type"] == "local":
+            copy_anything_to_container(self.container_obj, self.record["repo"].removeprefix("local://"), "/"+self._repo_name)
             self.communicate_with_handling(
                 input=f"chown -R root:root {self._repo_name}",
                 error_msg="Failed to change permissions on copied repository",
             )
             return self._repo_name
-        assert self.record.repo_type == "github"
+        assert self.record["repo_type"] == "github"
         token_prefix = ""
         if self._github_token:
             token_prefix = f"{self._github_token}@"
         # fixme: This if statement is brittle and should probably be replaced with better logic
-        if not self.args.no_mirror and self.record.problem_statement_source == "swe-bench":
+        if not self.args.no_mirror and self.record["problem_statement_source"] == "swe-bench":
             self.logger.info(f"{self._repo_name} not found in container, cloning...")
             self.communicate_with_handling(
                 input=f"git clone https://{token_prefix}github.com/swe-bench/{self._repo_name}.git",
@@ -162,7 +160,7 @@ class SWEEnv(gym.Env):
         else:
             logger.info(f"Trying to clone from non-mirror...")
             self.communicate_with_handling(
-                input=f"git clone https://{token_prefix}github.com/{self.record.repo}.git {self._repo_name}",
+                input=f"git clone https://{token_prefix}github.com/{self.record['repo']}.git {self._repo_name}",
                 error_msg="Failed to clone repository from non-mirror",
                 timeout_duration=LONG_TIMEOUT,
             )
@@ -191,8 +189,8 @@ class SWEEnv(gym.Env):
         self.idx += 1
 
         # Set query, gold command
-        self.base_commit = self.record.base_commit
-        self.query = self.record.problem_statement
+        self.base_commit = self.record["base_commit"]
+        self.query = self.record["problem_statement"]
         self.reward = None
 
         ### Reset Container ###
@@ -259,7 +257,7 @@ class SWEEnv(gym.Env):
         if apply_test_patch:
             path_to_patch = "test.patch"
             with open(path_to_patch, "w") as f:
-                f.write(self.record.test_patch)
+                f.write(self.record["test_patch"])
             subprocess.run(
                 f"docker cp {path_to_patch} {self.container_name}:/root/test.patch",
                 shell=True,
@@ -548,7 +546,7 @@ class SWEEnv(gym.Env):
             pids = [x for x in pids if x[1] != "ps" and x[0] not in self.parent_pids]
         return pids
 
-    def get_submission(self, action, output: str) -> Optional[str]:
+    def get_submission(self, action, output: str) -> str:
         """
         Function for extracting diff patch submission at the end of an episode.
 
@@ -592,8 +590,8 @@ class SWEEnv(gym.Env):
         Creates conda environment and installs third party dependencies to allow code execution
         """
         assert self.record is not None  # mypy
-        if (self.record.problem_statement_source != "swe-bench" or \
-            self.record.repo_type == "local") and self.args.environment_setup is None:
+        if (self.record["problem_statement_source"] != "swe-bench" or \
+            self.record["repo_type"] == "local") and self.args.environment_setup is None:
             logger.warning((
                 "install_environment is set to True, but the data path is a GitHub URL "
                 "without an environment config file (environment_config key/flag). "
@@ -615,8 +613,8 @@ class SWEEnv(gym.Env):
                 raise ValueError("Environment config file needs to be a yaml file or shell script")
         else:
             try:
-                install_configs = MAP_VERSION_TO_INSTALL[self.record.repo][
-                    str(self.record.version)
+                install_configs = MAP_VERSION_TO_INSTALL[self.record["repo"]][
+                    str(self.record["version"])
                 ]
             except KeyError as e:
                 msg = (
@@ -625,7 +623,7 @@ class SWEEnv(gym.Env):
                 )
                 raise ValueError(msg) from e
         # Create environment if does not exist yet
-        env_name = f"{self._repo_name}__{self.record.version}"
+        env_name = f"{self._repo_name}__{self.record['version']}"
         env_check = self.communicate(
             f"conda env list | grep {env_name}", timeout_duration=LONG_TIMEOUT
         )
@@ -642,7 +640,7 @@ class SWEEnv(gym.Env):
                     timeout_duration=LONG_TIMEOUT,
                 )
                 # Write reqs to requirements.txt in docker container
-                content_reqs = get_requirements(dataclasses.asdict(self.record))
+                content_reqs = get_requirements(self.record)
                 copy_file_to_container(self.container_obj, content_reqs, PATH_TO_REQS)
                 # Create conda environment + install reqs
                 self.communicate_with_handling(
@@ -657,7 +655,7 @@ class SWEEnv(gym.Env):
                 self.communicate(f"rm {PATH_TO_REQS}")
             elif packages == "environment.yml":
                 # Write environment.yml to file
-                content_env_yml = get_environment_yml(dataclasses.asdict(self.record), env_name)
+                content_env_yml = get_environment_yml(self.record, env_name)
                 copy_file_to_container(self.container_obj, content_env_yml, PATH_TO_ENV_YML)
                 if "no_use_env" in install_configs and install_configs["no_use_env"]:
                     # Create conda environment
