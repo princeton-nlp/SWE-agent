@@ -1,5 +1,6 @@
 import hashlib
 import shlex
+from attr import field
 import docker
 import json
 import logging
@@ -397,6 +398,8 @@ class Instance:
     version: str
     problem_statement: str
     instance_id: str
+    created_at: str = ""
+    test_patch: str = ""
     # todo: This field is only needed while swe_env is using some questionable logic
     # to determine whether to clone from a mirror or not. This should be removed in the future.
     # Values: 'swe-bench' (loaded from json/jsonl for swe-bench style inference),
@@ -412,6 +415,30 @@ class Instance:
 
     def __post_init__(self):
         self._validate()
+    
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any], strict=False) -> "Instance":
+        """Get an instance object from a dictionary
+        For backwards compatibility, any keys in the dictionary that are not fields of the class
+        will be added as attributes.
+
+        Args:
+            d: Dictionary with keys corresponding to fields of the class
+            strict: If True, raise an error if any keys in the dictionary are not fields of the class
+        """
+        field_names = [field.name for field in dataclasses.fields(cls)]
+        missing_fields = set(d.keys()) - set(field_names)
+        if missing_fields:
+            if strict:
+                msg = f"Missing fields in Instance dataclass: {missing_fields}"
+                raise ValueError(msg)
+            logger.warning(f"Missing fields in Instance dataclass: {missing_fields}")
+            new_cls = dataclasses.make_dataclass(
+                'Instance', 
+                fields=list([(f, type(f), field(init=False)) for f in missing_fields]), bases=(cls,)
+            )
+            return new_cls(**d)
+        return cls(**d)
 
 
 class InstanceBuilder:
@@ -491,7 +518,7 @@ def get_instances(
         token: Optional[str] = None,
         *,
         repo_path: str = "",
-    ) -> List[Dict[str, Any]]:
+    ) -> List[Instance]:
     """
     Getter function for handling json, jsonl files
 
@@ -501,8 +528,8 @@ def get_instances(
     Returns:
         List of instances as dictionaries
     """
-    def set_missing_keys(instances):
-        return [dataclasses.asdict(Instance(**inst)) for inst in instances]
+    def to_instances(list_of_dict):
+        return [Instance.from_dict(inst) for inst in list_of_dict]
 
 
     # If file_path is a directory, attempt load from disk
@@ -510,8 +537,8 @@ def get_instances(
         try:
             dataset_or_dict = load_from_disk(file_path)
             if isinstance(dataset_or_dict, dict):
-                return set_missing_keys(dataset_or_dict[split])
-            return set_missing_keys(dataset_or_dict)
+                return to_instances(dataset_or_dict[split])
+            return to_instances(dataset_or_dict)
         except FileNotFoundError:
             # Raised by load_from_disk if the directory is not a dataset directory
             pass
@@ -527,16 +554,16 @@ def get_instances(
         else:
             raise ValueError(f"Could not determine repo path from {file_path=}, {repo_path=}")
 
-        return [dataclasses.asdict(ib.build())]
+        return [ib.build()]
     
     if base_commit is not None:
         raise ValueError("base_commit must be None if data_path is not a github issue url")
 
     # If file_path is a file, load the file
     if file_path.endswith(".json"):
-        return set_missing_keys(json.load(open(file_path)))
+        return to_instances(json.load(open(file_path)))
     if file_path.endswith(".jsonl"):
-        return set_missing_keys([json.loads(x) for x in open(file_path, 'r').readlines()])
+        return to_instances([json.loads(x) for x in open(file_path, 'r').readlines()])
 
     if repo_path:
         msg = "repo_path must be empty if data_path is not a github url or local repo url"
@@ -544,7 +571,7 @@ def get_instances(
 
     # Attempt load from HF datasets as a last resort
     try:
-        return set_missing_keys(load_dataset(file_path, split=split))
+        return to_instances(load_dataset(file_path, split=split))
     except:
         raise ValueError(
             f"Could not load instances from {file_path}. "

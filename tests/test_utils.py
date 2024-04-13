@@ -1,7 +1,9 @@
+import dataclasses
 import hashlib
+import logging
 import subprocess
 import pytest
-from sweagent.environment.utils import InvalidGithubURL, format_trajectory_markdown, _MARKDOWN_TRAJECTORY_EMOJI_MAPPING, get_instances, is_github_repo_url, remove_triple_backticks, parse_gh_repo_url, parse_gh_issue_url, is_github_issue_url, get_associated_commit_urls
+from sweagent.environment.utils import Instance, InvalidGithubURL, format_trajectory_markdown, _MARKDOWN_TRAJECTORY_EMOJI_MAPPING, get_instances, is_github_repo_url, remove_triple_backticks, parse_gh_repo_url, parse_gh_issue_url, is_github_issue_url, get_associated_commit_urls
 
 def test_format_trajectory_markdown(test_trajectory):
     formatted = format_trajectory_markdown(test_trajectory["trajectory"])
@@ -76,10 +78,10 @@ def test_get_instance_gh_issue():
         "repo_type": "github",
     }
     for key in compare_with:
-        assert instance[key] == compare_with[key]
-    assert "SyntaxError" in instance["problem_statement"]
-    assert len(instance["base_commit"]) > 10
-    assert instance["version"]
+        assert getattr(instance, key) == compare_with[key]
+    assert "SyntaxError" in instance.problem_statement
+    assert len(instance.base_commit) > 10
+    assert instance.version
 
 
 def clone_repo(tmp_path, repo_url):
@@ -99,10 +101,10 @@ def test_get_instance_gh_issue_local_repo(tmp_path):
         'instance_id': 'klieret__swe-agent-test-repo-i1'
     }
     for key in compare_with:
-        assert instance[key] == compare_with[key]
-    assert "SyntaxError" in instance["problem_statement"]
-    assert len(instance["base_commit"]) > 10
-    assert instance["version"]
+        assert getattr(instance, key) == compare_with[key]
+    assert "SyntaxError" in instance.problem_statement
+    assert len(instance.base_commit) > 10
+    assert instance.version
 
 
 def test_get_instance_local_issue_local_repo(tmp_path):
@@ -120,12 +122,12 @@ def test_get_instance_local_issue_local_repo(tmp_path):
         "problem_statement": "asdf",
     }
     for key in compare_with:
-        assert instance[key] == compare_with[key]
-    assert len(instance["base_commit"]) > 10
-    assert instance["version"]
+        assert getattr(instance, key) == compare_with[key]
+    assert len(instance.base_commit) > 10
+    assert instance.version
 
 
-def test_get_instance_gh_issue_gh_repo(tmp_path):
+def test_get_instance_gh_issue_gh_repo():
     instance = get_instances(
         file_path="https://github.com/klieret/swe-agent-test-repo/issues/1",
         repo_path="https://github.com/princeton-nlp/SWE-agent",
@@ -136,7 +138,29 @@ def test_get_instance_gh_issue_gh_repo(tmp_path):
         'instance_id': "klieret__swe-agent-test-repo-i1",
     }
     for key in compare_with:
-        assert instance[key] == compare_with[key]
-    assert "SyntaxError" in instance["problem_statement"]
-    assert len(instance["base_commit"]) > 10
-    assert instance["version"]
+        assert getattr(instance, key) == compare_with[key]
+    assert "SyntaxError" in instance.problem_statement
+    assert len(instance.base_commit) > 10
+    assert instance.version
+
+
+def test_instance_added_field():
+    dct = {
+        'repo': 'klieret/swe-agent-test-repo',
+        'instance_id': 'klieret__swe-agent-test-repo-i1',
+        "repo_type": "github",
+        "base_commit": "asdf",
+        "version": "1.1",
+        "thisisnew": "new",
+        "problem_statement": "asdf",
+    }
+    assert "thisisnew" in dataclasses.asdict(Instance.from_dict(dct))
+
+
+def test_load_instances(test_data_path, caplog):
+    test_data_sources = test_data_path / "data_sources"
+    examples = list(test_data_sources.iterdir())
+    for example in examples:
+        with caplog.at_level(logging.DEBUG):
+            get_instances(file_path=str(example))
+    assert not "missing fields" in caplog.text.lower()
