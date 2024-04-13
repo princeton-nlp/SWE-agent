@@ -57,15 +57,14 @@ You can run the software directly using Docker.
 Then run
 
 ```bash
-# Please remove all comments (lines starting with '#') before running this command!
+# NOTE:
+# replace 'linux/arm64' with your architecture, either arm64 or amd64
+# This command is equivalent to the script shown in the quickstart 
 docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
   -v $(pwd)/keys.cfg:/app/keys.cfg \
-  # replace with your architecture, either arm64 or amd64
   --platform=linux/arm64 \
   sweagent/swe-agent-run:latest \
   python run.py --image_name=sweagent/swe-agent:latest \
-  # the rest of the command as shown in the quickstart/benchmarking section,
-  # for example to run on a specific github issue
   --model_name gpt4 \
   --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
   --config_file config/default_from_url.yaml  --skip_existing=False
@@ -78,7 +77,7 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 > * See the [installation issues section](#-installation-issues) for more help if you run into
 >   trouble.
 
-### 🐍 Setup with conda (development version) 
+### 🐍 Setup with conda (developer version) 
 
 To install the development version:
 
