@@ -64,7 +64,7 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
         with open(tmp_path, "w") as f:
             for d in data:
                 print(json.dumps(d), file=f, end="\n", flush=True)
-        return replay_task_instances_path
+        return tmp_path
 
     is_github = False
     if data_path.endswith(".jsonl"):
