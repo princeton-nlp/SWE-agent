@@ -26,10 +26,11 @@ This file defines the abstraction for running inference on API models. In additi
 - `AnthropicModel`: Handles inference + cost logging for Anthropic Models
 - `APIStats`: Cost tracking fields that are updated per model inference
 - `BaseModel`: Abstract class that defines the common logic for updating cost stats
-- `get_model`: Returns initialized `[Anthropic|Human|OpenAI]Model` based on given arguments + commands
+- `get_model`: Returns initialized `[Anthropic|Groq|Human|OpenAI]Model` based on given arguments + commands
 - `HumanModel`: Handles inference for human task worker
 - `ModelArguments`: Model name, hyperparameter, and cost limit arguments
 - `OpenAIModel`: Handles inference + cost logging for OpenAI models
+- `GroqModel`: Handles inference for Groq models
 
 #### `parsing.py`
 This file defines the abstraction for parsing the output of the model inference. The `Parsing` class is used to extract the relevant information from the model's output and format it into a response that can be used by the `Agent` class.
