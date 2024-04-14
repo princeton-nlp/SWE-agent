@@ -25,6 +25,7 @@ from sweagent.environment.utils import (
     get_gh_issue_data,
     get_instances,
     is_from_github_url,
+    is_from_azuredevops_url,
     parse_gh_issue_url,
     parse_gh_repo_url,
     read_with_timeout,
@@ -54,6 +55,7 @@ class EnvironmentArguments(FrozenSerializable):
     """Configure data sources and setup instructions for th environment in which we solve the tasks.
     """
     data_path: str
+    az_repo: str
     image_name: str
     split: str = "dev"
     base_commit: Optional[str] = None  # used only with data_path as url
@@ -85,6 +87,7 @@ class SWEEnv(gym.Env):
         self.persistent = args.container_name is not None
         self.returncode = None
         self.is_from_github_url = is_from_github_url(args.data_path)
+        self.is_from_azuredevops_url = is_from_azuredevops_url(args.data_path)
         if not self.args.verbose:
             self.logger.disabled = True
 
@@ -105,9 +108,16 @@ class SWEEnv(gym.Env):
             cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
             self._github_token = cfg.get("GITHUB_TOKEN", None)
 
+        self._azuredevops_token = os.environ.get("AZURE_DEVOPS_TOKEN", None)
+        if not self._azuredevops_token and os.path.isfile(
+            os.path.join(os.getcwd(), "keys.cfg")
+        ):
+            cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
+            self._azuredevops_token = cfg.get("AZURE_DEVOPS_TOKEN", None)
+
         # Load Task Instances
         self.data_path = self.args.data_path
-        self.data = get_instances(self.data_path, self.args.base_commit, self.args.split, token=self._github_token)
+        self.data = get_instances(self.data_path, self.args.base_commit, self.args.split, token=self._github_token, az_repo=self.args.az_repo, az_token=self._azuredevops_token)
         self.logger.info(f"💽 Loaded dataset from {self.data_path}")
 
         # Establish connection with execution container
@@ -156,7 +166,17 @@ class SWEEnv(gym.Env):
             token_prefix = ""
             if self._github_token:
                 token_prefix = f"{self._github_token}@"
-            if not self.args.no_mirror and not self.is_from_github_url:
+    
+            if self.is_from_azuredevops_url:
+                self.logger.info(f"{repo_name} not found in container, cloning...")
+                if self._azuredevops_token:
+                    token_prefix = f"{self._azuredevops_token}@"
+                self.communicate_with_handling(
+                    input=f"git clone https://{token_prefix}dev.azure.com/{self.data[0]['organization']}/{self.data[0]['project']}/_git/{self.data[0]['az_repo']} {repo_name}",
+                    error_msg="Failed to clone repository from azure",
+                    timeout_duration=LONG_TIMEOUT,
+                )
+            elif not self.args.no_mirror and not self.is_from_github_url:
                 self.logger.info(f"{repo_name} not found in container, cloning...")
                 self.communicate_with_handling(
                     input=f"git clone https://{token_prefix}github.com/swe-bench/{repo_name}.git",
@@ -559,7 +579,7 @@ class SWEEnv(gym.Env):
         """
         Creates conda environment and installs third party dependencies to allow code execution
         """
-        if self.is_from_github_url and self.args.environment_setup is None:
+        if (self.is_from_github_url or self.is_from_azuredevops_url) and self.args.environment_setup is None:
             logger.warning((
                 "install_environment is set to True, but the data path is a GitHub URL "
                 "without an environment config file (environment_config key/flag). "
