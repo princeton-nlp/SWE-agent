@@ -19,8 +19,9 @@ def test_parse_function_registry():
 
 def test_action_parser():
     parser = ActionParser()
-    command = Command('ls', 'ls', 'List directory contents', '[path]')
+    command = Command(code='ls', name='ls')
     thought, action = parser("ls -l", [command])
+    assert thought == "ls -l"
     assert action == "ls -l"
     with pytest.raises(FormatError):
         parser("invalid command", [command])
