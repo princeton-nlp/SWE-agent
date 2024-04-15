@@ -1,4 +1,5 @@
 import dataclasses
+import os
 from pathlib import Path
 import pytest
 import yaml
@@ -80,3 +81,15 @@ def test_interrupt_close(test_env_args):
     env = SWEEnv(test_env_args)
     env.interrupt()
     env.close()
+
+
+@pytest.mark.slow
+def test_communicate_old(test_env_args):
+    del os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"]
+    try:
+        env = SWEEnv(test_env_args)
+        env.reset()
+    except:
+        raise
+    finally:
+        os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"] = "1"
