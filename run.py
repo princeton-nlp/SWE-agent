@@ -51,7 +51,7 @@ class ActionsArguments(FlattenedAccess, FrozenSerializable):
     # to fix the issue. Please only set this to False if you are sure the commits are 
     # not fixes or if this is your own repository!
     skip_if_commits_reference_issue: bool = True  
-    # OBSOLETE. Do not use, will raise error.
+    # OBSOLETE. Do not use, will raise error. Please specify --repo_path instead.
     push_gh_repo_url: str = ""
 
     def __post_init__(self):
@@ -149,7 +149,7 @@ def main(args: ScriptArguments):
             save_predictions(traj_dir, instance_id, info)
             patch_path = save_patch(traj_dir, instance_id, info)
             if args.actions.open_pr and should_open_pr(args, info, token=env._github_token):
-                env.open_pr(trajectory=trajectory, push_gh_repo_url=args.actions.push_gh_repo_url)
+                env.open_pr(trajectory=trajectory)
             if args.actions.apply_patch_locally and patch_path is not None and env.record["repo_type"] == "local":
                 apply_patch(Path(args.environment.repo_path), patch_file=patch_path)
 
