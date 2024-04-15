@@ -49,7 +49,6 @@ class APIStats(Serializable):
             field.name: getattr(self, field.name) + getattr(other, field.name)
             for field in fields(self)
         })
-
     def replace(self, other):
         if not isinstance(other, APIStats):
             raise TypeError("Can only replace APIStats with APIStats")
@@ -102,8 +101,7 @@ class BaseModel:
             azure_model = args.model_name.split("azure:", 1)[1]
             self.model_metadata = MODELS[azure_model]
         else:
-            raise ValueError(
-                f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}")
+            raise ValueError(f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}")
 
     def reset_stats(self, other: Optional[APIStats] = None):
         if other is None:
@@ -125,8 +123,8 @@ class BaseModel:
         """
         # Calculate cost and update cost related fields
         cost = (
-                self.model_metadata["cost_per_input_token"] * input_tokens
-                + self.model_metadata["cost_per_output_token"] * output_tokens
+            self.model_metadata["cost_per_input_token"] * input_tokens
+            + self.model_metadata["cost_per_output_token"] * output_tokens
         )
         self.stats.total_cost += cost
         self.stats.instance_cost += cost
@@ -221,14 +219,13 @@ class OpenAIModel(BaseModel):
         cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
         if self.args.model_name.startswith("azure"):
             self.api_model = cfg["AZURE_OPENAI_DEPLOYMENT"]
-            self.client = AzureOpenAI(api_key=cfg["AZURE_OPENAI_API_KEY"], azure_endpoint=cfg["AZURE_OPENAI_ENDPOINT"],
-                                      api_version=cfg.get("AZURE_OPENAI_API_VERSION", "2024-02-01"))
+            self.client = AzureOpenAI(api_key=cfg["AZURE_OPENAI_API_KEY"], azure_endpoint=cfg["AZURE_OPENAI_ENDPOINT"], api_version=cfg.get("AZURE_OPENAI_API_VERSION", "2024-02-01"))
         else:
             api_base_url: Optional[str] = cfg.get("OPENAI_API_BASE_URL", None)
             self.client = OpenAI(api_key=cfg["OPENAI_API_KEY"], base_url=api_base_url)
 
     def history_to_messages(
-            self, history: list[dict[str, str]], is_demonstration: bool = False
+        self, history: list[dict[str, str]], is_demonstration: bool = False
     ) -> Union[str, list[dict[str, str]]]:
         """
         Create `messages` by filtering out all keys except for role/content per `history` turn
@@ -322,7 +319,7 @@ class AnthropicModel(BaseModel):
         self.api = Anthropic(api_key=cfg["ANTHROPIC_API_KEY"])
 
     def history_to_messages(
-            self, history: list[dict[str, str]], is_demonstration: bool = False
+        self, history: list[dict[str, str]], is_demonstration: bool = False
     ) -> Union[str, list[dict[str, str]]]:
         """
         Create `prompt` by filtering out all keys except for role/content per `history` turn
@@ -436,7 +433,7 @@ class OllamaModel(BaseModel):
         self.client = Client(host=args.host_url)
 
     def history_to_messages(
-            self, history: list[dict[str, str]], is_demonstration: bool = False
+        self, history: list[dict[str, str]], is_demonstration: bool = False
     ) -> Union[str, list[dict[str, str]]]:
         """
         Create `messages` by filtering out all keys except for role/content per `history` turn
@@ -532,7 +529,7 @@ class TogetherModel(BaseModel):
         together.api_key = cfg.TOGETHER_API_KEY
 
     def history_to_messages(
-            self, history: list[dict[str, str]], is_demonstration: bool = False
+        self, history: list[dict[str, str]], is_demonstration: bool = False
     ) -> str:
         """
         Create `prompt` by filtering out all keys except for role/content per `history` turn
@@ -589,7 +586,7 @@ class HumanModel(BaseModel):
         }
 
     def history_to_messages(
-            self, history: list[dict[str, str]], is_demonstration: bool = False
+        self, history: list[dict[str, str]], is_demonstration: bool = False
     ) -> Union[str, list[dict[str, str]]]:
         """
         Create `messages` by filtering out all keys except for role/content per `history` turn
@@ -701,8 +698,7 @@ def get_model(args: ModelArguments, commands: Optional[list[Command]] = None):
         return HumanThoughtModel(args, commands)
     if args.model_name == "replay":
         return ReplayModel(args, commands)
-    elif args.model_name.startswith("gpt") or args.model_name.startswith("ft:gpt") or args.model_name.startswith(
-            "azure:gpt"):
+    elif args.model_name.startswith("gpt") or args.model_name.startswith("ft:gpt") or args.model_name.startswith("azure:gpt"):
         return OpenAIModel(args, commands)
     elif args.model_name.startswith("claude"):
         return AnthropicModel(args, commands)
