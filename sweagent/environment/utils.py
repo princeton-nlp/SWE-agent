@@ -519,6 +519,9 @@ def get_instances(
         return ib.build()
 
     def postproc_instance_list(instances):
+        if isinstance(instances, dict):
+            msg = "Expected a list of instances, got a dictionary."
+            raise ValueError(msg)
         return [instance_from_dict(x) for x in instances]
 
 
