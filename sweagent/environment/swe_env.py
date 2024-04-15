@@ -19,6 +19,8 @@ from rich.logging import RichHandler
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 import yaml
 from sweagent.environment.utils import (
+    PROCESS_DONE_MARKER_END,
+    PROCESS_DONE_MARKER_START,
     copy_anything_to_container,
     copy_file_to_container,
     format_trajectory_markdown,
@@ -28,6 +30,7 @@ from sweagent.environment.utils import (
     parse_gh_issue_url,
     read_with_timeout,
     LOGGER_NAME,
+    read_with_timeout_experimental,
 )
 from swebench import (
     get_environment_yml,
@@ -445,11 +448,40 @@ class SWEEnv(gym.Env):
             error_msg="Failed to add commands directory to PATH",
         )
 
+    def _communicate_experimental(
+        self,
+        input: str,
+        timeout_duration=25,
+    ) -> str:
+        """Experimental version of `_communicate`"""
+
+        command_suffix = f"echo {PROCESS_DONE_MARKER_START}$?{PROCESS_DONE_MARKER_END}\n"
+        try:
+            self.returncode = None
+            cmd = input if input.endswith("\n") else input + "\n"
+            cmd += command_suffix
+            print(cmd)
+            os.write(self.container.stdin.fileno(), cmd.encode())
+            time.sleep(0.03)
+            self.container.stdin.flush()
+        except BrokenPipeError:
+            traceback.print_exc()
+            self.logger.error(
+                "Failed to communicate with container. Check docker logs for more information."
+            )
+            raise RuntimeError("Failed to communicate with container")
+
+        buffer, exit_code = read_with_timeout_experimental(self.container, timeout_duration) 
+        self.returncode = int(exit_code)
+        return buffer
+
     def _communicate(
         self,
         input: str,
         timeout_duration=25,
     ) -> str:
+        if "SWE_AGENT_EXPERIMENTAL_COMMUNICATE" in os.environ:
+            return self._communicate_experimental(input, timeout_duration)
         try:
             self.returncode = None
             cmd = input if input.endswith("\n") else input + "\n"

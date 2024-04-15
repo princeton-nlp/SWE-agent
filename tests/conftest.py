@@ -1,3 +1,4 @@
+import os
 import json
 import sys
 from pathlib import Path
@@ -10,7 +11,7 @@ root_dir = _this_dir.parent
 package_dir = root_dir / "sweagent"
 sys.path.insert(0, str(root_dir))
 sys.path.insert(1, str(package_dir))
-print("Adjusted path: ", sys.path)
+os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"] = "1"
 
 
 @fixture
