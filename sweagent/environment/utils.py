@@ -1,3 +1,4 @@
+import hashlib
 import shlex
 import docker
 import json
@@ -17,30 +18,44 @@ from ghapi.all import GhApi
 from io import BytesIO
 from pathlib import Path
 from subprocess import PIPE, STDOUT
-from typing import List, Set, Tuple, Dict
+from typing import Any, List, Optional, Set, Tuple, Dict
+
+from git import InvalidGitRepositoryError, Repo
+
 
 LOGGER_NAME = "intercode"
 START_UP_DELAY = 5
 TIMEOUT_DURATION = 25
 GITHUB_ISSUE_URL_PATTERN = re.compile(r'github\.com\/(.*?)\/(.*?)\/issues\/(\d+)')
+GITHUB_REPO_URL_PATTERN = re.compile(r'.*[/@]?github\.com\/([^/]+)\/([^/]+)')
 
 logger = logging.getLogger(LOGGER_NAME)
 
 
 def get_data_path_name(data_path: str):
-    # if data_path is a file, return the file stem
-    # elif it's a github url, return the owner__repo_name
+    """ if data_path is a file, return the file stem
+    elif it's a github url, return the owner__repo_name
+    """
     match = GITHUB_ISSUE_URL_PATTERN.search(data_path)
     if match:
-        owner, repo, issue_number = match.groups()
+        owner, repo, _ = match.groups()
         return f"{owner}__{repo}"
     return Path(data_path).stem
 
 
-def is_from_github_url(data_path: str):
+def is_github_issue_url(data_path: str) -> bool:
+    """Check if data_path is an URL pointing to a github issue"""
     return GITHUB_ISSUE_URL_PATTERN.search(data_path) is not None
 
 
+def is_github_repo_url(data_path: str) -> bool:
+    """Check if data_path is an URL pointing to a github repository.
+    Paths to issues or PRs will also match this pattern.
+    """
+    return GITHUB_REPO_URL_PATTERN.search(data_path) is not None
+
+
+# todo: Why not just use copy_anything_to_container?
 def copy_file_to_container(container, contents, container_path):
     """
     Copies a given string into a Docker container at a specified path.
@@ -84,6 +99,23 @@ def copy_file_to_container(container, contents, container_path):
         # Cleanup: Remove the temporary file if it was created
         if temp_file_name and os.path.exists(temp_file_name):
             os.remove(temp_file_name)
+
+
+def copy_anything_to_container(container, host_path: str, container_path: str) -> None:
+    """Copy files or directories from host to container
+    
+    Note: Will need to set ownership on the copied files in the container.
+    """
+    if not Path(host_path).exists():
+        msg = f"Path {host_path} does not exist, cannot copy it to container."
+        raise FileNotFoundError(msg)
+    cmd = ["docker", "cp", host_path, f"{container.id}:{container_path}"]
+    logger.debug(f"Copying {host_path} to container at {container_path} with command: {shlex.join(cmd)}")
+    try:
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        msg = f"Error copying {host_path} to container at {container_path}: {e}"
+        raise RuntimeError(msg) from e
 
 
 def read_with_timeout(container, pid_func, timeout_duration):
@@ -329,12 +361,12 @@ def parse_gh_issue_url(issue_url: str) -> Tuple[str, str, str]:
 
 def parse_gh_repo_url(repo_url: str) -> Tuple[str, str]:
     """Return owner, repo from repo url"""
-    if not repo_url.startswith('http://') and not repo_url.startswith('https://'):
-        repo_url = 'https://' + repo_url
-    parts = repo_url.split('/')
-    owner = parts[3] 
-    repo = parts[4]
-    return owner, repo
+    match = GITHUB_REPO_URL_PATTERN.search(repo_url)
+    if not match:
+        raise InvalidGithubURL(f"Invalid GitHub issue URL: {repo_url}")
+    res = match.groups()
+    assert len(res) == 2
+    return tuple(res)  # type: ignore
 
 
 def get_gh_issue_data(issue_url: str, *, token: str = ""):
@@ -347,53 +379,192 @@ def get_gh_issue_data(issue_url: str, *, token: str = ""):
     return api.issues.get(owner, repo, issue_number)
 
 
-def get_instances(file_path: str, base_commit: str = None, split: str = None, token: str = None):
+
+def get_problem_statement_from_github_issue(owner: str, repo: str, issue_number: str, *, token: Optional[str] = "") -> str:
+    """Return problem statement from github issue"""
+    api = GhApi(token=token)
+    issue = api.issues.get(owner, repo, issue_number)
+    title = issue.title if issue.title else ""
+    body = issue.body if issue.body else ""
+    return f"{title}\n{body}\n"
+
+
+class InstanceBuilder:
+    def __init__(self, token: Optional[str] = None):
+        """This helper class is used to build the data for an instance object, 
+        retrieving problem statements from github issues or local files and setting
+        repo paths from github urls or local paths.
+        """
+        # Args that will be passed to the Instance constructor
+        self.args = {}
+        self.token = token
+        self._instance_id_problem_suffix = ""
+
+    def set_problem_statement_from_gh_issue(self, issue_url: str):
+        owner, repo, issue_number = parse_gh_issue_url(issue_url)
+        self.args["problem_statement"] = get_problem_statement_from_github_issue(owner, repo, issue_number, token=self.token)
+        self.args["instance_id"] = f"{owner}__{repo}-i{issue_number}"
+        self.args["problem_statement_source"] = "online"
+    
+    def set_problem_statement_from_file(self, file_path: str):
+        self.args["problem_statement"] = Path(file_path).read_text()
+        self.args["instance_id"] = hashlib.sha256(self.args["problem_statement"].encode()).hexdigest()[:6]
+        self.args["problem_statement_source"] = "local"
+
+    def set_problem_statement(self, data_path: str ):
+        """Get problem statement for a single instance from a github issue url or a 
+        path to a markdown or text file.
+        """
+        if is_github_issue_url(data_path):
+            self.set_problem_statement_from_gh_issue(data_path)
+        elif Path(data_path).is_file():
+            self.set_problem_statement_from_file(data_path)
+        else:
+            msg = f"Not sure how to get problem statement from {data_path=}."
+            raise ValueError(msg)
+    
+    def set_repo_info_from_gh_url(self, url: str, base_commit: Optional[str] = None):
+        owner, repo = parse_gh_repo_url(url)
+        self.args["repo"] = f"{owner}/{repo}"
+        self.args["repo_type"] = "github"
+        if base_commit:
+            self.args["base_commit"] = base_commit
+        else:
+            api = GhApi(token=self.token)
+            self.args["base_commit"] = get_commit(api, owner, repo, base_commit).sha
+        self.args["version"] = self.args["base_commit"][:7]
+    
+    def set_repo_info_from_local_path(self, path: str, base_commit: Optional[str] = None):
+        self.args["repo"] = str(Path(path).resolve())
+        self.args["repo_type"] = "local"
+        if base_commit:
+            self.args["base_commit"] = base_commit
+        else:
+            try:
+                repo = Repo(path, search_parent_directories=True)
+            except InvalidGitRepositoryError as e:
+                msg = f"Could not find git repository at {path=}."
+                raise ValueError(msg) from e
+            if repo.is_dirty():
+                msg = f"Local git repository {path} is dirty. Please commit or stash changes."
+                raise ValueError(msg)
+            self.args["base_commit"] = repo.head.object.hexsha
+        self.args["version"] = self.args["base_commit"][:7]
+    
+    def set_repo_info(self, repo: str, base_commit: Optional[str] = None):
+        if is_github_repo_url(repo):
+            self.set_repo_info_from_gh_url(repo, base_commit=base_commit)
+        elif Path(repo).is_dir():
+            self.set_repo_info_from_local_path(repo, base_commit=base_commit)
+        else:
+            raise ValueError(f"Could not determine repo path from {repo=}.")
+    
+    def set_from_dict(self, instance_dict: Dict[str, Any]):
+        self.args |= instance_dict
+    
+    def set_missing_fields(self):
+        # todo: This field is only needed while swe_env is using some questionable logic
+        # to determine whether to clone from a mirror or not. This should be removed in the future.
+        # Values: 'swe-bench' (loaded from json/jsonl for swe-bench style inference),
+        # 'online' (loaded from github issue or similar) or 'local' (loaded from local file)
+        if "problem_statement_source" not in self.args:
+            self.args["problem_statement_source"] = "swe-bench"
+        if "repo_type" not in self.args: 
+            self.args["repo_type"] = "github"
+    
+    def validate(self):
+        required_fields = [
+            "problem_statement",
+            "instance_id",
+            "repo",
+            "repo_type",
+            "base_commit",
+            "version",
+            "problem_statement_source",
+        ]
+        if not all(x in self.args for x in required_fields):
+            missing = set(required_fields) - set(self.args.keys())
+            raise ValueError(f"Missing required fields: {missing=}")
+        if self.args["repo_type"] not in {"github", "local"}:
+            raise ValueError(f"Invalid repo type: {self.args['repo_type']=}")
+        if self.args["repo_type"] == "github" and self.args["repo"].count("/") != 1:
+            raise ValueError(f"Invalid repo format for {self.args['repo_type']=}: {self.args['repo']=}")
+    
+    def build(self) -> Dict[str, Any]:
+        self.set_missing_fields()
+        self.validate()
+        return self.args
+    
+
+def get_instances(
+        file_path: str, 
+        base_commit: Optional[str] = None, 
+        split: Optional[str] = None, 
+        token: Optional[str] = None,
+        *,
+        repo_path: str = "",
+    ) -> List[Dict[str, Any]]:
     """
     Getter function for handling json, jsonl files
 
-    Arguments:
+    Args:
         file_path (str): Path to file
+
     Returns:
-        List of instances
+        List of instances as dictionaries
     """
+    def instance_from_dict(instances):
+        ib = InstanceBuilder(token=token)
+        ib.set_from_dict(instances)
+        return ib.build()
+
+    def postproc_instance_list(instances):
+        if isinstance(instances, dict):
+            msg = "Expected a list of instances, got a dictionary."
+            raise ValueError(msg)
+        return [instance_from_dict(x) for x in instances]
+
+
     # If file_path is a directory, attempt load from disk
     if os.path.isdir(file_path):
-        dataset_or_dict = load_from_disk(file_path)
-        if isinstance(dataset_or_dict, dict):
-            return dataset_or_dict[split]
-        return dataset_or_dict
-
-    # If file_path is a github issue url, fetch the issue and return a single instance
-    if is_from_github_url(file_path):
-        try: 
-            owner, repo, issue_number = parse_gh_issue_url(file_path)
-        except InvalidGithubURL:
+        try:
+            dataset_or_dict = load_from_disk(file_path)
+            if isinstance(dataset_or_dict, dict):
+                return postproc_instance_list(dataset_or_dict[split])
+            return postproc_instance_list(dataset_or_dict)
+        except FileNotFoundError:
+            # Raised by load_from_disk if the directory is not a dataset directory
             pass
+
+    # The next if statement is very brittle logic to determine if we're processing a single instance
+    if (Path(file_path).is_file() and Path(file_path).suffix in ['.md', '.txt']) or is_github_issue_url(file_path):
+        ib = InstanceBuilder(token=token)
+        ib.set_problem_statement(file_path)
+        if repo_path:
+            ib.set_repo_info(repo_path, base_commit=base_commit)
+        elif is_github_repo_url(file_path):
+            ib.set_repo_info_from_gh_url(file_path)
         else:
-            record = dict()
-            api = GhApi(token=token)
-            issue = api.issues.get(owner, repo, issue_number)
-            title = issue.title if issue.title else ""
-            body = issue.body if issue.body else ""
-            text = f"{title}\n{body}\n"
-            record["repo"] = f"{owner}/{repo}"
-            record["base_commit"] = base_commit if base_commit else get_commit(api, owner, repo, base_commit).sha
-            record["version"] = record["base_commit"][:7]
-            record["problem_statement"] = text
-            record["instance_id"] = f"{owner}__{repo}-i{issue_number}"
-            return [record,]
-    elif base_commit is not None:
+            raise ValueError(f"Could not determine repo path from {file_path=}, {repo_path=}")
+
+        return [ib.build()]
+    
+    if base_commit is not None:
         raise ValueError("base_commit must be None if data_path is not a github issue url")
 
     # If file_path is a file, load the file
     if file_path.endswith(".json"):
-        return json.load(open(file_path))
+        return postproc_instance_list(json.load(open(file_path)))
     if file_path.endswith(".jsonl"):
-        return [json.loads(x) for x in open(file_path, 'r').readlines()]
+        return postproc_instance_list([json.loads(x) for x in open(file_path, 'r').readlines()])
+
+    if repo_path:
+        msg = "repo_path must be empty if data_path is not a github url or local repo url"
+        raise ValueError(msg)
 
     # Attempt load from HF datasets as a last resort
     try:
-        return load_dataset(file_path, split=split)
+        return postproc_instance_list(load_dataset(file_path, split=split))
     except:
         raise ValueError(
             f"Could not load instances from {file_path}. "

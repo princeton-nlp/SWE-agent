@@ -66,6 +66,9 @@ def test_execute_environment(tmp_path, test_env_args):
     test_env_args = dataclasses.replace(test_env_args, environment_setup=env_config_path)
     env = SWEEnv(test_env_args)
     env.reset()
+
+
+@pytest.mark.slow
 def test_open_pr(test_env_args):
     env = SWEEnv(test_env_args)
     env.reset()

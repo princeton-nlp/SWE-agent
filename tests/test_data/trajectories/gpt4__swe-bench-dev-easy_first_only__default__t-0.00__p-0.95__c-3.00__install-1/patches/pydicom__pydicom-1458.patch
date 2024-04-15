@@ -1,0 +1,18 @@
+
+diff --git a/pydicom/pixel_data_handlers/numpy_handler.py b/pydicom/pixel_data_handlers/numpy_handler.py
+index 8e8d319ae..6a1221b72 100644
+--- a/pydicom/pixel_data_handlers/numpy_handler.py
++++ b/pydicom/pixel_data_handlers/numpy_handler.py
+@@ -285,9 +285,10 @@ def get_pixeldata(ds: "Dataset", read_only: bool = False) -> "np.ndarray":
+         )
+ 
+     required_elements = [
+-        'BitsAllocated', 'Rows', 'Columns', 'PixelRepresentation',
+-        'SamplesPerPixel', 'PhotometricInterpretation'
++        'BitsAllocated', 'Rows', 'Columns', 'SamplesPerPixel', 'PhotometricInterpretation'
+     ]
++    if 'PixelData' in ds:
++        required_elements.append('PixelRepresentation')
+     missing = [elem for elem in required_elements if elem not in ds]
+     if missing:
+         raise AttributeError(
