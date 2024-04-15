@@ -146,12 +146,19 @@ python run.py --model_name gpt4 \
   --config_file config/default_from_url.yaml
 ```
 
-> [!TIP]
-> You can have the agent automatically open a PR if the issue has been solved by supplying the `--open_pr`
-> flag. Please use this feature responsibly (on your own repositories or after careful consideration).
+You can also apply to it to a local repository:
+```bash
+python run.py --model_name gpt4 \
+  --data_path /path/to/my_issue.md \
+  --repo_path /path/to/my/local/repo \
+  --config_file config/default_from_url.yaml \
+  --apply_patch_locally
+```
 
 > [!TIP]
-> Run `python run.py --help` to see all available options.
+> * Run `python run.py --help` to see all available options.
+> * You can have the agent automatically open a PR if the issue has been solved by supplying the `--open_pr`
+>   flag. Please use this feature responsibly (on your own repositories or after careful consideration).
 
 * See the [`scripts/`](scripts/) folder for other useful scripts and details.
 * See the [`config/`](config/) folder for details about how you can define your own configuration!
