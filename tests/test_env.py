@@ -59,7 +59,7 @@ def test_execute_environment(tmp_path, test_env_args):
     test_env = {
         "python": "3.6",
         "packages": "pytest",
-        "pip_packages": "tox",
+        "pip_packages": ["tox"],
         "install": "echo 'installing'",
     }
     env_config_path = Path(tmp_path / "env_config.yml")

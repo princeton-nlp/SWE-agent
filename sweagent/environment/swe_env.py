@@ -719,7 +719,7 @@ class SWEEnv(gym.Env):
             # Install extra pip packages if specified
             if "pip_packages" in install_configs:
                 self.communicate_with_handling(
-                    f"source activate {env_name} && pip install {install_configs['pip_packages']}",
+                    f"source activate {env_name} && pip install {' '.join(install_configs['pip_packages'])}",
                     error_msg="Failed to install pip packages",
                     timeout_duration=LONG_TIMEOUT
                 )
