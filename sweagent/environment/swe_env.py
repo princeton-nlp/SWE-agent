@@ -25,8 +25,6 @@ from sweagent.environment.utils import (
     get_container,
     get_gh_issue_data,
     get_instances,
-    parse_gh_issue_url,
-    parse_gh_repo_url,
     read_with_timeout,
     LOGGER_NAME,
 )
@@ -769,12 +767,11 @@ class SWEEnv(gym.Env):
             raise RuntimeError("Failed to interrupt container")
 
 
-    def open_pr(self, *, trajectory, push_gh_repo_url: Optional[str] = None, _dry_run: bool=False):
+    def open_pr(self, *, trajectory, _dry_run: bool=False):
         """Create PR to repository
         
         Args:
             trajectory: Trajectory of actions taken by the agent
-            push_gh_repo_url: URL of the repository to push the PR branch to
             _dry_run: Whether to actually push anything or just simulate it
         """
         logger.info("Opening PR")
@@ -808,21 +805,8 @@ class SWEEnv(gym.Env):
         # If users want to push to a fork, we add a new remote and push to that
         # otherwise, we push to 'origin' which has already been set up
         remote = "origin"
-        if not push_gh_repo_url:
-            owner, repo, _ = parse_gh_issue_url(issue_url)
-        else:
-            owner, repo = parse_gh_repo_url(push_gh_repo_url)
-        if push_gh_repo_url:
-            token_prefix = ""
-            if self._github_token:
-                token_prefix = f"{self._github_token}@"
-            fork_url = f"https://{token_prefix}github.com/{owner}/{repo}.git"
-            self.communicate_with_handling(
-                input=f"git remote add fork {fork_url}",
-                error_msg="Failed to create new git remote",
-                timeout_duration=10,
-            )
-            remote = "fork"
+        assert self.record is not None  # mypy
+        owner, repo = self.record["repo"].split("/")
         dry_run_prefix = "echo " if _dry_run else ""
         self.communicate_with_handling(
             input=f"{dry_run_prefix} git push {remote} {branch_name}",
