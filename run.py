@@ -5,6 +5,10 @@ import re
 import subprocess
 import traceback
 from typing import Any, Dict, Optional
+import rich.console
+import rich.markdown
+import rich.panel
+import rich.markdown
 import yaml
 
 from dataclasses import dataclass
@@ -165,15 +169,15 @@ def main(args: ScriptArguments):
 def should_open_pr(args: ScriptArguments, info: Dict[str, Any], *, token: str="") -> bool:
     """Does opening a PR make sense?"""
     if not info.get("submission"):
-        logger.info("Not openening PR because submission was made.")
+        logger.info("Not opening PR because submission was made.")
         return False
     if info["exit_status"] != "submitted":
-        logger.info("Not openening PR because exit status was %s and not submitted.", info["exit_status"])
+        logger.info("Not opening PR because exit status was %s and not submitted.", info["exit_status"])
         return False
     try:
         issue = get_gh_issue_data(args.environment.data_path, token=token)
     except InvalidGithubURL:
-        logger.info("Currently only github is supported to open PRs to. Skipping PR creation.")
+        logger.info("Currently only GitHub is supported to open PRs to. Skipping PR creation.")
         return False
     if issue.state != "open":
         logger.info(f"Issue is not open (state={issue.state}. Skipping PR creation.")
@@ -259,6 +263,8 @@ def save_predictions(traj_dir: Path, instance_id: str, info):
     logger.info(f"Saved predictions to {output_file}")
 
 
+
+
 def save_patch(traj_dir: Path, instance_id: str, info) -> Optional[Path]:
     """Create patch files that can be applied with `git am`.
     
@@ -273,7 +279,7 @@ def save_patch(traj_dir: Path, instance_id: str, info) -> Optional[Path]:
         return
     model_patch = info["submission"]
     patch_output_file.write_text(model_patch)
-    logger.info(f"Saved patch to {patch_output_file}")
+    _print_patch_message(patch_output_file)
     return patch_output_file
 
 
@@ -290,6 +296,31 @@ def apply_patch(local_dir: Path, patch_file: Path) -> None:
         logger.error(f"Failed to apply patch {patch_file} to {local_dir}: {e}")
         return
     logger.info(f"Applied patch {patch_file} to {local_dir}")
+
+    
+def _print_patch_message(patch_output_file: Path):
+    console = rich.console.Console()
+    msg = [
+        "SWE-agent has produced a patch that it believes will solve the issue you submitted!",
+        "Use the code snippet below to inspect or apply it!"
+    ]
+    panel = rich.panel.Panel.fit(
+        "\n".join(msg),
+        title="🎉 Submission successful 🎉",
+    )
+    console.print(panel)
+    content = [
+        "```bash",
+        f"# The patch has been saved to your local filesystem at:",
+        f"PATCH_FILE_PATH='{patch_output_file.resolve()}'",
+        "# Inspect it:",
+        "cat \"${PATCH_FILE_PATH}\"",
+        "# Apply it to a local repository:",
+        f"cd <your local repo root>",
+        "git apply \"${PATCH_FILE_PATH}\"",
+        "```",
+    ]
+    console.print(rich.markdown.Markdown("\n".join(content)))
 
 
 def get_args(args=None) -> ScriptArguments:
