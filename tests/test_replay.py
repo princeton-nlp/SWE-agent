@@ -68,7 +68,6 @@ def test_model_replay_local_repo(swe_agent_test_repo_clone, swe_agent_test_repo_
         assert problem_statement_path.is_file()
     else:
         raise ValueError(problem_statement_source)
-    # fixme: Make traj path dynamic
     run_cmd = [
         "--traj_path",
         str(swe_agent_test_repo_traj),
@@ -87,3 +86,26 @@ def test_model_replay_local_repo(swe_agent_test_repo_clone, swe_agent_test_repo_
     solution = (swe_agent_test_repo_traj.parent / "solution_missing_colon.py").read_text().strip()
     solution_retrieved = (local_repo_path / "tests" / "missing_colon.py").read_text().strip()
     assert solution == solution_retrieved
+
+
+def test_exception_replay_local_dirty(swe_agent_test_repo_clone, swe_agent_test_repo_traj):
+    """Test that swe-agent refuses to work if the local repo is dirty"""
+    problem_statement_path = swe_agent_test_repo_clone / "problem_statements" / "1.md"
+    test_file = swe_agent_test_repo_clone / "tests" / "missing_colon.py"
+    assert test_file.is_file()
+    test_file.write_text(test_file.read_text().replace("division", "division_function"))
+    run_cmd = [
+        "--traj_path",
+        str(swe_agent_test_repo_traj),
+        "--repo_path",
+        str(swe_agent_test_repo_clone),
+        "--config_file",
+        "config/default_from_url.yaml", 
+        "--data_path",
+        str(problem_statement_path),
+        "--apply_patch",
+        "--raise_exceptions",
+    ]
+    args, remaing_args = get_args(run_cmd)
+    with pytest.raises(ValueError, match=".*dirty.*"):
+        main(**vars(args), forward_args=remaing_args)
