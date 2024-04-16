@@ -169,7 +169,7 @@ def main(args: ScriptArguments):
 def should_open_pr(args: ScriptArguments, info: Dict[str, Any], *, token: str="") -> bool:
     """Does opening a PR make sense?"""
     if not info.get("submission"):
-        logger.info("Not opening PR because submission was made.")
+        logger.info("Not opening PR because no submission was made.")
         return False
     if info["exit_status"] != "submitted":
         logger.info("Not opening PR because exit status was %s and not submitted.", info["exit_status"])
