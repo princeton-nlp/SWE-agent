@@ -17,5 +17,5 @@ dependencies:
     - tenacity
     - unidiff
     - simple-parsing
-    - together
+    - together~=1.1.0
     - ollama
