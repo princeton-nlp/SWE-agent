@@ -19,3 +19,4 @@ dependencies:
     - simple-parsing
     - together
     - ollama
+    - rich-argparse

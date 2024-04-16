@@ -19,16 +19,19 @@ from rich.logging import RichHandler
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 import yaml
 from sweagent.environment.utils import (
+    PROCESS_DONE_MARKER_END,
+    PROCESS_DONE_MARKER_START,
+    InvalidGithubURL,
+    copy_anything_to_container,
     copy_file_to_container,
     format_trajectory_markdown,
     get_container,
     get_gh_issue_data,
     get_instances,
-    is_from_github_url,
     parse_gh_issue_url,
-    parse_gh_repo_url,
     read_with_timeout,
     LOGGER_NAME,
+    read_with_timeout_experimental,
 )
 from swebench import (
     get_environment_yml,
@@ -53,6 +56,9 @@ logger.propagate = False
 class EnvironmentArguments(FrozenSerializable):
     """Configure data sources and setup instructions for th environment in which we solve the tasks.
     """
+    # Source of issue statement/problem statement. To run over a batch of issues: Path to a data file 
+    # (`json`, `jsonl`) or directory. To run over single issue: github issue url or path to markdown file
+    # with problem statement.
     data_path: str
     image_name: str
     split: str = "dev"
@@ -62,11 +68,13 @@ class EnvironmentArguments(FrozenSerializable):
     timeout: int = 35
     verbose: bool = False
     no_mirror: bool = False
-    # Custom environment setup. Currently only used when data_path is a GitHub URL.
+    # Custom environment setup. Currently only used when data_path points to a single issue.
     # This needs to be either a string pointing to a yaml file (with yaml, yml file extension)
     # or a shell script (with sh extension).
     # See https://github.com/princeton-nlp/SWE-agent/pull/153 for more information
     environment_setup: Optional[str] = None
+    # Only used when running on single issue. Path to local repository or github repository. 
+    repo_path: str = ""
 
 
 class SWEEnv(gym.Env):
@@ -84,7 +92,6 @@ class SWEEnv(gym.Env):
         self.logger = logger
         self.persistent = args.container_name is not None
         self.returncode = None
-        self.is_from_github_url = is_from_github_url(args.data_path)
         if not self.args.verbose:
             self.logger.disabled = True
 
@@ -107,7 +114,9 @@ class SWEEnv(gym.Env):
 
         # Load Task Instances
         self.data_path = self.args.data_path
-        self.data = get_instances(self.data_path, self.args.base_commit, self.args.split, token=self._github_token)
+        self.data = get_instances(self.data_path, self.args.base_commit, self.args.split, token=self._github_token, repo_path=self.args.repo_path)
+        #: Instance we're currently processing. Gets set in self.reset.
+        self.record = None
         self.logger.info(f"💽 Loaded dataset from {self.data_path}")
 
         # Establish connection with execution container
@@ -119,7 +128,48 @@ class SWEEnv(gym.Env):
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
 
-    def reset(self, index: int = None, apply_test_patch: bool = False) -> Tuple[str, dict]:
+    @property
+    def _repo_name(self) -> str:
+        """Name of the local copy of the repository"""
+        assert self.record is not None
+        return self.record["repo"].replace("/", "__")
+    
+    def _copy_repo(self) -> str:
+        """Clone/copy repository/codebase in container
+        Returns:
+            folder name of clone
+        """
+        assert self.record is not None  # mypy
+        if self.record["repo_type"] == "local":
+            copy_anything_to_container(self.container_obj, self.record["repo"].removeprefix("local://"), "/"+self._repo_name)
+            self.communicate_with_handling(
+                input=f"chown -R root:root {self._repo_name}",
+                error_msg="Failed to change permissions on copied repository",
+            )
+            return self._repo_name
+        assert self.record["repo_type"] == "github"
+        token_prefix = ""
+        if self._github_token:
+            token_prefix = f"{self._github_token}@"
+        # fixme: This if statement is brittle and should probably be replaced with better logic
+        if not self.args.no_mirror and self.record["problem_statement_source"] == "swe-bench":
+            self.logger.info(f"{self._repo_name} not found in container, cloning...")
+            self.communicate_with_handling(
+                input=f"git clone https://{token_prefix}github.com/swe-bench/{self._repo_name}.git",
+                error_msg="Failed to clone repository from mirror",
+                timeout_duration=LONG_TIMEOUT,
+            )
+            return self._repo_name
+        else:
+            logger.info(f"Trying to clone from non-mirror...")
+            self.communicate_with_handling(
+                input=f"git clone https://{token_prefix}github.com/{self.record['repo']}.git {self._repo_name}",
+                error_msg="Failed to clone repository from non-mirror",
+                timeout_duration=LONG_TIMEOUT,
+            )
+            return self._repo_name
+
+    def reset(self, index: Optional[int] = None, apply_test_patch: bool = False) -> Tuple[Optional[str], dict]:
         """
         Function to reset container between each task instance.
         * Clones instance's repository
@@ -151,30 +201,13 @@ class SWEEnv(gym.Env):
         # Clone repository if not already cloned
         self.communicate(input="cd /")
         folders = self.communicate(input="ls").split("\n")
-        repo_name = self.record["repo"].replace("/", "__")
-        if repo_name not in folders:
-            token_prefix = ""
-            if self._github_token:
-                token_prefix = f"{self._github_token}@"
-            if not self.args.no_mirror and not self.is_from_github_url:
-                self.logger.info(f"{repo_name} not found in container, cloning...")
-                self.communicate_with_handling(
-                    input=f"git clone https://{token_prefix}github.com/swe-bench/{repo_name}.git",
-                    error_msg="Failed to clone repository from mirror",
-                    timeout_duration=LONG_TIMEOUT,
-                )
-            else:
-                logger.info(f"Trying to clone from non-mirror...")
-                self.communicate_with_handling(
-                    input=f"git clone https://{token_prefix}github.com/{self.record['repo']}.git {repo_name}",
-                    error_msg="Failed to clone repository from non-mirror",
-                    timeout_duration=LONG_TIMEOUT,
-                )
+        if self._repo_name not in folders:
+            self._copy_repo()
 
         # Clean repository of any modifications + Checkout base commit
         for cmd in [
             "echo -n > /root/files_to_edit.txt",
-            f"cd {repo_name}",
+            f"cd {self._repo_name}",
             "export ROOT=$(pwd -P)",
             "git status",
             "git restore .",
@@ -416,11 +449,40 @@ class SWEEnv(gym.Env):
             error_msg="Failed to add commands directory to PATH",
         )
 
+    def _communicate_experimental(
+        self,
+        input: str,
+        timeout_duration=25,
+    ) -> str:
+        """Experimental version of `_communicate`"""
+
+        command_suffix = f"echo {PROCESS_DONE_MARKER_START}$?{PROCESS_DONE_MARKER_END}\n"
+        try:
+            self.returncode = None
+            cmd = input if input.endswith("\n") else input + "\n"
+            cmd += command_suffix
+            print(cmd)
+            os.write(self.container.stdin.fileno(), cmd.encode())
+            time.sleep(0.03)
+            self.container.stdin.flush()
+        except BrokenPipeError:
+            traceback.print_exc()
+            self.logger.error(
+                "Failed to communicate with container. Check docker logs for more information."
+            )
+            raise RuntimeError("Failed to communicate with container")
+
+        buffer, exit_code = read_with_timeout_experimental(self.container, timeout_duration) 
+        self.returncode = int(exit_code)
+        return buffer
+
     def _communicate(
         self,
         input: str,
         timeout_duration=25,
     ) -> str:
+        if "SWE_AGENT_EXPERIMENTAL_COMMUNICATE" in os.environ:
+            return self._communicate_experimental(input, timeout_duration)
         try:
             self.returncode = None
             cmd = input if input.endswith("\n") else input + "\n"
@@ -559,14 +621,15 @@ class SWEEnv(gym.Env):
         """
         Creates conda environment and installs third party dependencies to allow code execution
         """
-        if self.is_from_github_url and self.args.environment_setup is None:
+        assert self.record is not None  # mypy
+        if (self.record["problem_statement_source"] != "swe-bench" or \
+            self.record["repo_type"] == "local") and self.args.environment_setup is None:
             logger.warning((
                 "install_environment is set to True, but the data path is a GitHub URL "
                 "without an environment config file (environment_config key/flag). "
                 "Skipping conda environment installation."
                 ))
             return
-        repo_name = self.record["repo"].replace("/", "__")
         if self.args.environment_setup is not None:
             assert isinstance(self.args.environment_setup, (str, os.PathLike))
             if Path(self.args.environment_setup).suffix in [".yml", ".yaml"]:
@@ -592,7 +655,7 @@ class SWEEnv(gym.Env):
                 )
                 raise ValueError(msg) from e
         # Create environment if does not exist yet
-        env_name = f"{repo_name}__{self.record['version']}"
+        env_name = f"{self._repo_name}__{self.record['version']}"
         env_check = self.communicate(
             f"conda env list | grep {env_name}", timeout_duration=LONG_TIMEOUT
         )
@@ -657,7 +720,7 @@ class SWEEnv(gym.Env):
             # Install extra pip packages if specified
             if "pip_packages" in install_configs:
                 self.communicate_with_handling(
-                    f"source activate {env_name} && pip install {install_configs['pip_packages']}",
+                    f"source activate {env_name} && pip install {' '.join(install_configs['pip_packages'])}",
                     error_msg="Failed to install pip packages",
                     timeout_duration=LONG_TIMEOUT
                 )
@@ -676,7 +739,7 @@ class SWEEnv(gym.Env):
                     pre_install_cmd,
                     error_msg="Pre-install commands failed to execute successfully",
                 )
-        self.logger.info(f"Installing {repo_name} at base commit...")
+        self.logger.info(f"Installing {self._repo_name} at base commit...")
         if "install" in install_configs:
             install_cmd = install_configs["install"]
             self.communicate_with_handling(
@@ -738,19 +801,22 @@ class SWEEnv(gym.Env):
             raise RuntimeError("Failed to interrupt container")
 
 
-    def open_pr(self, *, trajectory, push_gh_repo_url: Optional[str] = None, _dry_run: bool=False):
+    def open_pr(self, *, trajectory, _dry_run: bool=False):
         """Create PR to repository
         
         Args:
             trajectory: Trajectory of actions taken by the agent
-            push_gh_repo_url: URL of the repository to push the PR branch to
             _dry_run: Whether to actually push anything or just simulate it
         """
         logger.info("Opening PR")
         # todo: have better way of handling this
         # Adding random string suffix to avoid name conflicts if we had a previously failed run
         issue_url = self.args.data_path 
-        issue = get_gh_issue_data(issue_url, token=self._github_token)
+        try:
+            issue = get_gh_issue_data(issue_url, token=self._github_token)
+        except InvalidGithubURL as e:
+            msg = f"Data path must be a github issue URL if --open_pr is set."
+            raise ValueError(msg) from e
         branch_name = f"swe-agent-fix-#{issue.number}-" + str(random.random())[2:10]
 
         self.communicate_with_handling(
@@ -774,18 +840,26 @@ class SWEEnv(gym.Env):
             error_msg="Failed to commit changes",
             timeout_duration=10,
         )
-        # If users want to push to a fork, we add a new remote and push to that
-        # otherwise, we push to 'origin' which has already been set up
+
+        owner, repo, _ = parse_gh_issue_url(issue_url)
+        # If `--repo_path` was specified with a different github URL, then the record will contain
+        # the forking user
+        assert self.record is not None
+        if not self.record["repo_type"] == "github":
+            # We already validated that `--data_path` is a github issue URL
+            # so this is the only case where we can reach here
+            msg = "--repo_path must point to a github URL if --open_pr is set"
+            raise ValueError(msg)
+        forker, _ = self.record["repo"].split("/")
+        head = branch_name
         remote = "origin"
-        if not push_gh_repo_url:
-            owner, repo, _ = parse_gh_issue_url(issue_url)
-        else:
-            owner, repo = parse_gh_repo_url(push_gh_repo_url)
-        if push_gh_repo_url:
+        if forker != owner:
+            head = f"{forker}:{branch_name}"
             token_prefix = ""
             if self._github_token:
                 token_prefix = f"{self._github_token}@"
-            fork_url = f"https://{token_prefix}github.com/{owner}/{repo}.git"
+            fork_url = f"https://{token_prefix}github.com/{forker}/{repo}.git"
+            logger.debug(f"Using fork: {fork_url}")
             self.communicate_with_handling(
                 input=f"git remote add fork {fork_url}",
                 error_msg="Failed to create new git remote",
@@ -801,8 +875,6 @@ class SWEEnv(gym.Env):
             ),
             timeout_duration=10,
         )
-
-        # todo: add representation of trajectory to PR body
         body =  (
             f"This is a PR opened by AI tool [SWE Agent](https://github.com/princeton-nlp/SWE-agent/) " 
             f"to close [#{issue.number}]({issue_url}) ({issue.title}).\n\nCloses #{issue.number}."
@@ -814,7 +886,7 @@ class SWEEnv(gym.Env):
                 owner=owner,
                 repo=repo,
                 title=f"SWE-agent[bot] PR to fix: {issue.title}",
-                head=branch_name,
+                head=head,
                 base="main",
                 body=body,
                 draft=True,

@@ -189,3 +189,6 @@ website/frontend/build
 trajectories/*
 
 .vscode/**
+
+# PyCharm
+.idea/

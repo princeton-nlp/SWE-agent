@@ -2,10 +2,22 @@ import json
 import logging
 import os
 import re
+import subprocess
 import traceback
 from typing import Any, Dict, Optional
+import rich.console
+import rich.markdown
+import rich.panel
+import rich.markdown
+try:
+    from rich_argparse import RichHelpFormatter
+except ImportError:
+    msg = (
+        "Please install the rich_argparse package with `pip install rich_argparse`."
+    )
+    raise ImportError(msg)
 import yaml
-
+from rich.markdown import Markdown
 from dataclasses import dataclass
 from getpass import getuser
 from pathlib import Path
@@ -26,6 +38,16 @@ from unidiff import PatchSet
 
 from sweagent.environment.utils import InvalidGithubURL, get_associated_commit_urls, get_gh_issue_data, parse_gh_issue_url
 
+__doc__: str = """ Run inference. Usage examples:
+
+```bash
+# Run over a github issue:
+python run.py --model_name "gpt4" --data_path "https://github.com/pvlib/pvlib-python/issues/1603" --config_file "config/default_from_url.yaml"
+# Apply a patch in a local repository to an issue specified as Markdown file and run a custom installer script in the container
+python run.py --model_name "gpt4" --data_path "/path/to/my_issue.md" --repo_path "/path/to/my/local/repo" --environment_setup "/path/to/setup.sh" --config_file "config/default_from_url.yaml" --apply_patch_locally
+```
+"""
+
 handler = RichHandler(show_time=False, show_path=False)
 handler.setLevel(logging.DEBUG)
 logger = logging.getLogger("run_dev")
@@ -38,22 +60,20 @@ logging.getLogger("simple_parsing").setLevel(logging.WARNING)
 @dataclass(frozen=True)
 class ActionsArguments(FlattenedAccess, FrozenSerializable):
     """Run real-life actions (opening PRs, etc.) if we can solve the issue."""
-    open_pr: bool = False  # Open a PR with the patch if we can solve the issue
-    # Skip action if there are already commits claiming to fix the issue. Please only
-    # set this to False if you are sure the commits are not fixes or if this is your
-    # own repository!
+    # Open a PR with the patch if we can solve the issue
+    open_pr: bool = False  
+    # When working with local repository: Apply patch
+    apply_patch_locally: bool = False
+    # Option to be used with open_pr: Skip action if there are already commits claiming 
+    # to fix the issue. Please only set this to False if you are sure the commits are 
+    # not fixes or if this is your own repository!
     skip_if_commits_reference_issue: bool = True  
-    # For PRs: If you want to push the branch to a fork (e.g., because you lack
-    # permissions to push to the main repo), set this to the URL of the fork.
+    # OBSOLETE. Do not use, will raise error. Please specify --repo_path instead.
     push_gh_repo_url: str = ""
 
     def __post_init__(self):
-        if not self.skip_if_commits_reference_issue and self.push_gh_repo_url:
-            raise ValueError(
-                "Overriding `skip_if_commits_reference_issue` when you are "
-                "pushing to a fork is not supported. You should manually "
-                "apply the patch to the forked repository."
-            )
+        if self.push_gh_repo_url:
+            raise ValueError("push_gh_repo_url is obsolete. Use repo_path instead")
 
 @dataclass(frozen=True)
 class ScriptArguments(FlattenedAccess, FrozenSerializable):
@@ -114,6 +134,7 @@ def main(args: ScriptArguments):
             # Get info, patch information
             issue = getattr(env, "query", None)
             files = []
+            assert env.record is not None  # mypy
             if "patch" in env.record:
                 files = "\n".join(
                     [f"- {x.path}" for x in PatchSet(env.record["patch"]).modified_files]
@@ -143,9 +164,11 @@ def main(args: ScriptArguments):
                 return_type="info_trajectory",
             )
             save_predictions(traj_dir, instance_id, info)
-            save_patch(traj_dir, instance_id, info)
+            patch_path = save_patch(traj_dir, instance_id, info)
             if args.actions.open_pr and should_open_pr(args, info, token=env._github_token):
-                env.open_pr(trajectory=trajectory, push_gh_repo_url=args.actions.push_gh_repo_url)
+                env.open_pr(trajectory=trajectory)
+            if args.actions.apply_patch_locally and patch_path is not None and env.record["repo_type"] == "local":
+                apply_patch(Path(args.environment.repo_path), patch_file=patch_path)
 
         except KeyboardInterrupt:
             logger.info("Exiting InterCode environment...")
@@ -163,15 +186,15 @@ def main(args: ScriptArguments):
 def should_open_pr(args: ScriptArguments, info: Dict[str, Any], *, token: str="") -> bool:
     """Does opening a PR make sense?"""
     if not info.get("submission"):
-        logger.info("Not openening PR because submission was made.")
+        logger.info("Not opening PR because no submission was made.")
         return False
     if info["exit_status"] != "submitted":
-        logger.info("Not openening PR because exit status was %s and not submitted.", info["exit_status"])
+        logger.info("Not opening PR because exit status was %s and not submitted.", info["exit_status"])
         return False
     try:
         issue = get_gh_issue_data(args.environment.data_path, token=token)
     except InvalidGithubURL:
-        logger.info("Currently only github is supported to open PRs to. Skipping PR creation.")
+        logger.info("Currently only GitHub is supported to open PRs to. Skipping PR creation.")
         return False
     if issue.state != "open":
         logger.info(f"Issue is not open (state={issue.state}. Skipping PR creation.")
@@ -257,6 +280,8 @@ def save_predictions(traj_dir: Path, instance_id: str, info):
     logger.info(f"Saved predictions to {output_file}")
 
 
+
+
 def save_patch(traj_dir: Path, instance_id: str, info) -> Optional[Path]:
     """Create patch files that can be applied with `git am`.
     
@@ -266,13 +291,53 @@ def save_patch(traj_dir: Path, instance_id: str, info) -> Optional[Path]:
     patch_output_dir = traj_dir / "patches"
     patch_output_dir.mkdir(exist_ok=True, parents=True)
     patch_output_file = patch_output_dir / f"{instance_id}.patch"
-    if not "submission" in info or not info["submission"]:
+    if not info.get("submission"):
         logger.info("No patch to save.")
         return
     model_patch = info["submission"]
     patch_output_file.write_text(model_patch)
-    logger.info(f"Saved patch to {patch_output_file}")
+    _print_patch_message(patch_output_file)
     return patch_output_file
+
+
+def apply_patch(local_dir: Path, patch_file: Path) -> None:
+    """Apply a patch to a local directory."""
+    assert local_dir.is_dir()
+    assert patch_file.exists()
+    # The resolve() is important, because we're gonna run the cmd
+    # somewhere else
+    cmd = ["git", "apply", str(patch_file.resolve())]
+    try:
+        subprocess.run(cmd, cwd=local_dir, check=True)
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to apply patch {patch_file} to {local_dir}: {e}")
+        return
+    logger.info(f"Applied patch {patch_file} to {local_dir}")
+
+    
+def _print_patch_message(patch_output_file: Path):
+    console = rich.console.Console()
+    msg = [
+        "SWE-agent has produced a patch that it believes will solve the issue you submitted!",
+        "Use the code snippet below to inspect or apply it!"
+    ]
+    panel = rich.panel.Panel.fit(
+        "\n".join(msg),
+        title="🎉 Submission successful 🎉",
+    )
+    console.print(panel)
+    content = [
+        "```bash",
+        f"# The patch has been saved to your local filesystem at:",
+        f"PATCH_FILE_PATH='{patch_output_file.resolve()}'",
+        "# Inspect it:",
+        "cat \"${PATCH_FILE_PATH}\"",
+        "# Apply it to a local repository:",
+        f"cd <your local repo root>",
+        "git apply \"${PATCH_FILE_PATH}\"",
+        "```",
+    ]
+    console.print(rich.markdown.Markdown("\n".join(content)))
 
 
 def get_args(args=None) -> ScriptArguments:
@@ -315,7 +380,7 @@ def get_args(args=None) -> ScriptArguments:
 
     yaml.add_representer(str, multiline_representer)
 
-    return parse(ScriptArguments, default=defaults, add_config_path_arg=False, args=args)
+    return parse(ScriptArguments, default=defaults, add_config_path_arg=False, args=args, formatter_class=RichHelpFormatter, description=Markdown(__doc__))
 
 
 if __name__ == "__main__":

@@ -43,6 +43,7 @@ setuptools.setup(
         'tenacity',
         'together',
         'unidiff',
+        'rich-argparse',
     ],
     include_package_data=True,
 )

@@ -51,21 +51,19 @@ Read our paper for more details [coming soon!].
 You can run the software directly using Docker. 
 
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
-2. Run `docker pull --platform=linux/arm64 sweagent/swe-agent:latest` (replace `arm64` with `amd64` if you're running on x86)
+2. Run `docker pull sweagent/swe-agent:latest`
 3. Add your API tokens to a file `keys.cfg` as explained [below](#-add-your-api-keystokens)
 
 Then run
 
 ```bash
-# Please remove all comments (lines starting with '#') before running this command!
+# NOTE:
+# This assumes that keys.cfg is in your current directory (else fix the path below)
+# This command is equivalent to the script shown in the quickstart 
 docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
   -v $(pwd)/keys.cfg:/app/keys.cfg \
-  # replace with your architecture, either arm64 or amd64
-  --platform=linux/arm64 \
   sweagent/swe-agent-run:latest \
   python run.py --image_name=sweagent/swe-agent:latest \
-  # the rest of the command as shown in the quickstart/benchmarking section,
-  # for example to run on a specific github issue
   --model_name gpt4 \
   --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
   --config_file config/default_from_url.yaml  --skip_existing=False
@@ -78,7 +76,7 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 > * See the [installation issues section](#-installation-issues) for more help if you run into
 >   trouble.
 
-### 🐍 Setup with conda (development version) 
+### 🐍 Setup with conda (developer version) 
 
 To install the development version:
 
@@ -104,7 +102,7 @@ To install the development version:
 For the conda setup, create a `keys.cfg` file at the root of this repository and populate it with your API keys.
 
 ```
-GITHUB_TOKEN: 'GitHub Token Here (required)'
+GITHUB_TOKEN: 'GitHub Token Here (optional)'
 OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model (optional)'
 ```
 
@@ -148,12 +146,19 @@ python run.py --model_name gpt4 \
   --config_file config/default_from_url.yaml
 ```
 
-> [!TIP]
-> You can have the agent automatically open a PR if the issue has been solved by supplying the `--open_pr`
-> flag. Please use this feature responsibly (on your own repositories or after careful consideration).
+You can also apply to it to a local repository:
+```bash
+python run.py --model_name gpt4 \
+  --data_path /path/to/my_issue.md \
+  --repo_path /path/to/my/local/repo \
+  --config_file config/default_from_url.yaml \
+  --apply_patch_locally
+```
 
 > [!TIP]
-> Run `python run.py --help` to see all available options.
+> * Run `python run.py --help` to see all available options.
+> * You can have the agent automatically open a PR if the issue has been solved by supplying the `--open_pr`
+>   flag. Please use this feature responsibly (on your own repositories or after careful consideration).
 
 * See the [`scripts/`](scripts/) folder for other useful scripts and details.
 * See the [`config/`](config/) folder for details about how you can define your own configuration!
