@@ -277,7 +277,7 @@ class AnthropicModel(BaseModel):
             "cost_per_input_token": 1.63e-06,
             "cost_per_output_token": 5.51e-06,
         },
-        "claude-2": {
+        "claude-2.0": {
             "max_context": 100_000,
             "cost_per_input_token": 1.102e-05,
             "cost_per_output_token": 3.268e-05,
@@ -308,7 +308,7 @@ class AnthropicModel(BaseModel):
     }
 
     SHORTCUTS = {
-        "claude": "claude-2",
+        "claude": "claude-2.0",
         "claude-opus": "claude-3-opus-20240229",
         "claude-sonnet": "claude-3-sonnet-20240229",
         "claude-haiku": "claude-3-haiku-20240307",
@@ -433,7 +433,7 @@ def anthropic_history_to_messages(
     Reference: https://docs.anthropic.com/claude/reference/complete_post
     """
     # Preserve behavior for older models
-    if model.api_model in ["claude-instant", "claude-2"] or \
+    if model.api_model in ["claude-instant", "claude-2.0"] or \
        (isinstance(model, BedrockModel) and model.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]):
         # Remove system messages if it is a demonstration
         if is_demonstration:
@@ -482,7 +482,7 @@ def anthropic_query(model: Union[AnthropicModel, BedrockModel], history: list[di
     Query the Anthropic API with the given `history` and return the response.
     """
     # Preserve behavior for older models
-    if model.api_model in ["claude-instant", "claude-2"] or \
+    if model.api_model in ["claude-instant", "claude-2.0"] or \
        (isinstance(model, BedrockModel) and model.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]):
         # Perform Anthropic API call
         prompt = anthropic_history_to_messages(model, history)
