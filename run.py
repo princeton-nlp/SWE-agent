@@ -274,12 +274,10 @@ def save_patch(traj_dir: Path, instance_id: str, info) -> Optional[Path]:
     patch_output_dir = traj_dir / "patches"
     patch_output_dir.mkdir(exist_ok=True, parents=True)
     patch_output_file = patch_output_dir / f"{instance_id}.patch"
-    if not "submission" in info:
+    if not info.get("submission"):
         logger.info("No patch to save.")
         return
     model_patch = info["submission"]
-    if model_patch == None:
-        model_patch == ""
     patch_output_file.write_text(model_patch)
     _print_patch_message(patch_output_file)
     return patch_output_file
