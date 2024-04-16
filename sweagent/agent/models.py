@@ -565,15 +565,17 @@ class TogetherModel(BaseModel):
         completion = together.Complete.create(
             model=self.api_model,
             prompt=prompt,
-            max_tokens=self.model_metadata["max_context"],
-            stop="<human>",
+            # Input token count + max_tokens needs to be less than the context length of the model.
+            # But it is difficult to calculate input token before request.
+            max_tokens=None,
+            stop=["<human>"],
             temperature=self.args.temperature,
             top_p=self.args.top_p,
         )
         # Calculate + update costs, return response
-        response = completion["output"]["choices"][0]["text"].split("<human>")[0]
-        input_tokens = completion["output"]["usage"]["prompt_tokens"]
-        output_tokens = completion["output"]["usage"]["completion_tokens"]
+        response = completion["choices"][0]["text"].split("<human>")[0]
+        input_tokens = completion["usage"]["prompt_tokens"]
+        output_tokens = completion["usage"]["completion_tokens"]
         self.update_stats(input_tokens, output_tokens)
         return response
 
