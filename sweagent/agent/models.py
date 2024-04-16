@@ -334,48 +334,7 @@ class AnthropicModel(BaseModel):
         Create `prompt` by filtering out all keys except for role/content per `history` turn
         Reference: https://docs.anthropic.com/claude/reference/complete_post
         """
-        # Preserve behavior for older models
-        if self.api_model in ["claude-instant", "claude-2"]:
-            # Remove system messages if it is a demonstration
-            if is_demonstration:
-                history = [entry for entry in history if entry["role"] != "system"]
-            # Map history to Claude format
-            prompt = "\n\n"
-            for entry in history:
-                if entry["role"] in {"user", "system"}:
-                    prompt += f'{HUMAN_PROMPT} {entry["content"]}\n\n'
-                elif entry["role"] == "assistant":
-                    prompt += f'{AI_PROMPT} {entry["content"]}\n\n'
-            prompt += AI_PROMPT
-            return prompt
-
-        # Remove system messages if it is a demonstration
-        if is_demonstration:
-            history = [entry for entry in history if entry["role"] != "system"]
-            return '\n'.join([entry["content"] for entry in history])
-
-        # Return history components with just role, content fields (no system message)
-        messages = [
-            {
-                k: v for k, v in entry.items()
-                if k in ["role", "content"]
-            }
-            for entry in history if entry["role"] != "system"
-        ]
-        compiled_messages = []  # Combine messages from the same role
-        last_role = None
-        for message in reversed(messages):
-            if last_role == message["role"]:
-                compiled_messages[-1]["content"] = message["content"] + "\n" + compiled_messages[-1]["content"]
-            else:
-                compiled_messages.append(message)
-            last_role = message["role"]
-        compiled_messages = list(reversed(compiled_messages))
-        # Replace any empty content values with a "(No output)"
-        for message in compiled_messages:
-            if message["content"].strip() == "":
-                message["content"] = "(No output)"
-        return compiled_messages
+        anthropic_history_to_messages(self, history, is_demonstration)
 
     @retry(
         wait=wait_random_exponential(min=1, max=15),
@@ -387,46 +346,8 @@ class AnthropicModel(BaseModel):
         """
         Query the Anthropic API with the given `history` and return the response.
         """
-        # Preserve behavior for older models
-        if self.api_model in ["claude-instant", "claude-2"]:
-            # Perform Anthropic API call
-            prompt = self.history_to_messages(history)
-            input_tokens = self.api.count_tokens(prompt)
-            completion = self.api.completions.create(
-                model=self.api_model,
-                prompt=prompt,
-                max_tokens_to_sample=self.model_metadata["max_context"] - input_tokens,
-                temperature=self.args.temperature,
-                top_p=self.args.top_p,
-            )
-            # Calculate + update costs, return response
-            response = completion.completion
-            output_tokens = self.api.count_tokens(response)
-            self.update_stats(input_tokens, output_tokens)
-            return response
+        anthropic_query(self, history)
 
-        # Get system message(s)
-        system_message = "\n".join([
-            entry["content"] for entry in history if entry["role"] == "system"
-        ])
-        messages = self.history_to_messages(history)
-        # Perform Anthropic API call
-        response = self.api.messages.create(
-            messages=messages,
-            max_tokens=self.model_metadata["max_tokens"],
-            model=self.api_model,
-            temperature=self.args.temperature,
-            top_p=self.args.top_p,
-            system=system_message,
-        )
-
-        # Calculate + update costs, return response
-        self.update_stats(
-            response.usage.input_tokens,
-            response.usage.output_tokens
-        )
-        response = "\n".join([x.text for x in response.content])
-        return response
 
 class BedrockModel(BaseModel):
     MODELS = {
@@ -462,68 +383,29 @@ class BedrockModel(BaseModel):
     def __init__(self, args: ModelArguments, commands: list[Command]):
         super().__init__(args, commands)
 
-        model_provider = self.api_model.split('.')[0]
-        if model_provider == "anthropic":
+        # Extract provider and model name from model ID
+        # https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html
+        self.model_provider = self.api_model.split('.')[0]
+        self.bedrock_model_name = self.api_model.split('.')[1]
+        if self.model_provider == "anthropic":
             # Note: this assumes AWS credentials are already configured.
             # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
             self.api = AnthropicBedrock()
+        elif self.model_provider in ["ai21", "amazon", "cohere", "meta", "mistral"]:
+            raise NotImplementedError(f"{self.api_model} is not supported!")
         else:
-            raise NotImplementedError
+            raise ValueError(f"Provider {self.model_provider} is not supported by Amazon Bedrock!")
 
     def history_to_messages(
         self, history: list[dict[str, str]], is_demonstration: bool = False
     ) -> list[dict[str, str]]:
         """
-        Create `prompt` by filtering out all keys except for role/content per `history` turn
-        Reference: https://docs.anthropic.com/claude/reference/complete_post
+        Create `prompt` from the history of messages
         """
-        model_provider = self.api_model.split('.')[0]
-        # Adapted from the AnthropicModel implementation
-        if model_provider == "anthropic":
-            # Preserve behavior for older models
-            if self.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]:
-                # Remove system messages if it is a demonstration
-                if is_demonstration:
-                    history = [entry for entry in history if entry["role"] != "system"]
-                # Map history to Claude format
-                prompt = "\n\n"
-                for entry in history:
-                    if entry["role"] in {"user", "system"}:
-                        prompt += f'{HUMAN_PROMPT} {entry["content"]}\n\n'
-                    elif entry["role"] == "assistant":
-                        prompt += f'{AI_PROMPT} {entry["content"]}\n\n'
-                prompt += AI_PROMPT
-                return prompt
-
-            # Remove system messages if it is a demonstration
-            if is_demonstration:
-                history = [entry for entry in history if entry["role"] != "system"]
-                return '\n'.join([entry["content"] for entry in history])
-
-            # Return history components with just role, content fields (no system message)
-            messages = [
-                {
-                    k: v for k, v in entry.items()
-                    if k in ["role", "content"]
-                }
-                for entry in history if entry["role"] != "system"
-            ]
-            compiled_messages = []  # Combine messages from the same role
-            last_role = None
-            for message in reversed(messages):
-                if last_role == message["role"]:
-                    compiled_messages[-1]["content"] = message["content"] + "\n" + compiled_messages[-1]["content"]
-                else:
-                    compiled_messages.append(message)
-                last_role = message["role"]
-            compiled_messages = list(reversed(compiled_messages))
-            # Replace any empty content values with a "(No output)"
-            for message in compiled_messages:
-                if message["content"].strip() == "":
-                    message["content"] = "(No output)"
-            return compiled_messages
+        if self.model_provider == "anthropic":
+            return anthropic_history_to_messages(self, history, is_demonstration)
         else:
-            raise NotImplementedError
+            raise NotImplementedError(f"{self.api_model} is not supported!")
 
     @retry(
         wait=wait_random_exponential(min=1, max=15),
@@ -535,50 +417,111 @@ class BedrockModel(BaseModel):
         """
         Query Amazon Bedrock with the given `history` and return the response.
         """
-        model_provider = self.api_model.split('.')[0]
-        if model_provider == "anthropic":
-            # Preserve behavior for older models
-            if self.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]:
-                # Perform Amazon Bedrock API call
-                prompt = self.history_to_messages(history)
-                input_tokens = self.api.count_tokens(prompt)
-                completion = self.api.completions.create(
-                    model=self.api_model,
-                    prompt=prompt,
-                    max_tokens_to_sample=self.model_metadata["max_context"] - input_tokens,
-                    temperature=self.args.temperature,
-                    top_p=self.args.top_p,
-                )
-                # Calculate + update costs, return response
-                response = completion.completion
-                output_tokens = self.api.count_tokens(response)
-                self.update_stats(input_tokens, output_tokens)
-                return response
-
-            # Get system message(s)
-            system_message = "\n".join([
-                entry["content"] for entry in history if entry["role"] == "system"
-            ])
-            messages = self.history_to_messages(history)
-            # Perform Amazon Bedrock API call
-            response = self.api.messages.create(
-                messages=messages,
-                max_tokens=self.model_metadata["max_tokens"],
-                model=self.api_model,
-                temperature=self.args.temperature,
-                top_p=self.args.top_p,
-                system=system_message,
-            )
-
-            # Calculate + update costs, return response
-            self.update_stats(
-                response.usage.input_tokens,
-                response.usage.output_tokens
-            )
-            response = "\n".join([x.text for x in response.content])
-            return response
+        if self.model_provider == "anthropic":
+            anthropic_query(self, history)
         else:
-            raise NotImplementedError
+            raise NotImplementedError(f"{self.api_model} is not supported!")
+
+
+def anthropic_history_to_messages(
+        model: AnthropicModel|BedrockModel, history: list[dict[str, str]], is_demonstration: bool = False
+    ) -> list[dict[str, str]]:
+    """
+    Create `prompt` by filtering out all keys except for role/content per `history` turn
+    Reference: https://docs.anthropic.com/claude/reference/complete_post
+    """
+    # Preserve behavior for older models
+    if model.api_model in ["claude-instant", "claude-2"] or \
+       (isinstance(model, BedrockModel) and model.bedrock_model_name in ["claude-instant-v1", "claude-v2"]):
+        # Remove system messages if it is a demonstration
+        if is_demonstration:
+            history = [entry for entry in history if entry["role"] != "system"]
+        # Map history to Claude format
+        prompt = "\n\n"
+        for entry in history:
+            if entry["role"] in {"user", "system"}:
+                prompt += f'{HUMAN_PROMPT} {entry["content"]}\n\n'
+            elif entry["role"] == "assistant":
+                prompt += f'{AI_PROMPT} {entry["content"]}\n\n'
+        prompt += AI_PROMPT
+        return prompt
+
+    # Remove system messages if it is a demonstration
+    if is_demonstration:
+        history = [entry for entry in history if entry["role"] != "system"]
+        return '\n'.join([entry["content"] for entry in history])
+
+    # Return history components with just role, content fields (no system message)
+    messages = [
+        {
+            k: v for k, v in entry.items()
+            if k in ["role", "content"]
+        }
+        for entry in history if entry["role"] != "system"
+    ]
+    compiled_messages = []  # Combine messages from the same role
+    last_role = None
+    for message in reversed(messages):
+        if last_role == message["role"]:
+            compiled_messages[-1]["content"] = message["content"] + "\n" + compiled_messages[-1]["content"]
+        else:
+            compiled_messages.append(message)
+        last_role = message["role"]
+    compiled_messages = list(reversed(compiled_messages))
+    # Replace any empty content values with a "(No output)"
+    for message in compiled_messages:
+        if message["content"].strip() == "":
+            message["content"] = "(No output)"
+    return compiled_messages
+
+
+def anthropic_query(model: AnthropicModel|BedrockModel, history: list[dict[str, str]]) -> str:
+    """
+    Query the Anthropic API with the given `history` and return the response.
+    """
+    # Preserve behavior for older models
+    if model.api_model in ["claude-instant", "claude-2"] or \
+       (isinstance(model, BedrockModel) and model.bedrock_model_name in ["claude-instant-v1", "claude-v2"]):
+        # Perform Anthropic API call
+        prompt = anthropic_history_to_messages(model, history)
+        input_tokens = model.api.count_tokens(prompt)
+        completion = model.api.completions.create(
+            model=model.api_model if isinstance(model, AnthropicModel) else model.bedrock_model_name,
+            prompt=prompt,
+            max_tokens_to_sample=model.model_metadata["max_context"] - input_tokens,
+            temperature=model.args.temperature,
+            top_p=model.args.top_p,
+        )
+        # Calculate + update costs, return response
+        response = completion.completion
+        output_tokens = model.api.count_tokens(response)
+        model.update_stats(input_tokens, output_tokens)
+        return response
+
+    # Get system message(s)
+    system_message = "\n".join([
+        entry["content"] for entry in history if entry["role"] == "system"
+    ])
+    messages = anthropic_history_to_messages(model, history)
+
+    # Perform Anthropic API call
+    response = model.api.messages.create(
+        messages=messages,
+        max_tokens=model.model_metadata["max_tokens"],
+        model=model.api_model if isinstance(model, AnthropicModel) else model.bedrock_model_name,
+        temperature=model.args.temperature,
+        top_p=model.args.top_p,
+        system=system_message,
+    )
+
+    # Calculate + update costs, return response
+    model.update_stats(
+        response.usage.input_tokens,
+        response.usage.output_tokens
+    )
+    response = "\n".join([x.text for x in response.content])
+    return response
+
 
 class OllamaModel(BaseModel):
     MODELS = defaultdict(lambda: {
