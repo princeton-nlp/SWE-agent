@@ -9,8 +9,15 @@ import rich.console
 import rich.markdown
 import rich.panel
 import rich.markdown
+try:
+    from rich_argparse import RichHelpFormatter
+except ImportError:
+    msg = (
+        "Please install the rich_argparse package with `pip install rich_argparse`."
+    )
+    raise ImportError(msg)
 import yaml
-
+from rich.markdown import Markdown
 from dataclasses import dataclass
 from getpass import getuser
 from pathlib import Path
@@ -30,6 +37,16 @@ from swebench import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
 from unidiff import PatchSet
 
 from sweagent.environment.utils import InvalidGithubURL, get_associated_commit_urls, get_gh_issue_data, parse_gh_issue_url
+
+__doc__: str = """ Run inference. Usage examples:
+
+```bash
+# Run over a github issue:
+python run.py --model_name "gpt4" --data_path "https://github.com/pvlib/pvlib-python/issues/1603" --config_file "config/default_from_url.yaml"
+# Apply a patch in a local repository to an issue specified as Markdown file and run a custom installer script in the container
+python run.py --model_name "gpt4" --data_path "/path/to/my_issue.md" --repo_path "/path/to/my/local/repo" --environment_setup "/path/to/setup.sh" --config_file "config/default_from_url.yaml" --apply_patch_locally
+```
+"""
 
 handler = RichHandler(show_time=False, show_path=False)
 handler.setLevel(logging.DEBUG)
@@ -363,7 +380,7 @@ def get_args(args=None) -> ScriptArguments:
 
     yaml.add_representer(str, multiline_representer)
 
-    return parse(ScriptArguments, default=defaults, add_config_path_arg=False, args=args)
+    return parse(ScriptArguments, default=defaults, add_config_path_arg=False, args=args, formatter_class=RichHelpFormatter, description=Markdown(__doc__))
 
 
 if __name__ == "__main__":
