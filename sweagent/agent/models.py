@@ -16,7 +16,7 @@ from tenacity import (
     wait_random_exponential,
     retry_if_not_exception_type,
 )
-from typing import Optional
+from typing import Optional, Union
 
 logger = logging.getLogger("api_models")
 
@@ -334,7 +334,7 @@ class AnthropicModel(BaseModel):
         Create `prompt` by filtering out all keys except for role/content per `history` turn
         Reference: https://docs.anthropic.com/claude/reference/complete_post
         """
-        anthropic_history_to_messages(self, history, is_demonstration)
+        return anthropic_history_to_messages(self, history, is_demonstration)
 
     @retry(
         wait=wait_random_exponential(min=1, max=15),
@@ -346,7 +346,7 @@ class AnthropicModel(BaseModel):
         """
         Query the Anthropic API with the given `history` and return the response.
         """
-        anthropic_query(self, history)
+        return anthropic_query(self, history)
 
 
 class BedrockModel(BaseModel):
@@ -389,10 +389,9 @@ class BedrockModel(BaseModel):
     def __init__(self, args: ModelArguments, commands: list[Command]):
         super().__init__(args, commands)
 
-        # Extract provider and model name from model ID
+        # Extract provider from model ID
         # https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html
         self.model_provider = self.api_model.split('.')[0]
-        self.bedrock_model_name = self.api_model.split('.')[1]
         if self.model_provider == "anthropic":
             # Note: this assumes AWS credentials are already configured.
             # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
@@ -424,13 +423,13 @@ class BedrockModel(BaseModel):
         Query Amazon Bedrock with the given `history` and return the response.
         """
         if self.model_provider == "anthropic":
-            anthropic_query(self, history)
+            return anthropic_query(self, history)
         else:
             raise NotImplementedError(f"{self.api_model} is not supported!")
 
 
 def anthropic_history_to_messages(
-        model: AnthropicModel|BedrockModel, history: list[dict[str, str]], is_demonstration: bool = False
+        model: Union[AnthropicModel, BedrockModel], history: list[dict[str, str]], is_demonstration: bool = False
     ) -> list[dict[str, str]]:
     """
     Create `prompt` by filtering out all keys except for role/content per `history` turn
@@ -438,7 +437,7 @@ def anthropic_history_to_messages(
     """
     # Preserve behavior for older models
     if model.api_model in ["claude-instant", "claude-2"] or \
-       (isinstance(model, BedrockModel) and model.bedrock_model_name in ["claude-instant-v1", "claude-v2"]):
+       (isinstance(model, BedrockModel) and model.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]):
         # Remove system messages if it is a demonstration
         if is_demonstration:
             history = [entry for entry in history if entry["role"] != "system"]
@@ -481,18 +480,18 @@ def anthropic_history_to_messages(
     return compiled_messages
 
 
-def anthropic_query(model: AnthropicModel|BedrockModel, history: list[dict[str, str]]) -> str:
+def anthropic_query(model: Union[AnthropicModel, BedrockModel], history: list[dict[str, str]]) -> str:
     """
     Query the Anthropic API with the given `history` and return the response.
     """
     # Preserve behavior for older models
     if model.api_model in ["claude-instant", "claude-2"] or \
-       (isinstance(model, BedrockModel) and model.bedrock_model_name in ["claude-instant-v1", "claude-v2"]):
+       (isinstance(model, BedrockModel) and model.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]):
         # Perform Anthropic API call
         prompt = anthropic_history_to_messages(model, history)
         input_tokens = model.api.count_tokens(prompt)
         completion = model.api.completions.create(
-            model=model.api_model if isinstance(model, AnthropicModel) else model.bedrock_model_name,
+            model=model.api_model,
             prompt=prompt,
             max_tokens_to_sample=model.model_metadata["max_context"] - input_tokens,
             temperature=model.args.temperature,
@@ -514,7 +513,7 @@ def anthropic_query(model: AnthropicModel|BedrockModel, history: list[dict[str, 
     response = model.api.messages.create(
         messages=messages,
         max_tokens=model.model_metadata["max_tokens"],
-        model=model.api_model if isinstance(model, AnthropicModel) else model.bedrock_model_name,
+        model=model.api_model,
         temperature=model.args.temperature,
         top_p=model.args.top_p,
         system=system_message,
