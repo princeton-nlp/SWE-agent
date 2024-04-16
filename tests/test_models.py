@@ -44,7 +44,8 @@ def test_openai_model(openai_mock_client):
 @patch("together.Complete.create", return_value=together_return_value())
 def test_together_model(mock):
     for model_name in list(TogetherModel.MODELS) + list(TogetherModel.SHORTCUTS):
-        TEST_MODEL_ARGUMENTS = ModelArguments(model_name)
+        arguments = ModelArguments(model_name)
         with patch("sweagent.agent.models.config.Config"):
-            model = TogetherModel(TEST_MODEL_ARGUMENTS, [])
-            model.query(TEST_HISTORY)
+            model = TogetherModel(arguments, [])
+
+        model.query(TEST_HISTORY)
