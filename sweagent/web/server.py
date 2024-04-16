@@ -25,15 +25,14 @@ html_page = """
     <h1>Start run</h1>
     <form action="/run" method="post">
         <label for="data_path">Data Path:</label>
-        <input type="text" id="data_path" name="data_path" required>
+        <input type="text" id="data_path" name="data_path" value="https://github.com/klieret/swe-agent-test-repo/issues/1" required>
         <button type="submit">Run</button>
-        <input type="checkbox" id="test_run" name="test_run">
+        <input type="checkbox" id="test_run" name="test_run" checked>
         <label for="test_run">Test run (no LM queries)</label><br><br>
     </form>
 </body>
 </html>
 """
-
 
 @app.route('/')
 def index():

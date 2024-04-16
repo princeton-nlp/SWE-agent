@@ -264,14 +264,10 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> Tuple[subpr
     )
     time.sleep(START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
-    try:
-        with timeout(seconds=2):
-            output = container.stdout.read()
-            if output:
-                logger.error(f"Unexpected container setup output: {output}")
-    except TimeoutError:
-        pass
-    return container, {"1", }  # bash PID is always 1 for non-persistent containers
+    output = read_with_timeout(container, lambda: list(), timeout_duration=2)
+    if output:
+        logger.error(f"Unexpected container setup output: {output}")
+    return container, {"1", } # bash PID is always 1 for non-persistent containers
 
 
 def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool = False) -> Tuple[subprocess.Popen, Set]:
@@ -320,13 +316,9 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
     )
     time.sleep(START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
-    try:
-        with timeout(seconds=2):
-            output = container.stdout.read()
-            if output:
-                logger.error(f"Unexpected container setup output: {output}")
-    except TimeoutError:
-        pass
+    output = read_with_timeout(container, lambda: list(), timeout_duration=2)
+    if output:
+        logger.error(f"Unexpected container setup output: {output}")
     # Get the process IDs of the container
     # There should be at least a head process and possibly one child bash process
     bash_pids, other_pids = get_background_pids(container_obj)
