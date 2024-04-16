@@ -102,7 +102,7 @@ To install the development version:
 For the conda setup, create a `keys.cfg` file at the root of this repository and populate it with your API keys.
 
 ```
-GITHUB_TOKEN: 'GitHub Token Here (required)'
+GITHUB_TOKEN: 'GitHub Token Here (optional)'
 OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model (optional)'
 ```
 
