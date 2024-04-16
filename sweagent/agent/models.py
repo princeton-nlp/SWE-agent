@@ -489,7 +489,13 @@ def anthropic_query(model: Union[AnthropicModel, BedrockModel], history: list[di
        (isinstance(model, BedrockModel) and model.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]):
         # Perform Anthropic API call
         prompt = anthropic_history_to_messages(model, history)
-        input_tokens = model.api.count_tokens(prompt)
+        if isinstance(model, BedrockModel):
+            # Use a dummy Anthropic client since count_tokens
+            # is not available in AnthropicBedrock
+            # https://github.com/anthropics/anthropic-sdk-python/issues/353
+            input_tokens = Anthropic().count_tokens(prompt)
+        else:
+            input_tokens = model.api.count_tokens(prompt)
         completion = model.api.completions.create(
             model=model.api_model,
             prompt=prompt,
@@ -499,7 +505,10 @@ def anthropic_query(model: Union[AnthropicModel, BedrockModel], history: list[di
         )
         # Calculate + update costs, return response
         response = completion.completion
-        output_tokens = model.api.count_tokens(response)
+        if isinstance(model, BedrockModel):
+            output_tokens = Anthropic().count_tokens(response)
+        else:
+            output_tokens = model.api.count_tokens(response)
         model.update_stats(input_tokens, output_tokens)
         return response
 
