@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock, Mock, patch
-from sweagent.agent.models import OpenAIModel, ModelArguments
+from sweagent.agent.models import OpenAIModel, ModelArguments, TogetherModel
 import pytest
 
 
@@ -17,6 +17,13 @@ def openai_mock_client():
     return model
 
 
+def together_return_value():
+    return {
+        "choices": [{"text": "<human>Hello</human>"}],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 10},
+    }
+
+
 TEST_HISTORY = [
     {
         "role": "system",
@@ -32,3 +39,12 @@ def test_openai_model(openai_mock_client):
                 model = OpenAIModel(TEST_MODEL_ARGUMENTS, [])
         model.client = openai_mock_client
         model.query(TEST_HISTORY)
+
+
+@patch("together.Complete.create", return_value=together_return_value())
+def test_together_model(mock):
+    for model_name in list(TogetherModel.MODELS) + list(TogetherModel.SHORTCUTS):
+        TEST_MODEL_ARGUMENTS = ModelArguments(model_name)
+        with patch("sweagent.agent.models.config.Config"):
+            model = TogetherModel(TEST_MODEL_ARGUMENTS, [])
+            model.query(TEST_HISTORY)
