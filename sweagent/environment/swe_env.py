@@ -461,7 +461,6 @@ class SWEEnv(gym.Env):
             self.returncode = None
             cmd = input if input.endswith("\n") else input + "\n"
             cmd += command_suffix
-            print(cmd)
             os.write(self.container.stdin.fileno(), cmd.encode())
             time.sleep(0.03)
             self.container.stdin.flush()
