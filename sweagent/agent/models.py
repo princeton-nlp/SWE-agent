@@ -347,16 +347,19 @@ class BedrockModel(BaseModel):
     MODELS = {
         "anthropic.claude-instant-v1": {
             "max_context": 100_000,
+            "max_tokens_to_sample": 4096,
             "cost_per_input_token": 8e-07,
             "cost_per_output_token": 2.4e-06,
         },
         "anthropic.claude-v2": {
             "max_context": 100_000,
+            "max_tokens_to_sample": 4096,
             "cost_per_input_token": 8e-06,
             "cost_per_output_token": 2.4e-05,
         },
         "anthropic.claude-v2:1": {
             "max_context": 100_000,
+            "max_tokens": 4096,
             "cost_per_input_token": 8e-06,
             "cost_per_output_token": 2.4e-05,
         },
@@ -368,7 +371,7 @@ class BedrockModel(BaseModel):
         },
         "anthropic.claude-3-sonnet-20240229-v1:0": {
             "max_context": 200_000,
-            "max_tokens": 4096,  # Max tokens to generate for Claude 3 models
+            "max_tokens": 4096,
             "cost_per_input_token": 3e-06,
             "cost_per_output_token": 1.5e-05,
         },
@@ -397,7 +400,7 @@ class BedrockModel(BaseModel):
 
     def history_to_messages(
         self, history: list[dict[str, str]], is_demonstration: bool = False
-    ) -> list[dict[str, str]]:
+    ) -> Union[str, list[dict[str, str]]]:
         """
         Create `prompt` from the history of messages
         """
@@ -424,7 +427,7 @@ class BedrockModel(BaseModel):
 
 def anthropic_history_to_messages(
         model: Union[AnthropicModel, BedrockModel], history: list[dict[str, str]], is_demonstration: bool = False
-    ) -> list[dict[str, str]]:
+    ) -> Union[str, list[dict[str, str]]]:
     """
     Create `prompt` by filtering out all keys except for role/content per `history` turn
     Reference: https://docs.anthropic.com/claude/reference/complete_post
@@ -493,7 +496,7 @@ def anthropic_query(model: Union[AnthropicModel, BedrockModel], history: list[di
         completion = model.api.completions.create(
             model=model.api_model,
             prompt=prompt,
-            max_tokens_to_sample=model.model_metadata["max_context"] - input_tokens,
+            max_tokens_to_sample=model.model_metadata["max_context"] - input_tokens if isinstance(model, Anthropic) else model.model_metadata["max_tokens_to_sample"],
             temperature=model.args.temperature,
             top_p=model.args.top_p,
         )
