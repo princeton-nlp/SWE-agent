@@ -366,6 +366,12 @@ class BedrockModel(BaseModel):
             "cost_per_input_token": 8e-06,
             "cost_per_output_token": 2.4e-05,
         },
+        "anthropic.claude-3-opus-20240229-v1:0": {
+            "max_context": 200_000,
+            "max_tokens": 4096,
+            "cost_per_input_token": 1.5e-05,
+            "cost_per_output_token": 7.5e-05,
+        },
         "anthropic.claude-3-sonnet-20240229-v1:0": {
             "max_context": 200_000,
             "max_tokens": 4096,  # Max tokens to generate for Claude 3 models
