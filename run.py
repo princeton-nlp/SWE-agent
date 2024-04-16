@@ -278,6 +278,8 @@ def save_patch(traj_dir: Path, instance_id: str, info) -> Optional[Path]:
         logger.info("No patch to save.")
         return
     model_patch = info["submission"]
+    if model_patch == None:
+        model_patch == ""
     patch_output_file.write_text(model_patch)
     _print_patch_message(patch_output_file)
     return patch_output_file
