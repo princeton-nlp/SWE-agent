@@ -21,6 +21,7 @@ import yaml
 from sweagent.environment.utils import (
     PROCESS_DONE_MARKER_END,
     PROCESS_DONE_MARKER_START,
+    InvalidGithubURL,
     copy_anything_to_container,
     copy_file_to_container,
     format_trajectory_markdown,
@@ -811,7 +812,11 @@ class SWEEnv(gym.Env):
         # todo: have better way of handling this
         # Adding random string suffix to avoid name conflicts if we had a previously failed run
         issue_url = self.args.data_path 
-        issue = get_gh_issue_data(issue_url, token=self._github_token)
+        try:
+            issue = get_gh_issue_data(issue_url, token=self._github_token)
+        except InvalidGithubURL as e:
+            msg = f"Data path must be a github issue URL if --open_pr is set."
+            raise ValueError(msg) from e
         branch_name = f"swe-agent-fix-#{issue.number}-" + str(random.random())[2:10]
 
         self.communicate_with_handling(
@@ -840,6 +845,11 @@ class SWEEnv(gym.Env):
         # If `--repo_path` was specified with a different github URL, then the record will contain
         # the forking user
         assert self.record is not None
+        if not self.record["repo_type"] == "github":
+            # We already validated that `--data_path` is a github issue URL
+            # so this is the only case where we can reach here
+            msg = "--repo_path must point to a github URL if --open_pr is set"
+            raise ValueError(msg)
         forker, _ = self.record["repo"].split("/")
         head = branch_name
         remote = "origin"
