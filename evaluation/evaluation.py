@@ -166,53 +166,22 @@ def main(predictions_path, log_dir, swe_bench_tasks, testbed, skip_existing, tim
             scorecard["patch_lines_del"] = 0
         scorecards.append(scorecard)
 
-    # Calculate cumulative results
-    get_ids_with_status = lambda x: [
-        s[KEY_INSTANCE_ID] for s in scorecards if x in s["statuses"]
-    ]
-    report = {
-        "# Not Generated": len(get_ids_with_status("not_generated")),
-        "# Generated": len(get_ids_with_status("generated")),
-        "# Applied": len(get_ids_with_status("applied")),
-        "# Resolved": len(get_ids_with_status("RESOLVED_FULL")),
-        "# Install Fail": len(get_ids_with_status("install_fail")),
-    }
-    print(f"== Evaluation Report ==\n{report}")
-
-    report_exits = dict(
-        Counter([s["exit_status"] if "exit_status" in s else "n/a" for s in scorecards])
-    )
-
     # Save to summary, scorecard json
     path_scorecards = os.path.join(directory, "scorecards.json")
     with open(path_scorecards, "w") as f:
         json.dump(scorecards, fp=f, indent=2)
     print(f"- Wrote per-instance scorecards to {path_scorecards}")
 
-    path_results = os.path.join(directory, "results.json")
-    with open(path_results, "w") as f:
-        json.dump(
-            {
-                "report": report,
-                "report_exits": report_exits,
-                "not_generated": get_ids_with_status("not_generated"),
-                "generated": get_ids_with_status("generated"),
-                "applied": get_ids_with_status("applied"),
-                "resolved": get_ids_with_status("RESOLVED_FULL"),
-                "install_fail": get_ids_with_status("install_fail"),
-            },
-            fp=f,
-            indent=2,
-        )
-    print(f"- Wrote summary of run to {path_results}")
-
-    # Sanity check against get_model_report
-    report = get_model_report(
-        directory_name, pred_path_orig, swe_bench_tasks, log_dir
-    )
+    # Get results and write to file
     print(f"Reference Report:")
+    report = get_model_report(directory_name, pred_path_orig, swe_bench_tasks, log_dir)
     for k, v in report.items():
         print(f"- {k}: {len(v)}")
+
+    path_results = os.path.join(directory, "results.json")
+    with open(path_results, "w") as f:
+        json.dump(report, f, indent=2)
+    print(f"- Wrote summary of run to {path_results}")
 
 
 if __name__ == "__main__":
