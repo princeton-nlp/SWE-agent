@@ -39,4 +39,4 @@ jobs:
           docker image ls
       - name: Run pytest
         run: |
-          docker run -it sweagent/swe-agent-run:latest  /bin/bash -c "pip install pytest && pytest -k test_replay" 
+          docker run sweagent/swe-agent-run:latest  /bin/bash -c "pip install pytest && pytest -k test_replay" 
