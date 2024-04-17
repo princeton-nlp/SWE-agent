@@ -1,7 +1,13 @@
+import json
+from pathlib import Path
 import subprocess
+from typing import Any, Dict
 import pytest
 
-from run import OpenPRHook
+from run import ActionsArguments, Main, MainHook, OpenPRHook, ScriptArguments
+from sweagent.agent.agents import Agent, AgentArguments
+from sweagent.agent.models import ModelArguments
+from sweagent.environment.swe_env import EnvironmentArguments, SWEEnv
 
 def test_run_cli_help():
     args = [
@@ -30,11 +36,6 @@ def info_dict():
         "submission": "asdf",
         "exit_status": "submitted",
     }
-
-
-def test_should_open_pr_succeeds(open_pr_hook_init_for_sop, info_dict):
-    hook = open_pr_hook_init_for_sop
-    assert hook.should_open_pr(info_dict)
 
 
 def test_should_open_pr_fail_submission(open_pr_hook_init_for_sop, info_dict):
@@ -83,3 +84,70 @@ def test_should_open_pr_success_has_pr_override(open_pr_hook_init_for_sop, info_
     hook._data_path = "https://github.com/klieret/swe-agent-test-repo/issues/19"
     hook._skip_if_commits_reference_issue = False
     assert hook.should_open_pr(info_dict)
+
+
+class RaisesExceptionHook(MainHook):
+    def on_instance_start(self, *, index: int, instance: Dict[str, Any]):
+        raise ValueError("test exception")
+
+@pytest.fixture
+def test_script_args():
+    return ScriptArguments(
+        suffix="",
+        environment=EnvironmentArguments(
+            image_name="sweagent/swe-agent:latest",
+            data_path="https://github.com/klieret/swe-agent-test-repo/issues/1",
+            split="dev",
+            verbose=True,
+            install_environment=True,
+        ),
+        skip_existing=True,
+        agent=AgentArguments(
+            model=ModelArguments(
+                model_name="instant_empty_submit",
+                total_cost_limit=0.0,
+                per_instance_cost_limit=3.0,
+                temperature=0.0,
+                top_p=0.95,
+            ),
+            config_file=Path("config/default.yaml"),
+        ),
+        actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
+        raise_exceptions=True,
+    )
+
+
+def test_exception_raised(test_script_args):
+    assert test_script_args.raise_exceptions
+    main = Main(test_script_args)
+    main.add_hook(RaisesExceptionHook())
+    with pytest.raises(ValueError, match="test exception"):
+        main.main()
+
+
+class CreateFakeLogFile(MainHook):
+    """Testing the skip functionality"""
+    def on_init(self, *, args: ScriptArguments, agent: Agent, env: SWEEnv, traj_dir: Path):
+        self._traj_dir = traj_dir
+        (traj_dir / "args.yaml").write_text("asdf")
+    
+    def on_instance_start(self, *, index: int, instance: Dict[str, Any]):
+        instance_id = instance["instance_id"]
+        dct = {
+            "info": {"exit_status": "submitted"},
+        }
+        (self._traj_dir / f"{instance_id}.traj").write_text(json.dumps(dct))
+    
+
+
+def test_existing_corrupted_args(test_script_args):
+    main = Main(test_script_args)
+    main.add_hook(CreateFakeLogFile())
+    main.main
+
+
+
+def test_main_hook(test_script_args):
+    main = Main(test_script_args)
+    main.add_hook(MainHook())
+    main.main

@@ -362,10 +362,12 @@ class Main:
                 break
             except Exception as e:
                 traceback.print_exc()
-                assert self.env.record  # mypy
-                logger.warning(f"❌ Failed on {self.env.record['instance_id']}: {e}")
                 if self.args.raise_exceptions:
                     raise e
+                if self.env.record:
+                    logger.warning(f"❌ Failed on {self.env.record['instance_id']}: {e}")
+                else:
+                    logger.warning(f"❌ Failed on unknown instance")
                 self.env.reset_container()
                 continue
         for hook in self.hooks:
