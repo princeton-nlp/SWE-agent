@@ -326,7 +326,7 @@ class AnthropicModel(BaseModel):
         Reference: https://docs.anthropic.com/claude/reference/complete_post
         """
         # Preserve behavior for older models
-        if self.api_model in ["claude-instant", "claude-2"]:
+        if self.api_model in ["claude-instant", "claude-2", "claude-2.1"]:
             # Remove system messages if it is a demonstration
             if is_demonstration:
                 history = [entry for entry in history if entry["role"] != "system"]
@@ -379,7 +379,7 @@ class AnthropicModel(BaseModel):
         Query the Anthropic API with the given `history` and return the response.
         """
         # Preserve behavior for older models
-        if self.api_model in ["claude-instant", "claude-2"]:
+        if self.api_model in ["claude-instant", "claude-2", "claude-2.1"]:
             # Perform Anthropic API call
             prompt = self.history_to_messages(history)
             input_tokens = self.api.count_tokens(prompt)
