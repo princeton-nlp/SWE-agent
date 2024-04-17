@@ -37,9 +37,6 @@ jobs:
       - name: Show docker images
         run: |
           docker image ls
-      - name: Install test dependencies in containers
-        run: |
-          docker exec -it sweagent/swe-agent-run:latest pip install pytest pytest-cov
       - name: Run pytest
         run: |
-          docker exec -it sweagent/swe-agent-run:latest pytest -k test_replay
+          docker run -it sweagent/swe-agent-run:latest '/bin/bash pip install pytest && pytest -k test_replay'
