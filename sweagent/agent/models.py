@@ -70,6 +70,7 @@ class CostLimitExceededError(Exception):
 class BaseModel:
     MODELS = {}
     SHORTCUTS = {}
+    PREFIXES = []
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
         self.args = args
@@ -162,6 +163,18 @@ class BaseModel:
 
     def query(self, history: list[dict[str, str]]) -> str:
         raise NotImplementedError("Use a subclass of BaseModel")
+    
+    def list_models(self) -> str:
+        model_list = []
+        # Gather all model names without prefix first
+        for key in self.MODELS.keys():
+            model_list.append(key)
+        # If there are any prefixes, add prefixed names to list
+        for prefix in self.PREFIXES:
+            for key in self.MODELS.keys():
+                model_list.append(f'{prefix}{key}')
+                
+        return model_list
 
 
 class OpenAIModel(BaseModel):
@@ -217,7 +230,9 @@ class OpenAIModel(BaseModel):
         "gpt3-0125": "gpt-3.5-turbo-0125",
         "gpt4-turbo": "gpt-4-turbo-2024-04-09",
     }
-
+    
+    PREFIXES = ["azure:","ft:"]
+    
     def __init__(self, args: ModelArguments, commands: list[Command]):
         super().__init__(args, commands)
 
@@ -432,7 +447,9 @@ class OllamaModel(BaseModel):
         "cost_per_input_token": 0,
         "cost_per_output_token": 0,
     })
-
+    
+    PREFIXES=["ollama:"]
+    
     def __init__(self, args: ModelArguments, commands: list[Command]):
         super().__init__(args, commands)
         from ollama import Client
