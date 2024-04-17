@@ -105,12 +105,12 @@ class SWEEnv(gym.Env):
         except:
             logger.warning("Failed to get commit hash for this repo")
 
-        self._github_token = os.environ.get("GITHUB_TOKEN", None)
+        self._github_token: str = os.environ.get("GITHUB_TOKEN", "")
         if not self._github_token and os.path.isfile(
             os.path.join(os.getcwd(), "keys.cfg")
         ):
             cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
-            self._github_token = cfg.get("GITHUB_TOKEN", None)
+            self._github_token: str = cfg.get("GITHUB_TOKEN", "")  # type: ignore
 
         # Load Task Instances
         self.data_path = self.args.data_path
