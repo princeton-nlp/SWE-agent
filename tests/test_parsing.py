@@ -1,15 +1,23 @@
 import pytest
 from sweagent.agent.commands import Command
 from sweagent.agent.parsing import (
-    FormatError, ParseFunction, ActionParser, ThoughtActionParser,
-    XMLThoughtActionParser, EditFormat, Identity, JsonParser
+    FormatError,
+    ParseFunction,
+    ActionParser,
+    ThoughtActionParser,
+    XMLThoughtActionParser,
+    EditFormat,
+    Identity,
+    JsonParser,
 )
 
 
 def test_parse_function_registry():
     assert isinstance(ParseFunction.get("ActionParser"), ActionParser)
     assert isinstance(ParseFunction.get("ThoughtActionParser"), ThoughtActionParser)
-    assert isinstance(ParseFunction.get("XMLThoughtActionParser"), XMLThoughtActionParser)
+    assert isinstance(
+        ParseFunction.get("XMLThoughtActionParser"), XMLThoughtActionParser
+    )
     assert isinstance(ParseFunction.get("EditFormat"), EditFormat)
     assert isinstance(ParseFunction.get("Identity"), Identity)
     assert isinstance(ParseFunction.get("JsonParser"), JsonParser)
@@ -19,7 +27,7 @@ def test_parse_function_registry():
 
 def test_action_parser():
     parser = ActionParser()
-    command = Command(code='ls', name='ls')
+    command = Command(code="ls", name="ls")
     thought, action = parser("ls -l", [command])
     assert thought == "ls -l"
     assert action == "ls -l"
@@ -29,7 +37,9 @@ def test_action_parser():
 
 def test_thought_action_parser():
     parser = ThoughtActionParser()
-    model_response = "Let's look at the files in the current directory.\n```\nls -l\n```"
+    model_response = (
+        "Let's look at the files in the current directory.\n```\nls -l\n```"
+    )
     thought, action = parser(model_response, [])
     assert thought == "Let's look at the files in the current directory.\n"
     assert action == "ls -l\n"

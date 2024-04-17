@@ -20,3 +20,4 @@ dependencies:
     - together
     - ollama
     - rich-argparse
+    - black

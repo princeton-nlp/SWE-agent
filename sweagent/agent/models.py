@@ -8,7 +8,10 @@ from collections import defaultdict
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 from dataclasses import dataclass, fields
 from openai import BadRequestError, OpenAI, AzureOpenAI
-from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
+from simple_parsing.helpers.serialization.serializable import (
+    FrozenSerializable,
+    Serializable,
+)
 from sweagent.agent.commands import Command
 from tenacity import (
     retry,
@@ -24,6 +27,7 @@ logger = logging.getLogger("api_models")
 @dataclass(frozen=True)
 class ModelArguments(FrozenSerializable):
     """Arguments configuring the model and its behavior."""
+
     model_name: str
     per_instance_cost_limit: float = 0.0
     total_cost_limit: float = 0.0
@@ -45,18 +49,20 @@ class APIStats(Serializable):
         if not isinstance(other, APIStats):
             raise TypeError("Can only add APIStats with APIStats")
 
-        return APIStats(**{
-            field.name: getattr(self, field.name) + getattr(other, field.name)
-            for field in fields(self)
-        })
+        return APIStats(
+            **{
+                field.name: getattr(self, field.name) + getattr(other, field.name)
+                for field in fields(self)
+            }
+        )
+
     def replace(self, other):
         if not isinstance(other, APIStats):
             raise TypeError("Can only replace APIStats with APIStats")
 
-        return APIStats(**{
-            field.name: getattr(other, field.name)
-            for field in fields(self)
-        })
+        return APIStats(
+            **{field.name: getattr(other, field.name) for field in fields(self)}
+        )
 
 
 class ContextWindowExceededError(Exception):
@@ -95,13 +101,15 @@ class BaseModel:
             ft_model = args.model_name.split(":")[1]
             self.model_metadata = MODELS[ft_model]
         elif args.model_name.startswith("ollama:"):
-            self.api_model = args.model_name.split('ollama:', 1)[1]
+            self.api_model = args.model_name.split("ollama:", 1)[1]
             self.model_metadata = self.MODELS[self.api_model]
         elif args.model_name.startswith("azure:"):
             azure_model = args.model_name.split("azure:", 1)[1]
             self.model_metadata = MODELS[azure_model]
         else:
-            raise ValueError(f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}")
+            raise ValueError(
+                f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}"
+            )
 
     def reset_stats(self, other: Optional[APIStats] = None):
         if other is None:
@@ -219,7 +227,11 @@ class OpenAIModel(BaseModel):
         cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
         if self.args.model_name.startswith("azure"):
             self.api_model = cfg["AZURE_OPENAI_DEPLOYMENT"]
-            self.client = AzureOpenAI(api_key=cfg["AZURE_OPENAI_API_KEY"], azure_endpoint=cfg["AZURE_OPENAI_ENDPOINT"], api_version=cfg.get("AZURE_OPENAI_API_VERSION", "2024-02-01"))
+            self.client = AzureOpenAI(
+                api_key=cfg["AZURE_OPENAI_API_KEY"],
+                azure_endpoint=cfg["AZURE_OPENAI_ENDPOINT"],
+                api_version=cfg.get("AZURE_OPENAI_API_VERSION", "2024-02-01"),
+            )
         else:
             api_base_url: Optional[str] = cfg.get("OPENAI_API_BASE_URL", None)
             self.client = OpenAI(api_key=cfg["OPENAI_API_KEY"], base_url=api_base_url)
@@ -233,7 +245,7 @@ class OpenAIModel(BaseModel):
         # Remove system messages if it is a demonstration
         if is_demonstration:
             history = [entry for entry in history if entry["role"] != "system"]
-            return '\n'.join([entry["content"] for entry in history])
+            return "\n".join([entry["content"] for entry in history])
         # Return history components with just role, content fields
         return [
             {k: v for k, v in entry.items() if k in ["role", "content"]}
@@ -259,7 +271,9 @@ class OpenAIModel(BaseModel):
                 top_p=self.args.top_p,
             )
         except BadRequestError:
-            raise CostLimitExceededError(f"Context window ({self.model_metadata['max_context']} tokens) exceeded")
+            raise CostLimitExceededError(
+                f"Context window ({self.model_metadata['max_context']} tokens) exceeded"
+            )
         # Calculate + update costs, return response
         input_tokens = response.usage.prompt_tokens
         output_tokens = response.usage.completion_tokens
@@ -343,21 +357,21 @@ class AnthropicModel(BaseModel):
         # Remove system messages if it is a demonstration
         if is_demonstration:
             history = [entry for entry in history if entry["role"] != "system"]
-            return '\n'.join([entry["content"] for entry in history])
+            return "\n".join([entry["content"] for entry in history])
 
         # Return history components with just role, content fields (no system message)
         messages = [
-            {
-                k: v for k, v in entry.items()
-                if k in ["role", "content"]
-            }
-            for entry in history if entry["role"] != "system"
+            {k: v for k, v in entry.items() if k in ["role", "content"]}
+            for entry in history
+            if entry["role"] != "system"
         ]
         compiled_messages = []  # Combine messages from the same role
         last_role = None
         for message in reversed(messages):
             if last_role == message["role"]:
-                compiled_messages[-1]["content"] = message["content"] + "\n" + compiled_messages[-1]["content"]
+                compiled_messages[-1]["content"] = (
+                    message["content"] + "\n" + compiled_messages[-1]["content"]
+                )
             else:
                 compiled_messages.append(message)
             last_role = message["role"]
@@ -397,9 +411,9 @@ class AnthropicModel(BaseModel):
             return response
 
         # Get system message(s)
-        system_message = "\n".join([
-            entry["content"] for entry in history if entry["role"] == "system"
-        ])
+        system_message = "\n".join(
+            [entry["content"] for entry in history if entry["role"] == "system"]
+        )
         messages = self.history_to_messages(history)
         # Perform Anthropic API call
         response = self.api.messages.create(
@@ -412,24 +426,24 @@ class AnthropicModel(BaseModel):
         )
 
         # Calculate + update costs, return response
-        self.update_stats(
-            response.usage.input_tokens,
-            response.usage.output_tokens
-        )
+        self.update_stats(response.usage.input_tokens, response.usage.output_tokens)
         response = "\n".join([x.text for x in response.content])
         return response
 
 
 class OllamaModel(BaseModel):
-    MODELS = defaultdict(lambda: {
-        "max_context": 128_000,
-        "cost_per_input_token": 0,
-        "cost_per_output_token": 0,
-    })
+    MODELS = defaultdict(
+        lambda: {
+            "max_context": 128_000,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        }
+    )
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
         super().__init__(args, commands)
         from ollama import Client
+
         self.client = Client(host=args.host_url)
 
     def history_to_messages(
@@ -441,7 +455,7 @@ class OllamaModel(BaseModel):
         # Remove system messages if it is a demonstration
         if is_demonstration:
             history = [entry for entry in history if entry["role"] != "system"]
-            return '\n'.join([entry["content"] for entry in history])
+            return "\n".join([entry["content"] for entry in history])
         # Return history components with just role, content fields
         return [
             {k: v for k, v in entry.items() if k in ["role", "content"]}
@@ -464,7 +478,7 @@ class OllamaModel(BaseModel):
             options={
                 "temperature": self.args.temperature,
                 "top_p": self.args.top_p,
-            }
+            },
         )
         # Calculate + update costs, return response
         if "prompt_eval_count" in response:
@@ -594,7 +608,7 @@ class HumanModel(BaseModel):
         # Remove system messages if it is a demonstration
         if is_demonstration:
             history = [entry for entry in history if entry["role"] != "system"]
-            return '\n'.join([entry["content"] for entry in history])
+            return "\n".join([entry["content"] for entry in history])
         # Return history components with just role, content fields
         return [
             {k: v for k, v in entry.items() if k in ["role", "content"]}
@@ -619,7 +633,9 @@ class HumanModel(BaseModel):
                     # Continue reading input until terminating keyword inputted
                     break
             action = "\n".join(buffer)
-        elif action.strip() == "start_multiline_command":  # do arbitrary multi-line input
+        elif (
+            action.strip() == "start_multiline_command"
+        ):  # do arbitrary multi-line input
             buffer = []
             while True:
                 action = input("... ")
@@ -698,7 +714,11 @@ def get_model(args: ModelArguments, commands: Optional[list[Command]] = None):
         return HumanThoughtModel(args, commands)
     if args.model_name == "replay":
         return ReplayModel(args, commands)
-    elif args.model_name.startswith("gpt") or args.model_name.startswith("ft:gpt") or args.model_name.startswith("azure:gpt"):
+    elif (
+        args.model_name.startswith("gpt")
+        or args.model_name.startswith("ft:gpt")
+        or args.model_name.startswith("azure:gpt")
+    ):
         return OpenAIModel(args, commands)
     elif args.model_name.startswith("claude"):
         return AnthropicModel(args, commands)

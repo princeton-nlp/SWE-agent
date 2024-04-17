@@ -180,6 +180,7 @@ class AgentConfig(FrozenSerializable):
 @dataclass(frozen=True)
 class AgentArguments(FlattenedAccess, FrozenSerializable):
     """Configure the agent's behaviour (templates, parse functions, blocklists, ...)."""
+
     model: ModelArguments = None
 
     # Policy can only be set via config yaml file from command line
@@ -222,7 +223,6 @@ class Agent:
         self._parse_command_patterns()
         self.history = []
         self.last_container_id = None
-
 
     def setup(self, instance_args, init_model_stats=None) -> None:
         """Setup the agent for a new instance."""
@@ -378,7 +378,9 @@ class Agent:
                 rem_action = ""
         return "\n".join(parsed_action)
 
-    def split_actions(self, action: str, pattern_type="subroutine") -> List[Dict[str, Any]]:
+    def split_actions(
+        self, action: str, pattern_type="subroutine"
+    ) -> List[Dict[str, Any]]:
         """Split an action into a list of actions in a greedy manner, each of which is a subroutine call or a single command."""
         parsed_action = list()
         rem_action = action
@@ -603,7 +605,7 @@ class Agent:
         self, observation: str, state: str
     ) -> Tuple[str, str, str]:
         """Wrapper around `self.forward_model` that handles errors and retries
-        due to format errors or blocked actions. 
+        due to format errors or blocked actions.
         """
         try:
             output = self.forward_model(observation, state)
@@ -618,7 +620,11 @@ class Agent:
             )
         except ContextWindowExceededError:
             logger.warning(f"Context window exceeded")
-            return "Exit due to context window", "exit_context", "Exit due to context window"
+            return (
+                "Exit due to context window",
+                "exit_context",
+                "Exit due to context window",
+            )
         except CostLimitExceededError:
             logger.warning(f"Cost limit exceeded")
             return "Exit due to cost limit", "exit_cost", "Exit due to cost limit"

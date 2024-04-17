@@ -22,13 +22,26 @@ from swebench.harness.constants import (
 from unidiff import PatchSet
 
 
-def main(predictions_path, log_dir, swe_bench_tasks, testbed, skip_existing, timeout, verbose, conda_link, log_suffix, num_processes):
+def main(
+    predictions_path,
+    log_dir,
+    swe_bench_tasks,
+    testbed,
+    skip_existing,
+    timeout,
+    verbose,
+    conda_link,
+    log_suffix,
+    num_processes,
+):
     # Check if paths exist
     if not os.path.exists(predictions_path):
         raise FileNotFoundError(f"Predictions path {predictions_path} does not exist")
     eval_refs = get_eval_refs(swe_bench_tasks)
     for k, v in eval_refs.items():
-        eval_refs[k] = {key: v[key] for key in [KEY_INSTANCE_ID, "FAIL_TO_PASS", "PASS_TO_PASS"]}
+        eval_refs[k] = {
+            key: v[key] for key in [KEY_INSTANCE_ID, "FAIL_TO_PASS", "PASS_TO_PASS"]
+        }
 
     # Change model_name_or_patch field to directory name for all predictions
     directory = os.path.dirname(predictions_path)
@@ -65,7 +78,7 @@ def main(predictions_path, log_dir, swe_bench_tasks, testbed, skip_existing, tim
             verbose=verbose,
             conda_link=conda_link,
             log_suffix=log_suffix,
-            num_processes=num_processes
+            num_processes=num_processes,
         )
         print("✅ Finished evaluation")
     except Exception as e:
@@ -91,9 +104,13 @@ def main(predictions_path, log_dir, swe_bench_tasks, testbed, skip_existing, tim
             scorecard["stats"]["traj_action_dist"] = dict(
                 Counter(
                     [
-                        entry["action"].strip().split()[0]
-                        if entry["role"] == "assistant" and "action" in entry and len(entry["action"]) > 0
-                        else None
+                        (
+                            entry["action"].strip().split()[0]
+                            if entry["role"] == "assistant"
+                            and "action" in entry
+                            and len(entry["action"]) > 0
+                            else None
+                        )
                         for entry in traj_data["history"]
                     ]
                 )
@@ -144,7 +161,7 @@ def main(predictions_path, log_dir, swe_bench_tasks, testbed, skip_existing, tim
             "success": {
                 "FAIL_TO_PASS": report["FAIL_TO_PASS"]["success"],
                 "PASS_TO_PASS": report["PASS_TO_PASS"]["success"],
-            }
+            },
         }
         resolution_status = get_resolution_status(report)
         scorecard["statuses"].append(resolution_status)
@@ -218,13 +235,14 @@ if __name__ == "__main__":
         "--verbose", action="store_true", help="(Optional) Verbose mode"
     )
     parser.add_argument(
-        "--conda_link", default=None, type=str, help="(Optional) URL to conda installation to use"
+        "--conda_link",
+        default=None,
+        type=str,
+        help="(Optional) URL to conda installation to use",
     )
     parser.add_argument(
         "--log_suffix", default=None, type=str, help="(Optional) Log suffix"
     )
-    parser.add_argument(
-        "--num_processes", default=-1, type=int, help="Num processes"
-    )
+    parser.add_argument("--num_processes", default=-1, type=int, help="Num processes")
     args = parser.parse_args()
     main(**vars(args))

@@ -1,5 +1,6 @@
 import subprocess
 
+
 def test_run_cli_help():
     args = [
         "python",
@@ -9,5 +10,4 @@ def test_run_cli_help():
     subprocess.run(args, check=True)
 
 
-def test_run_obsolete():
-    ...
+def test_run_obsolete(): ...
