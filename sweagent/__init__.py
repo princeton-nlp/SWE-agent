@@ -7,6 +7,7 @@ from sweagent.agent.agents import (
 
 from sweagent.agent.models import (
     ModelArguments,
+    get_model_names
 )
 
 from sweagent.environment.swe_env import (
@@ -18,7 +19,6 @@ from sweagent.environment.utils import (
     get_data_path_name,
 )
 
-
 __all__ = [
     "Agent",
     "AgentArguments",
@@ -26,4 +26,5 @@ __all__ = [
     "EnvironmentArguments",
     "SWEEnv",
     "get_data_path_name",
+    "get_model_names"
 ]

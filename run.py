@@ -32,13 +32,17 @@ from sweagent import (
     ModelArguments,
     SWEEnv,
     get_data_path_name,
+    get_model_names
 )
 from swebench import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
 from unidiff import PatchSet
 
 from sweagent.environment.utils import InvalidGithubURL, get_associated_commit_urls, get_gh_issue_data, parse_gh_issue_url
 
-__doc__: str = """ Run inference. Usage examples:
+# Get up-to-date list of supported models
+formatted_model_names = " | ".join(get_model_names())
+
+__doc__: str = f""" Run inference. Usage examples:
 
 ```bash
 # Run over a github issue:
@@ -46,6 +50,8 @@ python run.py --model_name "gpt4" --data_path "https://github.com/pvlib/pvlib-py
 # Apply a patch in a local repository to an issue specified as Markdown file and run a custom installer script in the container
 python run.py --model_name "gpt4" --data_path "/path/to/my_issue.md" --repo_path "/path/to/my/local/repo" --environment_setup "/path/to/setup.sh" --config_file "config/default_from_url.yaml" --apply_patch_locally
 ```
+Available Models:\n
+{formatted_model_names}
 """
 
 handler = RichHandler(show_time=False, show_path=False)

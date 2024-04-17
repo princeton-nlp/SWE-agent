@@ -731,3 +731,22 @@ def get_model(args: ModelArguments, commands: Optional[list[Command]] = None):
         return TogetherModel(args, commands)
     else:
         raise ValueError(f"Invalid model name: {args.model_name}")
+
+def get_model_names() -> list:
+    """Retrieve all currently supported models as a list"""
+    all_models = []
+    
+    models = [
+        OpenAIModel,
+        AnthropicModel,
+        OllamaModel,
+        TogetherModel,
+        HumanModel,
+        HumanThoughtModel,
+        ReplayModel,
+    ]
+    for model in models:
+        all_models.extend(model.list_models(model))
+
+    sorted_model_names = sorted(all_models)
+    return sorted_model_names
