@@ -1,0 +1,4 @@
+# Invoking black for the first time
+# You can configure your local git to always ignore this commit by invoking:
+# git config blame.ignoreRevsFile .git-blame-ignore-revs
+607af4e5774a25375c31a6b6720e8e2490ca738c
