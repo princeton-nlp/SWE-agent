@@ -39,7 +39,7 @@ Read our paper for more details [coming soon!].
 ```
 @misc{yang2024sweagent,
       title={SWE-agent: Agent Computer Interfaces Enable Software Engineering Language Models}, 
-      author={John Yang and Carlos E. Jimenez and Alexander Wettig and Shunyu Yao and Karthik Narasimhan and Ofir Press},
+      author={John Yang and Carlos E. Jimenez and Alexander Wettig and Killian Lieret and Shunyu Yao and Karthik Narasimhan and Ofir Press},
       year={2024},
 }
 ```
