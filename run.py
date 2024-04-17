@@ -107,118 +107,126 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
         )
 
 
-def main(args: ScriptArguments):
-    logger.info(f"📙 Arguments: {args.dumps_yaml()}")
-    agent = Agent("primary", args.agent)
+class _ContinueLoop(Exception):
+    ...
 
-    env = SWEEnv(args.environment)
 
-    traj_dir = Path("trajectories") / Path(getuser()) / args.run_name
-    traj_dir.mkdir(parents=True, exist_ok=True)
+class Main:
+    def __init__(self, args: ScriptArguments):
+        logger.info(f"📙 Arguments: {args.dumps_yaml()}")
+        self.args = args
+        self.agent = Agent("primary", args.agent)
+        self.env = SWEEnv(args.environment)
+        self.traj_dir = Path("trajectories") / Path(getuser()) / args.run_name
+        self.traj_dir.mkdir(parents=True, exist_ok=True)
+        save_arguments(self.traj_dir, args)
 
-    save_arguments(traj_dir, args)
+    def run(self, index):
+        # Reset environment
+        instance_id = self.env.data[index]["instance_id"]
+        assert isinstance(instance_id, str)  # mypy
+        if should_skip(args, self.traj_dir, instance_id):
+            raise _ContinueLoop
+        logger.info("▶️  Beginning task " + str(index))
 
-    for index in range(len(env.data)):
-        try:
-            # Reset environment
-            instance_id = env.data[index]["instance_id"]
-            assert isinstance(instance_id, str)  # mypy
-            if should_skip(args, traj_dir, instance_id):
-                continue
-            logger.info("▶️  Beginning task " + str(index))
+        observation, info = self.env.reset(index)
+        if info is None:
+            raise _ContinueLoop
 
-            observation, info = env.reset(index)
-            if info is None:
-                continue
-
-            # Get info, patch information
-            issue = getattr(env, "query", None)
-            files = []
-            assert env.record is not None  # mypy
-            if "patch" in env.record:
-                files = "\n".join(
-                    [f"- {x.path}" for x in PatchSet(env.record["patch"]).modified_files]
-                )
-            # Get test files, F2P tests information
-            test_files = []
-            if "test_patch" in env.record:
-                test_patch_obj = PatchSet(env.record["test_patch"])
-                test_files = "\n".join(
-                    [f"- {x.path}" for x in test_patch_obj.modified_files + test_patch_obj.added_files]
-                )
-            tests = ""
-            if "FAIL_TO_PASS" in env.record:
-                tests = "\n".join([f"- {x}" for x in env.record["FAIL_TO_PASS"]])
-
-            setup_args = {
-                "issue": issue,
-                "files": files,
-                "test_files": test_files,
-                "tests": tests
-            }
-            info, trajectory = agent.run(
-                setup_args=setup_args,
-                env=env,
-                observation=observation,
-                traj_dir=traj_dir,
-                return_type="info_trajectory",
+        # Get info, patch information
+        issue = getattr(self.env, "query", None)
+        files = []
+        assert self.env.record is not None  # mypy
+        if "patch" in self.env.record:
+            files = "\n".join(
+                [f"- {x.path}" for x in PatchSet(self.env.record["patch"]).modified_files]
             )
-            save_predictions(traj_dir, instance_id, info)
-            patch_path = save_patch(traj_dir, instance_id, info)
-            if args.actions.open_pr and should_open_pr(args, info, token=env._github_token):
-                env.open_pr(trajectory=trajectory)
-            if args.actions.apply_patch_locally and patch_path is not None and env.record["repo_type"] == "local":
-                apply_patch(Path(args.environment.repo_path), patch_file=patch_path)
+        # Get test files, F2P tests information
+        test_files = []
+        if "test_patch" in self.env.record:
+            test_patch_obj = PatchSet(self.env.record["test_patch"])
+            test_files = "\n".join(
+                [f"- {x.path}" for x in test_patch_obj.modified_files + test_patch_obj.added_files]
+            )
+        tests = ""
+        if "FAIL_TO_PASS" in self.env.record:
+            tests = "\n".join([f"- {x}" for x in self.env.record["FAIL_TO_PASS"]])
 
-        except KeyboardInterrupt:
-            logger.info("Exiting InterCode environment...")
-            env.close()
-            break
-        except Exception as e:
-            traceback.print_exc()
-            logger.warning(f"❌ Failed on {env.record['instance_id']}: {e}")
-            if args.raise_exceptions:
-                raise e
-            env.reset_container()
-            continue
+        setup_args = {
+            "issue": issue,
+            "files": files,
+            "test_files": test_files,
+            "tests": tests
+        }
+        info, trajectory = self.agent.run(
+            setup_args=setup_args,
+            env=self.env,
+            observation=observation,
+            traj_dir=self.traj_dir,
+            return_type="info_trajectory",
+        )
+        save_predictions(self.traj_dir, instance_id, info)
+        patch_path = save_patch(self.traj_dir, instance_id, info)
+        if args.actions.open_pr and self.should_open_pr(info, token=self.env._github_token):
+            self.env.open_pr(trajectory=trajectory)
+        if args.actions.apply_patch_locally and patch_path is not None and self.env.record["repo_type"] == "local":
+            apply_patch(Path(args.environment.repo_path), patch_file=patch_path)
+    
+    def main(self):
+        for index in range(len(self.env.data)):
+            try:
+                self.run(index)
+            except _ContinueLoop:
+                continue
+            except KeyboardInterrupt:
+                logger.info("Exiting InterCode environment...")
+                self.env.close()
+                break
+            except Exception as e:
+                traceback.print_exc()
+                assert self.env.record  # mypy
+                logger.warning(f"❌ Failed on {self.env.record['instance_id']}: {e}")
+                if args.raise_exceptions:
+                    raise e
+                self.env.reset_container()
+                continue
 
-
-def should_open_pr(args: ScriptArguments, info: Dict[str, Any], *, token: str="") -> bool:
-    """Does opening a PR make sense?"""
-    if not info.get("submission"):
-        logger.info("Not opening PR because no submission was made.")
-        return False
-    if info["exit_status"] != "submitted":
-        logger.info("Not opening PR because exit status was %s and not submitted.", info["exit_status"])
-        return False
-    try:
-        issue = get_gh_issue_data(args.environment.data_path, token=token)
-    except InvalidGithubURL:
-        logger.info("Currently only GitHub is supported to open PRs to. Skipping PR creation.")
-        return False
-    if issue.state != "open":
-        logger.info(f"Issue is not open (state={issue.state}. Skipping PR creation.")
-        return False
-    if issue.assignee:
-        logger.info("Issue is already assigned. Skipping PR creation. Be nice :)")
-        return False
-    if issue.locked:
-        logger.info("Issue is locked. Skipping PR creation.")
-        return False
-    org, repo, issue_number = parse_gh_issue_url(args.environment.data_path)
-    associated_commits = get_associated_commit_urls(org, repo, issue_number, token=token) 
-    if associated_commits:
-        commit_url_strs = ", ".join(associated_commits)
-        if args.actions.skip_if_commits_reference_issue:
-            logger.info(f"Issue already has associated commits (see {commit_url_strs}). Skipping PR creation.")
+    def should_open_pr(self, info: Dict[str, Any]) -> bool:
+        """Does opening a PR make sense?"""
+        if not info.get("submission"):
+            logger.info("Not opening PR because no submission was made.")
             return False
-        else:
-            logger.warning(
-                "Proceeding with PR creation even though there are already commits "
-                f"({commit_url_strs}) associated with the issue. Please only do this for your own repositories "
-                "or after verifying that the existing commits do not fix the issue."
-            )
-    return True
+        if info["exit_status"] != "submitted":
+            logger.info("Not opening PR because exit status was %s and not submitted.", info["exit_status"])
+            return False
+        try:
+            issue = get_gh_issue_data(self.args.environment.data_path, token=self.env._github_token)
+        except InvalidGithubURL:
+            logger.info("Currently only GitHub is supported to open PRs to. Skipping PR creation.")
+            return False
+        if issue.state != "open":
+            logger.info(f"Issue is not open (state={issue.state}. Skipping PR creation.")
+            return False
+        if issue.assignee:
+            logger.info("Issue is already assigned. Skipping PR creation. Be nice :)")
+            return False
+        if issue.locked:
+            logger.info("Issue is locked. Skipping PR creation.")
+            return False
+        org, repo, issue_number = parse_gh_issue_url(self.args.environment.data_path)
+        associated_commits = get_associated_commit_urls(org, repo, issue_number, token=self.env._github_token) 
+        if associated_commits:
+            commit_url_strs = ", ".join(associated_commits)
+            if self.args.actions.skip_if_commits_reference_issue:
+                logger.info(f"Issue already has associated commits (see {commit_url_strs}). Skipping PR creation.")
+                return False
+            else:
+                logger.warning(
+                    "Proceeding with PR creation even though there are already commits "
+                    f"({commit_url_strs}) associated with the issue. Please only do this for your own repositories "
+                    "or after verifying that the existing commits do not fix the issue."
+                )
+        return True
 
 
 def save_arguments(traj_dir: Path, args: ScriptArguments) -> None:
