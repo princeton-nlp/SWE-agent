@@ -1,5 +1,6 @@
-
-name: Tests (no LLM)
+# This test uses the pre-built sweagent/swe-agent container
+# (saving around 1min of time)
+name: Tests (no LM)
 
 on:
   push:
@@ -25,9 +26,9 @@ jobs:
           architecture: x64
           activate-environment: swe-agent
           environment-file: environment.yml
-      - name: Run setup script and create keys.cfg
+      - name: Pull latest docker container and create keys.cfg
         run: |
-          ./setup.sh
+          docker pull sweagent/swe-agent:latest
           touch keys.cfg
         shell: bash
       - name: Install test dependencies

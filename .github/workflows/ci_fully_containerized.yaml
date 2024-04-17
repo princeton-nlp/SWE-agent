@@ -1,0 +1,42 @@
+# This test builds all containers and runs some smoke tests
+# in a fully containerized version
+name: Test containerized (no LM)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  setup_job:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          architecture: x64
+          activate-environment: swe-agent
+          environment-file: environment.yml
+      - name: Run setup and create keys.cfg
+        run: |
+          ./setup.sh
+          touch keys.cfg
+        shell: bash
+      - name: Build swe-agent-run container
+        run: |
+          docker build -t swe-agent-run .
+      - name: Install test dependencies in containers
+        run: |
+          docker exec -it swe-agent-run pip install pytest pytest-cov
+      - name: Run pytest
+        run: |
+          docker exec -it swe-agent-run pytest -k test_replay
