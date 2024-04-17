@@ -33,10 +33,13 @@ jobs:
         shell: bash
       - name: Build swe-agent-run container
         run: |
-          docker build -t swe-agent-run .
+          docker build -t sweagent/swe-agent-run:latest .
+      - name: Show docker images
+        run: |
+          docker image ls
       - name: Install test dependencies in containers
         run: |
-          docker exec -it swe-agent-run pip install pytest pytest-cov
+          docker exec -it sweagent/swe-agent-run:latest pip install pytest pytest-cov
       - name: Run pytest
         run: |
-          docker exec -it swe-agent-run pytest -k test_replay
+          docker exec -it sweagent/swe-agent-run:latest pytest -k test_replay
