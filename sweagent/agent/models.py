@@ -6,6 +6,7 @@ import together
 
 from collections import defaultdict
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
+from ollama import Client as OllamaClient
 from dataclasses import dataclass, fields
 from openai import BadRequestError, OpenAI, AzureOpenAI
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
@@ -429,8 +430,7 @@ class OllamaModel(BaseModel):
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
         super().__init__(args, commands)
-        from ollama import Client
-        self.client = Client(host=args.host_url)
+        self.client = OllamaClient(host=args.host_url)
 
     def history_to_messages(
         self, history: list[dict[str, str]], is_demonstration: bool = False

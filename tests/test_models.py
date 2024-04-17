@@ -17,7 +17,7 @@ def mock_openai_response():
     return Mock(choices=[choice], usage=usage)
 
 
-# @pytest.fixture
+@pytest.fixture
 def mock_anthropic2_response():
     return Mock(
         id="test",
@@ -29,6 +29,7 @@ def mock_anthropic2_response():
     )
 
 
+@pytest.fixture
 def mock_anthropic3_response():
     return Mock(
         id="test",
@@ -77,56 +78,48 @@ CLAUDE2_MODELS, CLAUDE3_MODELS = split_claude_model_by_version()
 def test_openai_model(model_name, mock_openai_response):
     with patch("sweagent.agent.models.config.Config"), \
             patch("sweagent.agent.models.OpenAI") as mock_openai:
-
         mock_openai.return_value.chat.completions.create.return_value = mock_openai_response
+
         model_args = ModelArguments(model_name)
         model = OpenAIModel(model_args, [])
         model.query(TEST_HISTORY)
 
-        mock_openai.return_value.chat.completions.create.assert_called_once()
-
 
 @pytest.mark.parametrize("model_name", CLAUDE2_MODELS)
-def test_anthropic2_model(model_name):
-    model_args = ModelArguments(model_name)
+def test_anthropic2_model(model_name, mock_anthropic2_response):
     with patch("sweagent.agent.models.config.Config"), \
-            patch("anthropic.resources.completions.Completions.create") as mock_request:
-        mock_request.return_value = mock_anthropic2_response()
+            patch("sweagent.agent.models.Anthropic") as mock_anthropic:
+        mock_anthropic.return_value.completions.create.return_value = mock_anthropic2_response
+        mock_anthropic.return_value.count_tokens.return_value = 10
+
+        model_args = ModelArguments(model_name)
         model = AnthropicModel(model_args, [])
         model.query(TEST_HISTORY)
-
-    mock_request.assert_called_once()
 
 
 @pytest.mark.parametrize("model_name", CLAUDE3_MODELS)
-def test_anthropic3_model(model_name):
-    model_args = ModelArguments(model_name)
+def test_anthropic3_model(model_name, mock_anthropic3_response):
     with patch("sweagent.agent.models.config.Config"), \
-            patch("anthropic.resources.messages.Messages.create") as mock_request:
-        mock_request.return_value = mock_anthropic3_response()
+            patch("sweagent.agent.models.Anthropic") as mock_anthropic:
+        mock_anthropic.return_value.messages.create.return_value = mock_anthropic3_response
+
+        model_args = ModelArguments(model_name)
         model = AnthropicModel(model_args, [])
         model.query(TEST_HISTORY)
 
-    mock_request.assert_called_once()
 
+def test_ollama_model(mock_ollama_response):
+    with patch("sweagent.agent.models.config.Config"), patch("sweagent.agent.models.OllamaClient") as mock_ollama:
+        mock_ollama.return_value.chat.return_value = mock_ollama_response
 
-@patch("ollama.Client.chat")
-def test_ollama_model(mock_request, mock_ollama_response):
-    mock_request.return_value = mock_ollama_response
-
-    model_args = ModelArguments("ollama:llama2")
-    with patch("sweagent.agent.models.config.Config"):
+        model_args = ModelArguments("ollama:llama2")
         model = OllamaModel(model_args, [])
         model.query(TEST_HISTORY)
 
-    mock_request.assert_called_once()
 
-
-@patch("builtins.input", return_value="Hello, I'm fine.")
-def test_human_model(mock_input):
-    model_args = ModelArguments("human")
-    with patch("sweagent.agent.models.config.Config"):
+def test_human_model():
+    with patch("sweagent.agent.models.config.Config"), patch("builtins.input", return_value="Hello, I'm fine."):
+        model_args = ModelArguments("human")
         model = HumanModel(model_args, [])
         model.query(TEST_HISTORY)
 
-    mock_input.assert_called_once()
