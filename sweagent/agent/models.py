@@ -529,6 +529,7 @@ class TogetherModel(BaseModel):
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
         super().__init__(args, commands)
+        assert together.version >= '1.1.0', "Please upgrade to Together SDK v1.1.0 or later."
 
         # Set Together key
         cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
