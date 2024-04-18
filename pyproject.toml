@@ -19,6 +19,7 @@ requires-python = ">=3.9"
 license = {file = "LICENSE"}
 keywords = ["nlp", "agents", "code"]
 authors = [
+  {name = "Carlos E. Jimenez", email = "carlosej@princeton.edu" },
   {name = "John Yang", email = "byjohnyang@gmail.com" }
 ]
 
