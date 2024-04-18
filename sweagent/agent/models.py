@@ -308,7 +308,7 @@ class AnthropicModel(BaseModel):
     }
 
     SHORTCUTS = {
-        "claude": "claude-2.0",
+        "claude-2": "claude-2.1",
         "claude-opus": "claude-3-opus-20240229",
         "claude-sonnet": "claude-3-sonnet-20240229",
         "claude-haiku": "claude-3-haiku-20240307",
