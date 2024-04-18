@@ -23,7 +23,7 @@ Every command subscribes to the following skeleton code.
 * If there are no arguments, omit the `arguments` section.
 * The implementation for your command is unconstrained. There are no limitations on the form of the underlying command code.
 * The minimal documentation requirements are `signature` and `docstring`.
-* If you'd like multiple commands to make modifications to a similar body of functions, we recommend using global varibles.
+* If you'd like multiple commands to make modifications to a similar body of functions, we recommend using global variables.
     * For instance, in `config/commands/default.sh`, you'll see we define the `CURRENT_LINE` variable for the file viewer. This variable is modified across multiple commands, including `open`, `goto`, `scroll_up`, `scroll_down`, and `edit`.
     * You can also leverage third party libraries (check out how we do linting enabled `edit` in `config/commands/edit_linting.sh`).
 * To show effects of the command, print to standard output (i.e. `echo`). SWE-agent is implemented such that it does not look for a return value from these commands.

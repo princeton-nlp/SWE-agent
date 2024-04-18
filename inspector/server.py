@@ -139,7 +139,7 @@ def load_content(file_name, gold_patches, test_patches):
         with open(scorecards_file) as infile:
             scorecards = json.load(infile)
 
-    content = append_exit(content)  # accomodate new and old format
+    content = append_exit(content)  # accommodate new and old format
     content = append_patch(Path(file_name).stem, content, gold_patches, "Gold")
     content = append_patch(Path(file_name).stem, content, test_patches, "Test")
     content = append_results(

@@ -6,13 +6,13 @@ import pytest
 @pytest.fixture
 def openai_mock_client():
     model = Mock()
-    reponse = Mock()
+    response = Mock()
     choice = Mock()
     choice.message.content = "test"
-    reponse.choices = [choice]
-    reponse.usage.prompt_tokens = 10
-    reponse.usage.completion_tokens = 10
-    model.chat.completions.create = MagicMock(return_value=reponse)
+    response.choices = [choice]
+    response.usage.prompt_tokens = 10
+    response.usage.completion_tokens = 10
+    model.chat.completions.create = MagicMock(return_value=response)
 
     return model
 
