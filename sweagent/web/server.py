@@ -1,48 +1,50 @@
 import os
-from flask import Flask, render_template_string, request
+from flask import Flask, render_template, request
 import threading
 import sys
+
+from pytest import skip
 from sweagent import CONFIG_DIR, PACKAGE_DIR
 from sweagent.agent.agents import AgentArguments
 from sweagent.agent.models import ModelArguments
 from sweagent.environment.swe_env import EnvironmentArguments
+from flask_socketio import SocketIO, emit
 
 # baaaaaaad
 sys.path.append(str(PACKAGE_DIR.parent))
-from run import ActionsArguments, main, ScriptArguments
-
+from run import ActionsArguments, ScriptArguments, Main, MainHook
 
 app = Flask(__name__)
+socketio = SocketIO(app)
 
-
-html_page = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Run Command</title>
-</head>
-<body>
-    <h1>Start run</h1>
-    <form action="/run" method="post">
-        <label for="data_path">Data Path:</label>
-        <input type="text" id="data_path" name="data_path" value="https://github.com/klieret/swe-agent-test-repo/issues/1" required>
-        <button type="submit">Run</button>
-        <input type="checkbox" id="test_run" name="test_run" checked>
-        <label for="test_run">Test run (no LM queries)</label><br><br>
-    </form>
-</body>
-</html>
-"""
 
 @app.route('/')
 def index():
-    return render_template_string(html_page)
+    return render_template("index.html")
 
 
-@app.route('/run', methods=['POST'])
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+
+class WebUpdateRunHook(MainHook):
+    def on_start(self):
+        print("on start")
+        emit('update', {'status': 'started'}, namespace="/run")
+    
+    def on_end(self):
+        print("on end")
+        emit('update', {'status': 'finished'})
+
+    def on_instance_completed(self, *, info, trajectory):
+        print("on instance completed")
+        emit('update', {'status': 'instance_completed', }, namespace="/run")
+
+
+@app.route('/run', methods=['GET'])
 def run():
-    data_path = request.form['data_path']
-    test_run = 'test_run' in request.form
+    data_path = request.args.get("data_path", "")
+    test_run = 'test_run' in request.args
     model_name = "gpt4"
     if test_run:
         os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"] = "1"
@@ -56,7 +58,7 @@ def run():
             verbose=True,
             install_environment=True,
         ),
-        skip_existing=True,
+        skip_existing=False,
         agent=AgentArguments(
             model=ModelArguments(
                 model_name=model_name,
@@ -69,9 +71,13 @@ def run():
         ),
         actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
     )
-    thread = threading.Thread(target=main, args=(defaults,))
-    thread.start()
+    WebUpdateRunHook().on_start()
+    # main = Main(defaults)
+    # main.add_hook(WebUpdateRunHook())
+    # thread = threading.Thread(target=main.main)
+    # thread.start()
     return 'Commands are being executed', 202
 
+
 if __name__ == "__main__":
-    app.run(port=5000)
+    socketio.run(app, port=5001)
