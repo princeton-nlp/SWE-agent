@@ -45,7 +45,7 @@ instance_template: |-
      Then start trying to fix it.
      When you think you've fixed the bug, re-run the bug reproduction script to make sure that the bug has indeed been fixed.
      
-     If the bug reproduction script does not print anything when it succesfully runs, we recommend adding a print("Script completed successfully, no errors.") command at the end of the file,
+     If the bug reproduction script does not print anything when it successfully runs, we recommend adding a print("Script completed successfully, no errors.") command at the end of the file,
      so that you can be sure that the script indeed ran fine all the way through. 
 
   2. If you run a command and it doesn't work, try running a different command. A command that did not work once will not work the second time unless you modify it!
