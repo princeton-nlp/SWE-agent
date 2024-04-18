@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Run Command</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const socket = io('/run');
+            
+            socket.on('update', function(data) {
+                console.log("update");
+                document.getElementById('update').textContent = data
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Start run</h1>
+    <form id="dataForm">
+        <label for="data_path">Data Path:</label>
+        <input type="text" id="data_path" name="data_path" value="https://github.com/klieret/swe-agent-test-repo/issues/1" required>
+        <label for="test_run">Test run (no LM queries)</label>
+        <input type="checkbox" id="test_run" name="test_run" checked>
+        <button type="submit">Run</button>
+    </form>
+    <div id="responseMessage"></div>
+    <div id="update"></div>
+    <script>
+        document.getElementById('dataForm').addEventListener('submit', function(event) {
+            console.log("submit!");
+            event.preventDefault();
+            var dataPath = document.getElementById('data_path').value;
+            var testRun = document.getElementById('test_run').checked;
+            fetch(`/run?asdf=true&data_path=${encodeURIComponent(dataPath)}&test_run=${testRun}`, {
+                method: 'GET'
+            })
+            .then(response => response.text())
+            .then(text => document.getElementById('responseMessage').innerText = text)
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+</html>
