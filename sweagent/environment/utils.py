@@ -22,7 +22,6 @@ from typing import Any, List, Optional, Set, Tuple, Dict
 
 from git import InvalidGitRepositoryError, Repo
 
-
 LOGGER_NAME = "intercode"
 START_UP_DELAY = 5
 TIMEOUT_DURATION = 25
@@ -685,3 +684,4 @@ def format_trajectory_markdown(trajectory: List[Dict[str, str]]):
         "</details>",
     ] 
     return "\n".join(prefix) + "\n\n---\n\n".join(steps) + "\n".join(suffix)
+

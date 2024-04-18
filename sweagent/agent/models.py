@@ -691,13 +691,34 @@ class ReplayModel(BaseModel):
         return action
 
 
+class InstantEmptySubmitTestModel(BaseModel):
+    MODELS = {"instant_empty_submit": {}}
+
+    def __init__(self, args: ModelArguments, commands: list[Command]):
+        """This model immediately submits an empty reproduce.py. Useful for testing purposes"""
+        super().__init__(args, commands)
+        self._action_idx = 0
+
+    def query(self, history: list[dict[str, str]]) -> str:
+        # Need to at least do _something_ to submit
+        if self._action_idx == 0:
+            self._action_idx = 1
+            action = "DISCUSSION\nblah blah\n\n```\ncreate reproduce.py\n```\n"
+        elif self._action_idx == 1:
+            self._action_idx = 0
+            action = "DISCUSSION\nblargh glargh\n\n```\nsubmit```\n"
+        return action
+
+
+
 def get_model(args: ModelArguments, commands: Optional[list[Command]] = None):
     """
     Returns correct model object given arguments and commands
     """
     if commands is None:
         commands = []
-
+    if args.model_name == "instant_empty_submit":
+        return InstantEmptySubmitTestModel(args, commands)
     if args.model_name == "human":
         return HumanModel(args, commands)
     if args.model_name == "human_thought":
