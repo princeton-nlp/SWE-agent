@@ -33,9 +33,12 @@ def test_data_sources_path(test_data_path) -> Path:
     assert p.is_dir()
     return p
 
+@fixture
+def test_trajectory_path(test_trajectories_path) -> Path:
+    traj = test_trajectories_path / "gpt4__klieret__swe-agent-test-repo__default_from_url__t-0.00__p-0.95__c-3.00__install-1" / "klieret__swe-agent-test-repo-i1.traj"
+    assert traj.exists()
+    return traj
 
 @fixture
-def test_trajectory(test_trajectories_path):
-    traj_dir = test_trajectories_path / "gpt4__klieret__swe-agent-test-repo__default_from_url__t-0.00__p-0.95__c-3.00__install-1" / "klieret__swe-agent-test-repo-i1.traj"
-    assert traj_dir.exists()
-    return json.loads(traj_dir.read_text())
+def test_trajectory(test_trajectory_path):
+    return json.loads(test_trajectory_path.read_text())
