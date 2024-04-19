@@ -797,7 +797,7 @@ class Agent:
                 observation, env.get_available_actions(), state
             )
             for hook in self.hooks:
-                hook.on_actions_gnerated(thought=thought, action=action, output=output)
+                hook.on_actions_generated(thought=thought, action=action, output=output)
             observations = list()
             run_action = self._guard_multiline_input(action)
             for sub_action in self.split_actions(run_action):
@@ -807,7 +807,7 @@ class Agent:
                 ):
                     obs, _, done, info = env.step(sub_action["action"])
                     for hook in self.hooks:
-                        hook.on_sub_action_done(obs=obs, done=done)
+                        hook.on_sub_action_executed(obs=obs, done=done)
                     observations.append(obs)
                     if sub_action["cmd_name"] == self.config.submit_command:
                         done = True
