@@ -1,6 +1,77 @@
+# Guide (user-friendly):
+# https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
+# Specification (technical, formal):
+# https://packaging.python.org/en/latest/specifications/pyproject-toml/
+
+
+# Choosing a build backend:
 [build-system]
-requires = ['setuptools>=42']
-build-backend = 'setuptools.build_meta'
+requires = ["setuptools"]  # REQUIRED if [build-system] table is used
+build-backend = "setuptools.build_meta"  # If not defined, then legacy behavior can happen.
+
+
+[project]
+name = "sweagent"
+dynamic = ["version"]
+description = "The official SWE-agent package - an open source Agent Computer Interface for running language models as software engineers."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {file = "LICENSE"}
+keywords = ["nlp", "agents", "code"]
+authors = [
+  {name = "Carlos E. Jimenez", email = "carlosej@princeton.edu" },
+  {name = "John Yang", email = "byjohnyang@gmail.com" }
+]
+
+# Classifiers help users find your project by categorizing it.
+classifiers = [
+  # How mature is this project? Common values are
+  #   3 - Alpha, 4 - Beta, 5 - Production/Stable
+  "Operating System :: OS Independent",
+  # Indicate who your project is intended for
+  "Intended Audience :: Developers",
+  # Pick your license as you wish
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3 :: Only",
+]
+
+dependencies = [
+    "anthropic",
+    "config",
+    "datasets",
+    "docker",
+    "gymnasium",
+    "numpy",
+    "openai>=1.0",
+    "pandas",
+    "rich",
+    "ollama",
+    "ruamel.yaml",
+    "simple-parsing",
+    "swebench>=1.0.1",
+    "tenacity",
+    "together",
+    "unidiff",
+    "rich-argparse"
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "sweagent.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["."]
+namespaces = false
+
+[project.urls]
+"Homepage" = "https://swe-agent.com"
+"Bug Reports" = "http://github.com/princeton-nlp/SWE-agent/issues"
+"Documentation" = "https://github.com/princeton-nlp/SWE-agent"
+"Source" = "http://github.com/princeton-nlp/SWE-agent"
+
 
 [tool.pytest.ini_options]
 markers = [

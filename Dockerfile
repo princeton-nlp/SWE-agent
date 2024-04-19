@@ -4,7 +4,7 @@ FROM python:3.9
 WORKDIR /app
 
 # Install Python dependencies
-RUN pip install anthropic config datasets docker gymnasium numpy openai pandas rich ruamel.yaml swebench tenacity unidiff simple-parsing together ollama
+RUN pip install anthropic[bedrock] config datasets docker gymnasium numpy openai pandas rich rich_argparse ruamel.yaml swebench tenacity unidiff simple-parsing together ollama
 
 # Install Docker CLI using the official Docker installation script
 RUN curl -fsSL https://get.docker.com -o get-docker.sh && \
