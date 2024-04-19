@@ -3,12 +3,11 @@ from flask import Flask, render_template, request
 import threading
 import sys
 
-from pytest import skip
 from sweagent import CONFIG_DIR, PACKAGE_DIR
 from sweagent.agent.agents import AgentArguments
 from sweagent.agent.models import ModelArguments
 from sweagent.environment.swe_env import EnvironmentArguments
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 
 # baaaaaaad
 sys.path.append(str(PACKAGE_DIR.parent))
@@ -29,16 +28,13 @@ def handle_connect():
 
 class WebUpdateRunHook(MainHook):
     def on_start(self):
-        print("on start")
-        emit('update', {'status': 'started'}, namespace="/run")
+        socketio.emit('update', {'event': 'started'})
     
     def on_end(self):
-        print("on end")
-        emit('update', {'status': 'finished'})
+        socketio.emit('update', {'event': 'finished'})
 
     def on_instance_completed(self, *, info, trajectory):
-        print("on instance completed")
-        emit('update', {'status': 'instance_completed', }, namespace="/run")
+        socketio.emit('update', {'event': 'instance_completed', **info})
 
 
 @app.route('/run', methods=['GET'])
@@ -71,11 +67,10 @@ def run():
         ),
         actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
     )
-    WebUpdateRunHook().on_start()
-    # main = Main(defaults)
-    # main.add_hook(WebUpdateRunHook())
-    # thread = threading.Thread(target=main.main)
-    # thread.start()
+    main = Main(defaults)
+    main.add_hook(WebUpdateRunHook())
+    thread = threading.Thread(target=main.main)
+    thread.start()
     return 'Commands are being executed', 202
 
 
