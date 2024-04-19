@@ -20,7 +20,7 @@ from sweagent.agent.parsing import ParseFunction, FormatError
 from sweagent.environment.utils import LOGGER_NAME
 from sweagent.environment.swe_env import SWEEnv
 from tenacity import RetryError
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any, TypedDict
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -204,6 +204,37 @@ class AgentArguments(FlattenedAccess, FrozenSerializable):
             )
 
 
+class TrajectoryStep(TypedDict):
+    action: str
+    observation: str
+    response: str
+    state: Optional[str]
+    thought: str
+
+
+class AgentHook:
+    def on_init(self):
+        ...
+
+    def on_run_start(self, ):
+        ...
+
+    def on_step_start(self):
+        ...
+
+    def on_actions_generated(self, *, thought: str, action: str, output: str):
+        ...
+
+    def on_sub_action_executed(self, *, obs: str, done: bool):
+        ...
+
+    def on_step_done(self, *, trajectory_step: TrajectoryStep, model_stats: APIStats):
+        ...
+
+    def on_run_done(self):
+        ...
+
+
 class Agent:
     """Agent handles the behaviour of the model and how it interacts with the environment."""
 
@@ -222,6 +253,11 @@ class Agent:
         self._parse_command_patterns()
         self.history = []
         self.last_container_id = None
+        self.hooks = []
+
+    def add_hook(self, hook: AgentHook):
+        hook.on_init()
+        self.hooks.append(hook)
 
 
     def setup(self, instance_args, init_model_stats=None) -> None:
@@ -747,14 +783,21 @@ class Agent:
         # Re-initialize primary
         self.setup(setup_args, init_model_stats)
 
+        for hook in self.hooks:
+            hook.on_run_start()
+
         # Run action/observation loop
         trajectory = []
         info = {}
         while not done:
+            for hook in self.hooks:
+                hook.on_step_start()
             state = env.communicate(self.state_command) if self.state_command else None
             thought, action, output = self.forward(
                 observation, env.get_available_actions(), state
             )
+            for hook in self.hooks:
+                hook.on_actions_generated(thought=thought, action=action, output=output)
             observations = list()
             run_action = self._guard_multiline_input(action)
             for sub_action in self.split_actions(run_action):
@@ -763,6 +806,8 @@ class Agent:
                     or sub_action["cmd_name"] == self.config.submit_command
                 ):
                     obs, _, done, info = env.step(sub_action["action"])
+                    for hook in self.hooks:
+                        hook.on_sub_action_executed(obs=obs, done=done)
                     observations.append(obs)
                     if sub_action["cmd_name"] == self.config.submit_command:
                         done = True
@@ -775,7 +820,7 @@ class Agent:
 
             observation = "\n".join([obs for obs in observations if obs is not None])
 
-            trajectory.append(
+            trajectory_step = TrajectoryStep(
                 {
                     "action": action,
                     "observation": observation,
@@ -784,9 +829,17 @@ class Agent:
                     "thought": thought,
                 }
             )
-            info["model_stats"] = self.model.stats.to_dict()
+            trajectory.append(trajectory_step)
+            model_stats: APIStats = self.model.stats
+            info["model_stats"] = model_stats.to_dict()
             if traj_dir:
                 self.save_trajectory(trajectory, traj_dir, env, info)
+            for hook in self.hooks:
+                hook.on_step_done(trajectory_step=trajectory_step, model_stats=model_stats)
+        
+        for hook in self.hooks:
+            hook.on_run_done()
+
         if return_type == "info":
             return info
         if return_type == "info_trajectory":

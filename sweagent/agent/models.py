@@ -820,7 +820,7 @@ class InstantEmptySubmitTestModel(BaseModel):
             action = "DISCUSSION\nblah blah\n\n```\ncreate reproduce.py\n```\n"
         elif self._action_idx == 1:
             self._action_idx = 0
-            action = "DISCUSSION\nblargh glargh\n\n```\nsubmit```\n"
+            action = "DISCUSSION\nblargh glargh\n\n```\nsubmit\n```\n"
         return action
 
 
