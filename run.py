@@ -12,10 +12,15 @@ import re
 import subprocess
 import traceback
 from typing import Any, Dict, List, Optional
+from collections import namedtuple
 import rich.console
 import rich.markdown
 import rich.panel
 import rich.markdown
+
+
+from aiderrepomap.swe_repomap import RepoMap
+Tag = namedtuple("Tag", "rel_fname fname line name kind".split())
 
 try:
     from rich_argparse import RichHelpFormatter
@@ -123,7 +128,7 @@ class _ContinueLoop(Exception):
 
 class MainHook:
     """Hook structure for the web server or other addons to interface with"""
-    
+
     @staticmethod
     def _is_promising_patch(info: Dict[str, Any]) -> bool:
         """Do we actually believe that the patch will solve the issue?
@@ -139,20 +144,20 @@ class MainHook:
 
     def on_start(self):
         """Called at the beginning of `Main.main`"""
-        ... 
+        ...
 
     def on_end(self):
         """Called at the end of `Main.main`"""
         ...
-    
+
     def on_instance_start(self, *, index: int, instance: Dict[str, Any]):
         """Called at the beginning of each instance loop in `Main.run`"""
         ...
-    
+
     def on_instance_skipped(self, ):
         """Called when an instance is skipped in `Main.run`"""
         ...
-    
+
     def on_instance_completed(self, *, info, trajectory):
         """Called when an instance is completed in `Main.run`"""
         ...
@@ -165,10 +170,10 @@ class SaveApplyPatchHook(MainHook):
         self._traj_dir = traj_dir
         self._apply_patch_locally = args.actions.apply_patch_locally
         self._instance = None
-    
+
     def on_instance_start(self, *, index: int, instance: Dict[str, Any]):
         self._instance = instance
-    
+
     def on_instance_completed(self, *, info, trajectory):
         assert self._instance is not None # mypy
         instance_id = self._instance["instance_id"]
@@ -211,7 +216,7 @@ class SaveApplyPatchHook(MainHook):
 
     def _save_patch(self, instance_id: str, info) -> Optional[Path]:
         """Create patch files that can be applied with `git am`.
-        
+
         Returns:
             The path to the patch file, if it was saved. Otherwise, returns None.
         """
@@ -224,14 +229,14 @@ class SaveApplyPatchHook(MainHook):
         model_patch = info["submission"]
         patch_output_file.write_text(model_patch)
         if self._is_promising_patch(info):
-            # Only print big congratulations if we actually believe 
+            # Only print big congratulations if we actually believe
             # the patch will solve the issue
             self._print_patch_message(patch_output_file)
         return patch_output_file
 
     def _apply_patch(self, patch_file: Path, local_dir: Path) -> None:
         """Apply a patch to a local directory."""
-        
+
         assert local_dir.is_dir()
         assert patch_file.exists()
         # The resolve() is important, because we're gonna run the cmd
@@ -258,7 +263,7 @@ class OpenPRHook(MainHook):
     def on_instance_completed(self, *, info, trajectory):
         if self._open_pr and self.should_open_pr(info):
             self._env.open_pr(trajectory=trajectory)
-    
+
     def should_open_pr(self, info: Dict[str, Any]) -> bool:
         """Does opening a PR make sense?"""
         if not info.get("submission"):
@@ -282,7 +287,7 @@ class OpenPRHook(MainHook):
             logger.info("Issue is locked. Skipping PR creation.")
             return False
         org, repo, issue_number = parse_gh_issue_url(self._data_path)
-        associated_commits = get_associated_commit_urls(org, repo, issue_number, token=self._token) 
+        associated_commits = get_associated_commit_urls(org, repo, issue_number, token=self._token)
         if associated_commits:
             commit_url_strs = ", ".join(associated_commits)
             if self._skip_if_commits_reference_issue:
@@ -311,9 +316,10 @@ class Main:
             OpenPRHook(),
         ]
         self.hooks: List[MainHook] = []
+        self.repo_path = args.environment.repo_path
         for hook in default_hooks:
             self.add_hook(hook)
-    
+
     def add_hook(self, hook: MainHook):
         hook.on_init(args=self.args, agent=self.agent, env=self.env, traj_dir=self.traj_dir)
         self.hooks.append(hook)
@@ -323,19 +329,15 @@ class Main:
         instance_id = self.env.data[index]["instance_id"]
         for hook in self.hooks:
             hook.on_instance_start(index=index, instance=self.env.data[index])
-        assert isinstance(instance_id, str)  # mypy
-        if self.should_skip(instance_id):
-            for hook in self.hooks:
-                hook.on_instance_skipped()
-            raise _ContinueLoop
-        logger.info("▶️  Beginning task " + str(index))
-
-        observation, info = self.env.reset(index)
-        if info is None:
-            raise _ContinueLoop
-
-        # Get info, patch information
+                # Get info, patch information
         issue = getattr(self.env, "query", None)
+
+        if self.repo_path:
+            rm = RepoMap(root=self.repo_path)
+            repo_map = rm.get_repo_map()
+        else:
+            repo_map = "n/a"
+
         files = []
         assert self.env.record is not None  # mypy
         if "patch" in self.env.record:
@@ -357,7 +359,8 @@ class Main:
             "issue": issue,
             "files": files,
             "test_files": test_files,
-            "tests": tests
+            "tests": tests,
+            "repo_map": repo_map
         }
         info, trajectory = self.agent.run(
             setup_args=setup_args,
@@ -367,9 +370,8 @@ class Main:
             return_type="info_trajectory",
         )
         self._save_predictions(instance_id, info)
-        for hook in self.hooks:
-            hook.on_instance_completed(info=info, trajectory=trajectory)
-    
+
+
     def main(self):
         for hook in self.hooks:
             hook.on_start()
@@ -401,7 +403,7 @@ class Main:
         for hook in self.hooks:
             hook.on_end()
 
-    
+
     def _save_arguments(self) -> None:
         """Save the arguments to a yaml file to the run's trajectory directory."""
         log_path = self.traj_dir / "args.yaml"
