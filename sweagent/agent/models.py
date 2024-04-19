@@ -278,11 +278,59 @@ class OpenAIModel(BaseModel):
         return response.choices[0].message.content
 
 
+class Claude2Mixin:
+    @staticmethod
+    def claude2_history_to_messages(
+        history: list[dict[str, str]], is_demonstration: bool = False
+    ) -> Union[str, list[dict[str, str]]]:
+        """
+        Create `prompt` by filtering out all keys except for role/content per `history` turn
+        Reference: https://docs.anthropic.com/claude/reference/complete_post
+        """
+        # Remove system messages if it is a demonstration
+        if is_demonstration:
+            history = [entry for entry in history if entry["role"] != "system"]
+        # Map history to Claude format
+        prompt = "\n\n"
+        for entry in history:
+            if entry["role"] in {"user", "system"}:
+                prompt += f'{HUMAN_PROMPT} {entry["content"]}\n\n'
+            elif entry["role"] == "assistant":
+                prompt += f'{AI_PROMPT} {entry["content"]}\n\n'
+        prompt += AI_PROMPT
+        return prompt
+
+    def claude2_query(self, model, history: list[dict[str, str]]) -> str:
+        """
+        Query the Anthropic API with the given `history` and return the response.
+        """
+        prompt = self.claude2_history_to_messages(history)
+        input_tokens = Anthropic().count_tokens(prompt)  # Work well without API_KEY?
+
+        if model.model_metadata.get("max_tokens_to_sample"):
+            max_tokens_to_sample = model.model_metadata["max_tokens_to_sample"]
+        else:
+            max_tokens_to_sample = model.model_metadata["max_context"] - input_tokens
+
+        completion = model.api.completions.create(
+            model=model.api_model,
+            prompt=prompt,
+            max_tokens_to_sample=max_tokens_to_sample,
+            temperature=model.args.temperature,
+            top_p=model.args.top_p,
+        )
+        # Calculate + update costs, return response
+        response = completion.completion
+        output_tokens = Anthropic().count_tokens(response)
+        model.update_stats(input_tokens, output_tokens)
+        return response
+
+
 class Claude3Mixin:
     api: Union[Anthropic, AnthropicBedrock]
 
     @staticmethod
-    def anthropic_claude3_history_to_messages(
+    def claude3_history_to_messages(
         history: list[dict[str, str]], is_demonstration: bool = False
     ) -> Union[str, list[dict[str, str]]]:
         """
@@ -318,12 +366,12 @@ class Claude3Mixin:
 
         return compiled_messages
 
-    def anthropic_claude3_query(self, model, history: list[dict[str, str]]) -> str:
+    def claude3_query(self, model, history: list[dict[str, str]]) -> str:
         # Get system message(s)
         system_message = "\n".join([
             entry["content"] for entry in history if entry["role"] == "system"
         ])
-        messages = self.anthropic_claude3_history_to_messages(history)
+        messages = self.claude3_history_to_messages(history)
 
         # Perform Anthropic API call
         response = model.api.messages.create(
@@ -344,7 +392,7 @@ class Claude3Mixin:
         return response
 
 
-class AnthropicModel(BaseModel, Claude3Mixin):
+class AnthropicModel(BaseModel, Claude2Mixin, Claude3Mixin):
     MODELS = {
         "claude-instant": {
             "max_context": 100_000,
@@ -403,9 +451,9 @@ class AnthropicModel(BaseModel, Claude3Mixin):
         Reference: https://docs.anthropic.com/claude/reference/complete_post
         """
         if self.api_model in ["claude-instant", "claude-2.0", "claude-2.1"]:
-            return anthropic_claude2_history_to_messages(history, is_demonstration)
+            return self.claude2_history_to_messages(history, is_demonstration)
         else:
-            return self.anthropic_claude3_history_to_messages(history, is_demonstration)
+            return self.claude3_history_to_messages(history, is_demonstration)
 
     @retry(
         wait=wait_random_exponential(min=1, max=15),
@@ -418,32 +466,12 @@ class AnthropicModel(BaseModel, Claude3Mixin):
         Query the Anthropic API with the given `history` and return the response.
         """
         if self.api_model in ["claude-instant", "claude-2.0", "claude-2.1"]:
-            return self.claude2_query(history)
+            return self.claude2_query(self, history)
 
-        return self.anthropic_claude3_query(self, history)
-
-    def claude2_query(self, history: list[dict[str, str]]) -> str:
-        """
-        Query the Anthropic API with the given `history` and return the response.
-        """
-        # Perform Anthropic API call
-        prompt = anthropic_claude2_history_to_messages(history)
-        input_tokens = self.api.count_tokens(prompt)
-        completion = self.api.completions.create(
-            model=self.api_model,
-            prompt=prompt,
-            max_tokens_to_sample=self.model_metadata["max_context"] - input_tokens,
-            temperature=self.args.temperature,
-            top_p=self.args.top_p,
-        )
-        # Calculate + update costs, return response
-        response = completion.completion
-        output_tokens = self.api.count_tokens(response)
-        self.update_stats(input_tokens, output_tokens)
-        return response
+        return self.claude3_query(self, history)
 
 
-class BedrockModel(BaseModel, Claude3Mixin):
+class BedrockModel(BaseModel, Claude2Mixin, Claude3Mixin):
     MODELS = {
         "anthropic.claude-instant-v1": {
             "max_context": 100_000,
@@ -506,9 +534,9 @@ class BedrockModel(BaseModel, Claude3Mixin):
         """
         if self.model_provider == "anthropic":
             if self.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]:
-                return anthropic_claude2_history_to_messages(history, is_demonstration)
+                return self.claude2_history_to_messages(history, is_demonstration)
             else:
-                return self.anthropic_claude3_history_to_messages(history, is_demonstration)
+                return self.claude3_history_to_messages(history, is_demonstration)
         else:
             raise NotImplementedError(f"{self.api_model} is not supported!")
 
@@ -524,51 +552,11 @@ class BedrockModel(BaseModel, Claude3Mixin):
         """
         if self.model_provider == "anthropic":
             if self.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]:
-                return self.claude2_query(history)
+                return self.claude2_query(self, history)
             else:
-                return self.anthropic_claude3_query(self, history)
+                return self.claude3_query(self, history)
         else:
             raise NotImplementedError(f"{self.api_model} is not supported!")
-
-    def claude2_query(self, history: list[dict[str, str]]) -> str:
-        """
-        Query the Anthropic API with the given `history` and return the response.
-        """
-        prompt = self.history_to_messages(history)
-        input_tokens = Anthropic().count_tokens(prompt)
-        completion = self.api.completions.create(
-            model=self.api_model,
-            prompt=prompt,
-            max_tokens_to_sample=self.model_metadata["max_tokens_to_sample"],  # bug?
-            temperature=self.args.temperature,
-            top_p=self.args.top_p,
-        )
-        # Calculate + update costs, return response
-        response = completion.completion
-        output_tokens = Anthropic().count_tokens(response)
-        self.update_stats(input_tokens, output_tokens)
-        return response
-
-
-def anthropic_claude2_history_to_messages(
-    history: list[dict[str, str]], is_demonstration: bool = False
-) -> Union[str, list[dict[str, str]]]:
-    """
-    Create `prompt` by filtering out all keys except for role/content per `history` turn
-    Reference: https://docs.anthropic.com/claude/reference/complete_post
-    """
-    # Remove system messages if it is a demonstration
-    if is_demonstration:
-        history = [entry for entry in history if entry["role"] != "system"]
-    # Map history to Claude format
-    prompt = "\n\n"
-    for entry in history:
-        if entry["role"] in {"user", "system"}:
-            prompt += f'{HUMAN_PROMPT} {entry["content"]}\n\n'
-        elif entry["role"] == "assistant":
-            prompt += f'{AI_PROMPT} {entry["content"]}\n\n'
-    prompt += AI_PROMPT
-    return prompt
 
 
 class OllamaModel(BaseModel):
