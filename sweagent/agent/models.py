@@ -5,7 +5,7 @@ import os
 import together
 
 from collections import defaultdict
-from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
+from anthropic import Anthropic, AnthropicBedrock, HUMAN_PROMPT, AI_PROMPT
 from ollama import Client as OllamaClient
 from dataclasses import dataclass, fields
 from openai import BadRequestError, OpenAI, AzureOpenAI
