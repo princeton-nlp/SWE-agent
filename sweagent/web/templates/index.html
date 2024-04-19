@@ -2,14 +2,34 @@
 <html>
 <head>
     <title>Run Command</title>
+    <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/mainpage.css') }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
     <script>
+        function addMessageToFeed(feedID, title, text) {
+            console.log("in addMessageToFeed");
+            const feed = document.getElementById(feedID);
+            const messageBlock = document.createElement('div');
+            messageBlock.className = 'message';
+
+            const messageTitle = document.createElement('h2');
+            messageTitle.textContent = title;
+
+            const messageText = document.createElement('p');
+            messageText.textContent = text;
+
+            messageBlock.appendChild(messageTitle);
+            messageBlock.appendChild(messageText);
+
+            feed.appendChild(messageBlock);
+        }
+
+
         document.addEventListener('DOMContentLoaded', function() {
-            const socket = io('/run');
-            
+            const socket = io();
             socket.on('update', function(data) {
                 console.log("update");
-                document.getElementById('update').textContent = data
+                addMessageToFeed('agentFeed', data["event"], JSON.stringify(data));
+                addMessageToFeed('envFeed', data["event"], JSON.stringify(data));
             });
         });
     </script>
@@ -39,5 +59,10 @@
             .catch(error => console.error('Error:', error));
         });
     </script>
+    <h1>Trajectory</h1>
+    <div id="container">
+        <div id="agentFeed"></div>
+        <div id="envFeed"></div>
+    </div>
 </body>
 </html>
