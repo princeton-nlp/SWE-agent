@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 from pytest import fixture
+import sweagent.environment.utils as env_utils
 
 # this is a hack and should be removed when we have a better solution
 _this_dir = Path(__file__).resolve().parent
@@ -12,6 +13,7 @@ package_dir = root_dir / "sweagent"
 sys.path.insert(0, str(root_dir))
 sys.path.insert(1, str(package_dir))
 os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"] = "1"
+env_utils.START_UP_DELAY = 1
 
 
 @fixture
