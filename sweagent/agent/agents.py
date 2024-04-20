@@ -225,6 +225,9 @@ class AgentHook:
     def on_actions_generated(self, *, thought: str, action: str, output: str):
         ...
 
+    def on_sub_action_started(self, *, sub_action: str):
+        ...
+
     def on_sub_action_executed(self, *, obs: str, done: bool):
         ...
 
@@ -232,6 +235,13 @@ class AgentHook:
         ...
 
     def on_run_done(self):
+        ...
+    
+    def on_model_query(self, *, query: str, agent: str):
+        """Actually query the model with the complete history."""
+        ...
+    
+    def on_query_message_added(self, *, role: str, content: str, agent: str, is_demo: bool = False, thought: str = "", action: str = ""):
         ...
 
 
@@ -258,7 +268,11 @@ class Agent:
     def add_hook(self, hook: AgentHook):
         hook.on_init()
         self.hooks.append(hook)
-
+    
+    def _append_history(self, item: Dict):
+        for hook in self.hooks:
+            hook.on_query_message_added(**item)
+        self.history.append(item)
 
     def setup(self, instance_args, init_model_stats=None) -> None:
         """Setup the agent for a new instance."""
@@ -269,9 +283,8 @@ class Agent:
         system_msg = self.config.system_template.format(**self.system_args)
         logger.info(f"SYSTEM ({self.name})\n{system_msg}")
 
-        self.history: List[Dict[str, Any]] = [
-            {"role": "system", "content": system_msg, "agent": self.name},
-        ]
+        self.history: List[Dict[str, Any]] = []
+        self._append_history({"role": "system", "content": system_msg, "agent": self.name})
 
         if len(self.config.demonstrations) > 0 and "history_to_messages" in dir(
             self.model
@@ -304,7 +317,7 @@ class Agent:
                     for entry in demo_history:
                         if entry["role"] != "system":
                             entry["is_demo"] = True
-                            self.history.append(entry)
+                            self._append_history(entry)
                 else:
                     # Add demonstration as single message to history
                     demo_message = self.model.history_to_messages(
@@ -314,7 +327,7 @@ class Agent:
                     demonstration = self.config.demonstration_template.format(
                         **{"demonstration": demo_message}
                     )
-                    self.history.append(
+                    self._append_history(
                         {
                             "agent": self.name,
                             "content": demonstration,
@@ -322,6 +335,7 @@ class Agent:
                             "role": "user",
                         }
                     )
+
 
     @property
     def state_command(self) -> str:
@@ -494,7 +508,7 @@ class Agent:
     ) -> Tuple[str, str, str]:
         thought, action, output = self.forward_with_error_check(observation, state)
 
-        self.history.append(
+        self._append_history(
             {
                 "role": "assistant",
                 "content": output,
@@ -548,8 +562,12 @@ class Agent:
         message = "\n".join(messages)
 
         logger.info(f"🤖 MODEL INPUT\n{message}")
-        self.history.append({"role": "user", "content": message, "agent": self.name})
+        self._append_history(
+            {"role": "user", "content": message, "agent": self.name}
+        )
 
+        for hook in self.hooks:
+            hook.on_model_query(query=self.local_history, agent=self.name)
         return self.model.query(self.local_history)
 
     def retry_after_format_fail(self, output):
@@ -738,7 +756,7 @@ class Agent:
         else:
             obs = None
         if env.returncode != 0:
-            self.history.append({"role": "user", "content": obs, "agent": agent_name})
+            self._append_history({"role": "user", "content": obs, "agent": agent_name})
             raise RuntimeError(
                 f"Nonzero return code: {env.returncode} for init_observation in {agent_name}.\n{obs}"
             )
@@ -805,6 +823,8 @@ class Agent:
                     sub_action["agent"] == self.name
                     or sub_action["cmd_name"] == self.config.submit_command
                 ):
+                    for hook in self.hooks:
+                        hook.on_sub_action_started(sub_action=sub_action)
                     obs, _, done, info = env.step(sub_action["action"])
                     for hook in self.hooks:
                         hook.on_sub_action_executed(obs=obs, done=done)

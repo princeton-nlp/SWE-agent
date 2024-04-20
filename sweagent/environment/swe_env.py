@@ -77,6 +77,18 @@ class EnvironmentArguments(FrozenSerializable):
     repo_path: str = ""
 
 
+
+class EnvHook:
+    def on_init(self):
+        ...
+    
+    def on_copy_repo_started(self, *, repo_type: str, repo_path: str):
+        ...
+    
+    def on_install_env_started(self):
+        ...
+    
+
 class SWEEnv(gym.Env):
     """Gym environment for SWE-bench. This class should handle all communication with the docker container."""
 
@@ -127,6 +139,11 @@ class SWEEnv(gym.Env):
         self.timeout = self.args.timeout
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
+        self.hooks = []
+
+    def add_hook(self, hook: EnvHook):
+        hook.on_init()
+        self.hooks.append(hook)
 
     @property
     def _repo_name(self) -> str:
@@ -140,6 +157,8 @@ class SWEEnv(gym.Env):
             folder name of clone
         """
         assert self.record is not None  # mypy
+        for hook in self.hooks:
+            hook.on_copy_repo_started(repo_type=self.record["repo_type"], repo_path=self.record["repo"])
         if self.record["repo_type"] == "local":
             copy_anything_to_container(self.container_obj, self.record["repo"].removeprefix("local://"), "/"+self._repo_name)
             self.communicate_with_handling(
@@ -629,6 +648,8 @@ class SWEEnv(gym.Env):
                 "Skipping conda environment installation."
                 ))
             return
+        for hook in self.hooks:
+            hook.on_install_env_started()
         if self.args.environment_setup is not None:
             assert isinstance(self.args.environment_setup, (str, os.PathLike))
             if Path(self.args.environment_setup).suffix in [".yml", ".yaml"]:
