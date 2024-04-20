@@ -4,7 +4,7 @@ from pathlib import Path
 import subprocess
 import pytest
 import yaml
-from sweagent.environment.swe_env import EnvironmentArguments, SWEEnv
+from sweagent.environment.swe_env import EnvHook, EnvironmentArguments, SWEEnv
 from contextlib import contextmanager
 import docker
 
@@ -105,3 +105,10 @@ def test_communicate_old(test_env_args):
         raise
     finally:
         os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"] = "1"
+
+
+@pytest.mark.slow
+def test_env_with_hook(test_env_args):
+    with swe_env_context(test_env_args) as env:
+        env.add_hook(EnvHook())
+        env.reset()
