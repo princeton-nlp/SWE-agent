@@ -192,3 +192,6 @@ trajectories/*
 
 # PyCharm
 .idea/
+
+# Secrets
+keys.cfg
