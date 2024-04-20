@@ -16,8 +16,8 @@ def openai_mock_client():
 
     return model
 
-
-def together_return_value():
+@pytest.fixture
+def mock_together_response():
     return {
         "choices": [{"text": "<human>Hello</human>"}],
         "usage": {"prompt_tokens": 10, "completion_tokens": 10},
@@ -41,11 +41,13 @@ def test_openai_model(openai_mock_client):
         model.query(TEST_HISTORY)
 
 
-@patch("together.Complete.create", return_value=together_return_value())
-def test_together_model(mock):
-    for model_name in list(TogetherModel.MODELS) + list(TogetherModel.SHORTCUTS):
-        arguments = ModelArguments(model_name)
-        with patch("sweagent.agent.models.config.Config"):
-            model = TogetherModel(arguments, [])
+@pytest.mark.parametrize("model_name", list(TogetherModel.MODELS) + list(TogetherModel.SHORTCUTS))
+def test_together_model(mock_together_response, model_name):
+    with patch("sweagent.agent.models.config.Config"), \
+            patch("sweagent.agent.models.together") as mock_together:
+        mock_together.version = '1.1.0'
+        mock_together.Complete.create.return_value = mock_together_response
 
+        model_args = ModelArguments(model_name)
+        model = TogetherModel(model_args, [])
         model.query(TEST_HISTORY)
