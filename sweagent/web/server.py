@@ -52,7 +52,7 @@ class MainUpdateHook(MainHook):
         self._wu = wu
 
     def on_start(self):
-        self._wu.up_agent(title="Started", message="Environment container initialized")
+        self._wu.up_env(message="Environment container initialized", format="text")
     
     def on_end(self):
         self._wu.up_agent(title="Ended", message="The run has ended")
