@@ -563,12 +563,12 @@ class TogetherModel(BaseModel):
         """
         # Perform Together API call
         prompt = self.history_to_messages(history)
+        # Anthropic's count_tokens is convenient because it caches and utilizes huggingface/tokenizers, so we will use.
+        max_tokens_to_sample = self.model_metadata["max_context"] - Anthropic().count_tokens(prompt)
         completion = together.Complete.create(
             model=self.api_model,
             prompt=prompt,
-            # Input token count + max_tokens needs to be less than the context length of the model.
-            # But it is difficult to calculate input token before request.
-            max_tokens=None,
+            max_tokens=max_tokens_to_sample,
             stop=["<human>"],
             temperature=self.args.temperature,
             top_p=self.args.top_p,
