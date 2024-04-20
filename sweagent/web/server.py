@@ -7,6 +7,7 @@ from sweagent import CONFIG_DIR, PACKAGE_DIR
 from sweagent.agent.agents import AgentArguments, AgentHook
 from sweagent.agent.models import ModelArguments
 from sweagent.environment.swe_env import EnvironmentArguments
+import sweagent.environment.utils as env_utils
 from flask_socketio import SocketIO
 
 # baaaaaaad
@@ -26,36 +27,71 @@ def index():
 def handle_connect():
     print('Client connected')
 
+
+
+class WebUpdate:
+    def up_agent(
+            self,
+            title: str,
+            message: str,
+            format: str = "text",
+    ):
+        socketio.emit('update', {'feed': 'agent',  'title': title, 'message': message, 'format': format})
+    
+    def up_env(
+            self,
+            message: str,
+            format: str = "markdown",
+    ):
+        socketio.emit('update', {'feed': 'env',  'title': '', 'message': message, 'format': format})
+
+
+
 class MainUpdateHook(MainHook):
+    def __init__(self, wu: WebUpdate):
+        self._wu = wu
+
     def on_start(self):
-        socketio.emit('update', {'event': 'started'})
+        self._wu.up_agent(title="Started", message="Environment container initialized")
     
     def on_end(self):
-        socketio.emit('update', {'event': 'finished'})
+        self._wu.up_agent(title="Ended", message="The run has ended")
 
     def on_instance_completed(self, *, info, trajectory):
-        socketio.emit('update', {'event': 'instance_completed', **info})
+        self._wu.up_agent(title="Instance completed", message=f"Instance completed")
 
 
 class AgentUpdateHook(AgentHook):
+    def __init__(self, wu: WebUpdate):
+        self._wu = wu
+        self._sub_action = None
+
     def on_actions_generated(self, *, thought: str, action: str, output: str):
-        socketio.emit('update', {'event': 'actions_generated', 'thought': thought, 'action': action})
+        self._wu.up_agent(title="Thought", message=thought, format="markdown")
     
-    def on_sub_action_started(self, *, sub_action: str):
-        socketio.emit('update', {'event': 'sub_action_started', 'sub_action': sub_action})
+    def on_sub_action_started(self, *, sub_action: dict):
+        msg = f"```bash\n{sub_action['action']}\n```"
+        self._sub_action = sub_action["action"].strip()
+        self._wu.up_env(message=msg)
     
     def on_sub_action_executed(self, *, obs: str, done: bool):
-        socketio.emit('update', {'event': 'sub_action_executed', 'obs': obs, 'done': done})
+        language = ""
+        if self._sub_action == "submit":
+            language = "diff"
+        msg = f"```{language}\n{obs}\n```"
+        self._wu.up_env(message=msg)
 
 
 @app.route('/run', methods=['GET'])
 def run():
-    data_path = request.args.get("data_path", "")
-    test_run = 'test_run' in request.args
+    data_path = request.args["data_path"]
+    test_run = request.args["test_run"].lower() == "true"
     model_name = "gpt4"
     if test_run:
+        print(">>>>>>>>>> test_run")
         os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"] = "1"
         model_name = "instant_empty_submit"
+        env_utils.START_UP_DELAY = 1
     defaults = ScriptArguments(
         suffix="",
         environment=EnvironmentArguments(
@@ -79,8 +115,9 @@ def run():
         actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
     )
     main = Main(defaults)
-    main.add_hook(MainUpdateHook())
-    main.agent.add_hook(AgentUpdateHook())
+    wu = WebUpdate()
+    main.add_hook(MainUpdateHook(wu))
+    main.agent.add_hook(AgentUpdateHook(wu))
     thread = threading.Thread(target=main.main)
     thread.start()
     return 'Commands are being executed', 202
