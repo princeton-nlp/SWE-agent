@@ -18,5 +18,7 @@
     max-width: 50%; /* Optionally limit the feed width */
     overflow-y: auto; /* Adds scroll bar if feed gets too long */
     height: 500px; /* Fixed height for feed */
-    border: 1px solid black;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
 }
