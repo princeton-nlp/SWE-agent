@@ -5,7 +5,7 @@ from typing import Any, Dict
 import pytest
 
 from run import ActionsArguments, Main, MainHook, OpenPRHook, ScriptArguments
-from sweagent.agent.agents import Agent, AgentArguments
+from sweagent.agent.agents import Agent, AgentArguments, AgentHook
 from sweagent.agent.models import ModelArguments
 from sweagent.environment.swe_env import EnvironmentArguments, SWEEnv
 
@@ -143,11 +143,17 @@ class CreateFakeLogFile(MainHook):
 def test_existing_corrupted_args(test_script_args):
     main = Main(test_script_args)
     main.add_hook(CreateFakeLogFile())
-    main.main
+    main.main()
 
 
 
 def test_main_hook(test_script_args):
     main = Main(test_script_args)
     main.add_hook(MainHook())
-    main.main
+    main.main()
+
+
+def test_agent_with_hook(test_script_args):
+    main = Main(test_script_args)
+    main.agent.add_hook(AgentHook())
+    main.main()

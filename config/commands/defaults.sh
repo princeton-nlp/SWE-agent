@@ -135,7 +135,7 @@ scroll_down() {
 }
 
 # @yaml
-# signature: scroll_down
+# signature: scroll_up
 # docstring: moves the window down {WINDOW} lines
 scroll_up() {
     if [ -z "$CURRENT_FILE" ]
