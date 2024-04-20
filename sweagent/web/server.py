@@ -4,7 +4,7 @@ import threading
 import sys
 
 from sweagent import CONFIG_DIR, PACKAGE_DIR
-from sweagent.agent.agents import AgentArguments
+from sweagent.agent.agents import AgentArguments, AgentHook
 from sweagent.agent.models import ModelArguments
 from sweagent.environment.swe_env import EnvironmentArguments
 from flask_socketio import SocketIO
@@ -26,7 +26,7 @@ def index():
 def handle_connect():
     print('Client connected')
 
-class WebUpdateRunHook(MainHook):
+class MainUpdateHook(MainHook):
     def on_start(self):
         socketio.emit('update', {'event': 'started'})
     
@@ -35,6 +35,17 @@ class WebUpdateRunHook(MainHook):
 
     def on_instance_completed(self, *, info, trajectory):
         socketio.emit('update', {'event': 'instance_completed', **info})
+
+
+class AgentUpdateHook(AgentHook):
+    def on_actions_generated(self, *, thought: str, action: str, output: str):
+        socketio.emit('update', {'event': 'actions_generated', 'thought': thought, 'action': action})
+    
+    def on_sub_action_started(self, *, sub_action: str):
+        socketio.emit('update', {'event': 'sub_action_started', 'sub_action': sub_action})
+    
+    def on_sub_action_executed(self, *, obs: str, done: bool):
+        socketio.emit('update', {'event': 'sub_action_executed', 'obs': obs, 'done': done})
 
 
 @app.route('/run', methods=['GET'])
@@ -68,11 +79,12 @@ def run():
         actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
     )
     main = Main(defaults)
-    main.add_hook(WebUpdateRunHook())
+    main.add_hook(MainUpdateHook())
+    main.agent.add_hook(AgentUpdateHook())
     thread = threading.Thread(target=main.main)
     thread.start()
     return 'Commands are being executed', 202
 
 
 if __name__ == "__main__":
-    socketio.run(app, port=5001)
+    socketio.run(app, port=5001, debug=True)
