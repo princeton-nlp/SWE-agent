@@ -1,27 +1,39 @@
-function addMessageToFeed(feedID, title, text) {
+function addMessageToFeed(feedID, title, text, format) {
     console.log("in addMessageToFeed");
     const feed = document.getElementById(feedID);
     const messageBlock = document.createElement('div');
     messageBlock.className = 'message';
 
-    const messageTitle = document.createElement('h4');
-    messageTitle.textContent = title;
+    if ( title != null && title.length > 0 ) {
+        const messageTitle = document.createElement('h4');
+        messageTitle.textContent = title;
+        messageBlock.appendChild(messageTitle);
+    }
 
-    const messageText = document.createElement('p');
-    messageText.textContent = text;
+    let messageText;
+    if ( format == "text" ) {
+        messageText = document.createElement('p');
+        messageText.textContent = text;
+    }
+    else if ( format == "markdown" ) {
+        messageText = document.createElement('md-block');
+        messageText.textContent = text;
+    }
+    else {
+        console.error("Unknown format: " + format);
+    }
 
-    messageBlock.appendChild(messageTitle);
     messageBlock.appendChild(messageText);
 
     feed.appendChild(messageBlock);
+    feed.scrollTop = feed.scrollHeight;
 }
 
 
 document.addEventListener('DOMContentLoaded', function() {
     const socket = io();
     socket.on('update', function(data) {
-        console.log("update");
-        addMessageToFeed('agentFeed', data["event"], JSON.stringify(data));
-        addMessageToFeed('envFeed', data["event"], JSON.stringify(data));
+        feed = data["feed"] + "Feed";
+        addMessageToFeed(feed, data["title"], data["message"], data["format"]);
     });
 });
