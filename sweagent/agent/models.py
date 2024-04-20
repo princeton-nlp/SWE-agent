@@ -304,7 +304,7 @@ class Claude2Mixin:
         Query the Anthropic API with the given `history` and return the response.
         """
         prompt = self.claude2_history_to_messages(history)
-        input_tokens = Anthropic().count_tokens(prompt)  # Work well without API_KEY?
+        input_tokens = Anthropic().count_tokens(prompt)
 
         if model.model_metadata.get("max_tokens_to_sample"):
             max_tokens_to_sample = model.model_metadata["max_tokens_to_sample"]
