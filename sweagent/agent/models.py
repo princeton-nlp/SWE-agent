@@ -234,9 +234,8 @@ class OpenAIModel(BaseModel):
             api_base_url: Optional[str] = cfg.get("OPENAI_API_BASE_URL", None)
             self.client = OpenAI(api_key=cfg["OPENAI_API_KEY"], base_url=api_base_url)
 
-    @staticmethod
     def history_to_messages(
-        history: list[dict[str, str]], is_demonstration: bool = False
+        self, history: list[dict[str, str]], is_demonstration: bool = False
     ) -> Union[str, list[dict[str, str]]]:
         """
         Create `messages` by filtering out all keys except for role/content per `history` turn
@@ -279,9 +278,9 @@ class OpenAIModel(BaseModel):
 
 
 class Claude2Mixin:
-    @staticmethod
+
     def claude2_history_to_messages(
-        history: list[dict[str, str]], is_demonstration: bool = False
+        self, history: list[dict[str, str]], is_demonstration: bool = False
     ) -> Union[str, list[dict[str, str]]]:
         """
         Create `prompt` by filtering out all keys except for role/content per `history` turn
@@ -329,9 +328,8 @@ class Claude2Mixin:
 class Claude3Mixin:
     api: Union[Anthropic, AnthropicBedrock]
 
-    @staticmethod
     def claude3_history_to_messages(
-        history: list[dict[str, str]], is_demonstration: bool = False
+        self, history: list[dict[str, str]], is_demonstration: bool = False
     ) -> Union[str, list[dict[str, str]]]:
         """
         Create `prompt` by filtering out all keys except for role/content per `history` turn
