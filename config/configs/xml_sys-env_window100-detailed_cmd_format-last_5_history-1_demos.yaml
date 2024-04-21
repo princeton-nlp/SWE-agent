@@ -18,9 +18,9 @@ system_template: |-
   Your output should always include _one_ discussion and _one_ command field EXACTLY as in the following example:
   DISCUSSION
   First I'll start by using ls to see what files are in the current directory. Then maybe we can look at some relevant files to see what they look like.
-  ```
+  <command>
   ls -a
-  ```
+  </command>
 
   You should only include a *SINGLE* command in the command section and then wait for a response from the shell before continuing with more discussion and commands. Everything you include in the DISCUSSION section will be saved for future reference.
   If you'd like to issue two commands at once, PLEASE DO NOT DO THAT! Please instead first submit just the first command, and then after receiving a response you'll be able to issue the second command. 
@@ -37,7 +37,7 @@ instance_template: |-
   When you're satisfied with all of the changes you've made, you can submit your changes to the code base by simply running the submit command.
   Note however that you cannot use any interactive session commands (e.g. python, vim) in this environment, but you can write scripts and run them. E.g. you can write a python script and then run it with `python <script_name>.py`.
 
-  NOTE ABOUT THE EDIT COMMAND: Indentation really matters! When editing a file, make sure to insert appropriate indentation before each line! 
+  NOTE ABOUT THE EDIT COMMAND: Indentation really matters! When editing a file, make sure to insert appropriate indentation before each line!
 
   IMPORTANT TIPS:
   1. Always start by trying to replicate the bug that the issues discusses. 
@@ -72,13 +72,7 @@ next_step_no_output_template: |-
   (Open file: {open_file})
   (Current directory: {working_dir})
   bash-$
-demonstration_template: |
-  Here is a demonstration of how to correctly accomplish this task.
-  It is included to show you how to correctly use the interface.
-  You do not need to follow exactly what is done in the demonstration.
-  --- DEMONSTRATION ---
-  {demonstration}
-  --- END OF DEMONSTRATION ---
+put_demos_in_history: true
 state_command:
   name: state
   code: |
@@ -90,7 +84,7 @@ state_command:
           echo '{"open_file": "'$(realpath $CURRENT_FILE)'", "working_dir": "'$working_dir'"}';
       fi
     };
-parse_function: ThoughtActionParser
+parse_function: XMLThoughtActionParser
 env_variables:
   WINDOW: 100
   OVERLAP: 2
@@ -107,4 +101,4 @@ command_files:
 parse_command: ParseCommandDetailed
 history_processor: Last5Observations
 demonstrations:
-- trajectories/demonstrations/replay__marshmallow-code__marshmallow-1867__default_sys-env_window100__t-0.20__p-0.95__c-2.00__install-1/marshmallow-code__marshmallow-1867.traj
+- trajectories/demonstrations/replay__marshmallow-code__marshmallow-1867__xml_sys-env_window100__t-0.20__p-0.95__c-2.00__install-1/marshmallow-code__marshmallow-1867.traj
