@@ -2,10 +2,25 @@
 <html>
 <head>
     <title>Run Command</title>
-    <link rel= "stylesheet" type= "text/css" href="{{ url_for('static',filename='styles/mainpage.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/mainpage.css') }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
-    <script src="{{ url_for('static',filename='scripts/mainscript.js') }}"> </script>
+    <script src="{{ url_for('static',filename='scripts/mainscript.js') }}"></script>
     <script type="module" src="https://md-block.verou.me/md-block.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#dataForm').on('submit', function(event) {
+                event.preventDefault();
+                const dataPath = $('#data_path').val();
+                const testRun = $('#test_run').is(':checked');
+                $.get(`/run`, { data_path: dataPath, test_run: testRun }, function(response) {
+                    $('#responseMessage').text(response);
+                }).fail(function(error) {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    </script>
 </head>
 <body>
     <h1>Start run</h1>
@@ -18,20 +33,6 @@
     </form>
     <div id="responseMessage"></div>
     <div id="update"></div>
-    <script>
-        document.getElementById('dataForm').addEventListener('submit', function(event) {
-            console.log("submit!");
-            event.preventDefault();
-            var dataPath = document.getElementById('data_path').value;
-            var testRun = document.getElementById('test_run').checked;
-            fetch(`/run?asdf=true&data_path=${encodeURIComponent(dataPath)}&test_run=${testRun}`, {
-                method: 'GET'
-            })
-            .then(response => response.text())
-            .then(text => document.getElementById('responseMessage').innerText = text)
-            .catch(error => console.error('Error:', error));
-        });
-    </script>
     <h2>Trajectory</h2>
     <div id="container">
         <div id="agentFeed">
