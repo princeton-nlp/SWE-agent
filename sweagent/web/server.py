@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from flask import Flask, render_template, request
 import threading
 import sys
@@ -30,20 +31,27 @@ def handle_connect():
 
 
 class WebUpdate:
+    def _emit(self, event, data):
+        socketio.emit(event, data)
+
+
     def up_agent(
             self,
-            title: str,
             message: str,
-            format: str = "text",
+            title: str = "",
+            format: str = "markdown",
+            thought_idx: Optional[int] =None,
     ):
-        socketio.emit('update', {'feed': 'agent',  'title': title, 'message': message, 'format': format})
+        self._emit('update', {'feed': 'agent',  'title': title, 'message': message, 'format': format, 'thought_idx': thought_idx})
     
     def up_env(
             self,
             message: str,
             format: str = "markdown",
+            title="",
+            thought_idx: Optional[int] =None,
     ):
-        socketio.emit('update', {'feed': 'env',  'title': '', 'message': message, 'format': format})
+        self._emit('update', {'feed': 'env',  'title': title, 'message': message, 'format': format, 'thought_idx': thought_idx})
 
 
 
@@ -55,31 +63,54 @@ class MainUpdateHook(MainHook):
         self._wu.up_env(message="Environment container initialized", format="text")
     
     def on_end(self):
-        self._wu.up_agent(title="Ended", message="The run has ended")
+        self._wu.up_agent(message="The run has ended", format="text")
 
     def on_instance_completed(self, *, info, trajectory):
-        self._wu.up_agent(title="Instance completed", message=f"Instance completed")
-
+        self._wu.up_agent(message=f"Instance completed")
+    
 
 class AgentUpdateHook(AgentHook):
     def __init__(self, wu: WebUpdate):
         self._wu = wu
         self._sub_action = None
+        self._thought_idx = 0
 
     def on_actions_generated(self, *, thought: str, action: str, output: str):
-        self._wu.up_agent(title="Thought", message=thought, format="markdown")
+        self._thought_idx += 1
+        thought, _, discussion = thought.partition("DISCUSSION")
+        self._wu.up_agent(title=f"Thought", message=thought, format="markdown", thought_idx=self._thought_idx)
+        self._wu.up_agent(title=f"Discussion", message=discussion, format="markdown", thought_idx=self._thought_idx)
     
     def on_sub_action_started(self, *, sub_action: dict):
         msg = f"```bash\n{sub_action['action']}\n```"
         self._sub_action = sub_action["action"].strip()
-        self._wu.up_env(message=msg)
+        self._wu.up_env(message=msg, title=f"Action (step {self._thought_idx})", thought_idx=self._thought_idx)
     
     def on_sub_action_executed(self, *, obs: str, done: bool):
         language = ""
         if self._sub_action == "submit":
             language = "diff"
         msg = f"```{language}\n{obs}\n```"
-        self._wu.up_env(message=msg)
+        self._wu.up_env(message=msg, thought_idx=self._thought_idx)
+        
+    def on_query_message_added(
+            self, 
+            *, 
+            role: str, 
+            content: str, 
+            agent: str, 
+            is_demo: bool = False, 
+            thought: str = "", 
+            action: str = ""
+        ):
+        if role == "assistant":
+            return
+        if thought or action:
+            return
+        if is_demo:
+            return self._wu.up_agent(title="Demo", message=content, thought_idx=self._thought_idx + 1)
+        self._wu.up_agent(title="Query", message=content, thought_idx=self._thought_idx + 1)
+
 
 
 @app.route('/run', methods=['GET'])
