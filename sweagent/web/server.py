@@ -84,7 +84,7 @@ class AgentUpdateHook(AgentHook):
     def on_sub_action_started(self, *, sub_action: dict):
         msg = f"```bash\n{sub_action['action']}\n```"
         self._sub_action = sub_action["action"].strip()
-        self._wu.up_env(message=msg, title=f"Action (step {self._thought_idx})", thought_idx=self._thought_idx)
+        self._wu.up_env(message=msg, title=f"Action", thought_idx=self._thought_idx)
     
     def on_sub_action_executed(self, *, obs: str, done: bool):
         language = ""
