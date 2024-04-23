@@ -12,6 +12,12 @@ function App() {
   const [responseMessage, setResponseMessage] = useState('');
   const [agentFeed, setAgentFeed] = useState([]);
   const [envFeed, setEnvFeed] = useState([]);
+  const [highlightedStep, setHighlightedStep] = useState(null);
+
+  const handleMouseEnter = (step) => {
+    setHighlightedStep(step);
+  };
+
 
   // Handle form submission
   const handleSubmit = async (event) => {
@@ -30,7 +36,7 @@ function App() {
   React.useEffect(() => {
     socket.on('update', (data) => {
       const updateFeed = data.feed === 'agent' ? setAgentFeed : setEnvFeed;
-      updateFeed(prevMessages => [...prevMessages, { title: data.title, message: data.message, format: data.format }]);
+      updateFeed(prevMessages => [...prevMessages, { title: data.title, message: data.message, format: data.format, step: data.thought_idx }]);
     });
   }, []);
 
@@ -47,16 +53,16 @@ function App() {
       <div>{responseMessage}</div>
       <h2>Trajectory</h2>
       <div id="container">
-        <Feed feed={agentFeed} title="Agent Feed" />
-        <Feed feed={envFeed} title="Environment Feed" />
+        <Feed feed={agentFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter}  title="Agent Feed" />
+        <Feed feed={envFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter}  title="Environment Feed" />
       </div>
     </div>
   );
 }
 
-const Feed = ({ feed, title }) => {
+const Feed = ({ feed, title, highlightedStep, handleMouseEnter }) => {
   const feedRef = useRef(null); // Create a ref for the feed container
-
+  
   // Scroll to the bottom of the feed whenever the feed data changes
   useEffect(() => {
       if (feedRef.current) {
@@ -69,7 +75,10 @@ const Feed = ({ feed, title }) => {
     <div id={`${title.toLowerCase().replace(' ', '')}`} ref={feedRef} >
       <h3>{title}</h3>
       {feed.map((item, index) => (
-        <div key={index} className={`message ${item.format}`}>
+        <div key={index} 
+          className={`message ${item.format} step${item.step} ${highlightedStep === item.step ? 'highlight' : ''}`}
+          onMouseEnter={() => handleMouseEnter(item.step)}
+        >
           <h4>{item.title}</h4>
           {item.message}
         </div>
