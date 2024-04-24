@@ -15,6 +15,8 @@ function App() {
   const [envFeed, setEnvFeed] = useState([]);
   const [highlightedStep, setHighlightedStep] = useState(null);
 
+  const agentFeedRef = useRef(null);
+  const envFeedRef = useRef(null);
 
   axios.defaults.baseURL = url;
 
@@ -63,26 +65,41 @@ function App() {
       <div>{responseMessage}</div>
       <h2>Trajectory</h2>
       <div id="container">
-        <Feed feed={agentFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter}  title="Agent Feed" />
-        <Feed feed={envFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter}  title="Environment Feed" />
+        <Feed feed={agentFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={agentFeedRef} otherRef={envFeedRef}  title="Agent Feed" />
+        <Feed feed={envFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={envFeedRef} otherRef={agentFeedRef} title="Environment Feed" />
       </div>
     </div>
   );
 }
 
-const Feed = ({ feed, title, highlightedStep, handleMouseEnter }) => {
-  const feedRef = useRef(null); // Create a ref for the feed container
-  
+const Feed = ({ feed, title, highlightedStep, handleMouseEnter, selfRef, otherRef }) => {
   // Scroll to the bottom of the feed whenever the feed data changes
   useEffect(() => {
-      if (feedRef.current) {
-          feedRef.current.scrollTop = feedRef.current.scrollHeight;
+      if (selfRef.current) {
+          selfRef.current.scrollTop = selfRef.current.scrollHeight;
       }
-  }, [feed]); // Dependency array includes 'feed' to trigger the effect when it changes
+  }, [feed]);
+
+  // Scroll to the first message of the highlighted step from the other feed
+  useEffect(() => {
+    if (highlightedStep && otherRef.current) {
+      const firstStepMessage = [...otherRef.current.children].find(
+        child => child.classList.contains(`step${highlightedStep}`)
+      );
+      if (firstStepMessage) {
+        window.requestAnimationFrame(() => {
+          otherRef.current.scrollTo({
+            top: firstStepMessage.offsetTop - otherRef.current.offsetTop,
+            behavior: 'smooth'
+          });
+        });
+      }
+    }
+  }, [highlightedStep, otherRef]);
 
 
   return (
-    <div id={`${title.toLowerCase().replace(' ', '')}`} ref={feedRef} >
+    <div id={`${title.toLowerCase().replace(' ', '')}`} ref={selfRef} >
       <h3>{title}</h3>
       {feed.map((item, index) => (
         <div key={index} 
