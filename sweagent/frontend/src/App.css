@@ -64,3 +64,12 @@
 .highlight {
   background-color: #eac2c2;
 }
+
+#log { 
+  height: 300px;
+  max-width: 50%;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  overflow-y: auto;
+}

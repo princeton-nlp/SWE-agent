@@ -1,5 +1,6 @@
 import ctypes
 import inspect
+import re
 import threading
 
 
@@ -79,3 +80,21 @@ class ThreadWithExc(threading.Thread):
         thread represented by this instance.
         """
         _async_raise( self._get_my_tid(), exctype )
+
+
+# From Martijn Pieters at https://stackoverflow.com/a/14693789
+# 7-bit C1 ANSI sequences
+_ANSI_ESCAPE = re.compile(r'''
+    \x1B  # ESC
+    (?:   # 7-bit C1 Fe (except CSI)
+        [@-Z\\-_]
+    |     # or [ for CSI, followed by a control sequence
+        \[
+        [0-?]*  # Parameter bytes
+        [ -/]*  # Intermediate bytes
+        [@-~]   # Final byte
+    )
+''', re.VERBOSE)
+
+def strip_ansi_sequences(string: str) -> str:
+    return _ANSI_ESCAPE.sub('', string)

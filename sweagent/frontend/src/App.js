@@ -13,6 +13,7 @@ function App() {
   const [agentFeed, setAgentFeed] = useState([]);
   const [envFeed, setEnvFeed] = useState([]);
   const [highlightedStep, setHighlightedStep] = useState(null);
+  const [logs, setLogs] = useState('');
 
   const agentFeedRef = useRef(null);
   const envFeedRef = useRef(null);
@@ -27,9 +28,10 @@ function App() {
   // Handle form submission
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setAgentFeed([]);
+    setEnvFeed([]); 
+    setLogs('');
     try {
-      setAgentFeed([]); // Clear the agent feed messages
-      setEnvFeed([]); // Clear the environment feed messages
       await axios.get(`/run`, { params: { data_path: dataPath, test_run: testRun } });
     } catch (error) {
       console.error('Error:', error);
@@ -53,10 +55,17 @@ function App() {
       updateFeed(prevMessages => [...prevMessages, { title: data.title, message: data.message, format: data.format, step: data.thought_idx }]);
     };
 
+    const handleLogMessage = (data) => {
+      console.log("Log message: ", data.message);
+      setLogs(prevLogs => prevLogs + data.message);
+    }
+
     socket.on('update', handleUpdate);
+    socket.on('log_message', handleLogMessage);
 
     return () => {
         socket.off('update', handleUpdate);
+        socket.off('log_message', handleLogMessage);
     };
   }, []);
 
@@ -75,6 +84,10 @@ function App() {
       <div id="container">
         <Feed feed={agentFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={agentFeedRef} otherRef={envFeedRef}  title="Agent Feed" />
         <Feed feed={envFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={envFeedRef} otherRef={agentFeedRef} title="Environment Feed" />
+      </div>
+      <div id="log">
+        <h3>Logs</h3>
+        <pre>{logs}</pre>
       </div>
     </div>
   );

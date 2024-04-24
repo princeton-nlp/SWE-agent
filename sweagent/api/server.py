@@ -1,3 +1,4 @@
+from contextlib import redirect_stderr, redirect_stdout
 import os
 from typing import Dict
 from flask import Flask, render_template, request, make_response
@@ -6,13 +7,14 @@ import sys
 from sweagent import CONFIG_DIR, PACKAGE_DIR
 from sweagent.agent.agents import AgentArguments
 from sweagent.agent.models import ModelArguments
-from sweagent.api.utils import ThreadWithExc
+from sweagent.api.utils import ThreadWithExc, strip_ansi_sequences
 from sweagent.environment.swe_env import EnvironmentArguments
 from sweagent.api.hooks import WebUpdate, MainUpdateHook, AgentUpdateHook
 import sweagent.environment.utils as env_utils
 from flask_socketio import SocketIO
 from flask_cors import CORS
 from flask import session
+import io
 from uuid import uuid4
 
 # baaaaaaad
@@ -26,6 +28,7 @@ socketio = SocketIO(app, cors_allowed_origins='*')
 THREADS: Dict[str, "MainThread"] = {}
 
 
+
 def ensure_session_id_set():
     """Ensures a session ID is set for this user"""
     session_id = session.get('session_id', None)
@@ -35,13 +38,29 @@ def ensure_session_id_set():
     return session_id
 
 
+class StreamToSocketIO(io.StringIO):
+    def __init__(self, socketio, ):
+        super().__init__()
+        self._socketio = socketio
+
+    def write(self, message):
+        message = strip_ansi_sequences(message)
+        self._socketio.emit("log_message", {'message': message})
+
+    def flush(self):
+        pass
+
+
 class MainThread(ThreadWithExc):
     def __init__(self, main: Main):
         super().__init__()
         self._main = main
     
     def run(self) -> None:
-        self._main.main()
+        # fixme: This actually redirects all output from all threads to the socketio, which is not what we want
+        with redirect_stdout(StreamToSocketIO(socketio)):
+            with redirect_stderr(StreamToSocketIO(socketio)):
+                self._main.main()
     
     def stop(self):
         self.raise_exc(SystemExit)
