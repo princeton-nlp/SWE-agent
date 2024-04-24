@@ -10,7 +10,6 @@ const socket = io(url);
 function App() {
   const [dataPath, setDataPath] = useState('https://github.com/klieret/swe-agent-test-repo/issues/1');
   const [testRun, setTestRun] = useState(true);
-  const [responseMessage, setResponseMessage] = useState('');
   const [agentFeed, setAgentFeed] = useState([]);
   const [envFeed, setEnvFeed] = useState([]);
   const [highlightedStep, setHighlightedStep] = useState(null);
@@ -29,14 +28,23 @@ function App() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      const response = await axios.get(`/run`, { params: { data_path: dataPath, test_run: testRun } });
-      setResponseMessage(response.data);
       setAgentFeed([]); // Clear the agent feed messages
       setEnvFeed([]); // Clear the environment feed messages
+      await axios.get(`/run`, { params: { data_path: dataPath, test_run: testRun } });
     } catch (error) {
       console.error('Error:', error);
     }
   };
+
+
+  const handleStop = async () => {
+    try {
+        const response = await axios.get('/stop');
+        console.log(response.data);
+    } catch (error) {
+        console.error('Error stopping:', error);
+    }
+};
 
   // Use effect to listen to socket updates
   React.useEffect(() => {
@@ -62,7 +70,7 @@ function App() {
         <input type="checkbox" checked={testRun} onChange={(e) => setTestRun(e.target.checked)} />
         <button type="submit">Run</button>
       </form>
-      <div>{responseMessage}</div>
+      <button onClick={handleStop}>Stop Computation</button>
       <h2>Trajectory</h2>
       <div id="container">
         <Feed feed={agentFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={agentFeedRef} otherRef={envFeedRef}  title="Agent Feed" />
