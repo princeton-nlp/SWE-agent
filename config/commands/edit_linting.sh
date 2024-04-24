@@ -83,7 +83,7 @@ edit() {
 
         echo "File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary."
     else
-        echo "Your proposed edit has introduced new syntax error(s). Please understand the fixes and retry your edit commmand."
+        echo "Your proposed edit has introduced new syntax error(s). Please read this error message carefully and then retry editing the file."
         echo ""
         echo "ERRORS:"
         _split_string "$lint_output"
