@@ -1,6 +1,6 @@
 import os
 from typing import Optional
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, make_response
 import threading
 import sys
 
@@ -113,10 +113,10 @@ class AgentUpdateHook(AgentHook):
             return self._wu.up_agent(title="Demo", message=content, thought_idx=self._thought_idx + 1)
         self._wu.up_agent(title="Query", message=content, thought_idx=self._thought_idx + 1)
 
-
-
-@app.route('/run', methods=['GET'])
+@app.route('/run', methods=['GET', 'OPTIONS'])
 def run():
+    if request.method == "OPTIONS":  # CORS preflight
+        return _build_cors_preflight_response()
     data_path = request.args["data_path"]
     test_run = request.args["test_run"].lower() == "true"
     model_name = "gpt4"
@@ -155,6 +155,12 @@ def run():
     thread.start()
     return 'Commands are being executed', 202
 
+def _build_cors_preflight_response():
+    response = make_response()
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add('Access-Control-Allow-Headers', "*")
+    response.headers.add('Access-Control-Allow-Methods', "*")
+    return response
 
 if __name__ == "__main__":
     socketio.run(app, port=5000, debug=True)

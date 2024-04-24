@@ -3,8 +3,9 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import './App.css';
 
+const url = ''; // Will get this from .env 
 // Connect to Socket.io
-const socket = io(); // Adjust the URL based on your Flask server
+const socket = io(url);
 
 function App() {
   const [dataPath, setDataPath] = useState('https://github.com/klieret/swe-agent-test-repo/issues/1');
@@ -13,6 +14,9 @@ function App() {
   const [agentFeed, setAgentFeed] = useState([]);
   const [envFeed, setEnvFeed] = useState([]);
   const [highlightedStep, setHighlightedStep] = useState(null);
+
+
+  axios.defaults.baseURL = url;
 
   const handleMouseEnter = (step) => {
     setHighlightedStep(step);
