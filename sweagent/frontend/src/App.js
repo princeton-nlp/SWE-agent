@@ -38,10 +38,16 @@ function App() {
 
   // Use effect to listen to socket updates
   React.useEffect(() => {
-    socket.on('update', (data) => {
+    const handleUpdate = (data) => {
       const updateFeed = data.feed === 'agent' ? setAgentFeed : setEnvFeed;
       updateFeed(prevMessages => [...prevMessages, { title: data.title, message: data.message, format: data.format, step: data.thought_idx }]);
-    });
+    };
+
+    socket.on('update', handleUpdate);
+
+    return () => {
+        socket.off('update', handleUpdate);
+    };
   }, []);
 
   return (
