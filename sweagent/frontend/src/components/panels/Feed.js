@@ -1,52 +1,42 @@
 import React, { useEffect } from 'react';
+import Message from '../Message';
 
-const Feed = ({ feed, title, highlightedStep, handleMouseEnter, selfRef, otherRef, isComputing }) => {
-    // Scroll to the bottom of the feed whenever the feed data changes
-    useEffect(() => {
-        if (selfRef.current) {
-            selfRef.current.scrollTop = selfRef.current.scrollHeight;
-        }
-    }, [feed, selfRef]);
-  
-    // Scroll to the first message of the highlighted step from the other feed
-    useEffect(() => {
-      if (!isComputing && highlightedStep && otherRef.current) {
-        const firstStepMessage = [...otherRef.current.children].find(
-          child => child.classList.contains(`step${highlightedStep}`)
-        );
-        if (firstStepMessage) {
-          window.requestAnimationFrame(() => {
-            otherRef.current.scrollTo({
-              top: firstStepMessage.offsetTop - otherRef.current.offsetTop,
-              behavior: 'smooth'
-            });
-          });
-        }
+
+function useScrollToBottom(feed, ref) {
+  useEffect(() => {
+      if (ref.current) {
+          ref.current.scrollTop = ref.current.scrollHeight;
       }
-    }, [highlightedStep, otherRef, isComputing]);
-  
-  
-    const feedID = title.toLowerCase().replace(' ', '');
-  
+  }, [feed, ref]);
+}
+
+const Feed = ({ feed, id, title, highlightedStep, handleMouseEnter, selfRef}) => {
+    useScrollToBottom(feed, selfRef);
+
+    const feedID = id + "Feed";
+
     return (
-      <div id={feedID} ref={selfRef} >
-        <h3>{title}</h3>
-        {feed.map((item, index) => {
-          const stepClass = item.step !== null ? `step${item.step}` : '';
-          const highlightClass = item.step !== null && highlightedStep === item.step ? 'highlight' : '';
-          return (
-            <div key={index} 
-              className={`message ${item.format} ${stepClass} ${highlightClass}`}
-              onMouseEnter={() => handleMouseEnter(item.step)}
-            >
-              <h4>{item.title}</h4>
-              {item.message}
+        <div id={feedID} className={feedID}>
+            <div id="label">
+              {/* <img src={workspaceLogo} alt="workspace" /> */}
+              <span>{title}</span>
             </div>
-          );
-        }
-        )}
-      </div>
-    )
+            <div className="scrollableDiv"  ref={selfRef} >
+              <div className="innerDiv">
+                {feed.map((item, index) => (
+                    <Message
+                        key={index}
+                        item={item}
+                        handleMouseEnter={handleMouseEnter}
+                        isHighlighted={item.step !== null && highlightedStep === item.step}
+                        feedRef={selfRef}
+                    />
+                ))}
+                <div style={{ clear: "both", marginTop: '1em' }}/>
+              </div>
+            </div>
+        </div>
+    );
 };
 
 export default Feed;

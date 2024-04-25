@@ -1,0 +1,10 @@
+.message {
+    background-color: #eee;
+    border-radius: 0 1em 1em 1em;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 0.25em 1em;
+  }
+  
+  .highlight {
+    background-color: #eac2c2;
+  }

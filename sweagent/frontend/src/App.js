@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
-import './App.css';
+import './static/app.css';
 import Feed from './components/panels/Feed';
 
 const url = ''; // Will get this from .env 
@@ -23,9 +23,31 @@ function App() {
 
   axios.defaults.baseURL = url;
 
-  const handleMouseEnter = (step) => {
+
+  function scrollToHighlightedStep(highlightedStep, ref) {
+    if (highlightedStep && ref.current) {
+        console.log('Scrolling to highlighted step', highlightedStep, ref.current);
+        const firstStepMessage = ref.current.querySelector(`.step${highlightedStep}`);
+        if (firstStepMessage) {
+            window.requestAnimationFrame(() => {
+                ref.current.scrollTo({
+                    top: firstStepMessage.offsetTop - ref.current.offsetTop,
+                    behavior: 'smooth'
+                });
+            });
+        }
+    }
+  }
+
+  function getOtherFeed(feedRef) {
+    return feedRef === agentFeedRef ? envFeedRef : agentFeedRef;
+  }
+
+  const handleMouseEnter = (item, feedRef) => {
+    const highlightedStep = item.step;
     if (!isComputing) {
-      setHighlightedStep(step);
+      setHighlightedStep(highlightedStep);
+      scrollToHighlightedStep(highlightedStep, getOtherFeed(feedRef));
     }
   };
 
@@ -100,13 +122,19 @@ function App() {
       </form>
       <button onClick={handleStop} disabled={!isComputing}>Stop Computation</button>
       <h2>Trajectory</h2>
-      <div id="container">
-        <Feed feed={agentFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={agentFeedRef} otherRef={envFeedRef} isComputing={isComputing}  title="Agent Feed" />
-        <Feed feed={envFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={envFeedRef} otherRef={agentFeedRef} isComputing={isComputing} title="Environment Feed" />
-      </div>
-      <div id="log" ref={logsRef}>
-        <h3>Logs</h3>
-        <pre >{logs}</pre>
+      <div className="container-demo">
+        <hr />
+        <div id="demo">
+          <hr />
+          <div className="panels">
+            <Feed feed={agentFeed} id="agent" highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={agentFeedRef} otherRef={envFeedRef} isComputing={isComputing}  title="Agent Feed" />
+            <Feed feed={envFeed} id="env" highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={envFeedRef} otherRef={agentFeedRef} isComputing={isComputing} title="Environment Feed" />
+            <div id="log" className="logPanel" ref={logsRef}>
+              <h3>Logs</h3>
+              <pre >{logs}</pre>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
