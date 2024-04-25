@@ -1,5 +1,6 @@
 from contextlib import redirect_stderr, redirect_stdout
 import os
+import time
 from typing import Dict
 from flask import Flask, render_template, request, make_response
 import sys
@@ -63,7 +64,9 @@ class MainThread(ThreadWithExc):
                 self._main.main()
     
     def stop(self):
-        self.raise_exc(SystemExit)
+        while self.is_alive():
+            self.raise_exc(SystemExit)
+            time.sleep(0.1)
 
 
 @app.route('/')
