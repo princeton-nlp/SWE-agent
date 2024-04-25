@@ -18,6 +18,7 @@ function App() {
 
   const agentFeedRef = useRef(null);
   const envFeedRef = useRef(null);
+  const logsRef = useRef(null);
 
   axios.defaults.baseURL = url;
 
@@ -49,7 +50,7 @@ function App() {
     } catch (error) {
         console.error('Error stopping:', error);
     }
-};
+  };
 
   // Use effect to listen to socket updates
   React.useEffect(() => {
@@ -59,8 +60,14 @@ function App() {
     };
 
     const handleLogMessage = (data) => {
-      console.log("Log message: ", data.message);
       setLogs(prevLogs => prevLogs + data.message);
+      if (logsRef.current) {
+        
+        setTimeout(() => {
+          logsRef.current.scrollTop = logsRef.current.scrollHeight;
+          console.log('Scrolling to bottom', logsRef.current.scrollHeight);
+        }, 100);
+      }
     }
 
     const handleFinishedRun = (data) => {
@@ -94,9 +101,9 @@ function App() {
         <Feed feed={agentFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={agentFeedRef} otherRef={envFeedRef}  title="Agent Feed" />
         <Feed feed={envFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={envFeedRef} otherRef={agentFeedRef} title="Environment Feed" />
       </div>
-      <div id="log">
+      <div id="log" ref={logsRef}>
         <h3>Logs</h3>
-        <pre>{logs}</pre>
+        <pre >{logs}</pre>
       </div>
     </div>
   );
@@ -128,8 +135,10 @@ const Feed = ({ feed, title, highlightedStep, handleMouseEnter, selfRef, otherRe
   }, [highlightedStep, otherRef]);
 
 
+  const feedID = title.toLowerCase().replace(' ', '');
+
   return (
-    <div id={`${title.toLowerCase().replace(' ', '')}`} ref={selfRef} >
+    <div id={feedID} ref={selfRef} >
       <h3>{title}</h3>
       {feed.map((item, index) => (
         <div key={index} 
