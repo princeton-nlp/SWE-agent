@@ -14,6 +14,7 @@ function App() {
   const [envFeed, setEnvFeed] = useState([]);
   const [highlightedStep, setHighlightedStep] = useState(null);
   const [logs, setLogs] = useState('');
+  const [isComputing, setIsComputing] = useState(false);
 
   const agentFeedRef = useRef(null);
   const envFeedRef = useRef(null);
@@ -27,6 +28,7 @@ function App() {
 
   // Handle form submission
   const handleSubmit = async (event) => {
+    setIsComputing(true);
     event.preventDefault();
     setAgentFeed([]);
     setEnvFeed([]); 
@@ -40,6 +42,7 @@ function App() {
 
 
   const handleStop = async () => {
+    setIsComputing(false);
     try {
         const response = await axios.get('/stop');
         console.log(response.data);
@@ -60,12 +63,18 @@ function App() {
       setLogs(prevLogs => prevLogs + data.message);
     }
 
+    const handleFinishedRun = (data) => {
+      setIsComputing(false);
+    }
+
     socket.on('update', handleUpdate);
     socket.on('log_message', handleLogMessage);
+    socket.on('finish_run', handleFinishedRun);
 
     return () => {
         socket.off('update', handleUpdate);
         socket.off('log_message', handleLogMessage);
+        socket.off('finish_run', handleFinishedRun);
     };
   }, []);
 
@@ -77,9 +86,9 @@ function App() {
         <input type="text" value={dataPath} onChange={(e) => setDataPath(e.target.value)} required />
         <label htmlFor="test_run">Test run (no LM queries)</label>
         <input type="checkbox" checked={testRun} onChange={(e) => setTestRun(e.target.checked)} />
-        <button type="submit">Run</button>
+        <button type="submit" disabled={isComputing}>Run</button>
       </form>
-      <button onClick={handleStop}>Stop Computation</button>
+      <button onClick={handleStop} disabled={!isComputing}>Stop Computation</button>
       <h2>Trajectory</h2>
       <div id="container">
         <Feed feed={agentFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={agentFeedRef} otherRef={envFeedRef}  title="Agent Feed" />

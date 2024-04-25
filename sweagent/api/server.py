@@ -86,7 +86,6 @@ def run():
     test_run = request.args["test_run"].lower() == "true"
     model_name = "gpt4"
     if test_run:
-        print(">>>>>>>>>> test_run")
         os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"] = "1"
         model_name = "instant_empty_submit"
         env_utils.START_UP_DELAY = 1
@@ -119,9 +118,6 @@ def run():
     thread = MainThread(main)
     global THREADS
     THREADS[session_id] = thread
-    print("||||||||||||||||||||||||||||||||||||||||||||||")
-    print(f"Starting session {session_id} with {thread}")
-    print("||||||||||||||||||||||||||||||||||||||||||||||")
     thread.start()
     return 'Commands are being executed', 202
 

@@ -40,6 +40,10 @@ class WebUpdate:
     ):
         """Update the environment feed"""
         self._emit('update', {'feed': 'env',  'title': title, 'message': message, 'format': format, 'thought_idx': thought_idx})
+    
+    def finish_run(self):
+        """Finish the run. We use that to control which buttons are active."""
+        self._emit('finish_run', {}) 
 
 
 
@@ -53,6 +57,7 @@ class MainUpdateHook(MainHook):
     
     def on_end(self):
         self._wu.up_agent(message="The run has ended", format="text")
+        self._wu.finish_run()
 
     def on_instance_completed(self, *, info, trajectory):
         self._wu.up_agent(message=f"Instance completed")
