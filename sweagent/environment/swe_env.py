@@ -28,6 +28,7 @@ from sweagent.environment.utils import (
     get_container,
     get_gh_issue_data,
     get_instances,
+    is_swe_bench_repo,
     parse_gh_issue_url,
     read_with_timeout,
     LOGGER_NAME,
@@ -171,7 +172,7 @@ class SWEEnv(gym.Env):
         if self._github_token:
             token_prefix = f"{self._github_token}@"
         # fixme: This if statement is brittle and should probably be replaced with better logic
-        if not self.args.no_mirror and self.record["problem_statement_source"] == "swe-bench":
+        if not self.args.no_mirror and is_swe_bench_repo(self.record):
             self.logger.info(f"{self._repo_name} not found in container, cloning...")
             self.communicate_with_handling(
                 input=f"git clone https://{token_prefix}github.com/swe-bench/{self._repo_name}.git",
@@ -650,7 +651,7 @@ class SWEEnv(gym.Env):
     def _assert_environment_prerequisites(self):
         """Asserts prerequisites for environment installation."""
         assert self.record is not None  # mypy
-        if (self.record["problem_statement_source"] != "swe-bench" or self.record["repo_type"] == "local") and self.args.environment_setup is None:
+        if (not is_swe_bench_repo(self.record["problem_statement_source"]) or self.record["repo_type"] == "local") and self.args.environment_setup is None:
             self._log_warning_and_exit("install_environment is set to True, but the data path is a GitHub URL without an environment config file.")
 
     def _notify_hooks_on_install_start(self):

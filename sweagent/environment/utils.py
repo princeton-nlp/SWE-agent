@@ -646,6 +646,12 @@ def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token:
     return commit_urls
 
 
+def is_swe_bench_repo(record: Dict[str, any]):
+    if "problem_statement_source" in record:
+        return record["problem_statement_source"] == "swe-bench"
+    return False
+
+
 def remove_triple_backticks(text: str) -> str:
     return "\n".join(line.removeprefix("```") for line in text.splitlines())
 
