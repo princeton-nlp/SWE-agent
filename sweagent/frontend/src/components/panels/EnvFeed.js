@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import Message from '../Message';
+import EnvMessage from '../EnvMessage';
 
 import MacBar from '../MacBar';
 import terminalLogo from '../../assets/panel_icons/terminal.png';
@@ -31,7 +31,7 @@ const EnvFeed = ({ feed, id, title, highlightedStep, handleMouseEnter, selfRef, 
             <div className="scrollableDiv"  ref={selfRef} >
               <div className="innerDiv">
                 {feed.map((item, index) => (
-                    <Message
+                    <EnvMessage
                         key={index}
                         item={item}
                         handleMouseEnter={handleMouseEnter}

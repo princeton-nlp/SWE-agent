@@ -4,7 +4,7 @@ import PropTypes from "prop-types"; // Import PropTypes for type checking
 import ExpandIcon from "./utils/icons/ExpandIcon";
 import "../static/macbar.css";
 
-import Message from './Message';
+import Message from './AgentMessage';
 
 const MacBar = ({
   setIsTyping,

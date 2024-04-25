@@ -85,8 +85,12 @@ function App() {
   // Use effect to listen to socket updates
   React.useEffect(() => {
     const handleUpdate = (data) => {
-      const updateFeed = data.feed === 'agent' ? setAgentFeed : setEnvFeed;
-      updateFeed(prevMessages => [...prevMessages, { title: data.title, message: data.message, format: data.format, step: data.thought_idx }]);
+      if (data.feed === 'agent') {
+        setAgentFeed(prevMessages => [...prevMessages, { title: data.title, message: data.message, format: data.format, step: data.thought_idx }]);
+      }
+      else if (data.feed === "env") {
+        setEnvFeed(prevMessages => [...prevMessages, { message: data.message, type: data.type, format: data.format, step: data.thought_idx }]);
+      }
     };
 
     const handleLogMessage = (data) => {
@@ -117,18 +121,16 @@ function App() {
 
   return (
     <div>
-      <h1>Start run</h1>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="data_path">Data Path:</label>
-        <input type="text" value={dataPath} onChange={(e) => setDataPath(e.target.value)} required />
-        <label htmlFor="test_run">Test run (no LM queries)</label>
-        <input type="checkbox" checked={testRun} onChange={(e) => setTestRun(e.target.checked)} />
-        <button type="submit" disabled={isComputing}>Run</button>
-      </form>
-      <button onClick={handleStop} disabled={!isComputing}>Stop Computation</button>
-      <h2>Trajectory</h2>
       <div className="container-demo">
         <hr />
+        <form onSubmit={handleSubmit}>
+          <label htmlFor="data_path">Data Path:</label>
+          <input type="text" value={dataPath} onChange={(e) => setDataPath(e.target.value)} required />
+          <label htmlFor="test_run">Test run (no LM queries)</label>
+          <input type="checkbox" checked={testRun} onChange={(e) => setTestRun(e.target.checked)} />
+          <button type="submit" disabled={isComputing}>Run</button>
+        </form>
+        <button onClick={handleStop} disabled={!isComputing}>Stop Computation</button>
         <div id="demo">
           <hr />
           <div className="panels">

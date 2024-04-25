@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import Message from '../Message';
+import Message from '../AgentMessage';
 
 import workspaceLogo from '../../assets/panel_icons/workspace.png';
 

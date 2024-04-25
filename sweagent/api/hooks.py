@@ -34,12 +34,12 @@ class WebUpdate:
     def up_env(
             self,
             message: str,
+            type_: str,
             format: str = "markdown",
-            title="",
             thought_idx: Optional[int] =None,
     ):
         """Update the environment feed"""
-        self._emit('update', {'feed': 'env',  'title': title, 'message': message, 'format': format, 'thought_idx': thought_idx})
+        self._emit('update', {'feed': 'env',  'message': message, 'format': format, 'thought_idx': thought_idx, 'type': type_})
     
     def finish_run(self):
         """Finish the run. We use that to control which buttons are active."""
@@ -53,7 +53,7 @@ class MainUpdateHook(MainHook):
         self._wu = wu
 
     def on_start(self):
-        self._wu.up_env(message="Environment container initialized", format="text")
+        self._wu.up_env(message="Environment container initialized", format="text", type_="info")
     
     def on_end(self):
         self._wu.up_agent(message="The run has ended", format="text")
@@ -81,14 +81,14 @@ class AgentUpdateHook(AgentHook):
     def on_sub_action_started(self, *, sub_action: dict):
         msg = f"```bash\n{sub_action['action']}\n```"
         self._sub_action = sub_action["action"].strip()
-        self._wu.up_env(message=msg, title=f"Action", thought_idx=self._thought_idx)
+        self._wu.up_env(message=msg, thought_idx=self._thought_idx, type_="command")
     
     def on_sub_action_executed(self, *, obs: str, done: bool):
         language = ""
         if self._sub_action == "submit":
             language = "diff"
         msg = f"```{language}\n{obs}\n```"
-        self._wu.up_env(message=msg, thought_idx=self._thought_idx)
+        self._wu.up_env(message=msg, thought_idx=self._thought_idx, type_="output")
         
     def on_query_message_added(
             self, 
