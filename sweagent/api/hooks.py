@@ -73,8 +73,10 @@ class AgentUpdateHook(AgentHook):
     def on_actions_generated(self, *, thought: str, action: str, output: str):
         self._thought_idx += 1
         thought, _, discussion = thought.partition("DISCUSSION")
-        self._wu.up_agent(title=f"Thought", message=thought, format="markdown", thought_idx=self._thought_idx)
-        self._wu.up_agent(title=f"Discussion", message=discussion, format="markdown", thought_idx=self._thought_idx)
+        if thought.strip():
+            self._wu.up_agent(title=f"Thought", message=thought, format="markdown", thought_idx=self._thought_idx)
+        if discussion.strip():
+            self._wu.up_agent(title=f"Discussion", message=discussion, format="markdown", thought_idx=self._thought_idx)
     
     def on_sub_action_started(self, *, sub_action: dict):
         msg = f"```bash\n{sub_action['action']}\n```"

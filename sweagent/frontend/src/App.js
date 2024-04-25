@@ -23,7 +23,9 @@ function App() {
   axios.defaults.baseURL = url;
 
   const handleMouseEnter = (step) => {
-    setHighlightedStep(step);
+    if (!isComputing) {
+      setHighlightedStep(step);
+    }
   };
 
 
@@ -98,8 +100,8 @@ function App() {
       <button onClick={handleStop} disabled={!isComputing}>Stop Computation</button>
       <h2>Trajectory</h2>
       <div id="container">
-        <Feed feed={agentFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={agentFeedRef} otherRef={envFeedRef}  title="Agent Feed" />
-        <Feed feed={envFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={envFeedRef} otherRef={agentFeedRef} title="Environment Feed" />
+        <Feed feed={agentFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={agentFeedRef} otherRef={envFeedRef} isComputing={isComputing}  title="Agent Feed" />
+        <Feed feed={envFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={envFeedRef} otherRef={agentFeedRef} isComputing={isComputing} title="Environment Feed" />
       </div>
       <div id="log" ref={logsRef}>
         <h3>Logs</h3>
@@ -109,17 +111,17 @@ function App() {
   );
 }
 
-const Feed = ({ feed, title, highlightedStep, handleMouseEnter, selfRef, otherRef }) => {
+const Feed = ({ feed, title, highlightedStep, handleMouseEnter, selfRef, otherRef, isComputing }) => {
   // Scroll to the bottom of the feed whenever the feed data changes
   useEffect(() => {
       if (selfRef.current) {
           selfRef.current.scrollTop = selfRef.current.scrollHeight;
       }
-  }, [feed]);
+  }, [feed, selfRef]);
 
   // Scroll to the first message of the highlighted step from the other feed
   useEffect(() => {
-    if (highlightedStep && otherRef.current) {
+    if (!isComputing && highlightedStep && otherRef.current) {
       const firstStepMessage = [...otherRef.current.children].find(
         child => child.classList.contains(`step${highlightedStep}`)
       );
@@ -132,7 +134,7 @@ const Feed = ({ feed, title, highlightedStep, handleMouseEnter, selfRef, otherRe
         });
       }
     }
-  }, [highlightedStep, otherRef]);
+  }, [highlightedStep, otherRef, isComputing]);
 
 
   const feedID = title.toLowerCase().replace(' ', '');
