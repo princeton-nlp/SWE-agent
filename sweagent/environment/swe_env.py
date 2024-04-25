@@ -533,6 +533,32 @@ class SWEEnv(gym.Env):
         """
         output = self._communicate(f"/bin/bash -n <<'EOF'\n{input}\nEOF\n")
         return output, self.returncode == 0
+    
+    def _check_syntax_with_shellcheck(script_content: str) -> bool:
+        """
+        Checks the syntax of a shell script using shellcheck.
+
+        Args:
+            script_content (str): The content of the shell script to check.
+
+        Returns:
+            bool: True if the syntax is correct, False otherwise.
+        """
+        try:
+            # Write the script content to a temporary file
+            with open("temp_script.sh", "w") as temp_file:
+                temp_file.write(script_content)
+            
+            # Run shellcheck on the temporary file
+            subprocess.run(["shellcheck", "temp_script.sh"], check=True)
+            # If shellcheck exits without errors, the syntax is correct
+            return True
+        except subprocess.CalledProcessError:
+            # If shellcheck exits with an error, the syntax has issues
+            return False
+        finally:
+            # Clean up the temporary file
+            os.remove("temp_script.sh")
 
     def communicate(
         self,
@@ -549,7 +575,7 @@ class SWEEnv(gym.Env):
             output (`str`) - output from container
         """
         if input.strip() != "exit":
-            output, valid = self._check_syntax(input)
+            output, valid = self._check_syntax_with_shellcheck(input)
             if not valid:
                 return output  # shows syntax errors
             output = self._communicate(
