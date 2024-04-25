@@ -79,31 +79,33 @@ class AgentUpdateHook(AgentHook):
             self._wu.up_agent(title=f"Discussion", message=discussion, format="markdown", thought_idx=self._thought_idx)
     
     def on_sub_action_started(self, *, sub_action: dict):
-        msg = f"```bash\n{sub_action['action']}\n```"
+        # msg = f"```bash\n{sub_action['action']}\n```"
+        msg = sub_action["action"].strip()
         self._sub_action = sub_action["action"].strip()
         self._wu.up_env(message=msg, thought_idx=self._thought_idx, type_="command")
     
     def on_sub_action_executed(self, *, obs: str, done: bool):
-        language = ""
-        if self._sub_action == "submit":
-            language = "diff"
-        msg = f"```{language}\n{obs}\n```"
+        # language = ""
+        # if self._sub_action == "submit":
+        #     language = "diff"
+        # msg = f"```{language}\n{obs}\n```"
+        msg = obs.strip()
         self._wu.up_env(message=msg, thought_idx=self._thought_idx, type_="output")
         
-    def on_query_message_added(
-            self, 
-            *, 
-            role: str, 
-            content: str, 
-            agent: str, 
-            is_demo: bool = False, 
-            thought: str = "", 
-            action: str = ""
-        ):
-        if role == "assistant":
-            return
-        if thought or action:
-            return
-        if is_demo:
-            return self._wu.up_agent(title="Demo", message=content, thought_idx=self._thought_idx + 1)
-        self._wu.up_agent(title="Query", message=content, thought_idx=self._thought_idx + 1)
+    # def on_query_message_added(
+    #         self, 
+    #         *, 
+    #         role: str, 
+    #         content: str, 
+    #         agent: str, 
+    #         is_demo: bool = False, 
+    #         thought: str = "", 
+    #         action: str = ""
+    #     ):
+    #     if role == "assistant":
+    #         return
+    #     if thought or action:
+    #         return
+    #     if is_demo:
+    #         return self._wu.up_agent(title="Demo", message=content, thought_idx=self._thought_idx + 1)
+    #     self._wu.up_agent(title="Query", message=content, thought_idx=self._thought_idx + 1)
