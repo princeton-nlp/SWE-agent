@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
 import './App.css';
+import Feed from './components/panels/Feed';
 
 const url = ''; // Will get this from .env 
 // Connect to Socket.io
@@ -110,50 +111,6 @@ function App() {
     </div>
   );
 }
-
-const Feed = ({ feed, title, highlightedStep, handleMouseEnter, selfRef, otherRef, isComputing }) => {
-  // Scroll to the bottom of the feed whenever the feed data changes
-  useEffect(() => {
-      if (selfRef.current) {
-          selfRef.current.scrollTop = selfRef.current.scrollHeight;
-      }
-  }, [feed, selfRef]);
-
-  // Scroll to the first message of the highlighted step from the other feed
-  useEffect(() => {
-    if (!isComputing && highlightedStep && otherRef.current) {
-      const firstStepMessage = [...otherRef.current.children].find(
-        child => child.classList.contains(`step${highlightedStep}`)
-      );
-      if (firstStepMessage) {
-        window.requestAnimationFrame(() => {
-          otherRef.current.scrollTo({
-            top: firstStepMessage.offsetTop - otherRef.current.offsetTop,
-            behavior: 'smooth'
-          });
-        });
-      }
-    }
-  }, [highlightedStep, otherRef, isComputing]);
-
-
-  const feedID = title.toLowerCase().replace(' ', '');
-
-  return (
-    <div id={feedID} ref={selfRef} >
-      <h3>{title}</h3>
-      {feed.map((item, index) => (
-        <div key={index} 
-          className={`message ${item.format} step${item.step} ${highlightedStep === item.step ? 'highlight' : ''}`}
-          onMouseEnter={() => handleMouseEnter(item.step)}
-        >
-          <h4>{item.title}</h4>
-          {item.message}
-        </div>
-      ))}
-    </div>
-  )
-};
 
 export default App;
 
