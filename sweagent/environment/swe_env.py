@@ -636,149 +636,48 @@ class SWEEnv(gym.Env):
             )
 
     def install_env(self) -> None:
-        """
-        Creates conda environment and installs third party dependencies to allow code execution
-        """
+        """Refactored method to install environment with better modularity and readability."""
+        self._assert_environment_prerequisites()
+        self._notify_hooks_on_install_start()
+        install_configs = self._load_install_configs()
+
+        env_name = self._get_env_name()
+        if not self._env_exists(env_name):
+            self._create_and_setup_env(env_name, install_configs)
+        self._activate_env(env_name)
+        self._handle_repo_installation(install_configs)
+
+    def _assert_environment_prerequisites(self):
+        """Asserts prerequisites for environment installation."""
         assert self.record is not None  # mypy
-        if (self.record["problem_statement_source"] != "swe-bench" or \
-            self.record["repo_type"] == "local") and self.args.environment_setup is None:
-            logger.warning((
-                "install_environment is set to True, but the data path is a GitHub URL "
-                "without an environment config file (environment_config key/flag). "
-                "Skipping conda environment installation."
-                ))
-            return
+        if (self.record["problem_statement_source"] != "swe-bench" or self.record["repo_type"] == "local") and self.args.environment_setup is None:
+            self._log_warning_and_exit("install_environment is set to True, but the data path is a GitHub URL without an environment config file.")
+
+    def _notify_hooks_on_install_start(self):
+        """Notifies hooks that environment installation has started."""
         for hook in self.hooks:
             hook.on_install_env_started()
+
+    def _load_install_configs(self):
+        """Loads installation configurations from file or map."""
         if self.args.environment_setup is not None:
-            assert isinstance(self.args.environment_setup, (str, os.PathLike))
-            if Path(self.args.environment_setup).suffix in [".yml", ".yaml"]:
-                try:
-                    install_configs = yaml.safe_load(Path(self.args.environment_setup).read_text())
-                except Exception as e:
-                    msg = "Environment config file needs to be a yaml file"
-                    raise ValueError(msg) from e
-            elif Path(self.args.environment_setup).suffix == ".sh":
-                self.run_shell_script(Path(self.args.environment_setup), location="host")
-                return
-            else:
-                raise ValueError("Environment config file needs to be a yaml file or shell script")
-        else:
-            try:
-                install_configs = MAP_VERSION_TO_INSTALL[self.record["repo"]][
-                    str(self.record["version"])
-                ]
-            except KeyError as e:
-                msg = (
-                    "Tried to look up install configs in swe-bench, but failed. "
-                    "You can set a custom environment config with the environment_config key/flag."
-                )
-                raise ValueError(msg) from e
-        # Create environment if does not exist yet
-        env_name = f"{self._repo_name}__{self.record['version']}"
-        env_check = self.communicate(
-            f"conda env list | grep {env_name}", timeout_duration=LONG_TIMEOUT
-        )
-        if env_check.strip() == "":
-            self.logger.info(f"{env_name} conda env not found, creating...")
-            packages = (
-                install_configs.get("packages", "")
-            )
-            if packages == "requirements.txt":
-                # Create conda environment
-                self.communicate_with_handling(
-                    f"conda create -n {env_name} python={install_configs['python']} -y",
-                    error_msg="Failed to create conda environment",
-                    timeout_duration=LONG_TIMEOUT,
-                )
-                # Write reqs to requirements.txt in docker container
-                content_reqs = get_requirements(self.record)
-                copy_file_to_container(self.container_obj, content_reqs, PATH_TO_REQS)
-                # Create conda environment + install reqs
-                self.communicate_with_handling(
-                    f"conda activate {env_name}",
-                    error_msg="Failed to activate conda environment",
-                )
-                self.communicate_with_handling(
-                    f"pip install -r {PATH_TO_REQS}",
-                    error_msg="Failed to install requirements.txt",
-                    timeout_duration=LONG_TIMEOUT,
-                )
-                self.communicate(f"rm {PATH_TO_REQS}")
-            elif packages == "environment.yml":
-                # Write environment.yml to file
-                if install_configs.get("no_use_env", False):
-                    content_env_yml = get_environment_yml(self.record, env_name)
-                else:
-                    content_env_yml = get_environment_yml(
-                        self.record, env_name, python_version=install_configs["python"]
-                    )
-                copy_file_to_container(self.container_obj, content_env_yml, PATH_TO_ENV_YML)
-                if install_configs.get("no_use_env", False):
-                    # Create conda environment
-                    self.communicate_with_handling(
-                        f"conda create -c conda-forge -n {env_name} python={install_configs['python']} -y",
-                        error_msg="Failed to create conda environment",
-                        timeout_duration=LONG_TIMEOUT,
-                    )
-                    # Install packages
-                    self.communicate_with_handling(
-                        f"conda env update -f {PATH_TO_ENV_YML}",
-                        error_msg="Failed to install environment.yml",
-                        timeout_duration=LONG_TIMEOUT
-                    )
-                else:
-                    # Create environment + install packages
-                    self.communicate_with_handling(
-                        f"conda env create --file {PATH_TO_ENV_YML}",
-                        error_msg="Failed to create conda environment with environment.yml",
-                        timeout_duration=LONG_TIMEOUT,
-                    )
-                self.communicate(f"rm {PATH_TO_ENV_YML}")
-            else:
-                # Create environment + install packages
-                self.communicate_with_handling(
-                    f"conda create -n {env_name} python={install_configs['python']} {packages} -y",
-                    error_msg="Failed to create conda environment",
-                    timeout_duration=LONG_TIMEOUT,
-                )
-            # Install extra pip packages if specified
-            if install_configs.get("pip_packages", False):
-                self.communicate_with_handling(
-                    f"source activate {env_name} && pip install {' '.join(install_configs['pip_packages'])}",
-                    error_msg="Failed to install pip packages",
-                    timeout_duration=LONG_TIMEOUT
-                )
+            return self._load_config_from_file(self.args.environment_setup)
+        return self._load_config_from_map()
 
-        # Activate environment
-        self.communicate_with_handling(
-            f"conda activate {env_name}",
-            error_msg="Failed to activate conda environment"
-        )
+    def _create_and_setup_env(self, env_name, install_configs):
+        """Creates and sets up the conda environment based on the installation configurations."""
+        self._log_info(f"{env_name} conda env not found, creating...")
+        self._handle_packages_installation(env_name, install_configs)
 
-        # Install repo at base commit
-        if install_configs.get("pre_install", False):
-            self.logger.info("Running pre-install commands...")
-            for pre_install_cmd in install_configs["pre_install"]:
-                self.communicate_with_handling(
-                    pre_install_cmd,
-                    error_msg="Pre-install commands failed to execute successfully",
-                )
-        self.logger.info(f"Installing {self._repo_name} at base commit...")
-        if install_configs.get("install", False):
-            install_cmd = install_configs["install"]
-            self.communicate_with_handling(
-                install_cmd,
-                error_msg="Install command failed to execute successfully",
-                timeout_duration=LONG_TIMEOUT
-            )
-        if install_configs.get("post_install", False):
-            self.logger.info("Running post-install commands...")
-            for post_install_cmd in install_configs["post_install"]:
-                self.communicate_with_handling(
-                    post_install_cmd,
-                    error_msg="Post-install commands failed to execute successfully",
-                )
+    def _activate_env(self, env_name):
+        """Activates the specified conda environment."""
+        self._execute_with_error_handling(f"conda activate {env_name}", "Failed to activate conda environment")
+
+    def _handle_repo_installation(self, install_configs):
+        """Handles the installation of the repository at the base commit."""
+        self._execute_pre_install_commands(install_configs)
+        self._install_repo(install_configs)
+        self._execute_post_install_commands(install_configs)
 
     def add_commands(self, commands: list[dict]) -> None:
         """
