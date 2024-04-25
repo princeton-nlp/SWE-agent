@@ -2,7 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
 import './static/app.css';
-import Feed from './components/panels/Feed';
+import AgentFeed from './components/panels/AgentFeed';
+import EnvFeed from './components/panels/EnvFeed';
+import LogPanel from './components/panels/LogPanel';
 
 const url = ''; // Will get this from .env 
 // Connect to Socket.io
@@ -16,6 +18,9 @@ function App() {
   const [highlightedStep, setHighlightedStep] = useState(null);
   const [logs, setLogs] = useState('');
   const [isComputing, setIsComputing] = useState(false);
+
+  const [isTerminalExpanded, setIsTerminalExpanded] = useState(false);
+  const [isLogsExpanded, setIsLogsExpanded] = useState(false);
 
   const agentFeedRef = useRef(null);
   const envFeedRef = useRef(null);
@@ -127,12 +132,9 @@ function App() {
         <div id="demo">
           <hr />
           <div className="panels">
-            <Feed feed={agentFeed} id="agent" highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={agentFeedRef} otherRef={envFeedRef} isComputing={isComputing}  title="Agent Feed" />
-            <Feed feed={envFeed} id="env" highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={envFeedRef} otherRef={agentFeedRef} isComputing={isComputing} title="Environment Feed" />
-            <div id="log" className="logPanel" ref={logsRef}>
-              <h3>Logs</h3>
-              <pre >{logs}</pre>
-            </div>
+            <AgentFeed feed={agentFeed} id="agent" highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={agentFeedRef} otherRef={envFeedRef} title="Agent Feed" />
+            <EnvFeed feed={envFeed} id="env" highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={envFeedRef} otherRef={agentFeedRef} setIsTerminalExpanded={setIsTerminalExpanded} title="Environment Feed" />
+            <LogPanel logs={logs} logsRef={logsRef} setIsTerminalExpanded={setIsLogsExpanded} />
           </div>
         </div>
       </div>

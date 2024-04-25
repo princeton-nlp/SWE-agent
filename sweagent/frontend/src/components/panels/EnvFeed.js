@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import Message from '../Message';
 
+import MacBar from '../MacBar';
+import terminalLogo from '../../assets/panel_icons/terminal.png';
 
 function useScrollToBottom(feed, ref) {
   useEffect(() => {
@@ -10,7 +12,7 @@ function useScrollToBottom(feed, ref) {
   }, [feed, ref]);
 }
 
-const Feed = ({ feed, id, title, highlightedStep, handleMouseEnter, selfRef}) => {
+const EnvFeed = ({ feed, id, title, highlightedStep, handleMouseEnter, selfRef, setIsTerminalExpanded}) => {
     useScrollToBottom(feed, selfRef);
 
     const feedID = id + "Feed";
@@ -18,9 +20,14 @@ const Feed = ({ feed, id, title, highlightedStep, handleMouseEnter, selfRef}) =>
     return (
         <div id={feedID} className={feedID}>
             <div id="label">
-              {/* <img src={workspaceLogo} alt="workspace" /> */}
+              <img src={terminalLogo} alt="workspace" />
               <span>{title}</span>
             </div>
+            <MacBar
+              barStyle={{ height: "2em" }}
+              expandFillColor={"black"}
+              setIsExpanded={setIsTerminalExpanded}
+            />
             <div className="scrollableDiv"  ref={selfRef} >
               <div className="innerDiv">
                 {feed.map((item, index) => (
@@ -39,4 +46,4 @@ const Feed = ({ feed, id, title, highlightedStep, handleMouseEnter, selfRef}) =>
     );
 };
 
-export default Feed;
+export default EnvFeed;

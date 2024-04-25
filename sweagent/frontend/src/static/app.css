@@ -63,15 +63,6 @@
 
 
 
-#log { 
-  height: 300px;
-  max-width: 50%;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  padding: 10px;
-  overflow-y: auto;
-}
-
 #demo hr {
   border-top: 1px dotted #bbb;
   margin: 0.5em 0;
