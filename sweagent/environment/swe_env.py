@@ -17,7 +17,6 @@ from dataclasses import dataclass
 from git import Repo
 from rich.logging import RichHandler
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
-import yaml
 from sweagent.environment.utils import (
     PROCESS_DONE_MARKER_END,
     PROCESS_DONE_MARKER_START,
@@ -33,11 +32,6 @@ from sweagent.environment.utils import (
     read_with_timeout,
     LOGGER_NAME,
     read_with_timeout_experimental,
-)
-from swebench import (
-    get_environment_yml,
-    get_requirements,
-    MAP_VERSION_TO_INSTALL
 )
 from typing import Optional, Tuple
 
