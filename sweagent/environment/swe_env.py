@@ -584,16 +584,29 @@ class SWEEnv(gym.Env):
 
     def get_pids(self, all_pids=False) -> list[str]:
         """
-        Gets list of processes running inside docker container
+        Gets list of processes running inside docker container with improved error handling
+        and output parsing robustness.
         """
-        pids = (
-            self.container_obj.exec_run("ps -eo pid,comm --no-headers")
-            .output.decode()
-            .split("\n")
-        )
-        pids = [x.split() for x in pids if x]
+        try:
+            # Execute the command and check for execution success
+            result = self.container_obj.exec_run("ps -eo pid,comm --no-headers")
+            if result.exit_code != 0:
+                raise RuntimeError(f"Failed to list processes in container, exit code {result.exit_code}")
+            output = result.output.decode()
+        except Exception as e:
+            self.logger.error(f"Error executing ps command in container: {e}")
+            raise RuntimeError(f"Error executing ps command in container: {e}")
+
+        # Split the output by new lines and filter out empty lines
+        lines = [line for line in output.split("\n") if line.strip()]
+
+        # Parse each line into a list of [pid, command]
+        pids = [line.split(maxsplit=1) for line in lines]
+
+        # Filter out the 'ps' command and parent PIDs if not all_pids
         if not all_pids:
-            pids = [x for x in pids if x[1] != "ps" and x[0] not in self.parent_pids]
+            pids = [pid for pid in pids if pid[1] != "ps" and pid[0] not in self.parent_pids]
+
         return pids
 
     def get_submission(self, action, output: str) -> str:
