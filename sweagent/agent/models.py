@@ -643,6 +643,7 @@ class TogetherModel(BaseModel):
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
         super().__init__(args, commands)
+        assert together.version >= '1.1.0', "Please upgrade to Together SDK v1.1.0 or later."
 
         # Set Together key
         cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
@@ -676,18 +677,20 @@ class TogetherModel(BaseModel):
         """
         # Perform Together API call
         prompt = self.history_to_messages(history)
+        # Anthropic's count_tokens is convenient because it caches and utilizes huggingface/tokenizers, so we will use.
+        max_tokens_to_sample = self.model_metadata["max_context"] - Anthropic().count_tokens(prompt)
         completion = together.Complete.create(
             model=self.api_model,
             prompt=prompt,
-            max_tokens=self.model_metadata["max_context"],
-            stop="<human>",
+            max_tokens=max_tokens_to_sample,
+            stop=["<human>"],
             temperature=self.args.temperature,
             top_p=self.args.top_p,
         )
         # Calculate + update costs, return response
-        response = completion["output"]["choices"][0]["text"].split("<human>")[0]
-        input_tokens = completion["output"]["usage"]["prompt_tokens"]
-        output_tokens = completion["output"]["usage"]["completion_tokens"]
+        response = completion["choices"][0]["text"].split("<human>")[0]
+        input_tokens = completion["usage"]["prompt_tokens"]
+        output_tokens = completion["usage"]["completion_tokens"]
         self.update_stats(input_tokens, output_tokens)
         return response
 
