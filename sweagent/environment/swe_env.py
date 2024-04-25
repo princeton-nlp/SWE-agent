@@ -318,7 +318,7 @@ class SWEEnv(gym.Env):
         if action in {"exit_context", "exit_cost", "exit_error", "exit_format", "exit_api"}:
             try:
                 observation = self.communicate(input="submit")
-                submission = self.get_submission('submit', observation)
+                submission = self.get_submission(observation)
                 assert submission is not None and submission.strip() != "", AssertionError('No submission found.')
                 self.logger.info(f"Found submission: {submission}")
                 info["exit_status"] = f"submitted ({action})"
@@ -363,7 +363,7 @@ class SWEEnv(gym.Env):
             observation += "\nEXECUTION FAILED OR COMMAND MALFORMED"
 
         # Record submission and end episode if `submit` keyword found
-        submission = self.get_submission(action, observation)
+        submission = self.get_submission(observation)
         if submission is not None:
             self.logger.info(f"Found submission: {submission}")
             info["exit_status"] = "submitted"
