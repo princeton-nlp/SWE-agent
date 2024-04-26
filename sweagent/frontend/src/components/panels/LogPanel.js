@@ -26,7 +26,7 @@ const LogPanel = ({ logs, logsRef, setIsTerminalExpanded}) => {
               expandFillColor={"black"}
               setIsExpanded={setIsTerminalExpanded}
             />
-            <div className="scrollableDiv"  ref={logsRef} >
+            <div className="scrollableDiv"  ref={logsRef} style={{ backgroundColor: "#1e1e1e" }}>
               <div className="innerDiv">
                 <pre>{logs}</pre>
                 <div style={{ clear: "both", marginTop: '1em' }}/>
