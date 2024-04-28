@@ -25,6 +25,11 @@ from run import ActionsArguments, ScriptArguments, Main
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins='*')
+# Setting these variables outside of `if __name__ == "__main__"` because when run Flask server with
+# `flask run` it will skip the if block. Therefore, the app will return an error for missing `secret_key`
+# Setting it here will allow both `flask run` and `python server.py` to work
+app.secret_key = 'super secret key'
+app.config['SESSION_TYPE'] = 'memcache'
 
 THREADS: Dict[str, "MainThread"] = {}
 
@@ -147,5 +152,8 @@ def _build_cors_preflight_response():
 
 if __name__ == "__main__":
     # fixme:
-    app.secret_key = 'super secret key'
-    socketio.run(app, port=5000, debug=True)
+    app.debug = True
+    # Setting this port to be 8000 due to the fact that on newer verions of macOS, 
+    # port 5000 and 7000 are reserved. Hence calls made to these 2 ports will be rejected and returned with 503 code.
+    # Source https://stackoverflow.com/questions/72795799/how-to-solve-403-error-with-flask-in-python 
+    socketio.run(app, port=8000, debug=True)
