@@ -136,6 +136,7 @@ class SWEEnv(gym.Env):
         # Establish connection with execution container
         self.image_name = args.image_name
         self._reset_container()
+        self._timings = []
 
         # Prepare image tag prefix for cached task environments
         if self.args.cache_task_images:
@@ -154,6 +155,14 @@ class SWEEnv(gym.Env):
     def add_hook(self, hook: EnvHook):
         hook.on_init()
         self.hooks.append(hook)
+
+    def update_timings(self, dt: float):
+        self._timings.append(dt)
+        cached = "_cached" if self.args.cache_task_images else ""
+        fname = f"env_timings_{self.args.data_path.replace('/', '_')}_{self.args.split}{cached}.yaml"
+        with open(fname, "w") as f:
+            yaml.dump(self._timings, f)
+        logger.debug(f"Total time spent in the environment preparation: {sum(self._timings):.1f} sec")
 
     @property
     def _repo_name(self) -> str:
@@ -212,6 +221,7 @@ class SWEEnv(gym.Env):
             observation (`str`) - output from container
             info (`dict`) - additional information (e.g. debugging information)
         """
+        dt = time.monotonic()
         info = {}
         info["commit_sha"] = self.commit_sha
 
@@ -232,6 +242,12 @@ class SWEEnv(gym.Env):
                 logger.info(f"Restore environment from cached image {cached_image}")
                 self.stop_container() # stop current container
                 self._init_container(cached_image=cached_image)
+                self.communicate("export $(xargs </.env)")
+                envs = self.communicate("env")
+                logger.debug(f"Environment variables after loading cached image:\n{envs}\n")
+                self.update_timings(time.monotonic() - dt)
+                if apply_test_patch:
+                    self._apply_test_patch()
                 return None, info
             else:
                 logger.info(f"Cached image {cached_image} not found, rebuilding task environment...")
@@ -294,26 +310,35 @@ class SWEEnv(gym.Env):
             error_msg="Failed to install flake8 (lint library)"
         )
 
-        # Apply test patch for oracle setting
-        if apply_test_patch:
-            path_to_patch = "test.patch"
-            with open(path_to_patch, "w") as f:
-                f.write(self.record["test_patch"])
-            subprocess.run(
-                f"docker cp {path_to_patch} {self.container_name}:/root/test.patch",
-                shell=True,
-            )
-            self.communicate_with_handling(
-                input="git apply /root/test.patch",
-                error_msg="Failed to apply test patch correctly"
-            )
-            os.remove(path_to_patch)
-
+        envs = self.communicate("env")
+        logger.debug(f"Environment variables to save:\n{envs}\n")
+        self.communicate("env >> /.env")
         self.container_obj.commit(cached_image)
         logger.info(f"Container with environment {self.container_obj.id} cached as image {cached_image}")
 
+        self.update_timings(time.monotonic() - dt)
+
+        if apply_test_patch:
+            self._apply_test_patch()
         # Write any metadata to info if necessary
         return None, info
+
+    def _apply_test_patch(self):
+        """
+        Apply test patch for oracle setting
+        """
+        path_to_patch = "test.patch"
+        with open(path_to_patch, "w") as f:
+            f.write(self.record["test_patch"])
+        subprocess.run(
+                f"docker cp {path_to_patch} {self.container_name}:/root/test.patch",
+                shell=True,
+            )
+        self.communicate_with_handling(
+                input="git apply /root/test.patch",
+                error_msg="Failed to apply test patch correctly"
+            )
+        os.remove(path_to_patch)
 
     def step(self, action: str) -> Tuple[Optional[str], int, bool, dict]:
         """
