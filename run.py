@@ -447,6 +447,7 @@ def get_args(args=None) -> ScriptArguments:
             split="dev",
             verbose=True,
             install_environment=True,
+            cache_task_images=False,
         ),
         skip_existing=True,
         agent=AgentArguments(

@@ -102,7 +102,7 @@ def copy_file_to_container(container, contents, container_path):
 
 def copy_anything_to_container(container, host_path: str, container_path: str) -> None:
     """Copy files or directories from host to container
-    
+
     Note: Will need to set ownership on the copied files in the container.
     """
     if not Path(host_path).exists():
@@ -349,12 +349,34 @@ def get_container(ctr_name: str, image_name: str, persistent: bool = False) -> T
     Returns:
         Container object
     """
-    # Let's first check that the image exists and give some better error messages
+    if not image_exists(image_name):
+        msg = (
+            f"Image {image_name} not found. Please ensure it is built and available. "
+            "Please double-check that you followed all installation/setup instructions from the "
+            "readme."
+        )
+        raise RuntimeError(msg)
+
+    if persistent:
+        return _get_persistent_container(ctr_name, image_name)
+    else:
+        return _get_non_persistent_container(ctr_name, image_name)
+
+
+def image_exists(image_name):
+    """
+    Check that the image exists and give some better error messages.
+
+    Arguments:
+        image_name (str): Name of image
+    Returns:
+        bool: True if image exists
+    """
     try:
         client = docker.from_env()
     except docker.errors.DockerException as e:
         docker_not_runnnig = any((
-            "connection aborted" in str(e).lower(), 
+            "connection aborted" in str(e).lower(),
             "connection refused" in str(e).lower(),
             "error while fetching server api version" in str(e).lower(),
         ))
@@ -370,25 +392,16 @@ def get_container(ctr_name: str, image_name: str, persistent: bool = False) -> T
         raise
     filterred_images = client.images.list(filters={'reference': image_name})
     if len(filterred_images) == 0:
-        msg = (
-            f"Image {image_name} not found. Please ensure it is built and available. "
-            "Please double-check that you followed all installation/setup instructions from the "
-            "readme."
-        )
-        raise RuntimeError(msg)
+        return False
     elif len(filterred_images) > 1:
-        logger.warning(f"Multiple images found for {image_name}, that's weird.")
-    attrs = filterred_images[0].attrs 
+        RuntimeError(f"Multiple images found for {image_name}, that's weird.")
+    attrs = filterred_images[0].attrs
     if attrs is not None:
         logger.info(
             f"Found image {image_name} with tags: {attrs['RepoTags']}, created: {attrs['Created']} "
             f"for {attrs['Os']} {attrs['Architecture']}."
         )
-
-    if persistent:
-        return _get_persistent_container(ctr_name, image_name)
-    else:
-        return _get_non_persistent_container(ctr_name, image_name)
+    return True
 
 
 def get_commit(api: GhApi, owner: str, repo: str, base_commit: str = None):
@@ -446,7 +459,7 @@ def get_problem_statement_from_github_issue(owner: str, repo: str, issue_number:
 
 class InstanceBuilder:
     def __init__(self, token: Optional[str] = None):
-        """This helper class is used to build the data for an instance object, 
+        """This helper class is used to build the data for an instance object,
         retrieving problem statements from github issues or local files and setting
         repo paths from github urls or local paths.
         """
@@ -460,14 +473,14 @@ class InstanceBuilder:
         self.args["problem_statement"] = get_problem_statement_from_github_issue(owner, repo, issue_number, token=self.token)
         self.args["instance_id"] = f"{owner}__{repo}-i{issue_number}"
         self.args["problem_statement_source"] = "online"
-    
+
     def set_problem_statement_from_file(self, file_path: str):
         self.args["problem_statement"] = Path(file_path).read_text()
         self.args["instance_id"] = hashlib.sha256(self.args["problem_statement"].encode()).hexdigest()[:6]
         self.args["problem_statement_source"] = "local"
 
     def set_problem_statement(self, data_path: str ):
-        """Get problem statement for a single instance from a github issue url or a 
+        """Get problem statement for a single instance from a github issue url or a
         path to a markdown or text file.
         """
         if is_github_issue_url(data_path):
@@ -477,7 +490,7 @@ class InstanceBuilder:
         else:
             msg = f"Not sure how to get problem statement from {data_path=}."
             raise ValueError(msg)
-    
+
     def set_repo_info_from_gh_url(self, url: str, base_commit: Optional[str] = None):
         owner, repo = parse_gh_repo_url(url)
         self.args["repo"] = f"{owner}/{repo}"
@@ -488,7 +501,7 @@ class InstanceBuilder:
             api = GhApi(token=self.token)
             self.args["base_commit"] = get_commit(api, owner, repo, base_commit).sha
         self.args["version"] = self.args["base_commit"][:7]
-    
+
     def set_repo_info_from_local_path(self, path: str, base_commit: Optional[str] = None):
         self.args["repo"] = str(Path(path).resolve())
         self.args["repo_type"] = "local"
@@ -505,7 +518,7 @@ class InstanceBuilder:
                 raise ValueError(msg)
             self.args["base_commit"] = repo.head.object.hexsha
         self.args["version"] = self.args["base_commit"][:7]
-    
+
     def set_repo_info(self, repo: str, base_commit: Optional[str] = None):
         if is_github_repo_url(repo):
             self.set_repo_info_from_gh_url(repo, base_commit=base_commit)
@@ -513,10 +526,10 @@ class InstanceBuilder:
             self.set_repo_info_from_local_path(repo, base_commit=base_commit)
         else:
             raise ValueError(f"Could not determine repo path from {repo=}.")
-    
+
     def set_from_dict(self, instance_dict: Dict[str, Any]):
         self.args |= instance_dict
-    
+
     def set_missing_fields(self):
         # todo: This field is only needed while swe_env is using some questionable logic
         # to determine whether to clone from a mirror or not. This should be removed in the future.
@@ -524,9 +537,9 @@ class InstanceBuilder:
         # 'online' (loaded from github issue or similar) or 'local' (loaded from local file)
         if "problem_statement_source" not in self.args:
             self.args["problem_statement_source"] = "swe-bench"
-        if "repo_type" not in self.args: 
+        if "repo_type" not in self.args:
             self.args["repo_type"] = "github"
-    
+
     def validate(self):
         required_fields = [
             "problem_statement",
@@ -544,17 +557,17 @@ class InstanceBuilder:
             raise ValueError(f"Invalid repo type: {self.args['repo_type']=}")
         if self.args["repo_type"] == "github" and self.args["repo"].count("/") != 1:
             raise ValueError(f"Invalid repo format for {self.args['repo_type']=}: {self.args['repo']=}")
-    
+
     def build(self) -> Dict[str, Any]:
         self.set_missing_fields()
         self.validate()
         return self.args
-    
+
 
 def get_instances(
-        file_path: str, 
-        base_commit: Optional[str] = None, 
-        split: Optional[str] = None, 
+        file_path: str,
+        base_commit: Optional[str] = None,
+        split: Optional[str] = None,
         token: Optional[str] = None,
         *,
         repo_path: str = "",
@@ -603,7 +616,7 @@ def get_instances(
             raise ValueError(f"Could not determine repo path from {file_path=}, {repo_path=}")
 
         return [ib.build()]
-    
+
     if base_commit is not None:
         raise ValueError("base_commit must be None if data_path is not a github issue url")
 
@@ -682,6 +695,6 @@ def format_trajectory_markdown(trajectory: List[Dict[str, str]]):
     suffix = [
         "",
         "</details>",
-    ] 
+    ]
     return "\n".join(prefix) + "\n\n---\n\n".join(steps) + "\n".join(suffix)
 
