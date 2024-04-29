@@ -236,9 +236,10 @@ class SWEEnv(gym.Env):
         self.reward = None
 
         ### Reset Container ###
-        cached_image = f"{self.cached_image_prefix}{index}"
-        if self.args.cache_task_images and cached_image is not None:
-            if image_exists(cached_image):
+
+        if self.args.cache_task_images:
+            cached_image = f"{self.cached_image_prefix}{index}"
+            if cached_image is not None and image_exists(cached_image):
                 logger.info(f"Restore environment from cached image {cached_image}")
                 self.stop_container() # stop current container
                 self._init_container(cached_image=cached_image)
