@@ -311,11 +311,12 @@ class SWEEnv(gym.Env):
             error_msg="Failed to install flake8 (lint library)"
         )
 
-        envs = self.communicate("env")
-        logger.debug(f"Environment variables to save:\n{envs}\n")
-        self.communicate("env >> /.env")
-        self.container_obj.commit(cached_image)
-        logger.info(f"Container with environment {self.container_obj.id} cached as image {cached_image}")
+        if self.args.cache_task_images:
+            envs = self.communicate("env")
+            logger.debug(f"Environment variables to save:\n{envs}\n")
+            self.communicate("env >> /.env")
+            self.container_obj.commit(cached_image)
+            logger.info(f"Container with environment {self.container_obj.id} cached as image {cached_image}")
 
         self.update_timings(time.monotonic() - dt)
 
