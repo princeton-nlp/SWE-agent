@@ -491,7 +491,7 @@ class SWEEnv(gym.Env):
             self.container_name, image_name, persistent=self.persistent
         )
         try:
-            client = docker.from_env()
+            client = docker.from_env(timeout=600)
         except docker.errors.DockerException as e:
             if "Error while fetching server API version" in str(e):
                 raise RuntimeError(
