@@ -378,7 +378,7 @@ class SWEEnv(gym.Env):
         """
         self.logger.info("Beginning environment shutdown...")
         try:
-            self.communicate(input="exit")
+            self._terminate_container()
         except KeyboardInterrupt:
             raise
         except:
@@ -548,20 +548,20 @@ class SWEEnv(gym.Env):
         Returns:
             output (`str`) - output from container
         """
-        if input.strip() != "exit":
-            output, valid = self._check_syntax(input)
-            if not valid:
-                return output  # shows syntax errors
-            output = self._communicate(
-                input, timeout_duration=timeout_duration,
-            )
-            self.communicate_output = output
-            return output
-        else:
-            self.container.terminate()
-            self.returncode = 0
-            self.communicate_output = ""
-            return ""
+        output, valid = self._check_syntax(input)
+        if not valid:
+            return output  # shows syntax errors
+        output = self._communicate(
+            input, timeout_duration=timeout_duration,
+        )
+        self.communicate_output = output
+        return output
+
+    def _terminate_container(self) -> str:
+        self.container.terminate()
+        self.returncode = 0
+        self.communicate_output = ""
+        return ""
 
     def communicate_with_handling(
         self, input: str, error_msg: str, timeout_duration=25
