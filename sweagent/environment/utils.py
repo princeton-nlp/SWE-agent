@@ -163,7 +163,7 @@ def read_with_timeout(container, pid_func, timeout_duration):
 PROCESS_DONE_MARKER_START = "///PROCESS-DONE:"
 PROCESS_DONE_MARKER_END= ":PROCESS-DONE///"
 PROCESS_DONE_REGEX = re.compile(rf"{PROCESS_DONE_MARKER_START}(.+?){PROCESS_DONE_MARKER_END}")
-
+EXIT_ACTIONS = {"exit_context", "exit_cost", "exit_error", "exit_format", "exit_api"} 
 
 def read_with_timeout_experimental(container, timeout_duration):
     """

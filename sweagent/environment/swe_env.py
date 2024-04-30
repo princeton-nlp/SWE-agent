@@ -19,6 +19,7 @@ from rich.logging import RichHandler
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 import yaml
 from sweagent.environment.utils import (
+    EXIT_ACTIONS,
     PROCESS_DONE_MARKER_END,
     PROCESS_DONE_MARKER_START,
     InvalidGithubURL,
@@ -315,7 +316,7 @@ class SWEEnv(gym.Env):
             observation = "Skipped"
             info["exit_status"] = "skipped"
             return observation, 0, True, info
-        if action in {"exit_context", "exit_cost", "exit_error", "exit_format", "exit_api"}:
+        if action in EXIT_ACTIONS:
             try:
                 observation = self.communicate(input="submit")
                 submission = self.get_submission('submit', observation)
