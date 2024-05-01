@@ -9,7 +9,7 @@
         "ms-azuretools.vscode-docker",
         "ms-toolsai.jupyter"
     ],
-    "postCreateCommand": "sudo usermod -aG docker vscode && sudo chmod 666 /var/run/docker.sock && docker pull sweagent/swe-agent && conda env create -f environment.yml && conda init && echo '\nconda activate swe-agent\n' >> ~/.bashrc",
+    "onCreateCommand": "sudo usermod -aG docker vscode && sudo chmod 666 /var/run/docker.sock && docker pull sweagent/swe-agent && conda env create -f environment.yml && conda init && echo '\nconda activate swe-agent\n' >> ~/.bashrc",
     "features": {
         "docker-in-docker": "latest"
     },
