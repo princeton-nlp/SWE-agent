@@ -46,6 +46,8 @@ Read our paper for more details [coming soon!].
 
 ## 🚀 Setup <a name="setup"></a>
 
+SWE-agent runs on Linux and Intel/Apple Silicon Macs. Running it in other environments, such as Windows or WSL, might not work. 
+
 ### 🏎️ Express Setup + Run
 
 You can run the software directly using Docker. 
@@ -211,6 +213,9 @@ cd evaluation/
 Replace `<predictions_path>` with the path to the model's predictions, which should be generated from the *Inference* step. The `<predictions_path>` arguments should look like `../trajectories/<username>/<model>-<dataset>-<hyperparams>/all_preds.jsonl`
 * See the [`evaluation/`](evaluation/) folder for details about how evaluation works.
 
+## 🦺 Modifying SWE-agent <a name="modifying"></a>
+If you'd like to modify the example demonstration that we feed the model at the start of each run, first generate a trajectory manually by running the agent with ```--model_name human``` 
+and then convert that trajectory into a demonstration by following the guide [here](https://github.com/princeton-nlp/SWE-agent/tree/main/make_demos). 
 
 ## 💫 Contributions <a name="contributions"></a>
 - If you'd like to ask questions, learn about upcoming features, and participate in future development, join our [Discord community](https://discord.gg/AVEFbBn2rH)!
