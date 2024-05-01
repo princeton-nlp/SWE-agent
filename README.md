@@ -116,7 +116,7 @@ If you're using docker, pass the key with the [`-e` option](https://stackoverflo
 All keys are optional.
 
 ```
-GITHUB_TOKEN: 'GitHub Token Here'
+GITHUB_TOKEN: 'GitHub Token for access to private repos'  # <-- delete line if not used
 OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model'
 ANTHROPIC_API_KEY: 'Anthropic API Key Here if using Anthropic Model'
 TOGETHER_API_KEY: 'Together API Key Here if using Together Model'
