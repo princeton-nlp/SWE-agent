@@ -44,9 +44,13 @@ Read our paper for more details [coming soon!].
 }
 ```
 
-## 🚀 Setup <a name="setup"></a>
+## 🚀 Get started <a name="setup"></a>
 
-SWE-agent runs on Linux and Intel/Apple Silicon Macs. Running it in other environments, such as Windows or WSL, might not work. 
+### ☁️ Run from your browser
+
+1. Click [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/princeton-nlp/SWE-agent)
+2. Add your API keys to `keys.cfg` (find the file in the left sidebar and fill out the tempalte)
+3. Enter your SWE-agent command in the terminal window at the bottom
 
 ### 🏎️ Express Setup + Run
 
@@ -139,7 +143,7 @@ If you seem to be having issues with running docker
 
 Any remaining issues? Please [open a GitHub issue](https://github.com/princeton-nlp/SWE-agent/issues/new/choose)!
 
-## 🔥 Quickstart: Solve real-life GitHub issues! <a name="real-life"></a>
+## 🔥 Solve real-life GitHub issues! <a name="real-life"></a>
 
 Using this script, you can run SWE-agent on any GitHub issue!
 ```bash
