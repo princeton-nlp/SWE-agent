@@ -9,7 +9,7 @@
         "ms-azuretools.vscode-docker",
         "ms-toolsai.jupyter"
     ],
-    "onCreateCommand": "sudo usermod -aG docker vscode && sudo chmod 666 /var/run/docker.sock && docker pull sweagent/swe-agent && conda env create -f environment.yml && conda init && echo '\nconda activate swe-agent\n' >> ~/.bashrc",
+    "onCreateCommand": "sudo usermod -aG docker vscode && sudo chmod 666 /var/run/docker.sock && docker pull sweagent/swe-agent && conda env create -f environment.yml && conda init && echo '\nconda activate swe-agent\n' >> ~/.bashrc && echo 'Welcome to SWE-agent!\nPlease insert your OpenAI token into keys.cfg and then you can run SWE-agent, as explained in the README.\n'",
     "features": {
         "docker-in-docker": "latest"
     },
