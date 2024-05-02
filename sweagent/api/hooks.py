@@ -1,13 +1,29 @@
 from typing import Optional
 import sys
+import io
 
 from sweagent import PACKAGE_DIR
 from sweagent.agent.agents import AgentHook
 from flask_socketio import SocketIO
 
+from sweagent.api.utils import strip_ansi_sequences
+
 # baaaaaaad
 sys.path.append(str(PACKAGE_DIR.parent))
 from run import MainHook
+
+
+class StreamToSocketIO(io.StringIO):
+    def __init__(self, wu: "WebUpdate", ):
+        super().__init__()
+        self._wu = wu
+
+    def write(self, message):
+        message = strip_ansi_sequences(message)
+        self._wu.up_log(message)
+
+    def flush(self):
+        pass
 
 
 class WebUpdate:
@@ -15,11 +31,15 @@ class WebUpdate:
     """
     def __init__(self, socketio: SocketIO):
         self._socketio = socketio
-
+        self.log_stream = StreamToSocketIO(self)
 
     def _emit(self, event, data):
         """Directly wrap around socketio.emit"""
         self._socketio.emit(event, data)
+
+    def up_log(self, message: str):
+        """Update the log"""
+        self._emit('log_message', {'message': message})
 
     def up_agent(
             self,
@@ -91,6 +111,8 @@ class AgentUpdateHook(AgentHook):
         # msg = f"```{language}\n{obs}\n```"
         msg = obs.strip()
         self._wu.up_env(message=msg, thought_idx=self._thought_idx, type_="output")
+
+
         
     # def on_query_message_added(
     #         self, 

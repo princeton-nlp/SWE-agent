@@ -1,6 +1,7 @@
 from contextlib import redirect_stderr, redirect_stdout
 import os
 import time
+import traceback
 from typing import Dict
 from flask import Flask, render_template, request, make_response
 import sys
@@ -8,14 +9,13 @@ import sys
 from sweagent import CONFIG_DIR, PACKAGE_DIR
 from sweagent.agent.agents import AgentArguments
 from sweagent.agent.models import ModelArguments
-from sweagent.api.utils import ThreadWithExc, strip_ansi_sequences
+from sweagent.api.utils import ThreadWithExc
 from sweagent.environment.swe_env import EnvironmentArguments
 from sweagent.api.hooks import WebUpdate, MainUpdateHook, AgentUpdateHook
 import sweagent.environment.utils as env_utils
 from flask_socketio import SocketIO
 from flask_cors import CORS
 from flask import session
-import io
 from uuid import uuid4
 
 # baaaaaaad
@@ -44,29 +44,27 @@ def ensure_session_id_set():
     return session_id
 
 
-class StreamToSocketIO(io.StringIO):
-    def __init__(self, socketio, ):
-        super().__init__()
-        self._socketio = socketio
-
-    def write(self, message):
-        message = strip_ansi_sequences(message)
-        self._socketio.emit("log_message", {'message': message})
-
-    def flush(self):
-        pass
-
-
 class MainThread(ThreadWithExc):
-    def __init__(self, main: Main):
+    def __init__(self, settings: ScriptArguments, wu: WebUpdate):
         super().__init__()
-        self._main = main
+        self._wu = wu
+        self._settings = settings
     
     def run(self) -> None:
         # fixme: This actually redirects all output from all threads to the socketio, which is not what we want
-        with redirect_stdout(StreamToSocketIO(socketio)):
-            with redirect_stderr(StreamToSocketIO(socketio)):
-                self._main.main()
+        with redirect_stdout(self._wu.log_stream):
+            with redirect_stderr(self._wu.log_stream):
+                try:
+                    main = Main(self._settings)
+                    main.add_hook(MainUpdateHook(self._wu))
+                    main.agent.add_hook(AgentUpdateHook(self._wu))
+                    main.main()
+                except Exception as e:
+                    self._wu.up_agent(f"Error:\n```\n{e}\n```\n")
+                    traceback_str = traceback.format_exc()
+                    self._wu.up_log(traceback_str)
+                    self._wu.finish_run()
+                    raise
     
     def stop(self):
         while self.is_alive():
@@ -119,11 +117,8 @@ def run():
         ),
         actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
     )
-    main = Main(defaults)
     wu = WebUpdate(socketio)
-    main.add_hook(MainUpdateHook(wu))
-    main.agent.add_hook(AgentUpdateHook(wu))
-    thread = MainThread(main)
+    thread = MainThread(defaults, wu)
     global THREADS
     THREADS[session_id] = thread
     thread.start()
