@@ -11,6 +11,9 @@ const url = ''; // Will get this from .env
 const socket = io(url);
 
 function Run() {
+  const [isConnected, setIsConnected] = useState(socket.connected);
+  const [connectionError, setConnectionError] = useState('');
+
   const [dataPath, setDataPath] = useState('https://github.com/klieret/swe-agent-test-repo/issues/1');
   const [testRun, setTestRun] = useState(true);
   const [agentFeed, setAgentFeed] = useState([]);
@@ -111,24 +114,55 @@ function Run() {
     socket.on('update', handleUpdate);
     socket.on('log_message', handleLogMessage);
     socket.on('finish_run', handleFinishedRun);
+    socket.on('connect', () => {
+      console.log("Connected to server");
+      setIsConnected(true);
+      setConnectionError('');  // Clear any errors on successful connection
+    });
+
+    socket.on('disconnect', () => {
+      console.log("Disconnected from server");
+        setIsConnected(false);
+        setConnectionError('Connection to server lost.');
+    });
+
+    socket.on('connect_error', (error) => {
+        setIsConnected(false);
+        setConnectionError('Failed to connect to server.');
+    });
 
     return () => {
         socket.off('update', handleUpdate);
         socket.off('log_message', handleLogMessage);
         socket.off('finish_run', handleFinishedRun);
+        socket.off('connect');
+        socket.off('disconnect');
+        socket.off('connect_error');
     };
   }, []);
 
+  function renderErrorMessage() {
+    if (!isConnected && connectionError) {
+        return (
+            <div style={{ backgroundColor: 'red', color: 'white', padding: '10px' }}>
+                {connectionError}
+            </div>
+        );
+    }
+    return null;
+  }
+
   return (
-      
+
           <div className="container-demo">
             <hr />
+            {renderErrorMessage()}
             <form onSubmit={handleSubmit}>
               <label htmlFor="data_path">Data Path:</label>
               <input type="text" value={dataPath} onChange={(e) => setDataPath(e.target.value)} required />
               <label htmlFor="test_run">Test run (no LM queries)</label>
               <input type="checkbox" checked={testRun} onChange={(e) => setTestRun(e.target.checked)} />
-              <button type="submit" disabled={isComputing}>Run</button>
+              <button type="submit" disabled={isComputing || !isConnected}>Run</button>
             </form>
             <button onClick={handleStop} disabled={!isComputing}>Stop Computation</button>
             <div id="demo">
