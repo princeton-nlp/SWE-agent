@@ -18,6 +18,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
       - name: Pull swe-agent docker container
         run: |
           docker pull sweagent/swe-agent:latest
