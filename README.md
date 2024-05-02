@@ -49,8 +49,15 @@ Read our paper for more details [coming soon!].
 ### ☁️ Run from your browser
 
 1. Click [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/princeton-nlp/SWE-agent)
-2. Add your API keys to `keys.cfg` (find the file in the left sidebar and fill out the tempalte)
-3. Enter your SWE-agent command in the terminal window at the bottom
+2. Add your API keys to `keys.cfg` (find the file in the left sidebar and fill out the template)
+3. Make sure to wait until the `postCreateCommand` in the terminal window at the bottom is finished
+4. Enter your SWE-agent command
+
+<details>
+<summary>🔎 Watch the video</summary>
+
+https://github.com/princeton-nlp/SWE-agent/assets/13602468/44d60674-59ca-4986-9b22-7052a45cbed9
+</details>
 
 ### 🏎️ Express Setup + Run
 
