@@ -18,20 +18,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-          architecture: x64
-          activate-environment: swe-agent
-          environment-file: environment.yml
-      - name: Run setup script and create keys.cfg
+      - name: Pull swe-agent docker container
         run: |
-          ./setup.sh
+          docker pull sweagent/swe-agent:latest
+      - name: Create keys.cfg
+        run: |
           touch keys.cfg
-        shell: bash
-      - name: Install test dependencies
+      - name: Install dependencies
         run: |
+            pip install .
             pip install pytest pytest-cov
       - name: Run pytest
         run: |
