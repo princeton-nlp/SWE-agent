@@ -1,3 +1,10 @@
+try:
+    import rich
+except ModuleNotFoundError as e:
+    raise RuntimeError(
+        "You probably either forgot to install the dependencies "
+        "or forgot to activate your conda or virtual environment."
+    ) from e
 import json
 import logging
 import os
