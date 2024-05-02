@@ -134,8 +134,8 @@ function Run() {
             <div id="demo">
               <hr />
               <div className="panels">
-                <AgentFeed feed={agentFeed} id="agent" highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={agentFeedRef} otherRef={envFeedRef} title="Agent Feed" />
-                <EnvFeed feed={envFeed} id="env" highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={envFeedRef} otherRef={agentFeedRef} setIsTerminalExpanded={setIsTerminalExpanded} title="Environment Feed" />
+                <AgentFeed feed={agentFeed} id="agent" highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={agentFeedRef} otherRef={envFeedRef} title="Thoughts" />
+                <EnvFeed feed={envFeed} id="env" highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={envFeedRef} otherRef={agentFeedRef} setIsTerminalExpanded={setIsTerminalExpanded} title="Terminal" />
                 <LogPanel logs={logs} logsRef={logsRef} setIsTerminalExpanded={setIsLogsExpanded} />
               </div>
             </div>
