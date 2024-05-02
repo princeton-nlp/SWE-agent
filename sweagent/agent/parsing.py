@@ -127,6 +127,15 @@ class ThoughtActionParser(ParseFunction):
             start, end = last_valid_block
             thought = model_response[:start.start()] + model_response[end.end():]
             return thought, model_response[start.end():end.start()]
+        
+        # No multiline code, look for single line code
+        code_block_pat = re.compile(r'```(.*?)```')
+        match = code_block_pat.search(model_response)
+        if match:
+            thought = model_response[:match.start()] + model_response[match.end():]
+            return thought, match.group(1)
+        
+        # No single line code, raise error
         raise FormatError("No action found in model response.")
 
 

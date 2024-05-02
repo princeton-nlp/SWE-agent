@@ -36,6 +36,12 @@ def test_thought_action_parser():
     with pytest.raises(FormatError):
         parser("No code block", [])
 
+    # Single line code block test
+    model_response = "Let's look at the files in the current directory.\n```ls -l```"
+    thought, action = parser(model_response, [])
+    assert thought == "Let's look at the files in the current directory.\n"
+    assert action == "ls -l"
+
 
 def test_xml_thought_action_parser():
     parser = XMLThoughtActionParser()
