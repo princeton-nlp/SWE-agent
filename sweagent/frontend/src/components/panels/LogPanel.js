@@ -1,6 +1,4 @@
 import React, { useEffect } from 'react';
-import Message from '../AgentMessage';
-
 import MacBar from '../MacBar';
 import editorLogo from '../../assets/panel_icons/editor.png';
 

@@ -16,6 +16,7 @@ function Run() {
   const [connectionError, setConnectionError] = useState('');
 
   const [dataPath, setDataPath] = useState('https://github.com/klieret/swe-agent-test-repo/issues/1');
+  const [repoPath, setRepoPath] = useState("");
   const [testRun, setTestRun] = useState(true);
   const [agentFeed, setAgentFeed] = useState([]);
   const [envFeed, setEnvFeed] = useState([]);
@@ -69,7 +70,7 @@ function Run() {
     setEnvFeed([]); 
     setLogs('');
     try {
-      await axios.get(`/run`, { params: { data_path: dataPath, test_run: testRun } });
+      await axios.get(`/run`, { params: { data_path: dataPath, test_run: testRun, repo_path: repoPath } });
     } catch (error) {
       console.error('Error:', error);
     }
@@ -158,7 +159,7 @@ function Run() {
           <div className="container-demo">
             <hr />
             {renderErrorMessage()}
-            <LRunControl isComputing={isComputing} isConnected={isConnected} handleStop={handleStop} handleSubmit={handleSubmit} setDataPath={setDataPath} setTestRun={setTestRun} dataPath={dataPath} testRun={testRun} />
+            <LRunControl isComputing={isComputing} isConnected={isConnected} handleStop={handleStop} handleSubmit={handleSubmit} setDataPath={setDataPath} setTestRun={setTestRun} dataPath={dataPath} testRun={testRun} repoPath={repoPath} setRepoPath={setRepoPath} />
             <div id="demo">
               <hr />
               <div className="panels">
