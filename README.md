@@ -63,6 +63,10 @@ https://github.com/princeton-nlp/SWE-agent/assets/13602468/44d60674-59ca-4986-9b
 
 You can run the software directly using Docker. 
 
+> [!TIP]
+> If you're used to installing python packages
+> and you are on Linux or MacOS, we recommend you to use the [development setup](#-development-setup) instead. 
+
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
 2. Run `docker pull sweagent/swe-agent:latest`
 3. Add your API tokens to a file `keys.cfg` as explained [below](#-add-your-api-keystokens)
@@ -89,23 +93,17 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 > * See the [installation issues section](#-installation-issues) for more help if you run into
 >   trouble.
 
-### 🐍 Setup with conda (developer version) 
-
-To install the development version:
-
-1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
-2. Clone this repository
-3. [Install Miniconda](https://docs.anaconda.com/free/miniconda/miniconda-install/), then create the `swe-agent` environment with `conda env create -f environment.yml`
-4. Activate using `conda activate swe-agent`.
-5. Run `./setup.sh` to create the `swe-agent` docker image.
-6. Create a `keys.cfg` file at the root of this repository ([see below](#-add-your-api-keystokens))
+### Development setup
 
 > [!WARNING]
 > Expect some issues with Windows (we're working on them).
-> In the meantime, simply use Docker (see above).
-> If you want the latest version, you can also build your own `swe-agent-run`
-> container with the `Dockerfile` at the root of this repository by running
-> `docker build -t sweagent/swe-agent-run:latest .`
+> In the meantime, use Docker (see above).
+
+1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
+2. Clone this repository
+3. Run `pip install --editable .` at the repository root (as with any python package, it's recommended to use conda or virtual environments to avoid dependency hell)
+5. Run `./setup.sh` to create the `swe-agent` docker image.
+6. Create a `keys.cfg` file at the root of this repository ([see below](#-add-your-api-keystokens))
 
 > [!TIP]
 > If you run into docker issues, see the [installation issues section](#-installation-issues) for more help
