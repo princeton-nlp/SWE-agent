@@ -102,8 +102,8 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
 2. Clone this repository
 3. Run `pip install --editable .` at the repository root (as with any python package, it's recommended to use conda or virtual environments to avoid dependency hell)
-5. Run `./setup.sh` to create the `swe-agent` docker image.
-6. Create a `keys.cfg` file at the root of this repository ([see below](#-add-your-api-keystokens))
+4. Run `./setup.sh` to create the `swe-agent` docker image.
+5. Create a `keys.cfg` file at the root of this repository ([see below](#-add-your-api-keystokens))
 
 > [!TIP]
 > If you run into docker issues, see the [installation issues section](#-installation-issues) for more help
