@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Accordion from 'react-bootstrap/Accordion';
+import Form from 'react-bootstrap/Form';
 
 function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDataPath, setTestRun, dataPath, testRun, repoPath, setRepoPath}) {
   const [psType, setPsType] = useState('gh');
@@ -55,8 +56,13 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
       <Accordion.Item eventKey="1">
         <Accordion.Header>Extra settings</Accordion.Header>
         <Accordion.Body>
-            <label htmlFor="test_run">Test run (no LM queries)</label>
-            <input type="checkbox" checked={testRun} onChange={(e) => setTestRun(e.target.checked)} />
+            <Form.Check // prettier-ignore
+              type="switch"
+              id="custom-switch"
+              label="Test run (no LM queries)"
+              defaultChecked={testRun}
+              onChange={(e) => setTestRun(e.target.checked)}
+          />
           </Accordion.Body>
       </Accordion.Item>
     </Accordion>
