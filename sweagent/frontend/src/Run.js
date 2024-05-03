@@ -69,6 +69,7 @@ function Run() {
     setAgentFeed([]);
     setEnvFeed([]); 
     setLogs('');
+    setHighlightedStep(null);
     try {
       await axios.get(`/run`, { params: { data_path: dataPath, test_run: testRun, repo_path: repoPath } });
     } catch (error) {
