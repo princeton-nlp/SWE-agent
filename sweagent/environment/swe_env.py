@@ -77,6 +77,18 @@ class EnvironmentArguments(FrozenSerializable):
     repo_path: str = ""
 
 
+
+class EnvHook:
+    def on_init(self):
+        ...
+    
+    def on_copy_repo_started(self, *, repo_type: str, repo_path: str):
+        ...
+    
+    def on_install_env_started(self):
+        ...
+    
+
 class SWEEnv(gym.Env):
     """Gym environment for SWE-bench. This class should handle all communication with the docker container."""
 
@@ -127,6 +139,11 @@ class SWEEnv(gym.Env):
         self.timeout = self.args.timeout
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
+        self.hooks = []
+
+    def add_hook(self, hook: EnvHook):
+        hook.on_init()
+        self.hooks.append(hook)
 
     @property
     def _repo_name(self) -> str:
@@ -140,6 +157,8 @@ class SWEEnv(gym.Env):
             folder name of clone
         """
         assert self.record is not None  # mypy
+        for hook in self.hooks:
+            hook.on_copy_repo_started(repo_type=self.record["repo_type"], repo_path=self.record["repo"])
         if self.record["repo_type"] == "local":
             copy_anything_to_container(self.container_obj, self.record["repo"].removeprefix("local://"), "/"+self._repo_name)
             self.communicate_with_handling(
@@ -629,6 +648,8 @@ class SWEEnv(gym.Env):
                 "Skipping conda environment installation."
                 ))
             return
+        for hook in self.hooks:
+            hook.on_install_env_started()
         if self.args.environment_setup is not None:
             assert isinstance(self.args.environment_setup, (str, os.PathLike))
             if Path(self.args.environment_setup).suffix in [".yml", ".yaml"]:
@@ -686,9 +707,14 @@ class SWEEnv(gym.Env):
                 self.communicate(f"rm {PATH_TO_REQS}")
             elif packages == "environment.yml":
                 # Write environment.yml to file
-                content_env_yml = get_environment_yml(self.record, env_name)
+                if install_configs.get("no_use_env", False):
+                    content_env_yml = get_environment_yml(self.record, env_name)
+                else:
+                    content_env_yml = get_environment_yml(
+                        self.record, env_name, python_version=install_configs["python"]
+                    )
                 copy_file_to_container(self.container_obj, content_env_yml, PATH_TO_ENV_YML)
-                if "no_use_env" in install_configs and install_configs["no_use_env"]:
+                if install_configs.get("no_use_env", False):
                     # Create conda environment
                     self.communicate_with_handling(
                         f"conda create -c conda-forge -n {env_name} python={install_configs['python']} -y",
@@ -717,7 +743,7 @@ class SWEEnv(gym.Env):
                     timeout_duration=LONG_TIMEOUT,
                 )
             # Install extra pip packages if specified
-            if "pip_packages" in install_configs:
+            if install_configs.get("pip_packages", False):
                 self.communicate_with_handling(
                     f"source activate {env_name} && pip install {' '.join(install_configs['pip_packages'])}",
                     error_msg="Failed to install pip packages",
@@ -731,7 +757,7 @@ class SWEEnv(gym.Env):
         )
 
         # Install repo at base commit
-        if "pre_install" in install_configs:
+        if install_configs.get("pre_install", False):
             self.logger.info("Running pre-install commands...")
             for pre_install_cmd in install_configs["pre_install"]:
                 self.communicate_with_handling(
@@ -739,14 +765,14 @@ class SWEEnv(gym.Env):
                     error_msg="Pre-install commands failed to execute successfully",
                 )
         self.logger.info(f"Installing {self._repo_name} at base commit...")
-        if "install" in install_configs:
+        if install_configs.get("install", False):
             install_cmd = install_configs["install"]
             self.communicate_with_handling(
                 install_cmd,
                 error_msg="Install command failed to execute successfully",
                 timeout_duration=LONG_TIMEOUT
             )
-        if "post_install" in install_configs:
+        if install_configs.get("post_install", False):
             self.logger.info("Running post-install commands...")
             for post_install_cmd in install_configs["post_install"]:
                 self.communicate_with_handling(
