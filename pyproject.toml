@@ -12,7 +12,7 @@ build-backend = "setuptools.build_meta"  # If not defined, then legacy behavior 
 
 [project]
 name = "sweagent"
-dynamic = ["version"]
+dynamic = ["version", "dependencies"]
 description = "The official SWE-agent package - an open source Agent Computer Interface for running language models as software engineers."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -36,31 +36,12 @@ classifiers = [
   "Programming Language :: Python :: 3 :: Only",
 ]
 
-dependencies = [
-    "anthropic",
-    "config",
-    "datasets",
-    "docker",
-    "gymnasium",
-    "numpy",
-    "openai>=1.0",
-    "pandas",
-    "rich",
-    "ollama",
-    "ruamel.yaml",
-    "simple-parsing",
-    "swebench>=1.0.1",
-    "tenacity",
-    "together",
-    "unidiff",
-    "rich-argparse"
-]
-
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools.dynamic]
 version = {attr = "sweagent.__version__"}
+dependencies = {file = ["requirements.txt"]}
 
 [tool.setuptools.packages.find]
 where = ["."]
