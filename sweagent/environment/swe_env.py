@@ -58,7 +58,7 @@ class EnvironmentArguments(FrozenSerializable):
     """
     # Source of issue statement/problem statement. To run over a batch of issues: Path to a data file 
     # (`json`, `jsonl`) or directory. To run over single issue: github issue url or path to markdown file
-    # with problem statement.
+    # with problem statement or problem statement as text prefixed with `text://`.
     data_path: str
     image_name: str
     split: str = "dev"

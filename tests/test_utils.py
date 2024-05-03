@@ -142,6 +142,22 @@ def test_get_instance_gh_issue_gh_repo(tmp_path):
     assert instance["version"]
 
 
+def test_get_instance_text_issue_gh_repo(tmp_path):
+    instance = get_instances(
+        file_path="text://this is a test",
+        repo_path="https://github.com/princeton-nlp/SWE-agent",
+    )[0]
+    compare_with = {
+        'repo': "princeton-nlp/SWE-agent",
+        "repo_type": "github",
+        "problem_statement": "this is a test",
+    }
+    for key in compare_with:
+        assert instance[key] == compare_with[key]
+    assert len(instance["base_commit"]) > 10
+    assert instance["version"]
+
+
 def test_load_instances(test_data_path, caplog):
     test_data_sources = test_data_path / "data_sources"
     examples = list(test_data_sources.iterdir())
