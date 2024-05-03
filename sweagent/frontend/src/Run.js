@@ -5,6 +5,7 @@ import './static/run.css';
 import AgentFeed from './components/panels/AgentFeed';
 import EnvFeed from './components/panels/EnvFeed';
 import LogPanel from './components/panels/LogPanel';
+import LRunControl from './components/controls/LRunControl';
 
 const url = ''; // Will get this from .env 
 // Connect to Socket.io
@@ -157,14 +158,7 @@ function Run() {
           <div className="container-demo">
             <hr />
             {renderErrorMessage()}
-            <form onSubmit={handleSubmit}>
-              <label htmlFor="data_path">Data Path:</label>
-              <input type="text" value={dataPath} onChange={(e) => setDataPath(e.target.value)} required />
-              <label htmlFor="test_run">Test run (no LM queries)</label>
-              <input type="checkbox" checked={testRun} onChange={(e) => setTestRun(e.target.checked)} />
-              <button type="submit" disabled={isComputing || !isConnected}>Run</button>
-            </form>
-            <button onClick={handleStop} disabled={!isComputing}>Stop Computation</button>
+            <LRunControl isComputing={isComputing} isConnected={isConnected} handleStop={handleStop} handleSubmit={handleSubmit} setDataPath={setDataPath} setTestRun={setTestRun} dataPath={dataPath} testRun={testRun} />
             <div id="demo">
               <hr />
               <div className="panels">
