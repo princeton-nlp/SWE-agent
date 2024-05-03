@@ -462,21 +462,25 @@ class InstanceBuilder:
         self.args["problem_statement_source"] = "online"
     
     def set_problem_statement_from_file(self, file_path: str):
-        self.args["problem_statement"] = Path(file_path).read_text()
+        self.set_problem_statement_from_text(Path(file_path).read_text())
+
+    def set_problem_statement_from_text(self, text: str):
+        self.args["problem_statement"] = text
         self.args["instance_id"] = hashlib.sha256(self.args["problem_statement"].encode()).hexdigest()[:6]
         self.args["problem_statement_source"] = "local"
-
+    
     def set_problem_statement(self, data_path: str ):
         """Get problem statement for a single instance from a github issue url or a 
         path to a markdown or text file.
         """
+        if data_path.startswith("text://"):
+            return self.set_problem_statement_from_text(data_path.removeprefix("text://"))
         if is_github_issue_url(data_path):
-            self.set_problem_statement_from_gh_issue(data_path)
-        elif Path(data_path).is_file():
-            self.set_problem_statement_from_file(data_path)
-        else:
-            msg = f"Not sure how to get problem statement from {data_path=}."
-            raise ValueError(msg)
+            return self.set_problem_statement_from_gh_issue(data_path)
+        if Path(data_path).is_file():
+            return self.set_problem_statement_from_file(data_path)
+        msg = f"Not sure how to get problem statement from {data_path=}."
+        raise ValueError(msg)
     
     def set_repo_info_from_gh_url(self, url: str, base_commit: Optional[str] = None):
         owner, repo = parse_gh_repo_url(url)
@@ -592,7 +596,7 @@ def get_instances(
             pass
 
     # The next if statement is very brittle logic to determine if we're processing a single instance
-    if (Path(file_path).is_file() and Path(file_path).suffix in ['.md', '.txt']) or is_github_issue_url(file_path):
+    if (Path(file_path).is_file() and Path(file_path).suffix in ['.md', '.txt']) or is_github_issue_url(file_path) or file_path.startswith("text://"):
         ib = InstanceBuilder(token=token)
         ib.set_problem_statement(file_path)
         if repo_path:
