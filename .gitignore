@@ -186,7 +186,8 @@ website/frontend/build
 *.demo.yaml
 
 # trajectory files
-trajectories/*
+trajectories/**
+!trajectories/demonstrations/**
 
 .vscode/**
 
