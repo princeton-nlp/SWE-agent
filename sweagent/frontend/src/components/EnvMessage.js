@@ -21,7 +21,6 @@ const EnvMessage = ({ item, handleMouseEnter, isHighlighted, feedRef}) => {
     const messageTypeClass = "envMessage" + capitalizeFirstLetter(item.type);
 
     const textStyle={
-        backgroundColor: '#f5f2f0',
         boxShadow: "none",
         margin: "0",
         overflowY: "hidden",
@@ -56,17 +55,17 @@ const EnvMessage = ({ item, handleMouseEnter, isHighlighted, feedRef}) => {
                 className={`message ${item.format} ${stepClass} ${highlightClass} ${messageTypeClass}`}
                 onMouseEnter={() => handleMouseEnter(item, feedRef)}
             >
-                <SyntaxHighlighterBash
+                <p
                     codeTagProps={codeTagProps}
-                    customStyle={customStyleMerged}
+                    customStyle={{customStyleMerged, overflow: 'hidden'}}
                     language={language}
-                    lineProps={{ style: {wordBreak: 'break-word', whiteSpace: 'pre-wrap'} }}
+                    lineProps={{ style: {wordBreak: 'break-word', whiteSpace: 'normal'} }}
                     style={prism}
                     wrapLines={true}
                     showLineNumbers={false}
                 >
                     {item.message}
-                </SyntaxHighlighterBash>
+                </p>
             </div>
         );
     } else {
