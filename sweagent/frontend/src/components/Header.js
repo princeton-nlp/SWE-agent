@@ -9,9 +9,6 @@ const Header = () => {
         <Link to="/">
           <button>Home</button>
         </Link>
-        <Link to="/demo">
-          <button>Demo</button>
-        </Link>
         <Link
           to="https://discord.gg/AVEFbBn2rH"
           target="_blank"

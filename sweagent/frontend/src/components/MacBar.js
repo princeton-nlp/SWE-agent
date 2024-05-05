@@ -52,11 +52,11 @@ const MacBar = ({
           style={{ position: "absolute", right: "0em" }}
           onClick={() => setIsExpanded((prev) => !prev)}
         >
-          <ExpandIcon
+          {/* <ExpandIcon
             fillColor={expandFillColorMerged}
             height="0.75em"
             style={{ marginRight: "0.75em", cursor: "pointer" }}
-          />
+          /> */}
         </div>
       )}
     </div>
