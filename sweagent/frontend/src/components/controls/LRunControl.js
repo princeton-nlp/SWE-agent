@@ -44,13 +44,11 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
                 <option value="gh" selected>GitHub issue URL</option>
                 <option value="write">Write here</option>
               </select>
-              {getPsInput()}
             </div>
             <div class="input-group mb-3">
-              <span class="input-group-text" >Repository path</span>
-              <input type="text" class="form-control" placeholder="Enter repository path (optional when using GitHub issue)" onChange={(e) => setRepoPath(e.target.value)}  /> 
+            {getPsInput()}
             </div>
-            {/* <input type="text" value={dataPath} onChange={(e) => setDataPath(e.target.value)} required /> */}
+            <input type="text" class="form-control" placeholder="Enter repository path (optional when using GitHub issue)" onChange={(e) => setRepoPath(e.target.value)}  /> 
         </Accordion.Body>
       </Accordion.Item>
       <Accordion.Item eventKey="1">
@@ -66,6 +64,7 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
           </Accordion.Body>
       </Accordion.Item>
     </Accordion>
+    <br/>
     <div class="btn-group" role="group" aria-label="Basic example">
       <button type="submit" className="btn btn-primary" onClick={handleSubmit} disabled={isComputing || !isConnected}>Run</button>
       <button onClick={handleStop} disabled={!isComputing} className="btn btn-primary">Stop</button>
