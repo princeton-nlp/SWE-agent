@@ -169,7 +169,7 @@ function Run() {
   function renderErrorMessage() {
     if (!isConnected && connectionError) {
         return (
-            <div style={{ backgroundColor: 'red', color: 'white', padding: '10px' }}>
+            <div class="alert alert-danger" role="alert">
                 {connectionError}
             </div>
         );

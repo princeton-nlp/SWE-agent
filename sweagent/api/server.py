@@ -88,6 +88,8 @@ def run():
     session_id = ensure_session_id_set()
     if request.method == "OPTIONS":  # CORS preflight
         return _build_cors_preflight_response()
+    wu = WebUpdate(socketio)
+    wu.up_agent("Starting the run")
     data_path = request.args["data_path"]
     repo_path = request.args["repo_path"]
     model_name = request.args["model"]
@@ -119,7 +121,6 @@ def run():
         ),
         actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
     )
-    wu = WebUpdate(socketio)
     thread = MainThread(defaults, wu)
     global THREADS
     THREADS[session_id] = thread
