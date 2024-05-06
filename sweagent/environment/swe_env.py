@@ -230,13 +230,13 @@ class SWEEnv(gym.Env):
 
         if self.args.cache_task_images:
             cached_image = f"{self.cached_image_prefix}{index}"
-            if cached_image is not None and image_exists(cached_image):
+            if image_exists(cached_image):
                 logger.info(f"Restore environment from cached image {cached_image}")
                 self.stop_container() # stop current container
                 self._init_container(cached_image=cached_image)
                 self.communicate("export $(xargs </.env)")
                 envs = self.communicate("env")
-                logger.debug(f"Environment variables after loading cached image:\n{envs}\n")
+                logger.debug(f"Environment variables restored from the image:\n{envs}\n")
                 if apply_test_patch:
                     self._apply_test_patch()
                 return None, info
