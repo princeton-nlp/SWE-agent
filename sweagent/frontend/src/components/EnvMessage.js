@@ -9,10 +9,10 @@ import {
 import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
 import { prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-SyntaxHighlighter.registerLanguage('bash', bash);
+// SyntaxHighlighter.registerLanguage('bash', bash);
 
 
-const EnvMessage = ({ item, handleMouseEnter, isHighlighted, feedRef}) => {
+const EnvMessage = ({ item, handleMouseEnter, handleMouseLeave, isHighlighted, feedRef}) => {
     const stepClass = item.step !== null ? `step${item.step}` : '';
     const highlightClass = isHighlighted ? 'highlight' : '';
 
@@ -46,6 +46,7 @@ const EnvMessage = ({ item, handleMouseEnter, isHighlighted, feedRef}) => {
             <div 
                 className={`message ${stepClass} ${highlightClass}`}
                 onMouseEnter={() => handleMouseEnter(item, feedRef)}
+                onMouseLeave={handleMouseLeave}
             >
                 <SyntaxHighlighter
                     codeTagProps={codeTagProps}

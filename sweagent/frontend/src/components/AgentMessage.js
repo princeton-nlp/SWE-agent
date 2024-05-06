@@ -3,7 +3,7 @@ import React from 'react';
 import "../static/message.css";
 import "../static/agentMessage.css";
 
-const AgentMessage = ({ item, handleMouseEnter, isHighlighted, feedRef }) => {
+const AgentMessage = ({ item, handleMouseEnter, handleMouseLeave, isHighlighted, feedRef }) => {
     const stepClass = item.step !== null ? `step${item.step}` : '';
     const highlightClass = isHighlighted ? 'highlight' : '';
 
@@ -11,6 +11,7 @@ const AgentMessage = ({ item, handleMouseEnter, isHighlighted, feedRef }) => {
         <div 
             className={`message ${item.format} ${stepClass} ${highlightClass}`}
             onMouseEnter={() => handleMouseEnter(item, feedRef)}
+            onMouseLeave={handleMouseLeave}
         >
             { item.title && <span className="agentMessageTitle badge badge-dark">{item.title}</span>}
             <span>{item.message}</span>

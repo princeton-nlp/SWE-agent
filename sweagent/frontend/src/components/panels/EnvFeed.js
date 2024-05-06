@@ -13,7 +13,7 @@ function useScrollToBottom(feed, ref) {
   }, [feed, ref]);
 }
 
-const EnvFeed = ({ feed, id, title, highlightedStep, handleMouseEnter, selfRef, setIsTerminalExpanded}) => {
+const EnvFeed = ({ feed,  title, highlightedStep, handleMouseEnter, handleMouseLeave, selfRef, setIsTerminalExpanded}) => {
     useScrollToBottom(feed, selfRef);
 
     return (
@@ -34,6 +34,7 @@ const EnvFeed = ({ feed, id, title, highlightedStep, handleMouseEnter, selfRef, 
                         key={index}
                         item={item}
                         handleMouseEnter={handleMouseEnter}
+                        handleMouseLeave={handleMouseLeave}
                         isHighlighted={item.step !== null && highlightedStep === item.step}
                         feedRef={selfRef}
                     />

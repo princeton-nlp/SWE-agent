@@ -12,10 +12,8 @@ function useScrollToBottom(feed, ref) {
   }, [feed, ref]);
 }
 
-const AgentFeed = ({ feed, id, title, highlightedStep, handleMouseEnter, selfRef, }) => {
+const AgentFeed = ({ feed, title, highlightedStep, handleMouseEnter, handleMouseLeave, selfRef, }) => {
     useScrollToBottom(feed, selfRef);
-
-    const feedID = id + "Feed";
 
     return (
         <div id="agentFeed" className="agentFeed">
@@ -30,6 +28,7 @@ const AgentFeed = ({ feed, id, title, highlightedStep, handleMouseEnter, selfRef
                         key={index}
                         item={item}
                         handleMouseEnter={handleMouseEnter}
+                        handleMouseLeave={handleMouseLeave}
                         isHighlighted={item.step !== null && highlightedStep === item.step}
                         feedRef={selfRef}
                     />

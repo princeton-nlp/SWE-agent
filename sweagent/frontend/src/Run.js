@@ -61,6 +61,11 @@ function Run() {
     }
   };
 
+  const handleMouseLeave = () => {
+    console.log('Mouse left');
+    setHighlightedStep(null);
+  }
+
 
   // Handle form submission
   const handleSubmit = async (event) => {
@@ -163,8 +168,8 @@ function Run() {
             <div id="demo">
               <hr />
               <div className="panels">
-                <AgentFeed feed={agentFeed} id="agent" highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={agentFeedRef} otherRef={envFeedRef} title="Thoughts" />
-                <EnvFeed feed={envFeed} id="env" highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} selfRef={envFeedRef} otherRef={agentFeedRef} setIsTerminalExpanded={setIsTerminalExpanded} title="Terminal" />
+                <AgentFeed feed={agentFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} handleMouseLeave={handleMouseLeave} selfRef={agentFeedRef} otherRef={envFeedRef} title="Thoughts" />
+                <EnvFeed feed={envFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} handleMouseLeave={handleMouseLeave} selfRef={envFeedRef} otherRef={agentFeedRef} setIsTerminalExpanded={setIsTerminalExpanded} title="Terminal" />
                 <LogPanel logs={logs} logsRef={logsRef} setIsTerminalExpanded={setIsLogsExpanded} />
               </div>
             </div>
