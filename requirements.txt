@@ -1,0 +1,18 @@
+anthropic[bedrock]
+config
+datasets
+docker
+gymnasium
+numpy
+openai>=1.0
+pandas
+rich
+ruamel.yaml
+swebench>=1.0.1
+tenacity
+unidiff
+simple-parsing
+# Versions of together below 1.1.0 are not compatible. see https://github.com/princeton-nlp/SWE-agent/issues/135
+together>=1.1.0 
+ollama
+rich-argparse

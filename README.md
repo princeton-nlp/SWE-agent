@@ -31,7 +31,7 @@ Just like how typical language models requires good prompt engineering, good ACI
 SWE-agent contains features that we discovered to be immensely helpful during the agent-computer interface design process:
 1. We add a linter that runs when an edit command is issued, and do not let the edit command go through if the code isn't syntactically correct.
 2. We supply the agent with a special-built file viewer, instead of having it just ```cat``` files. We found that this file viewer works best when displaying just 100 lines in each turn. The file editor that we built has commands for scrolling up and down and for performing a search within the file.
-3. We supply the agent with a special-built full-directory string searching command. We found that it was important for this tool to succintly list the matches- we simply list each file that had at least one match. Showing the model more context about each match proved to be too confusing for the model. 
+3. We supply the agent with a special-built full-directory string searching command. We found that it was important for this tool to succinctly list the matches- we simply list each file that had at least one match. Showing the model more context about each match proved to be too confusing for the model. 
 4. When commands have an empty output we return a message saying "Your command ran successfully and did not produce any output."
 
 Read our paper for more details [coming soon!].
@@ -44,7 +44,20 @@ Read our paper for more details [coming soon!].
 }
 ```
 
-## 🚀 Setup <a name="setup"></a>
+## 🚀 Get started <a name="setup"></a>
+
+### ☁️ Run from your browser
+
+1. Click [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/princeton-nlp/SWE-agent)
+2. Add your API keys to `keys.cfg` (find the file in the left sidebar and fill out the template)
+3. Make sure to wait until the `postCreateCommand` in the terminal window at the bottom is finished
+4. Enter your SWE-agent command
+
+<details>
+<summary>🔎 Watch the video</summary>
+
+https://github.com/princeton-nlp/SWE-agent/assets/13602468/44d60674-59ca-4986-9b22-7052a45cbed9
+</details>
 
 ### 🏎️ Express Setup + Run
 
@@ -114,7 +127,7 @@ If you're using docker, pass the key with the [`-e` option](https://stackoverflo
 All keys are optional.
 
 ```
-GITHUB_TOKEN: 'GitHub Token Here'
+GITHUB_TOKEN: 'GitHub Token for access to private repos'  # <-- delete line if not used
 OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model'
 ANTHROPIC_API_KEY: 'Anthropic API Key Here if using Anthropic Model'
 TOGETHER_API_KEY: 'Together API Key Here if using Together Model'
@@ -137,7 +150,7 @@ If you seem to be having issues with running docker
 
 Any remaining issues? Please [open a GitHub issue](https://github.com/princeton-nlp/SWE-agent/issues/new/choose)!
 
-## 🔥 Quickstart: Solve real-life GitHub issues! <a name="real-life"></a>
+## 🔥 Solve real-life GitHub issues! <a name="real-life"></a>
 
 Using this script, you can run SWE-agent on any GitHub issue!
 ```bash
@@ -211,6 +224,9 @@ cd evaluation/
 Replace `<predictions_path>` with the path to the model's predictions, which should be generated from the *Inference* step. The `<predictions_path>` arguments should look like `../trajectories/<username>/<model>-<dataset>-<hyperparams>/all_preds.jsonl`
 * See the [`evaluation/`](evaluation/) folder for details about how evaluation works.
 
+## 🦺 Modifying SWE-agent <a name="modifying"></a>
+If you'd like to modify the example demonstration that we feed the model at the start of each run, first generate a trajectory manually by running the agent with ```--model_name human``` 
+and then convert that trajectory into a demonstration by following the guide [here](https://github.com/princeton-nlp/SWE-agent/tree/main/make_demos). 
 
 ## 💫 Contributions <a name="contributions"></a>
 - If you'd like to ask questions, learn about upcoming features, and participate in future development, join our [Discord community](https://discord.gg/AVEFbBn2rH)!
@@ -224,7 +240,8 @@ MIT. Check `LICENSE`.
 
 <div align="center">
 
-[![Tests (no LM)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/ci_no_llm.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/ci_no_llm.yaml)
+[![Pytest](https://github.com/princeton-nlp/SWE-agent/actions/workflows/pytest.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/pytest.yaml)
+[![Test build containers](https://github.com/princeton-nlp/SWE-agent/actions/workflows/test_build_containers.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/test_build_containers.yaml)
 [![codecov](https://codecov.io/gh/princeton-nlp/SWE-agent/graph/badge.svg?token=18XAVDK365)](https://codecov.io/gh/princeton-nlp/SWE-agent)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/princeton-nlp/SWE-agent/main.svg)](https://results.pre-commit.ci/latest/github/princeton-nlp/SWE-agent/main)
 [![Markdown links](https://github.com/princeton-nlp/SWE-agent/actions/workflows/check-links.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/check-links.yaml)
