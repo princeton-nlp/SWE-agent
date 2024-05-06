@@ -114,7 +114,7 @@ function Run() {
   React.useEffect(() => {
     const handleUpdate = (data) => {
       if (data.feed === 'agent') {
-        setAgentFeed(prevMessages => [...prevMessages, { title: data.title, message: data.message, format: data.format, step: data.thought_idx }]);
+        setAgentFeed(prevMessages => [...prevMessages, { type: data.type, message: data.message, format: data.format, step: data.thought_idx }]);
       }
       else if (data.feed === "env") {
         setEnvFeed(prevMessages => [...prevMessages, { message: data.message, type: data.type, format: data.format, step: data.thought_idx }]);

@@ -44,16 +44,18 @@ class WebUpdate:
     def up_agent(
             self,
             message: str,
-            title: str = "",
+            *,
             format: str = "markdown",
             thought_idx: Optional[int] =None,
+            type_: str = "info",
     ):
         """Update the agent feed"""
-        self._emit('update', {'feed': 'agent',  'title': title, 'message': message, 'format': format, 'thought_idx': thought_idx})
+        self._emit('update', {'feed': 'agent', 'message': message, 'format': format, 'thought_idx': thought_idx, 'type': type_})
     
     def up_env(
             self,
             message: str,
+            *,
             type_: str,
             format: str = "markdown",
             thought_idx: Optional[int] =None,
@@ -92,11 +94,9 @@ class AgentUpdateHook(AgentHook):
 
     def on_actions_generated(self, *, thought: str, action: str, output: str):
         self._thought_idx += 1
-        thought, _, discussion = thought.partition("DISCUSSION")
-        if thought.strip():
-            self._wu.up_agent(title=f"Thought", message=thought, format="markdown", thought_idx=self._thought_idx)
-        if discussion.strip():
-            self._wu.up_agent(title=f"Discussion", message=discussion, format="markdown", thought_idx=self._thought_idx)
+        for prefix in ["DISCUSSION\n", "THOUGHT\n", "DISCUSSION", "THOUGHT"]:
+            thought = thought.replace(prefix, "")
+        self._wu.up_agent(message=thought, format="markdown", thought_idx=self._thought_idx, type_="thought")
     
     def on_sub_action_started(self, *, sub_action: dict):
         # msg = f"```bash\n{sub_action['action']}\n```"

@@ -49,7 +49,7 @@ const EnvMessage = ({ item, handleMouseEnter, handleMouseLeave, isHighlighted, f
         "diff": "diff",
     }
 
-    if (item.type !== "text") {
+    if (item.format !== "text") {
         return (
             <div 
                 className={`message ${stepClass} ${highlightClass}  ${messageTypeClass}`}

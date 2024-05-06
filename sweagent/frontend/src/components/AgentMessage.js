@@ -2,6 +2,7 @@ import React from 'react';
 
 import "../static/message.css";
 import "../static/agentMessage.css";
+import {Gear} from 'react-bootstrap-icons';
 
 const AgentMessage = ({ item, handleMouseEnter, handleMouseLeave, isHighlighted, feedRef }) => {
     const stepClass = item.step !== null ? `step${item.step}` : '';
@@ -13,7 +14,7 @@ const AgentMessage = ({ item, handleMouseEnter, handleMouseLeave, isHighlighted,
             onMouseEnter={() => handleMouseEnter(item, feedRef)}
             onMouseLeave={handleMouseLeave}
         >
-            { item.title && <span className="agentMessageTitle badge badge-dark">{item.title}</span>}
+            { item.type !== "thought" && <Gear style={{marginRight: 5}}/>}
             <span>{item.message}</span>
         </div>
     );
