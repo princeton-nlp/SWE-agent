@@ -158,7 +158,6 @@ function Run() {
   return (
 
           <div className="container-demo">
-            <hr />
             {renderErrorMessage()}
             <LRunControl isComputing={isComputing} isConnected={isConnected} handleStop={handleStop} handleSubmit={handleSubmit} setDataPath={setDataPath} setTestRun={setTestRun} dataPath={dataPath} testRun={testRun} repoPath={repoPath} setRepoPath={setRepoPath} />
             <div id="demo">

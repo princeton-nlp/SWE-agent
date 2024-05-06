@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import Accordion from 'react-bootstrap/Accordion';
+import { Tab, Tabs } from 'react-bootstrap';
 import Form from 'react-bootstrap/Form';
+import '../../static/runControl.css';
 
 function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDataPath, setTestRun, dataPath, testRun, repoPath, setRepoPath}) {
   const [psType, setPsType] = useState('gh');
+  const [key, setKey] = useState('problem');
 
   const handlePsTypeChange = (event) => {
     const selectedType = event.target.value;
@@ -34,36 +36,40 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
 
   return (
     <div>
-    <Accordion defaultActiveKey="0">
-      <Accordion.Item eventKey="0">
-        <Accordion.Header>Problem statement</Accordion.Header>
-        <Accordion.Body>
-            <div class="input-group mb-3">
-              <span class="input-group-text" >Problem statement</span>
-              <select class="form-select" aria-label="Select problem statement type" onChange={handlePsTypeChange} >
-                <option value="gh" selected>GitHub issue URL</option>
+      <Tabs
+        id="controlled-tab-example"
+        activeKey={key}
+        onSelect={(k) => setKey(k)}
+        className="mb-3 bordered-tab-contents"
+      >
+        <Tab eventKey="problem" title="Problem Statement">
+          <div className="p-3">
+            <div className="input-group mb-3">
+              <span className="input-group-text">Problem statement</span>
+              <select className="form-select" aria-label="Select problem statement type" onChange={handlePsTypeChange}>
+                <option value="gh">GitHub issue URL</option>
                 <option value="write">Write here</option>
               </select>
             </div>
-            <div class="input-group mb-3">
-            {getPsInput()}
+            <div className="input-group mb-3">
+              {getPsInput()}
             </div>
-            <input type="text" class="form-control" placeholder="Enter repository path (optional when using GitHub issue)" onChange={(e) => setRepoPath(e.target.value)}  /> 
-        </Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="1">
-        <Accordion.Header>Extra settings</Accordion.Header>
-        <Accordion.Body>
-            <Form.Check // prettier-ignore
+            <input type="text" className="form-control" placeholder="Enter repository path (optional when using GitHub issue)" onChange={(e) => setRepoPath(e.target.value)} />
+          </div>
+        </Tab>
+        <Tab eventKey="model" title="Model">
+        </Tab>
+        <Tab eventKey="settings" title="Extra Settings">
+          <div className="p-3">
+            <Form.Check 
               type="switch"
               id="custom-switch"
               label="Test run (no LM queries)"
-              defaultChecked={testRun}
               onChange={(e) => setTestRun(e.target.checked)}
-          />
-          </Accordion.Body>
-      </Accordion.Item>
-    </Accordion>
+            />
+          </div>
+        </Tab>
+      </Tabs>
     <br/>
     <div class="btn-group" role="group" aria-label="Basic example">
       <button type="submit" className="btn btn-primary" onClick={handleSubmit} disabled={isComputing || !isConnected}>Run</button>
