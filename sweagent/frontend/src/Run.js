@@ -17,6 +17,7 @@ function Run() {
 
   const [dataPath, setDataPath] = useState('https://github.com/klieret/swe-agent-test-repo/issues/1');
   const [repoPath, setRepoPath] = useState("");
+  const [model, setModel] = useState("gpt4");
   const [testRun, setTestRun] = useState(true);
   const [agentFeed, setAgentFeed] = useState([]);
   const [envFeed, setEnvFeed] = useState([]);
@@ -92,7 +93,7 @@ function Run() {
     setLogs('');
     setHighlightedStep(null);
     try {
-      await axios.get(`/run`, { params: { data_path: dataPath, test_run: testRun, repo_path: repoPath } });
+      await axios.get(`/run`, { params: { data_path: dataPath, test_run: testRun, repo_path: repoPath, model: model } });
     } catch (error) {
       console.error('Error:', error);
     }
@@ -180,7 +181,7 @@ function Run() {
 
           <div className="container-demo">
             {renderErrorMessage()}
-            <LRunControl isComputing={isComputing} isConnected={isConnected} handleStop={handleStop} handleSubmit={handleSubmit} setDataPath={setDataPath} setTestRun={setTestRun} dataPath={dataPath} testRun={testRun} repoPath={repoPath} setRepoPath={setRepoPath} />
+            <LRunControl isComputing={isComputing} isConnected={isConnected} handleStop={handleStop} handleSubmit={handleSubmit} setDataPath={setDataPath} setTestRun={setTestRun} setRepoPath={setRepoPath} testRun={testRun} setModel={setModel} />
             <div id="demo">
               <hr />
               <div className="panels">

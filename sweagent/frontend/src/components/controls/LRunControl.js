@@ -6,9 +6,11 @@ import { PlayFill, StopFill} from 'react-bootstrap-icons';
 import logo from '../../assets/logo.png'
 import { Link } from 'react-router-dom';
 
-function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDataPath, setTestRun, dataPath, testRun, repoPath, setRepoPath}) {
+function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDataPath, setTestRun, testRun, setRepoPath, setModel}) {
   const [psType, setPsType] = useState('gh');
   const [key, setKey] = useState('problem');
+
+  const defaultPS = "https://github.com/klieret/swe-agent-test-repo/issues/1" ;
 
   const handlePsTypeChange = (event) => {
     const selectedType = event.target.value;
@@ -16,17 +18,16 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
   };
 
   function getPsInput() {
-    if (psType == 'gh') {
+    if (psType === 'gh') {
       return (
         <input 
           type="text" 
           className="form-control" 
-          // value={inputValue} 
-          onChange={(e) => setDataPath(e.target.value || "https://github.com/klieret/swe-agent-test-repo/issues/1")}
-          placeholder="https://github.com/klieret/swe-agent-test-repo/issues/1" />
+          onChange={(e) => setDataPath(e.target.value || defaultPS)}
+          placeholder={defaultPS}/>
       );
     }
-    if (psType == 'write') {
+    if (psType === 'write') {
       return (
         <textarea 
           className="form-control" 
@@ -45,10 +46,10 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
         onSelect={(k) => setKey(k)}
         className="mb-3 bordered-tab-contents"
       >
-        <Tab eventKey="problem" title="Problem Statement">
+        <Tab eventKey="problem" title="Problem Source">
           <div className="p-3">
             <div className="input-group mb-3">
-              <span className="input-group-text">Problem statement</span>
+              <span className="input-group-text">Problem source</span>
               <select className="form-select" aria-label="Select problem statement type" onChange={handlePsTypeChange}>
                 <option value="gh">GitHub issue URL</option>
                 <option value="write">Write here</option>
@@ -61,7 +62,15 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
           </div>
         </Tab>
         <Tab eventKey="model" title="Model">
-          <div>Model settings coming soon.</div>
+          <div className="p-3">
+            <div className="input-group mb-3">
+              <span className="input-group-text">Model name</span>
+              <input type="text" className="form-control" placeholder="gpt4" onChange={(e) => setModel(e.target.value || "gpt4")}  />
+            </div>
+            <div class="alert alert-info" role="alert">
+              Please make sure that you have your API keys set in keys.cfg
+            </div>
+          </div>
         </Tab>
         <Tab eventKey="settings" title="Extra Settings">
           <div className="p-3">
@@ -75,9 +84,9 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
           </div>
         </Tab>
       </Tabs>
-    <div className="runControl">
+    <div className="runControl p-3">
       <div>
-        <img src={logo} style={{height: 50, marginRight: 20}}/>
+        <img src={logo} style={{height: 50, marginRight: 20}} alt="swe agent logo"/>
         <div class="btn-group" role="group" aria-label="Basic example">
           <button type="submit" className="btn btn-primary" onClick={handleSubmit} disabled={isComputing || !isConnected}><PlayFill/> Run</button>
           <button onClick={handleStop} disabled={!isComputing} className="btn btn-primary"><StopFill/> Stop</button>
