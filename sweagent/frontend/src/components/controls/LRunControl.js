@@ -4,6 +4,7 @@ import Form from 'react-bootstrap/Form';
 import '../../static/runControl.css';
 import { PlayFill, StopFill} from 'react-bootstrap-icons';
 import logo from '../../assets/logo.png'
+import { Link } from 'react-router-dom';
 
 function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDataPath, setTestRun, dataPath, testRun, repoPath, setRepoPath}) {
   const [psType, setPsType] = useState('gh');
@@ -74,11 +75,24 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
           </div>
         </Tab>
       </Tabs>
-    <div className="runControlButtons">
-      <img src={logo} style={{height: 50, marginRight: 20}}/>
-      <div class="btn-group" role="group" aria-label="Basic example">
-        <button type="submit" className="btn btn-primary" onClick={handleSubmit} disabled={isComputing || !isConnected}><PlayFill/> Run</button>
-        <button onClick={handleStop} disabled={!isComputing} className="btn btn-primary"><StopFill/> Stop</button>
+    <div className="runControl">
+      <div>
+        <img src={logo} style={{height: 50, marginRight: 20}}/>
+        <div class="btn-group" role="group" aria-label="Basic example">
+          <button type="submit" className="btn btn-primary" onClick={handleSubmit} disabled={isComputing || !isConnected}><PlayFill/> Run</button>
+          <button onClick={handleStop} disabled={!isComputing} className="btn btn-primary"><StopFill/> Stop</button>
+        </div>
+      </div>
+      <div className="extraButtons">
+        <div class="btn-group" role="group" aria-label="Basic example">
+          <Link
+            to="https://github.com/princeton-nlp/SWE-agent"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <button type="button" class="btn btn-outline-secondary">GitHub readme</button>
+          </Link>
+        </div>
       </div>
     </div>
   </div>

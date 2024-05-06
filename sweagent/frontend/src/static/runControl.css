@@ -13,10 +13,12 @@
     background-color: white;
 }
 
-div .runControlButtons {
+div .runControl{
     background-color: white;
     padding: 10px;
     border-radius: 0 0 0.5em 0.5em;
     border: 1px solid #ddd;
     border-top: none;
+    display: flex;
+    justify-content: space-between;
 }
