@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import Message from '../AgentMessage';
 
 import workspaceLogo from '../../assets/panel_icons/workspace.png';
+import "../../static/agentFeed.css";
 
 function useScrollToBottom(feed, ref) {
   useEffect(() => {
@@ -17,7 +18,7 @@ const AgentFeed = ({ feed, id, title, highlightedStep, handleMouseEnter, selfRef
     const feedID = id + "Feed";
 
     return (
-        <div id={feedID} className={feedID}>
+        <div id="agentFeed" className="agentFeed">
             <div id="label">
               <img src={workspaceLogo} alt="workspace" />
               <span>{title}</span>

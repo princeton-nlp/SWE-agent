@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import MacBar from '../MacBar';
 import editorLogo from '../../assets/panel_icons/editor.png';
+import "../../static/logPanel.css";
 import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { Clipboard } from 'react-bootstrap-icons';
 
@@ -49,14 +50,11 @@ const LogPanel = ({ logs, logsRef, setIsTerminalExpanded}) => {
                 <pre id="logContent">{logs}</pre>
                 <div style={{ clear: "both", marginTop: '1em' }}/>
               </div>
-              <OverlayTrigger
-              placement="top"
-              overlay={<Tooltip id="copy-tooltip">Copy to Clipboard</Tooltip>}
-            >
-              <Button variant="light" onClick={handleCopy}>
-                <Clipboard />
-              </Button>
-            </OverlayTrigger>
+              <div style={{ display: 'flex', justifyContent: 'right', width: '100%' }}>
+                <Button variant="light" onClick={handleCopy} style={{marginBottom: 20, marginRight: 20}}>
+                  <Clipboard /> Copy to clipboard
+                </Button>
+              </div>
             </div>
         </div>
     );

@@ -55,7 +55,7 @@ const EnvMessage = ({ item, handleMouseEnter, isHighlighted, feedRef}) => {
                 className={`message ${item.format} ${stepClass} ${highlightClass} ${messageTypeClass}`}
                 onMouseEnter={() => handleMouseEnter(item, feedRef)}
             >
-                <p
+                <div
                     codeTagProps={codeTagProps}
                     customStyle={{customStyleMerged, overflow: 'hidden'}}
                     language={language}
@@ -65,7 +65,7 @@ const EnvMessage = ({ item, handleMouseEnter, isHighlighted, feedRef}) => {
                     showLineNumbers={false}
                 >
                     {item.message}
-                </p>
+                </div>
             </div>
         );
     } else {

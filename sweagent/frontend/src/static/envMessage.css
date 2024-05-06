@@ -1,7 +1,7 @@
 .envMessageCommand {
   border-radius: 1em 1em 0em 0em;
   margin: 1em 1em 0em 1em;
-  border-bottom: 1px dashed black;
+  /* border-bottom: 1px dashed black; */
 }
 
 .envMessageOutput{

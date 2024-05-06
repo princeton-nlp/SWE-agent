@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 import Form from 'react-bootstrap/Form';
 import '../../static/runControl.css';
+import { PlayFill, StopFill} from 'react-bootstrap-icons';
 
 function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDataPath, setTestRun, dataPath, testRun, repoPath, setRepoPath}) {
   const [psType, setPsType] = useState('gh');
@@ -58,6 +59,7 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
           </div>
         </Tab>
         <Tab eventKey="model" title="Model">
+          <div>Model settings coming soon.</div>
         </Tab>
         <Tab eventKey="settings" title="Extra Settings">
           <div className="p-3">
@@ -72,8 +74,8 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
       </Tabs>
     <br/>
     <div class="btn-group" role="group" aria-label="Basic example">
-      <button type="submit" className="btn btn-primary" onClick={handleSubmit} disabled={isComputing || !isConnected}>Run</button>
-      <button onClick={handleStop} disabled={!isComputing} className="btn btn-primary">Stop</button>
+      <button type="submit" className="btn btn-primary" onClick={handleSubmit} disabled={isComputing || !isConnected}><PlayFill/> Run</button>
+      <button onClick={handleStop} disabled={!isComputing} className="btn btn-primary"><StopFill/> Stop</button>
     </div>
   </div>
   );

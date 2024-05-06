@@ -3,6 +3,7 @@ import EnvMessage from '../EnvMessage';
 
 import MacBar from '../MacBar';
 import terminalLogo from '../../assets/panel_icons/terminal.png';
+import "../../static/envFeed.css";
 
 function useScrollToBottom(feed, ref) {
   useEffect(() => {
@@ -15,10 +16,8 @@ function useScrollToBottom(feed, ref) {
 const EnvFeed = ({ feed, id, title, highlightedStep, handleMouseEnter, selfRef, setIsTerminalExpanded}) => {
     useScrollToBottom(feed, selfRef);
 
-    const feedID = id + "Feed";
-
     return (
-        <div id={feedID} className={feedID}>
+        <div id="envFeed" className="envFeed">
             <div id="label">
               <img src={terminalLogo} alt="workspace" />
               <span>{title}</span>
