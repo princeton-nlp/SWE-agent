@@ -8,7 +8,7 @@
 <p align="center">
   <a href="https://swe-agent.com"><strong>Website & Demo</strong></a>&nbsp; | &nbsp;
   <a href="https://discord.gg/AVEFbBn2rH"><strong>Discord</strong></a>&nbsp; | &nbsp;
-  <strong>Paper [coming April 2024]</strong>
+  <a href="https://swe-agent.com/paper.pdf"><strong>Preprint</strong></a>&nbsp; 
 </p>
 
 
@@ -26,7 +26,7 @@ SWE-agent is built and maintained by researchers from Princeton University.
 ### ✨ Agent-Computer Interface (ACI) <a name="aci"></a>
 We accomplish these results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, view, edit and execute code files. We call this an **Agent-Computer Interface** (ACI) and build the SWE-agent repository to make it easy to iterate on ACI design for repository-level coding agents.
 
-Just like how typical language models requires good prompt engineering, good ACI design leads to much better results when using agents. As we show in our paper, a baseline agent without a well-tuned ACI does much worse than SWE-agent.
+Just like how typical language models requires good prompt engineering, good ACI design leads to much better results when using agents. As we show in our [paper](https://swe-agent.com/paper.pdf), a baseline agent without a well-tuned ACI does much worse than SWE-agent.
 
 SWE-agent contains features that we discovered to be immensely helpful during the agent-computer interface design process:
 1. We add a linter that runs when an edit command is issued, and do not let the edit command go through if the code isn't syntactically correct.
@@ -34,11 +34,11 @@ SWE-agent contains features that we discovered to be immensely helpful during th
 3. We supply the agent with a special-built full-directory string searching command. We found that it was important for this tool to succinctly list the matches- we simply list each file that had at least one match. Showing the model more context about each match proved to be too confusing for the model. 
 4. When commands have an empty output we return a message saying "Your command ran successfully and did not produce any output."
 
-Read our paper for more details [coming soon!].
+Read our paper for more details [here](https://swe-agent.com/paper.pdf).
 
 ```
 @misc{yang2024sweagent,
-      title={SWE-agent: Agent Computer Interfaces Enable Software Engineering Language Models}, 
+      title={SWE-agent: Agent-Computer Interfaces Enable Software Engineering Language Models}, 
       author={John Yang and Carlos E. Jimenez and Alexander Wettig and Kilian Lieret and Shunyu Yao and Karthik Narasimhan and Ofir Press},
       year={2024},
 }
