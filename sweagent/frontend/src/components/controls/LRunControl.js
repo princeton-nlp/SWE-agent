@@ -3,6 +3,7 @@ import { Tab, Tabs } from 'react-bootstrap';
 import Form from 'react-bootstrap/Form';
 import '../../static/runControl.css';
 import { PlayFill, StopFill} from 'react-bootstrap-icons';
+import logo from '../../assets/logo.png'
 
 function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDataPath, setTestRun, dataPath, testRun, repoPath, setRepoPath}) {
   const [psType, setPsType] = useState('gh');
@@ -73,10 +74,12 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
           </div>
         </Tab>
       </Tabs>
-    <br/>
-    <div class="btn-group" role="group" aria-label="Basic example">
-      <button type="submit" className="btn btn-primary" onClick={handleSubmit} disabled={isComputing || !isConnected}><PlayFill/> Run</button>
-      <button onClick={handleStop} disabled={!isComputing} className="btn btn-primary"><StopFill/> Stop</button>
+    <div className="runControlButtons">
+      <img src={logo} style={{height: 50, marginRight: 20}}/>
+      <div class="btn-group" role="group" aria-label="Basic example">
+        <button type="submit" className="btn btn-primary" onClick={handleSubmit} disabled={isComputing || !isConnected}><PlayFill/> Run</button>
+        <button onClick={handleStop} disabled={!isComputing} className="btn btn-primary"><StopFill/> Stop</button>
+      </div>
     </div>
   </div>
   );

@@ -1,12 +1,12 @@
 import React from "react";
 import "../static/header.css";
-import { Link } from 'react-router-dom';
+// import { Link } from 'react-router-dom';
 
 const Header = () => {
   return (
     <>
       <header>
-        <Link to="/">
+        {/* <Link to="/">
           <button>Home</button>
         </Link>
         <Link
@@ -15,7 +15,7 @@ const Header = () => {
           rel="noopener noreferrer"
         >
           <button>Discord</button>
-        </Link>
+        </Link> */}
       </header>
     </>
   );

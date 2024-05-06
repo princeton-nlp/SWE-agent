@@ -2,7 +2,6 @@
     border-left: 1px solid #ddd;
     border-right: 1px solid #ddd;
     border-bottom: 1px solid #ddd;
-    border-radius: 0px 0px 5px 5px;
     padding: 10px;
 }
 
@@ -12,4 +11,12 @@
 
 .tab-pane {
     background-color: white;
+}
+
+div .runControlButtons {
+    background-color: white;
+    padding: 10px;
+    border-radius: 0 0 0.5em 0.5em;
+    border: 1px solid #ddd;
+    border-top: none;
 }
