@@ -231,7 +231,7 @@ class SWEEnv(gym.Env):
             cached_image = f"{self.cached_image_prefix}{index}"
             if image_exists(cached_image):
                 logger.info(f"Restore environment from cached image {cached_image}")
-                self.stop_container() # stop current container
+                self.close() # stop current container
                 self._init_container(cached_image=cached_image)
                 self.communicate("export $(xargs </.env)")
                 envs = self.communicate("env")
@@ -418,9 +418,6 @@ class SWEEnv(gym.Env):
             raise
         except:
             pass
-        self.stop_container()
-
-    def stop_container(self):
         assert self.container is not None
         assert self.container_obj is not None
         self.container.terminate()
