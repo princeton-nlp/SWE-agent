@@ -156,14 +156,6 @@ class SWEEnv(gym.Env):
         hook.on_init()
         self.hooks.append(hook)
 
-    def update_timings(self, dt: float):
-        self._timings.append(dt)
-        cached = "_cached" if self.args.cache_task_images else ""
-        fname = f"env_timings_{self.args.data_path.replace('/', '_')}_{self.args.split}{cached}.yaml"
-        with open(fname, "w") as f:
-            yaml.dump(self._timings, f)
-        logger.debug(f"Total time spent in the environment preparation: {sum(self._timings):.1f} sec")
-
     @property
     def _repo_name(self) -> str:
         """Name of the local copy of the repository"""
@@ -221,7 +213,6 @@ class SWEEnv(gym.Env):
             observation (`str`) - output from container
             info (`dict`) - additional information (e.g. debugging information)
         """
-        dt = time.monotonic()
         info = {}
         info["commit_sha"] = self.commit_sha
 
@@ -246,7 +237,6 @@ class SWEEnv(gym.Env):
                 self.communicate("export $(xargs </.env)")
                 envs = self.communicate("env")
                 logger.debug(f"Environment variables after loading cached image:\n{envs}\n")
-                self.update_timings(time.monotonic() - dt)
                 if apply_test_patch:
                     self._apply_test_patch()
                 return None, info
@@ -317,8 +307,6 @@ class SWEEnv(gym.Env):
             self.communicate("env >> /.env")
             self.container_obj.commit(cached_image)
             logger.info(f"Container with environment {self.container_obj.id} cached as image {cached_image}")
-
-        self.update_timings(time.monotonic() - dt)
 
         if apply_test_patch:
             self._apply_test_patch()
