@@ -24,6 +24,8 @@ function Run() {
   const [logs, setLogs] = useState('');
   const [isComputing, setIsComputing] = useState(false);
 
+  const hoverTimeoutRef = useRef(null);
+
   const [isTerminalExpanded, setIsTerminalExpanded] = useState(false);
   const [isLogsExpanded, setIsLogsExpanded] = useState(false);
 
@@ -54,15 +56,29 @@ function Run() {
   }
 
   const handleMouseEnter = (item, feedRef) => {
-    const highlightedStep = item.step;
-    if (!isComputing) {
-      setHighlightedStep(highlightedStep);
-      scrollToHighlightedStep(highlightedStep, getOtherFeed(feedRef));
+    if (isComputing) {
+      return;
     }
+
+    const highlightedStep = item.step;
+
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+
+    hoverTimeoutRef.current = setTimeout(() => {
+      if (!isComputing) {
+        setHighlightedStep(highlightedStep);
+        scrollToHighlightedStep(highlightedStep, getOtherFeed(feedRef));
+      }
+    }, 250);
   };
 
   const handleMouseLeave = () => {
     console.log('Mouse left');
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
     setHighlightedStep(null);
   }
 
