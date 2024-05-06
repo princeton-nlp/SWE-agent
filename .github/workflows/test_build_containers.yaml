@@ -1,0 +1,23 @@
+
+name: Test build containers
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  setup_job:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Run setup.sh
+        run: |
+          ./setup.sh
