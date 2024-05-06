@@ -136,7 +136,6 @@ class SWEEnv(gym.Env):
         # Establish connection with execution container
         self.image_name = args.image_name
         self._reset_container()
-        self._timings = []
 
         # Prepare image tag prefix for cached task environments
         if self.args.cache_task_images:
