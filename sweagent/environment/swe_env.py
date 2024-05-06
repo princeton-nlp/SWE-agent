@@ -684,6 +684,7 @@ class SWEEnv(gym.Env):
             packages = (
                 install_configs.get("packages", "")
             )
+            install_configs["python"] = install_configs.get("python", "3.9")
             if packages == "requirements.txt":
                 # Create conda environment
                 self.communicate_with_handling(
