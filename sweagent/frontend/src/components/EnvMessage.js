@@ -5,73 +5,65 @@ import "../static/envMessage.css";
 
 import {
     Prism as SyntaxHighlighter,
-    PrismLight as SyntaxHighlighterBash
   } from 'react-syntax-highlighter';
-// import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
+import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
 import { prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-function capitalizeFirstLetter(str) {
-    return str[0].toUpperCase() + str.slice(1);
-  }
+SyntaxHighlighter.registerLanguage('bash', bash);
 
 
 const EnvMessage = ({ item, handleMouseEnter, isHighlighted, feedRef}) => {
     const stepClass = item.step !== null ? `step${item.step}` : '';
     const highlightClass = isHighlighted ? 'highlight' : '';
-    const messageTypeClass = "envMessage" + capitalizeFirstLetter(item.type);
 
-    const textStyle={
-        boxShadow: "none",
-        margin: "0",
-        overflowY: "hidden",
-        padding: "0.25em 0.5em 0.75em 0.5em",
-    }
-    
-    const customStyle={
-        backgroundColor: 'inherit',
-    }
-
-
-    const customStyleMerged = {
+    const customStyle = {
         margin: 0,
         padding: '0 0.5em',
         overflowX: 'hidden',
         lineHeight: 'inherit',
-        ...customStyle,
+        backgroundColor: 'transparent',
     }
 
     const codeTagProps = {
         style: {
+            boxShadow: "none",
+            margin: "0",
+            overflowY: "hidden",
+            padding: "0.25em 0.5em 0.75em 0.5em",
             lineHeight: 'inherit',
             fontSize: 'inherit',
-            ...textStyle,
         }
     }
 
+    const typeToLanguage = {
+        "command": "bash",
+        "output": "markdown",
+        "diff": "diff",
+    }
+
     if (item.type === "command" || item.type === "output") {
-        const language = item.type === "command" ? "bash" : "markdown";
         return (
             <div 
-                className={`message ${item.format} ${stepClass} ${highlightClass} ${messageTypeClass}`}
+                className={`message ${stepClass} ${highlightClass}`}
                 onMouseEnter={() => handleMouseEnter(item, feedRef)}
             >
-                <div
+                <SyntaxHighlighter
                     codeTagProps={codeTagProps}
-                    customStyle={{customStyleMerged, overflow: 'hidden'}}
-                    language={language}
-                    lineProps={{ style: {wordBreak: 'break-word', whiteSpace: 'normal'} }}
-                    style={prism}
+                    customStyle={{customStyleMerged: customStyle, overflow: 'hidden'}}
+                    language={typeToLanguage[item.type]}
+                    // lineProps={{ style: {wordBreak: 'break-word', whiteSpace: 'normal'} }}
+                    style={{backgroundColor: 'transparent', ...prism}}
                     wrapLines={true}
                     showLineNumbers={false}
                 >
                     {item.message}
-                </div>
+                </SyntaxHighlighter>
             </div>
         );
     } else {
         return (
             <div 
-                className={`message ${item.format} ${stepClass} ${highlightClass} ${messageTypeClass}`}
+                className={`message ${stepClass} ${highlightClass}`}
                 onMouseEnter={() => handleMouseEnter(item, feedRef)}
             >
                 <span>{item.message}</span>
