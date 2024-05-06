@@ -67,6 +67,7 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
               type="switch"
               id="custom-switch"
               label="Test run (no LM queries)"
+              checked={testRun}
               onChange={(e) => setTestRun(e.target.checked)}
             />
           </div>
