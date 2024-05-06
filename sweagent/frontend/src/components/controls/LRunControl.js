@@ -77,7 +77,7 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
             <Form.Check 
               type="switch"
               id="custom-switch"
-              label="Test run (no LM queries)"
+              label="Test run (dummy agent without LM queries)"
               checked={testRun}
               onChange={(e) => setTestRun(e.target.checked)}
             />
