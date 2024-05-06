@@ -100,7 +100,7 @@ class AgentUpdateHook(AgentHook):
     
     def on_sub_action_started(self, *, sub_action: dict):
         # msg = f"```bash\n{sub_action['action']}\n```"
-        msg = sub_action["action"].strip()
+        msg = "$ " + sub_action["action"].strip()
         self._sub_action = sub_action["action"].strip()
         self._wu.up_env(message=msg, thought_idx=self._thought_idx, type_="command")
     

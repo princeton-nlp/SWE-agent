@@ -11,14 +11,22 @@ import { prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 // SyntaxHighlighter.registerLanguage('bash', bash);
 
+function capitalizeFirstLetter(str) {
+    return str[0].toUpperCase() + str.slice(1);
+}
+
 
 const EnvMessage = ({ item, handleMouseEnter, handleMouseLeave, isHighlighted, feedRef}) => {
     const stepClass = item.step !== null ? `step${item.step}` : '';
     const highlightClass = isHighlighted ? 'highlight' : '';
+    const messageTypeClass = "envMessage" + capitalizeFirstLetter(item.type);
+
+    const paddingBottom = item.type === "command" ? "0" : "0.5em";
+    const paddingTop = ["output", "diff"].includes(item.type) ? "0" : "0.5em";
 
     const customStyle = {
         margin: 0,
-        padding: '0 0.5em',
+        padding: `${paddingTop} 0.5em ${paddingBottom} 0.5em`,
         overflowX: 'hidden',
         lineHeight: 'inherit',
         backgroundColor: 'transparent',
@@ -29,7 +37,7 @@ const EnvMessage = ({ item, handleMouseEnter, handleMouseLeave, isHighlighted, f
             boxShadow: "none",
             margin: "0",
             overflowY: "hidden",
-            padding: "0.25em 0.5em 0.75em 0.5em",
+            padding: "0",
             lineHeight: 'inherit',
             fontSize: 'inherit',
         }
@@ -41,16 +49,16 @@ const EnvMessage = ({ item, handleMouseEnter, handleMouseLeave, isHighlighted, f
         "diff": "diff",
     }
 
-    if (item.type === "command" || item.type === "output") {
+    if (item.type !== "text") {
         return (
             <div 
-                className={`message ${stepClass} ${highlightClass}`}
+                className={`message ${stepClass} ${highlightClass}  ${messageTypeClass}`}
                 onMouseEnter={() => handleMouseEnter(item, feedRef)}
                 onMouseLeave={handleMouseLeave}
             >
                 <SyntaxHighlighter
                     codeTagProps={codeTagProps}
-                    customStyle={{customStyleMerged: customStyle, overflow: 'hidden'}}
+                    customStyle={customStyle}
                     language={typeToLanguage[item.type]}
                     // lineProps={{ style: {wordBreak: 'break-word', whiteSpace: 'normal'} }}
                     style={{backgroundColor: 'transparent', ...prism}}
@@ -64,7 +72,7 @@ const EnvMessage = ({ item, handleMouseEnter, handleMouseLeave, isHighlighted, f
     } else {
         return (
             <div 
-                className={`message ${stepClass} ${highlightClass}`}
+                className={`message ${stepClass} ${highlightClass} ${messageTypeClass}`}
                 onMouseEnter={() => handleMouseEnter(item, feedRef)}
             >
                 <span>{item.message}</span>
