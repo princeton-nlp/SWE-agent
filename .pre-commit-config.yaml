@@ -13,6 +13,15 @@ repos:
       - id: detect-private-key
       - id: check-ast
 
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.20.7
+    hooks:
+      - id: typos
+        files: \.(py|md|rst|yaml|toml)
+        # empty to do not write fixes
+        args: []
+        exclude: pyproject.toml
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.4.3
     hooks:
