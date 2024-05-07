@@ -114,6 +114,9 @@ class AgentUpdateHook(AgentHook):
         type_ = "output"
         if self._sub_action == "submit":
             type_ = "diff"
+        if obs is None:
+            # This can happen for empty patch submissions
+            obs = ""
         msg = obs.strip()
         self._wu.up_env(message=msg, thought_idx=self._thought_idx, type_=type_)
 
