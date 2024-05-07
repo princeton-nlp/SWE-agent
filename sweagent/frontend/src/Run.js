@@ -15,10 +15,10 @@ function Run() {
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [errorBanner, setErrorBanner] = useState('');
 
-  const [dataPath, setDataPath] = useState('https://github.com/klieret/swe-agent-test-repo/issues/1');
+  const [dataPath, setDataPath] = useState('https://github.com/marshmallow-code/marshmallow/issues/1359');
   const [repoPath, setRepoPath] = useState("");
   const [model, setModel] = useState("gpt4");
-  const [testRun, setTestRun] = useState(true);
+  const [testRun, setTestRun] = useState(false);
   const [agentFeed, setAgentFeed] = useState([]);
   const [envFeed, setEnvFeed] = useState([]);
   const [highlightedStep, setHighlightedStep] = useState(null);
@@ -89,8 +89,8 @@ function Run() {
     setIsComputing(true);
     stillComputingTimeoutRef.current = setTimeout(() => {
         setIsComputing(false);
-        console.log("No activity for 20 second, setting isComputing to false");
-    }, 20000);
+        console.log("No activity for 30s, setting isComputing to false");
+    }, 30000);
   }
 
   // Handle form submission

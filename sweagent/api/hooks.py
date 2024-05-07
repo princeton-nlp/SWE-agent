@@ -83,8 +83,13 @@ class MainUpdateHook(MainHook):
         self._wu.finish_run()
 
     def on_instance_completed(self, *, info, trajectory):
-        self._wu.up_agent(message=f"Instance completed")
-    
+        print(info.get("submission"))
+        if info.get("submission") and info["exit_status"] == "submitted":
+            msg = (
+                "The submission was successful. You can find the patch (diff) in the right panel. "
+                "To apply it to your code, run `git apply /path/to/patch/file.patch`. "
+            )
+            self._wu.up_agent(msg, type_="success")
 
 class AgentUpdateHook(AgentHook):
     def __init__(self, wu: WebUpdate):

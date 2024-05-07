@@ -9,7 +9,7 @@ import { Link } from 'react-router-dom';
 function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDataPath, setTestRun, testRun, setRepoPath, setModel, tabKey, setTabKey}) {
   const [psType, setPsType] = useState('gh');
 
-  const defaultPS = "https://github.com/klieret/swe-agent-test-repo/issues/1" ;
+  const defaultPS = "https://github.com/marshmallow-code/marshmallow/issues/1359" ;
 
   const handlePsTypeChange = (event) => {
     const selectedType = event.target.value;
