@@ -48,20 +48,38 @@ Read our paper for more details [here](https://swe-agent.com/paper.pdf).
 
 ### ☁️ Run from your browser
 
-1. Click [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/princeton-nlp/SWE-agent)
-2. Add your API keys to `keys.cfg` (find the file in the left sidebar and fill out the template)
-3. Make sure to wait until the `postCreateCommand` in the terminal window at the bottom is finished
-4. Enter your SWE-agent command
-
 <details>
 <summary>🔎 Watch the video</summary>
 
 https://github.com/princeton-nlp/SWE-agent/assets/13602468/44d60674-59ca-4986-9b22-7052a45cbed9
 </details>
 
-### 🏎️ Express Setup + Run
+1. Click [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/princeton-nlp/SWE-agent)
+2. Add your API keys to `keys.cfg` (find the file in the left sidebar and fill out the template)
+3. Make sure to wait until the `postCreateCommand` in the terminal window at the bottom is finished
+4. Enter your SWE-agent command
 
-You can run the software directly using Docker. 
+### Install from source
+
+> [!WARNING]
+> Expect some issues with Windows (we're working on them).
+> In the meantime, use Docker (see below).
+
+1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
+2. Clone this repository
+3. Run `pip install --editable .` at the repository root (as with any python setup, it's recommended to use [conda][] or [virtual environments][] to manage dependencies)
+4. Run `./setup.sh` to create the `swe-agent` docker image.
+5. Create a `keys.cfg` file at the root of this repository ([see below](#-add-your-api-keystokens))
+
+> [!TIP]
+> If you run into docker issues, see the [installation issues section](#-installation-issues) for more help
+
+[conda]: https://docs.conda.io/en/latest/
+[virtual environments]: https://realpython.com/python-virtual-environments-a-primer/
+
+### Fallback: Run with docker
+
+Instead of installing SWE-agent from source, you can also run the software directly using Docker. 
 
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
 2. Run `docker pull sweagent/swe-agent:latest`
@@ -89,26 +107,6 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 > * See the [installation issues section](#-installation-issues) for more help if you run into
 >   trouble.
 
-### 🐍 Setup with conda (developer version) 
-
-To install the development version:
-
-1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
-2. Clone this repository
-3. [Install Miniconda](https://docs.anaconda.com/free/miniconda/miniconda-install/), then create the `swe-agent` environment with `conda env create -f environment.yml`
-4. Activate using `conda activate swe-agent`.
-5. Run `./setup.sh` to create the `swe-agent` docker image.
-6. Create a `keys.cfg` file at the root of this repository ([see below](#-add-your-api-keystokens))
-
-> [!WARNING]
-> Expect some issues with Windows (we're working on them).
-> In the meantime, simply use Docker (see above).
-> If you want the latest version, you can also build your own `swe-agent-run`
-> container with the `Dockerfile` at the root of this repository by running
-> `docker build -t sweagent/swe-agent-run:latest .`
-
-> [!TIP]
-> If you run into docker issues, see the [installation issues section](#-installation-issues) for more help
 
 ### 🔑 Add your API keys/tokens
 
