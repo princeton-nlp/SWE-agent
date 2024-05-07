@@ -1,5 +1,5 @@
 import MacBar from "../MacBar";
-import editorLogo from "../../assets/panel_icons/editor.png";
+import workspaceLogo from "../../assets/panel_icons/workspace.png";
 import "../../static/logPanel.css";
 import { Button } from "react-bootstrap";
 import { Clipboard } from "react-bootstrap-icons";
@@ -26,7 +26,7 @@ const LogPanel = ({ logs, logsRef, isComputing }) => {
 
   return (
     <div id="logPanel" className="logPanel">
-      <MacBar logo={editorLogo} title="Log file" dark={true} />
+      <MacBar logo={workspaceLogo} title="Log file" dark={true} />
       <div className="scrollableDiv" ref={logsRef}>
         <div className="innerDiv">
           <pre id="logContent">{logs}</pre>

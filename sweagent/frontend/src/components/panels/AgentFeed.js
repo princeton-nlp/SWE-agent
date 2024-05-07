@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import Message from "../AgentMessage";
 import MacBar from "../MacBar";
-import workspaceLogo from "../../assets/panel_icons/workspace.png";
+import editorLogo from "../../assets/panel_icons/editor.png";
 import "../../static/agentFeed.css";
 
 function useScrollToBottom(feed, ref) {
@@ -23,7 +23,7 @@ const AgentFeed = ({
 
   return (
     <div id="agentFeed" className="agentFeed">
-      <MacBar title="Agent" logo={workspaceLogo} />
+      <MacBar title="Agent" logo={editorLogo} />
       <div className="scrollableDiv" ref={selfRef}>
         <div className="innerDiv">
           {feed.map((item, index) => (
