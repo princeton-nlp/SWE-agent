@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import Message from '../AgentMessage';
-
+import MacBar from '../MacBar';
 import workspaceLogo from '../../assets/panel_icons/workspace.png';
 import "../../static/agentFeed.css";
 
@@ -17,10 +17,10 @@ const AgentFeed = ({ feed, title, highlightedStep, handleMouseEnter, handleMouse
 
     return (
         <div id="agentFeed" className="agentFeed">
-            <div id="label">
-              <img src={workspaceLogo} alt="workspace" />
-              <span>{title}</span>
-            </div>
+          <MacBar
+              title="Agent"
+              logo={workspaceLogo}
+            />
             <div className="scrollableDiv"  ref={selfRef} >
               <div className="innerDiv">
                 {feed.map((item, index) => (

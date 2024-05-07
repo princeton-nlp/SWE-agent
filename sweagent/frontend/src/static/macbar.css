@@ -1,40 +1,37 @@
 .mac-window-top-bar {
   background-color: #f0f0f0;
-  background-image: linear-gradient(to bottom, #f0f0f0, #e0e0e0); /* Gradient effect */
+  background-image: linear-gradient(to bottom, #f0f0f0, #e0e0e0); 
   border-top-left-radius: 0.5em;
   border-top-right-radius: 0.5em;
-  height: 1.2em;
+  height: 2em;
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.mac-window-button {
-  width: 0.5em;
-  height: 0.5em;
-  border-radius: 50%;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+.mac-window-top-bar.dark {
+  background-color: #f0f0f0;
+  background-image: linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.9));
+  /* messageStyle={{
+    color: "white",
+    fontSize: "smaller",
+    marginBottom: "0.1em",
+  }} */
+
 }
 
-.mac-window-button:hover {
-  background-color: #c0c0c0;
-}
+#label {
+  align-items: center;
+  display: flex;
+  margin: 1em 1em 1em 0.5em;
 
-.mac-window-button.close {
-  background-color: #FF605C;
-  left: 0.5em;
-}
+  img {
+    height: 1em;
+    margin-right: 0.4em;
+  }
 
-.mac-window-button.minimize {
-  background-color: #FFBD44;
-  left: 1.25em;
-}
-
-.mac-window-button.expand {
-  background-color: #00CA4E;
-  left: 2em;
+  span {
+    color: #888;
+    font-size: smaller;
+  }
 }

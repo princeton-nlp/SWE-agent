@@ -85,30 +85,10 @@
     margin: 0.2em;
     overflow: auto;
 
-    #label {
-      align-items: center;
-      display: flex;
-      margin-bottom: 0.25em;
 
-      img {
-        height: 1em;
-        margin-right: 0.25em;
-      }
-
-      span {
-        color: #888;
-        font-size: smaller;
-      }
-    }
   }
 
-  .agentFeed {
-    grid-column: 1 / 3;
-    grid-row: 1 / 5;
-    .scrollableDiv {
-      background-color: #ebe6ea;
-    }
-  }
+
   
   .envFeed {
     grid-column: 3 / 6;

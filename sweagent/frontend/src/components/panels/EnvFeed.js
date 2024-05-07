@@ -18,14 +18,9 @@ const EnvFeed = ({ feed,  title, highlightedStep, handleMouseEnter, handleMouseL
 
     return (
         <div id="envFeed" className="envFeed">
-            <div id="label">
-              <img src={terminalLogo} alt="workspace" />
-              <span>{title}</span>
-            </div>
             <MacBar
-              barStyle={{ height: "2em" }}
-              expandFillColor={"black"}
-              setIsExpanded={setIsTerminalExpanded}
+              title="Terminal"
+              logo={terminalLogo}
             />
             <div className="scrollableDiv"  ref={selfRef} >
               <div className="innerDiv">
