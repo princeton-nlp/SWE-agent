@@ -33,6 +33,8 @@ app.config['SESSION_TYPE'] = 'memcache'
 
 THREADS: Dict[str, "MainThread"] = {}
 
+os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"] = "1"
+env_utils.START_UP_DELAY = 1
 
 
 def ensure_session_id_set():
@@ -105,9 +107,7 @@ def run():
     model_name = request.args["model"]
     test_run = request.args["test_run"].lower() == "true"
     if test_run:
-        os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"] = "1"
         model_name = "instant_empty_submit"
-        env_utils.START_UP_DELAY = 1
     defaults = ScriptArguments(
         suffix="",
         environment=EnvironmentArguments(
