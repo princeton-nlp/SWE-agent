@@ -54,7 +54,7 @@ logger.propagate = False
 
 @dataclass(frozen=True)
 class EnvironmentArguments(FrozenSerializable):
-    """Configure data sources and setup instructions for th environment in which we solve the tasks.
+    """Configure data sources and setup instructions for the environment in which we solve the tasks.
     """
     # Source of issue statement/problem statement. To run over a batch of issues: Path to a data file 
     # (`json`, `jsonl`) or directory. To run over single issue: github issue url or path to markdown file
