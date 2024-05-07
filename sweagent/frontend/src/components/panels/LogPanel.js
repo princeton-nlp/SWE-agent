@@ -4,7 +4,7 @@ import "../../static/logPanel.css";
 import { Button } from 'react-bootstrap';
 import { Clipboard } from 'react-bootstrap-icons';
 
-const LogPanel = ({ logs, logsRef }) => {
+const LogPanel = ({ logs, logsRef, isComputing }) => {
 
   const copyToClipboard = (text) => {
     // Create a temporary textarea element
@@ -37,11 +37,13 @@ const LogPanel = ({ logs, logsRef }) => {
                 <pre id="logContent">{logs}</pre>
                 <div style={{ clear: "both", marginTop: '1em' }}/>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'right', width: '100%' }}>
-                <Button variant="light" onClick={handleCopy} style={{marginBottom: 20, marginRight: 20}}>
-                  <Clipboard /> Copy to clipboard
-                </Button>
-              </div>
+              { !isComputing && 
+                <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                  <Button variant="light" onClick={handleCopy} style={{marginBottom: 20, marginRight: 20}}>
+                    <Clipboard /> Copy to clipboard
+                  </Button>
+                </div>
+              }
             </div>
         </div>
     );

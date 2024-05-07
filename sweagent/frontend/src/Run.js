@@ -121,13 +121,17 @@ function Run() {
       }
     };
 
+    const scrollLog = () => {
+      logsRef.current.scrollTop = logsRef.current.scrollHeight;
+      console.log('Scrolling to bottom', logsRef.current.scrollHeight);
+    }
+
     const handleLogMessage = (data) => {
       setLogs(prevLogs => prevLogs + data.message);
       if (logsRef.current) {
         
         setTimeout(() => {
-          logsRef.current.scrollTop = logsRef.current.scrollHeight;
-          console.log('Scrolling to bottom', logsRef.current.scrollHeight);
+          scrollLog();
         }, 100);
       }
     }
@@ -149,11 +153,15 @@ function Run() {
       console.log("Disconnected from server");
         setIsConnected(false);
         setConnectionError('Connection to server lost.');
+        setIsComputing(false);
+        scrollLog(); // reveal copy button
     });
 
     socket.on('connect_error', (error) => {
         setIsConnected(false);
         setConnectionError('Failed to connect to server.');
+        setIsComputing(false);
+        scrollLog();  // reveal copy button
     });
 
     return () => {
@@ -187,7 +195,7 @@ function Run() {
               <div className="panels">
                 <AgentFeed feed={agentFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} handleMouseLeave={handleMouseLeave} selfRef={agentFeedRef} otherRef={envFeedRef} />
                 <EnvFeed feed={envFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} handleMouseLeave={handleMouseLeave} selfRef={envFeedRef} otherRef={agentFeedRef} />
-                <LogPanel logs={logs} logsRef={logsRef} />
+                <LogPanel logs={logs} logsRef={logsRef} isComputing={isComputing}/>
               </div>
             </div>
           <hr />
