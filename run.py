@@ -369,6 +369,8 @@ class Main:
                 break
             except SystemExit:
                 logger.critical(f"❌ Exiting because SystemExit was called")
+                self.env.close()
+                logger.info("Container closed")
                 raise
             except Exception as e:
                 traceback.print_exc()

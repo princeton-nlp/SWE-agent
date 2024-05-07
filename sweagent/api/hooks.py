@@ -7,6 +7,7 @@ from sweagent.agent.agents import AgentHook
 from flask_socketio import SocketIO
 
 from sweagent.api.utils import strip_ansi_sequences
+from sweagent.environment.swe_env import EnvHook
 
 # baaaaaaad
 sys.path.append(str(PACKAGE_DIR.parent))
@@ -110,6 +111,15 @@ class AgentUpdateHook(AgentHook):
             type_ = "diff"
         msg = obs.strip()
         self._wu.up_env(message=msg, thought_idx=self._thought_idx, type_=type_)
+
+
+class EnvUpdateHook(EnvHook):
+    def __init__(self, wu: WebUpdate):
+        """This hooks into the environment class to update the web interface"""
+        self._wu = wu
+
+    def on_close(self):
+        self._wu.up_env(message="Environment closed", format="text", type_="info")
 
 
         

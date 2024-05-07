@@ -11,7 +11,7 @@ from sweagent.agent.agents import AgentArguments
 from sweagent.agent.models import ModelArguments
 from sweagent.api.utils import ThreadWithExc
 from sweagent.environment.swe_env import EnvironmentArguments
-from sweagent.api.hooks import WebUpdate, MainUpdateHook, AgentUpdateHook
+from sweagent.api.hooks import EnvUpdateHook, WebUpdate, MainUpdateHook, AgentUpdateHook
 import sweagent.environment.utils as env_utils
 from flask_socketio import SocketIO
 from flask_cors import CORS
@@ -58,6 +58,7 @@ class MainThread(ThreadWithExc):
                     main = Main(self._settings)
                     main.add_hook(MainUpdateHook(self._wu))
                     main.agent.add_hook(AgentUpdateHook(self._wu))
+                    main.env.add_hook(EnvUpdateHook(self._wu))
                     main.main()
                 except Exception as e:
                     self._wu.up_agent(f"Error (see log for details): {e}")
@@ -71,6 +72,8 @@ class MainThread(ThreadWithExc):
         while self.is_alive():
             self.raise_exc(SystemExit)
             time.sleep(0.1)
+        self._wu.finish_run()
+        self._wu.up_agent("Run stopped by user")
 
 
 @app.route('/')
