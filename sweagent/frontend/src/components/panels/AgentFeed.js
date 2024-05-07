@@ -12,7 +12,7 @@ function useScrollToBottom(feed, ref) {
   }, [feed, ref]);
 }
 
-const AgentFeed = ({ feed, title, highlightedStep, handleMouseEnter, handleMouseLeave, selfRef, }) => {
+const AgentFeed = ({ feed, highlightedStep, handleMouseEnter, handleMouseLeave, selfRef, }) => {
     useScrollToBottom(feed, selfRef);
 
     return (

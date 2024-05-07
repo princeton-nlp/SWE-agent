@@ -27,12 +27,11 @@ function Run() {
 
   const hoverTimeoutRef = useRef(null);
 
-  const [isTerminalExpanded, setIsTerminalExpanded] = useState(false);
-  const [isLogsExpanded, setIsLogsExpanded] = useState(false);
-
   const agentFeedRef = useRef(null);
   const envFeedRef = useRef(null);
   const logsRef = useRef(null);
+  
+  const [tabKey, setTabKey] = useState('problem');
 
   axios.defaults.baseURL = url;
 
@@ -86,6 +85,7 @@ function Run() {
 
   // Handle form submission
   const handleSubmit = async (event) => {
+    setTabKey(null);
     setIsComputing(true);
     event.preventDefault();
     setAgentFeed([]);
@@ -181,13 +181,13 @@ function Run() {
 
           <div className="container-demo">
             {renderErrorMessage()}
-            <LRunControl isComputing={isComputing} isConnected={isConnected} handleStop={handleStop} handleSubmit={handleSubmit} setDataPath={setDataPath} setTestRun={setTestRun} setRepoPath={setRepoPath} testRun={testRun} setModel={setModel} />
+            <LRunControl isComputing={isComputing} isConnected={isConnected} handleStop={handleStop} handleSubmit={handleSubmit} setDataPath={setDataPath} setTestRun={setTestRun} setRepoPath={setRepoPath} testRun={testRun} setModel={setModel} tabKey={tabKey} setTabKey={setTabKey}/>
             <div id="demo">
               <hr />
               <div className="panels">
-                <AgentFeed feed={agentFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} handleMouseLeave={handleMouseLeave} selfRef={agentFeedRef} otherRef={envFeedRef} title="Thoughts" />
-                <EnvFeed feed={envFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} handleMouseLeave={handleMouseLeave} selfRef={envFeedRef} otherRef={agentFeedRef} setIsTerminalExpanded={setIsTerminalExpanded} title="Terminal" />
-                <LogPanel logs={logs} logsRef={logsRef} setIsTerminalExpanded={setIsLogsExpanded} />
+                <AgentFeed feed={agentFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} handleMouseLeave={handleMouseLeave} selfRef={agentFeedRef} otherRef={envFeedRef} />
+                <EnvFeed feed={envFeed} highlightedStep={highlightedStep} handleMouseEnter={handleMouseEnter} handleMouseLeave={handleMouseLeave} selfRef={envFeedRef} otherRef={agentFeedRef} />
+                <LogPanel logs={logs} logsRef={logsRef} />
               </div>
             </div>
           <hr />

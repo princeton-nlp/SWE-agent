@@ -4,7 +4,7 @@ import "../../static/logPanel.css";
 import { Button } from 'react-bootstrap';
 import { Clipboard } from 'react-bootstrap-icons';
 
-const LogPanel = ({ logs, logsRef, setIsTerminalExpanded}) => {
+const LogPanel = ({ logs, logsRef }) => {
 
   const copyToClipboard = (text) => {
     // Create a temporary textarea element

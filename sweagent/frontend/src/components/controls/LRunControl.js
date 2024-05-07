@@ -6,9 +6,8 @@ import { PlayFill, StopFill} from 'react-bootstrap-icons';
 
 import { Link } from 'react-router-dom';
 
-function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDataPath, setTestRun, testRun, setRepoPath, setModel}) {
+function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDataPath, setTestRun, testRun, setRepoPath, setModel, tabKey, setTabKey}) {
   const [psType, setPsType] = useState('gh');
-  const [key, setKey] = useState('problem');
 
   const defaultPS = "https://github.com/klieret/swe-agent-test-repo/issues/1" ;
 
@@ -41,12 +40,21 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
     }
   }
 
+  function onTabClicked(keyClicked) {
+    if (keyClicked === tabKey) {
+      setTabKey(null);
+    }
+    else {
+      setTabKey(keyClicked);
+    }
+  }
+
   return (
     <div>
       <Tabs
         id="controlled-tab-example"
-        activeKey={key}
-        onSelect={(k) => setKey(k)}
+        activeKey={tabKey}
+        onSelect={onTabClicked}
         className="mb-3 bordered-tab-contents"
       >
         <Tab eventKey="problem" title="Problem Source">

@@ -13,7 +13,7 @@ function useScrollToBottom(feed, ref) {
   }, [feed, ref]);
 }
 
-const EnvFeed = ({ feed,  title, highlightedStep, handleMouseEnter, handleMouseLeave, selfRef, setIsTerminalExpanded}) => {
+const EnvFeed = ({ feed,  highlightedStep, handleMouseEnter, handleMouseLeave, selfRef}) => {
     useScrollToBottom(feed, selfRef);
 
     return (
