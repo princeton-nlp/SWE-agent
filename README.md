@@ -110,14 +110,12 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 
 ### 🔑 Add your API keys/tokens
 
-For the conda setup, create a `keys.cfg` file at the root of this repository and populate it with your API keys.
+Create a `keys.cfg` file at the root of this repository and populate it with your API keys.
 
 ```
 GITHUB_TOKEN: 'GitHub Token Here (optional)'
 OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model (optional)'
 ```
-
-If you're using docker, pass the key with the [`-e` option](https://stackoverflow.com/a/30494145/) to the docker container. 
 
 <details>
 <summary>🔎 More options for different keys (click to unfold)</summary>
