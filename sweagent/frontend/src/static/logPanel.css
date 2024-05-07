@@ -1,3 +1,13 @@
+.logPanel {
+    grid-column: 3 / 6;
+    grid-row: 3 / 5;
+    color: white;
+}
+
 .logPanel .innerDiv {
     padding-left: 1em;
+}
+
+.logPanel .scrollableDiv {
+    background-color: #1e1e1e !important;
 }

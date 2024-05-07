@@ -20,7 +20,7 @@
 
 }
 
-#label {
+.label {
   align-items: center;
   display: flex;
   margin: 1em 1em 1em 0.5em;
@@ -34,4 +34,8 @@
     color: #888;
     font-size: smaller;
   }
+}
+
+.dark .label span {
+  color: #eae5e5;
 }

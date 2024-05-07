@@ -1,8 +1,7 @@
-import React, { useEffect } from 'react';
 import MacBar from '../MacBar';
 import editorLogo from '../../assets/panel_icons/editor.png';
 import "../../static/logPanel.css";
-import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Button } from 'react-bootstrap';
 import { Clipboard } from 'react-bootstrap-icons';
 
 const LogPanel = ({ logs, logsRef, setIsTerminalExpanded}) => {
@@ -33,7 +32,7 @@ const LogPanel = ({ logs, logsRef, setIsTerminalExpanded}) => {
               title="Log file"
               dark={true}
             />
-            <div className="scrollableDiv"  ref={logsRef} style={{ backgroundColor: "#1e1e1e" }}>
+            <div className="scrollableDiv"  ref={logsRef}>
               <div className="innerDiv">
                 <pre id="logContent">{logs}</pre>
                 <div style={{ clear: "both", marginTop: '1em' }}/>

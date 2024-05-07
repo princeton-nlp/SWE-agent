@@ -11,7 +11,7 @@ const MacBar = ({
   const darkClass = dark ? 'dark' : '';
   return (
     <div className={`mac-window-top-bar ${darkClass}`} >
-       <div id="label">
+       <div className="label">
           <img src={logo} alt="title" />
           <span>{title}</span>
         </div>

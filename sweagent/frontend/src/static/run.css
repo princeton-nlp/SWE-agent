@@ -87,8 +87,6 @@
 
 
   }
-
-
   
   .envFeed {
     grid-column: 3 / 6;
@@ -96,11 +94,6 @@
     height: 95%;
   }
 
-  .logPanel {
-    grid-column: 3 / 6;
-    grid-row: 3 / 5;
-    color: white;
-  }
 
   .innerDiv {
     flex-grow: 1;

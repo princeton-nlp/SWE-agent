@@ -21,6 +21,7 @@ const EnvFeed = ({ feed,  title, highlightedStep, handleMouseEnter, handleMouseL
             <MacBar
               title="Terminal"
               logo={terminalLogo}
+              dark={false}
             />
             <div className="scrollableDiv"  ref={selfRef} >
               <div className="innerDiv">
