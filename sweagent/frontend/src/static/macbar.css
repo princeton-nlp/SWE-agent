@@ -1,6 +1,6 @@
 .mac-window-top-bar {
   background-color: #f0f0f0;
-  background-image: linear-gradient(to bottom, #f0f0f0, #e0e0e0); 
+  background-image: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
   border-top-left-radius: 0.5em;
   border-top-right-radius: 0.5em;
   height: 2em;
@@ -11,13 +11,16 @@
 
 .mac-window-top-bar.dark {
   background-color: #f0f0f0;
-  background-image: linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.9));
+  background-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.6),
+    rgba(0, 0, 0, 0.9)
+  );
   /* messageStyle={{
     color: "white",
     fontSize: "smaller",
     marginBottom: "0.1em",
   }} */
-
 }
 
 .label {
