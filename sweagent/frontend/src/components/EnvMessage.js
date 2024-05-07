@@ -28,8 +28,10 @@ const EnvMessage = ({ item, handleMouseEnter, handleMouseLeave, isHighlighted, f
         margin: 0,
         padding: `${paddingTop} 0.5em ${paddingBottom} 0.5em`,
         overflowX: 'hidden',
-        lineHeight: 'inherit',
+        overflowY: 'hidden',
+        lineHeight: '100%',
         backgroundColor: 'transparent',
+        fontSize: '93%',
     }
 
     const codeTagProps = {
@@ -37,9 +39,10 @@ const EnvMessage = ({ item, handleMouseEnter, handleMouseLeave, isHighlighted, f
             boxShadow: "none",
             margin: "0",
             overflowY: "hidden",
+            overflowX: "hidden",
             padding: "0",
             lineHeight: 'inherit',
-            fontSize: 'inherit',
+            fontSize: '93%',
         }
     }
 
@@ -52,7 +55,7 @@ const EnvMessage = ({ item, handleMouseEnter, handleMouseLeave, isHighlighted, f
     if (item.format !== "text") {
         return (
             <div 
-                className={`message ${stepClass} ${highlightClass}  ${messageTypeClass}`}
+                className={`message envMessage ${stepClass} ${highlightClass}  ${messageTypeClass}`}
                 onMouseEnter={() => handleMouseEnter(item, feedRef)}
                 onMouseLeave={handleMouseLeave}
             >
