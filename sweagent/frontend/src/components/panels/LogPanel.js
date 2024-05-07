@@ -37,7 +37,7 @@ const LogPanel = ({ logs, logsRef, isComputing }) => {
                 <pre id="logContent">{logs}</pre>
                 <div style={{ clear: "both", marginTop: '1em' }}/>
               </div>
-              { !isComputing && 
+              { !isComputing && logs && 
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
                   <Button variant="light" onClick={handleCopy} style={{marginBottom: 20, marginRight: 20}}>
                     <Clipboard /> Copy to clipboard

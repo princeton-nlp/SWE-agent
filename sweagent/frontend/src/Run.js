@@ -13,7 +13,7 @@ const socket = io(url);
 
 function Run() {
   const [isConnected, setIsConnected] = useState(socket.connected);
-  const [connectionError, setConnectionError] = useState('');
+  const [errorBanner, setErrorBanner] = useState('');
 
   const [dataPath, setDataPath] = useState('https://github.com/klieret/swe-agent-test-repo/issues/1');
   const [repoPath, setRepoPath] = useState("");
@@ -92,6 +92,7 @@ function Run() {
     setEnvFeed([]); 
     setLogs('');
     setHighlightedStep(null);
+    setErrorBanner('');
     try {
       await axios.get(`/run`, { params: { data_path: dataPath, test_run: testRun, repo_path: repoPath, model: model } });
     } catch (error) {
@@ -123,13 +124,15 @@ function Run() {
 
     const scrollLog = () => {
       logsRef.current.scrollTop = logsRef.current.scrollHeight;
-      console.log('Scrolling to bottom', logsRef.current.scrollHeight);
     }
 
     const handleLogMessage = (data) => {
       setLogs(prevLogs => prevLogs + data.message);
+      if (data.level === "critical") {
+        console.log("Critical error", data.message);
+        setErrorBanner("Critical errror encountered: "+ data.message);
+      }
       if (logsRef.current) {
-        
         setTimeout(() => {
           scrollLog();
         }, 100);
@@ -146,20 +149,20 @@ function Run() {
     socket.on('connect', () => {
       console.log("Connected to server");
       setIsConnected(true);
-      setConnectionError('');  // Clear any errors on successful connection
+      setErrorBanner('');  // Clear any errors on successful connection
     });
 
     socket.on('disconnect', () => {
       console.log("Disconnected from server");
         setIsConnected(false);
-        setConnectionError('Connection to server lost.');
+        setErrorBanner('Connection to flask server lost, please restart it.');
         setIsComputing(false);
         scrollLog(); // reveal copy button
     });
 
     socket.on('connect_error', (error) => {
         setIsConnected(false);
-        setConnectionError('Failed to connect to server.');
+        setErrorBanner('Failed to connect to the flask server, please restart it.');
         setIsComputing(false);
         scrollLog();  // reveal copy button
     });
@@ -175,10 +178,14 @@ function Run() {
   }, []);
 
   function renderErrorMessage() {
-    if (!isConnected && connectionError) {
+    if (errorBanner) {
         return (
-            <div class="alert alert-danger" role="alert">
-                {connectionError}
+            <div className="alert alert-danger" role="alert">
+                {errorBanner}
+                <br/>
+                If you think this was a bug, please head over to <a href="https://github.com/princeton-nlp/swe-agent/issues" target='blank'>our GitHub issue tracker</a>,
+                check if someone has already reported the issue, and if not, create a new issue.
+                Please include the full log, all settings that you entered, and a screenshot of this page.
             </div>
         );
     }

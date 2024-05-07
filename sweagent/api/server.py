@@ -60,9 +60,10 @@ class MainThread(ThreadWithExc):
                     main.agent.add_hook(AgentUpdateHook(self._wu))
                     main.main()
                 except Exception as e:
-                    self._wu.up_agent(f"Error:\n```\n{e}\n```\n")
+                    self._wu.up_agent(f"Error (see log for details): {e}")
                     traceback_str = traceback.format_exc()
                     self._wu.up_log(traceback_str)
+                    self._wu.up_log(str(e), level="critical")
                     self._wu.finish_run()
                     raise
     

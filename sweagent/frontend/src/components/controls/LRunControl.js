@@ -81,7 +81,7 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
               <span className="input-group-text">Model name</span>
               <input type="text" className="form-control" placeholder="gpt4" onChange={(e) => setModel(e.target.value || "gpt4")}  />
             </div>
-            <div class="alert alert-info" role="alert">
+            <div className="alert alert-info" role="alert">
               Please make sure that you have your API keys set in keys.cfg
             </div>
           </div>
@@ -100,19 +100,19 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
       </Tabs>
     <div className="runControl p-3">
       <div>
-        <div class="btn-group" role="group" aria-label="Basic example">
+        <div className="btn-group" role="group" aria-label="Basic example">
           <button type="submit" className="btn btn-primary" onClick={handleSubmit} disabled={isComputing || !isConnected}><PlayFill/> Run</button>
           <button onClick={handleStop} disabled={!isComputing} className="btn btn-primary"><StopFill/> Stop</button>
         </div>
       </div>
       <div className="extraButtons">
-        <div class="btn-group" role="group" aria-label="Basic example">
+        <div className="btn-group" role="group" aria-label="Basic example">
           <Link
             to="https://github.com/princeton-nlp/SWE-agent"
             target="_blank"
             rel="noopener noreferrer"
           >
-            <button type="button" class="btn btn-outline-secondary">GitHub readme</button>
+            <button type="button" className="btn btn-outline-secondary">GitHub readme</button>
           </Link>
         </div>
       </div>
