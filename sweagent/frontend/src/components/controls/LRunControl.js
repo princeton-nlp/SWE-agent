@@ -20,11 +20,14 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
   function getPsInput() {
     if (psType === 'gh') {
       return (
-        <input 
-          type="text" 
-          className="form-control" 
-          onChange={(e) => setDataPath(e.target.value || defaultPS)}
-          placeholder={defaultPS}/>
+        <div className="input-group mb-3">
+          <span className="input-group-text">GitHub issue URL</span>
+          <input 
+            type="text" 
+            className="form-control" 
+            onChange={(e) => setDataPath(e.target.value || defaultPS)}
+            placeholder={defaultPS}/>
+        </div>
       );
     }
     if (psType === 'write') {
@@ -58,7 +61,10 @@ function LRunControl({isComputing, isConnected, handleStop, handleSubmit, setDat
             <div className="input-group mb-3">
               {getPsInput()}
             </div>
-            <input type="text" className="form-control" placeholder="Enter repository path (optional when using GitHub issue)" onChange={(e) => setRepoPath(e.target.value)} />
+            <div className="input-group mb-3">
+              <span className="input-group-text">Repository path</span> 
+              <input type="text" className="form-control" placeholder="Optional when using GitHub issue" onChange={(e) => setRepoPath(e.target.value)} />
+            </div>
           </div>
         </Tab>
         <Tab eventKey="model" title="Model">
