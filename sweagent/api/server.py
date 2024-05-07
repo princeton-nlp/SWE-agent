@@ -1,3 +1,11 @@
+try:
+    import flask  # noqa
+except ImportError as e:
+    msg = (
+        "Flask not found. You probably haven't installed the dependencies for SWE-agent. "
+        "Please go to the root of the repository and run `pip install -e .`"
+    )
+    raise RuntimeError(msg) from e
 from contextlib import redirect_stderr, redirect_stdout
 import os
 import time
