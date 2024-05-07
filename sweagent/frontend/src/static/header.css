@@ -1,9 +1,12 @@
 header {
   margin-bottom: 1em;
   margin-top: 1.5em;
-  align-items: center;
-  justify-content: center;
+  margin-left: auto;
+  margin-right: auto;
+  align-items: left;
+  justify-content: left;
   display: flex;
+  width: 54%;
 }
 
 header button {
