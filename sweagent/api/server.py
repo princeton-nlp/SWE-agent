@@ -92,6 +92,12 @@ def run():
     session_id = ensure_session_id_set()
     if request.method == "OPTIONS":  # CORS preflight
         return _build_cors_preflight_response()
+    # While we're running as a local UI, let's make sure that there's at most
+    # one run at a time
+    global THREADS
+    for thread in THREADS.values():
+        if thread.is_alive():
+            thread.stop()
     wu = WebUpdate(socketio)
     wu.up_agent("Starting the run")
     data_path = request.args["data_path"]
@@ -126,7 +132,6 @@ def run():
         actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
     )
     thread = MainThread(defaults, wu)
-    global THREADS
     THREADS[session_id] = thread
     thread.start()
     return 'Commands are being executed', 202

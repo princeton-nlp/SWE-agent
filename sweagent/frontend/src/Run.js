@@ -33,6 +33,8 @@ function Run() {
   
   const [tabKey, setTabKey] = useState('problem');
 
+  const stillComputingTimeoutRef = useRef(null);
+
   axios.defaults.baseURL = url;
 
 
@@ -82,6 +84,14 @@ function Run() {
     setHighlightedStep(null);
   }
 
+  const requeueStopComputeTimeout = () => {
+    clearTimeout(stillComputingTimeoutRef.current);
+    setIsComputing(true);
+    stillComputingTimeoutRef.current = setTimeout(() => {
+        setIsComputing(false);
+        console.log("No activity for 20 second, setting isComputing to false");
+    }, 20000);
+  }
 
   // Handle form submission
   const handleSubmit = async (event) => {
@@ -114,6 +124,7 @@ function Run() {
   // Use effect to listen to socket updates
   React.useEffect(() => {
     const handleUpdate = (data) => {
+      requeueStopComputeTimeout();
       if (data.feed === 'agent') {
         setAgentFeed(prevMessages => [...prevMessages, { type: data.type, message: data.message, format: data.format, step: data.thought_idx }]);
       }
@@ -127,6 +138,7 @@ function Run() {
     }
 
     const handleLogMessage = (data) => {
+      requeueStopComputeTimeout();
       setLogs(prevLogs => prevLogs + data.message);
       if (data.level === "critical") {
         console.log("Critical error", data.message);
@@ -149,7 +161,7 @@ function Run() {
     socket.on('connect', () => {
       console.log("Connected to server");
       setIsConnected(true);
-      setErrorBanner('');  // Clear any errors on successful connection
+      setErrorBanner('');
     });
 
     socket.on('disconnect', () => {
