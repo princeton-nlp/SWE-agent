@@ -23,7 +23,7 @@ const AgentFeed = ({
 
   return (
     <div id="agentFeed" className="agentFeed">
-      <MacBar title="Agent" logo={editorLogo} />
+      <MacBar title="Thoughts" logo={editorLogo} />
       <div className="scrollableDiv" ref={selfRef}>
         <div className="innerDiv">
           {feed.map((item, index) => (
