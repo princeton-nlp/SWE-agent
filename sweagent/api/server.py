@@ -191,9 +191,5 @@ def _build_cors_preflight_response():
 
 
 if __name__ == "__main__":
-    # fixme:
     app.debug = True
-    # Setting this port to be 8000 due to the fact that on newer verions of macOS,
-    # port 5000 and 7000 are reserved. Hence calls made to these 2 ports will be rejected and returned with 503 code.
-    # Source https://stackoverflow.com/questions/72795799/how-to-solve-403-error-with-flask-in-python
     socketio.run(app, port=8000, debug=True)
