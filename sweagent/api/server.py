@@ -131,7 +131,6 @@ def run():
         environment_setup = str(write_env_yaml(environment))
     elif environment["config_type"] == "script_path":
         environment_setup = environment["script_path"]
-    wu.up_agent("Environment setup " + environment_setup)
     test_run = request.args["test_run"].lower() == "true"
     if test_run:
         model_name = "instant_empty_submit"

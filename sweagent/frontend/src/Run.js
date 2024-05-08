@@ -94,12 +94,12 @@ function Run() {
   };
 
   const requeueStopComputeTimeout = () => {
-    clearTimeout(stillComputingTimeoutRef.current);
-    setIsComputing(true);
-    stillComputingTimeoutRef.current = setTimeout(() => {
-      setIsComputing(false);
-      console.log("No activity for 30s, setting isComputing to false");
-    }, 30000);
+    // clearTimeout(stillComputingTimeoutRef.current);
+    // setIsComputing(true);
+    // stillComputingTimeoutRef.current = setTimeout(() => {
+    //   setIsComputing(false);
+    //   console.log("No activity for 30s, setting isComputing to false");
+    // }, 30000);
   };
 
   // Handle form submission
