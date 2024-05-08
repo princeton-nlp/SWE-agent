@@ -362,17 +362,17 @@ def get_container(ctr_name: str, image_name: str, persistent: bool = False) -> T
             )
             raise RuntimeError(msg) from e
         raise
-    filterred_images = client.images.list(filters={'reference': image_name})
-    if len(filterred_images) == 0:
+    filtered_images = client.images.list(filters={'reference': image_name})
+    if len(filtered_images) == 0:
         msg = (
             f"Image {image_name} not found. Please ensure it is built and available. "
             "Please double-check that you followed all installation/setup instructions from the "
             "readme."
         )
         raise RuntimeError(msg)
-    elif len(filterred_images) > 1:
+    elif len(filtered_images) > 1:
         logger.warning(f"Multiple images found for {image_name}, that's weird.")
-    attrs = filterred_images[0].attrs 
+    attrs = filtered_images[0].attrs 
     if attrs is not None:
         logger.info(
             f"Found image {image_name} with tags: {attrs['RepoTags']}, created: {attrs['Created']} "
