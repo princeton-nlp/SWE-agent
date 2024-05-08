@@ -367,9 +367,15 @@ class Main:
                 logger.info("Exiting InterCode environment...")
                 self.env.close()
                 break
+            except SystemExit:
+                logger.critical(f"❌ Exiting because SystemExit was called")
+                self.env.close()
+                logger.info("Container closed")
+                raise
             except Exception as e:
                 traceback.print_exc()
                 if self.args.raise_exceptions:
+                    self.env.close()
                     raise e
                 if self.env.record:
                     logger.warning(f"❌ Failed on {self.env.record['instance_id']}: {e}")

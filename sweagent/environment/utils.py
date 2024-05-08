@@ -31,10 +31,12 @@ GITHUB_REPO_URL_PATTERN = re.compile(r'.*[/@]?github\.com\/([^/]+)\/([^/]+)')
 logger = logging.getLogger(LOGGER_NAME)
 
 
-def get_data_path_name(data_path: str):
+def get_data_path_name(data_path: str) -> str:
     """ if data_path is a file, return the file stem
     elif it's a github url, return the owner__repo_name
     """
+    if data_path.startswith("text://"):
+        return hashlib.sha256(data_path.removeprefix("text://").encode()).hexdigest()[:6]
     match = GITHUB_ISSUE_URL_PATTERN.search(data_path)
     if match:
         owner, repo, _ = match.groups()
@@ -264,14 +266,10 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> Tuple[subpr
     )
     time.sleep(START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
-    try:
-        with timeout(seconds=2):
-            output = container.stdout.read()
-            if output:
-                logger.error(f"Unexpected container setup output: {output}")
-    except TimeoutError:
-        pass
-    return container, {"1", }  # bash PID is always 1 for non-persistent containers
+    output = read_with_timeout(container, lambda: list(), timeout_duration=2)
+    if output:
+        logger.error(f"Unexpected container setup output: {output}")
+    return container, {"1", } # bash PID is always 1 for non-persistent containers
 
 
 def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool = False) -> Tuple[subprocess.Popen, Set]:
@@ -320,13 +318,9 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
     )
     time.sleep(START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
-    try:
-        with timeout(seconds=2):
-            output = container.stdout.read()
-            if output:
-                logger.error(f"Unexpected container setup output: {output}")
-    except TimeoutError:
-        pass
+    output = read_with_timeout(container, lambda: list(), timeout_duration=2)
+    if output:
+        logger.error(f"Unexpected container setup output: {output}")
     # Get the process IDs of the container
     # There should be at least a head process and possibly one child bash process
     bash_pids, other_pids = get_background_pids(container_obj)
@@ -596,7 +590,7 @@ def get_instances(
             pass
 
     # The next if statement is very brittle logic to determine if we're processing a single instance
-    if (Path(file_path).is_file() and Path(file_path).suffix in ['.md', '.txt']) or is_github_issue_url(file_path) or file_path.startswith("text://"):
+    if file_path.startswith("text://") or (Path(file_path).is_file() and Path(file_path).suffix in ['.md', '.txt']) or is_github_issue_url(file_path):
         ib = InstanceBuilder(token=token)
         ib.set_problem_statement(file_path)
         if repo_path:

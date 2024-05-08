@@ -88,6 +88,9 @@ class EnvHook:
     def on_install_env_started(self):
         ...
     
+    def on_close(self):
+        ...
+    
 
 class SWEEnv(gym.Env):
     """Gym environment for SWE-bench. This class should handle all communication with the docker container."""
@@ -400,6 +403,8 @@ class SWEEnv(gym.Env):
             except:
                 pass
             self.logger.info("Agent container stopped")
+        for hook in self.hooks:
+            hook.on_close()
 
     # MARK: Helper functions #
 

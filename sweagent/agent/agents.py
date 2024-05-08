@@ -224,6 +224,9 @@ class AgentHook:
 
     def on_actions_generated(self, *, thought: str, action: str, output: str):
         ...
+    
+    def on_sub_action_started(self, *, sub_action: str):
+        ...
 
     def on_sub_action_started(self, *, sub_action: str):
         ...
