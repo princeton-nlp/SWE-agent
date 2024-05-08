@@ -23,8 +23,14 @@ SWE-agent is built and maintained by researchers from Princeton University.
   <img src="assets/results+preview.png" style="width: 80%; height: auto;">
 </p>
 
-### ✨ Agent-Computer Interface (ACI) <a name="aci"></a>
-We accomplish these results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, view, edit and execute code files. We call this an **Agent-Computer Interface** (ACI) and build the SWE-agent repository to make it easy to iterate on ACI design for repository-level coding agents.
+### ✨ Use SWE-agent as a dev tool
+
+We provide a command line tool and a graphical web interface:
+
+![My Movie 3](https://github.com/princeton-nlp/SWE-agent/assets/13602468/fa201621-ec31-4644-b658-c1d0feb92253)
+
+### 🤖 Agent-Computer Interface (ACI) <a name="aci"></a>
+We accomplish our results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, view, edit and execute code files. We call this an **Agent-Computer Interface** (ACI) and build the SWE-agent repository to make it easy to iterate on ACI design for repository-level coding agents.
 
 Just like how typical language models requires good prompt engineering, good ACI design leads to much better results when using agents. As we show in our [paper](https://swe-agent.com/paper.pdf), a baseline agent without a well-tuned ACI does much worse than SWE-agent.
 
