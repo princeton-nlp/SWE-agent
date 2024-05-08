@@ -449,7 +449,12 @@ class SWEEnv(gym.Env):
                 raise RuntimeError(
                     "Docker is not running. Please start Docker and try again."
                 ) from e
-        self.container_obj = client.containers.get(self.container_name)
+        try:
+            self.container_obj = client.containers.get(self.container_name)
+        except docker.errors.NotFound:
+            logger.debug("Couldn't find container. Let's wait and retry.")
+            time.sleep(3)
+            self.container_obj = client.containers.get(self.container_name)
         self.logger.info("🌱 Environment Initialized")
 
     def _init_scripts(self):
