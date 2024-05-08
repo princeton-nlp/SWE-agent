@@ -25,6 +25,7 @@ function LRunControl({
   // ps = problem statement
   const [psType, setPsType] = useState("gh");
   const [envInputType, setEnvInputType] = useState("manual");
+  const defaultInstallCommand = "pip install --editable .";
 
   const defaultPS =
     "https://github.com/marshmallow-code/marshmallow/issues/1359";
@@ -133,16 +134,46 @@ function LRunControl({
                 })
               }
               placeholder={envConfigDefault["python"]}
-              value=""
+              defaultValue=""
             />
           </div>
+          <div class="input-group mb-3">
+            <div class="input-group-text">
+              <input
+                class="form-check-input mt-0"
+                type="checkbox"
+                aria-label="Run installation command"
+                defaultChecked={true}
+                onChange={(e) =>
+                  setEnvConfig({
+                    ...envConfig,
+                    install_command_active: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <span className="input-group-text">Installation command</span>
+            <input
+              type="text"
+              class="form-control"
+              aria-label="Text input with checkbox"
+              placeholder={defaultInstallCommand}
+              onChange={(e) =>
+                setEnvConfig({
+                  ...envConfig,
+                  install: e.target.value || defaultInstallCommand,
+                })
+              }
+            />
+          </div>
+
           <textarea
             className="form-control"
             onChange={(e) =>
               setEnvConfig({ ...envConfig, pip_packages: e.target.value })
             }
             rows="5"
-            placeholder="pip installable packages list, one per line (i.e., requirements.txt). You can also just enter . to install the package with pip install ."
+            placeholder="pip installable packages list, one per line (i.e., requirements.txt)."
           />
         </div>
       );
@@ -160,6 +191,8 @@ function LRunControl({
       setEnvConfig({
         python: envConfigDefault["python"],
         config_type: "manual",
+        install: "pip install --editable .",
+        install_command_active: true,
       });
     } else if (value === "script_path") {
       setEnvConfig({ script_path: "", config_type: "script_path" });
@@ -245,7 +278,7 @@ function LRunControl({
                 className="form-select"
                 aria-label="Select problem statement type"
                 onChange={(e) => handleEnvInputTypeUpdate(e.target.value)}
-                value={envInputType}
+                defaultValue={envInputType}
               >
                 <option value="manual">Python version and packages</option>
                 <option value="script_path">Path to shell script</option>

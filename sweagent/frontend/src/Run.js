@@ -20,7 +20,12 @@ function Run() {
   );
   const [repoPath, setRepoPath] = useState("");
   const [model, setModel] = useState("gpt4");
-  const envConfigDefault = { python: "3.10" };
+  const envConfigDefault = {
+    python: "3.10",
+    config_type: "manual",
+    install: "pip install --editable .",
+    install_command_active: true,
+  };
   const [envConfig, setEnvConfig] = useState(envConfigDefault);
   const [testRun, setTestRun] = useState(false);
   const [agentFeed, setAgentFeed] = useState([]);

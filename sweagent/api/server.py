@@ -128,6 +128,8 @@ def run():
     environment = json.loads(request.args["environment"])
     environment_setup = ""
     if environment["config_type"] == "manual":
+        if not environment["install_command_active"]:
+            environment["install"] = ""
         environment_setup = str(write_env_yaml(environment))
     elif environment["config_type"] == "script_path":
         environment_setup = environment["script_path"]
