@@ -126,7 +126,12 @@ def run():
     repo_path = request.args["repo_path"]
     model_name = request.args["model"]
     environment = json.loads(request.args["environment"])
-    environment_setup = str(write_env_yaml(environment))
+    environment_setup = ""
+    if environment["config_type"] == "manual":
+        environment_setup = str(write_env_yaml(environment))
+    elif environment["config_type"] == "script_path":
+        environment_setup = environment["script_path"]
+    wu.up_agent("Environment setup " + environment_setup)
     test_run = request.args["test_run"].lower() == "true"
     if test_run:
         model_name = "instant_empty_submit"

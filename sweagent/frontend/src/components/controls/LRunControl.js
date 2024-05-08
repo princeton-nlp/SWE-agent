@@ -95,6 +95,29 @@ function LRunControl({
         </div>
       );
     }
+    if (envInputType === "script_path") {
+      return (
+        <div>
+          <div className="input-group mb-3">
+            <span className="input-group-text">Setup script</span>
+            <input
+              type="text"
+              className="form-control"
+              onChange={(e) =>
+                setEnvConfig({ ...envConfig, script_path: e.target.value })
+              }
+              placeholder="/path/to/setup.sh"
+              value=""
+            />
+          </div>
+          <div className="alert alert-info" role="alert">
+            The script will be sourced (every line will be run as if it were
+            typed into the shell), so make sure there is no exit commands as it
+            will close the environment.
+          </div>
+        </div>
+      );
+    }
     if (envInputType === "manual") {
       return (
         <div>
@@ -110,6 +133,7 @@ function LRunControl({
                 })
               }
               placeholder={envConfigDefault["python"]}
+              value=""
             />
           </div>
           <textarea
@@ -137,6 +161,8 @@ function LRunControl({
         python: envConfigDefault["python"],
         config_type: "manual",
       });
+    } else if (value === "script_path") {
+      setEnvConfig({ script_path: "", config_type: "script_path" });
     }
   }
 
@@ -198,7 +224,8 @@ function LRunControl({
               />
             </div>
             <div className="alert alert-info" role="alert">
-              Please make sure that you have your API keys set in keys.cfg
+              Please make sure that you have your API keys configured in
+              keys.cfg
             </div>
           </div>
         </Tab>
@@ -221,6 +248,7 @@ function LRunControl({
                 value={envInputType}
               >
                 <option value="manual">Python version and packages</option>
+                <option value="script_path">Path to shell script</option>
                 {/* Currently broken */}
                 {/* <option value="conda">Conda environment</option> */}
               </select>
