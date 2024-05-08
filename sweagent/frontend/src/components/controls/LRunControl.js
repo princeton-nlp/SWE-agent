@@ -28,7 +28,9 @@ function LRunControl({
   const defaultInstallCommand = "pip install --editable .";
 
   const defaultPS =
-    "https://github.com/marshmallow-code/marshmallow/issues/1359";
+    "https://github.com/marshmallow-code/marshmallow/issues/1357";
+
+  const defaultRepo = "https://github.com/swe-agent-demo/marshmallow";
 
   const handlePsTypeChange = (event) => {
     const selectedType = event.target.value;
@@ -45,8 +47,9 @@ function LRunControl({
           <input
             type="text"
             className="form-control"
-            onChange={(e) => setDataPath(e.target.value || defaultPS)}
-            placeholder={defaultPS}
+            onChange={(e) => setDataPath(e.target.value)}
+            placeholder={"Example: " + defaultPS}
+            defaultValue=""
           />
         </div>
       );
@@ -62,6 +65,7 @@ function LRunControl({
             className="form-control"
             onChange={(e) => setDataPath(e.target.value)}
             placeholder="/path/to/your/local/file.md"
+            defaultValue=""
           />
         </div>
       );
@@ -239,8 +243,9 @@ function LRunControl({
               <input
                 type="text"
                 className="form-control"
-                placeholder="Optional when using GitHub issue as problem source"
+                placeholder="Optional when using GitHub issue as problem source."
                 onChange={(e) => setRepoPath(e.target.value)}
+                defaultValue=""
               />
             </div>
           </div>

@@ -31,10 +31,12 @@ GITHUB_REPO_URL_PATTERN = re.compile(r'.*[/@]?github\.com\/([^/]+)\/([^/]+)')
 logger = logging.getLogger(LOGGER_NAME)
 
 
-def get_data_path_name(data_path: str):
+def get_data_path_name(data_path: str) -> str:
     """ if data_path is a file, return the file stem
     elif it's a github url, return the owner__repo_name
     """
+    if data_path.startswith("text://"):
+        return hashlib.sha256(data_path.removeprefix("text://").encode()).hexdigest()[:6]
     match = GITHUB_ISSUE_URL_PATTERN.search(data_path)
     if match:
         owner, repo, _ = match.groups()
@@ -588,7 +590,7 @@ def get_instances(
             pass
 
     # The next if statement is very brittle logic to determine if we're processing a single instance
-    if (Path(file_path).is_file() and Path(file_path).suffix in ['.md', '.txt']) or is_github_issue_url(file_path) or file_path.startswith("text://"):
+    if file_path.startswith("text://") or (Path(file_path).is_file() and Path(file_path).suffix in ['.md', '.txt']):
         ib = InstanceBuilder(token=token)
         ib.set_problem_statement(file_path)
         if repo_path:
