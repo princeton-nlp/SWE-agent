@@ -7,12 +7,16 @@ except ImportError as e:
     )
     raise RuntimeError(msg) from e
 from contextlib import redirect_stderr, redirect_stdout
+import json
 import os
+from pathlib import Path
 import time
 import traceback
-from typing import Dict
+from typing import Any, Dict
 from flask import Flask, render_template, request, make_response
 import sys
+
+import yaml
 
 from sweagent import CONFIG_DIR, PACKAGE_DIR
 from sweagent.agent.agents import AgentArguments
@@ -25,6 +29,8 @@ from flask_socketio import SocketIO
 from flask_cors import CORS
 from flask import session
 from uuid import uuid4
+import tempfile
+import atexit
 
 # baaaaaaad
 sys.path.append(str(PACKAGE_DIR.parent))
@@ -96,6 +102,12 @@ def handle_connect():
     print('Client connected')
 
 
+def write_env_yaml(data: Dict[str, Any]) -> str:
+    path = Path(tempfile.NamedTemporaryFile(delete=False, suffix=".yml").name)
+    atexit.register(path.unlink)
+    path.write_text(yaml.dump(data))
+    return str(path)
+
 
 @app.route('/run', methods=['GET', 'OPTIONS'])
 def run():
@@ -113,6 +125,8 @@ def run():
     data_path = request.args["data_path"]
     repo_path = request.args["repo_path"]
     model_name = request.args["model"]
+    environment = json.loads(request.args["environment"])
+    environment_setup = str(write_env_yaml(environment))
     test_run = request.args["test_run"].lower() == "true"
     if test_run:
         model_name = "instant_empty_submit"
@@ -125,6 +139,7 @@ def run():
             verbose=True,
             install_environment=True,
             repo_path=repo_path,
+            environment_setup=environment_setup,
         ),
         skip_existing=False,
         agent=AgentArguments(

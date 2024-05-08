@@ -18,8 +18,13 @@ function LRunControl({
   setModel,
   tabKey,
   setTabKey,
+  envConfig,
+  setEnvConfig,
+  envConfigDefault,
 }) {
+  // ps = problem statement
   const [psType, setPsType] = useState("gh");
+  const [envInputType, setEnvInputType] = useState("manual");
 
   const defaultPS =
     "https://github.com/marshmallow-code/marshmallow/issues/1359";
@@ -30,6 +35,8 @@ function LRunControl({
   };
 
   function getPsInput() {
+    // Problem statement input controls based on the value of the problem statement type
+    // dropdown menu.
     if (psType === "gh") {
       return (
         <div className="input-group mb-3">
@@ -70,8 +77,73 @@ function LRunControl({
     }
   }
 
+  function getEnvInput() {
+    // Get environment configuration input controls based on the
+    // "Environment type" dropdown menu.
+    if (envInputType === "conda") {
+      return (
+        <div className="input-group mb-3">
+          <span className="input-group-text">Conda environment</span>
+          <input
+            type="text"
+            className="form-control"
+            onChange={(e) =>
+              setEnvConfig({ ...envConfig, packages: e.target.value })
+            }
+            placeholder="/path/to/conda_env.yml"
+          />
+        </div>
+      );
+    }
+    if (envInputType === "manual") {
+      return (
+        <div>
+          <div className="input-group mb-3">
+            <span className="input-group-text">Python version</span>
+            <input
+              type="text"
+              className="form-control"
+              onChange={(e) =>
+                setEnvConfig({
+                  ...envConfig,
+                  python: e.target.value || envConfigDefault["python"],
+                })
+              }
+              placeholder={envConfigDefault["python"]}
+            />
+          </div>
+          <textarea
+            className="form-control"
+            onChange={(e) =>
+              setEnvConfig({ ...envConfig, pip_packages: e.target.value })
+            }
+            rows="5"
+            placeholder="pip installable packages list, one per line (i.e., requirements.txt). You can also just enter . to install the package with pip install ."
+          />
+        </div>
+      );
+    }
+  }
+
+  function handleEnvInputTypeUpdate(value) {
+    // Handle a change in how the user wants to configure the environment.
+    // We need to make sure that we clear out config items that aren't "active" anymore
+    // For example, if we switch from conda to manual, we should clear out conda env path
+    setEnvInputType(value);
+    if (value === "conda") {
+      setEnvConfig({ packages: "", config_type: "conda" });
+    } else if (value === "manual") {
+      setEnvConfig({
+        python: envConfigDefault["python"],
+        config_type: "manual",
+      });
+    }
+  }
+
   function onTabClicked(keyClicked) {
+    /* Handle clicks on the tabs of the control/setting groups */
     if (keyClicked === tabKey) {
+      // Clicking the active tab hides it
       setTabKey(null);
     } else {
       setTabKey(keyClicked);
@@ -128,6 +200,32 @@ function LRunControl({
             <div className="alert alert-info" role="alert">
               Please make sure that you have your API keys set in keys.cfg
             </div>
+          </div>
+        </Tab>
+        <Tab eventKey="env" title="Environment">
+          <div className="p-3">
+            <p>
+              These settings set up the environment in which SWE-agent operates.
+              It's a good idea to explicitly specify all relevant setup commands
+              here (though SWE-agent will try to figure them out if they
+              aren't).
+            </p>
+            <div className="input-group mb-3">
+              <span className="input-group-text">
+                Environment specification
+              </span>
+              <select
+                className="form-select"
+                aria-label="Select problem statement type"
+                onChange={(e) => handleEnvInputTypeUpdate(e.target.value)}
+                value={envInputType}
+              >
+                <option value="manual">Python version and packages</option>
+                {/* Currently broken */}
+                {/* <option value="conda">Conda environment</option> */}
+              </select>
+            </div>
+            {getEnvInput()}
           </div>
         </Tab>
         <Tab eventKey="settings" title="Extra Settings">

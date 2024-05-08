@@ -20,6 +20,8 @@ function Run() {
   );
   const [repoPath, setRepoPath] = useState("");
   const [model, setModel] = useState("gpt4");
+  const envConfigDefault = { python: "3.10" };
+  const [envConfig, setEnvConfig] = useState(envConfigDefault);
   const [testRun, setTestRun] = useState(false);
   const [agentFeed, setAgentFeed] = useState([]);
   const [envFeed, setEnvFeed] = useState([]);
@@ -117,6 +119,7 @@ function Run() {
           test_run: testRun,
           repo_path: repoPath,
           model: model,
+          environment: JSON.stringify(envConfig),
         },
       });
     } catch (error) {
@@ -256,6 +259,9 @@ function Run() {
         setModel={setModel}
         tabKey={tabKey}
         setTabKey={setTabKey}
+        envConfig={envConfig}
+        setEnvConfig={setEnvConfig}
+        envConfigDefault={envConfigDefault}
       />
       <div id="demo">
         <hr />
