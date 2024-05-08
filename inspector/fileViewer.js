@@ -12,8 +12,8 @@ function getBaseUrl() {
     protocol === "http:" && !port
       ? "80"
       : protocol === "https:" && !port
-      ? "443"
-      : port;
+        ? "443"
+        : port;
 
   return `${protocol}//${host}:${defaultPort}`;
 }
@@ -64,8 +64,8 @@ function viewFile(fileName) {
               item.agent && item.agent !== "primary"
                 ? "subroutine"
                 : item.role
-                ? item.role.toLowerCase().replaceAll(" ", "-")
-                : "default";
+                  ? item.role.toLowerCase().replaceAll(" ", "-")
+                  : "default";
             const elementId = "historyItem" + index;
             const historyItem = document.createElement("div");
             historyItem.className = `history-item ${roleClass} fade-in`;
@@ -131,9 +131,8 @@ function fetchDirectoryInfo() {
       if (data.directory) {
         trajectoryDirectory = data.directory; // Store the directory
         document.title = `Trajectory Viewer: ${data.directory}`;
-        document.querySelector(
-          "h1",
-        ).textContent = `Trajectory Viewer: ${data.directory}`;
+        document.querySelector("h1").textContent =
+          `Trajectory Viewer: ${data.directory}`;
       }
     })
     .catch((error) => console.error("Error fetching directory info:", error));
