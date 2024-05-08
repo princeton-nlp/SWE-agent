@@ -72,7 +72,7 @@ https://github.com/princeton-nlp/SWE-agent/assets/13602468/44d60674-59ca-4986-9b
 5. Create a `keys.cfg` file at the root of this repository ([see below](#-add-your-api-keystokens))
 
 > [!TIP]
-> If you run into docker issues, see the [installation issues section](#-more-installation-tips) for more help
+> If you run into docker issues, see the [installation issues section](#more-installation-tips) for more help
 
 [conda]: https://docs.conda.io/en/latest/
 [virtual environments]: https://realpython.com/python-virtual-environments-a-primer/
@@ -104,7 +104,7 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 > * For more information on the different API keys/tokens, see [below](#-add-your-api-keystokens).
 > * If you're using docker on Windows, use `-v //var/run/docker.sock:/var/run/docker.sock`
 >   (double slash) to escape it ([more information](https://stackoverflow.com/a/47229180/)).
-> * See the [installation issues section](#-more-installation-tips) for more help if you run into
+> * See the [installation issues section](#more-installation-tips) for more help if you run into
 >   trouble.
 
 
