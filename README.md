@@ -63,7 +63,7 @@ https://github.com/princeton-nlp/SWE-agent/assets/13602468/44d60674-59ca-4986-9b
 1. Click [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/princeton-nlp/SWE-agent)
 2. Add your API keys to `keys.cfg` (find the file in the left sidebar and fill out the template)
 3. Make sure to wait until the `postCreateCommand` in the terminal window at the bottom is finished
-4. Enter your SWE-agent command
+4. Enter your SWE-agent command ([see below](#-solve-real-life-github-issues-))
 
 ### Install from source
 
@@ -72,10 +72,13 @@ https://github.com/princeton-nlp/SWE-agent/assets/13602468/44d60674-59ca-4986-9b
 > In the meantime, use Docker (see below).
 
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
-2. Clone this repository
-3. Run `pip install --editable .` at the repository root (as with any python setup, it's recommended to use [conda][] or [virtual environments][] to manage dependencies)
-4. Run `./setup.sh` to create the `swe-agent` docker image.
-5. Create a `keys.cfg` file at the root of this repository ([see below](#-add-your-api-keystokens))
+2. For the web interface only: Install [`nodejs`][nodejs-install].
+3. Clone this repository.
+4. Run `pip install --editable .` at the repository root (as with any python setup, it's recommended to use [conda][] or [virtual environments][] to manage dependencies).
+5. Run `./setup.sh` to create the `swe-agent` docker image.
+6. Create a `keys.cfg` file at the root of this repository ([see below](#-add-your-api-keystokens)).
+
+[nodejs-install]: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
 
 > [!TIP]
 > If you run into docker issues, see the [installation issues section](#more-installation-tips) for more help
@@ -84,6 +87,9 @@ https://github.com/princeton-nlp/SWE-agent/assets/13602468/44d60674-59ca-4986-9b
 [virtual environments]: https://realpython.com/python-virtual-environments-a-primer/
 
 ### Fallback: Run with docker
+
+> [!warning]
+> The latest containerized version does not yet provide the web interface.
 
 Instead of installing SWE-agent from source, you can also run the software directly using Docker. 
 
@@ -154,7 +160,17 @@ Any remaining issues? Please [open a GitHub issue](https://github.com/princeton-
 
 ## 🔥 Solve real-life GitHub issues! <a name="real-life"></a>
 
-Using this script, you can run SWE-agent on any GitHub issue!
+To start our web UI, simply run
+
+```bash
+./start_web_ui.sh
+```
+
+If the user interface doesn't automatically open in your browser, please open it at `http://localhost:3000`.
+
+Currently, the web interface only has a subset of the options of the command line interface (CLI). 
+For the CLI, use the `run.py` script:
+
 ```bash
 python run.py --model_name gpt4 \
   --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
@@ -162,6 +178,7 @@ python run.py --model_name gpt4 \
 ```
 
 You can also apply to it to a local repository:
+
 ```bash
 python run.py --model_name gpt4 \
   --data_path /path/to/my_issue.md \
