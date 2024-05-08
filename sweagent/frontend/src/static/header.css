@@ -9,6 +9,12 @@ header {
   width: 54%;
 }
 
+@media only screen and (max-width: 2400px) {
+  header {
+    width: 80%;
+  }
+}
+
 header button {
   background: none;
   border: none;
