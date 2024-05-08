@@ -590,7 +590,7 @@ def get_instances(
             pass
 
     # The next if statement is very brittle logic to determine if we're processing a single instance
-    if file_path.startswith("text://") or (Path(file_path).is_file() and Path(file_path).suffix in ['.md', '.txt']):
+    if file_path.startswith("text://") or (Path(file_path).is_file() and Path(file_path).suffix in ['.md', '.txt']) or is_github_issue_url(file_path):
         ib = InstanceBuilder(token=token)
         ib.set_problem_statement(file_path)
         if repo_path:
