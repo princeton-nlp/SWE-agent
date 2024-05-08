@@ -38,12 +38,12 @@ from run import ActionsArguments, ScriptArguments, Main
 
 app = Flask(__name__)
 CORS(app)
-socketio = SocketIO(app, cors_allowed_origins='*')
+socketio = SocketIO(app, cors_allowed_origins="*")
 # Setting these variables outside of `if __name__ == "__main__"` because when run Flask server with
 # `flask run` it will skip the if block. Therefore, the app will return an error for missing `secret_key`
 # Setting it here will allow both `flask run` and `python server.py` to work
-app.secret_key = 'super secret key'
-app.config['SESSION_TYPE'] = 'memcache'
+app.secret_key = "super secret key"
+app.config["SESSION_TYPE"] = "memcache"
 
 THREADS: Dict[str, "MainThread"] = {}
 
@@ -53,10 +53,10 @@ env_utils.START_UP_DELAY = 1
 
 def ensure_session_id_set():
     """Ensures a session ID is set for this user"""
-    session_id = session.get('session_id', None)
+    session_id = session.get("session_id", None)
     if not session_id:
         session_id = uuid4().hex
-        session['session_id'] = session_id
+        session["session_id"] = session_id
     return session_id
 
 
@@ -65,7 +65,7 @@ class MainThread(ThreadWithExc):
         super().__init__()
         self._wu = wu
         self._settings = settings
-    
+
     def run(self) -> None:
         # fixme: This actually redirects all output from all threads to the socketio, which is not what we want
         with redirect_stdout(self._wu.log_stream):
@@ -83,7 +83,7 @@ class MainThread(ThreadWithExc):
                     self._wu.up_log(str(e), level="critical")
                     self._wu.finish_run()
                     raise
-    
+
     def stop(self):
         while self.is_alive():
             self.raise_exc(SystemExit)
@@ -92,14 +92,14 @@ class MainThread(ThreadWithExc):
         self._wu.up_agent("Run stopped by user")
 
 
-@app.route('/')
+@app.route("/")
 def index():
     return render_template("index.html")
 
 
-@socketio.on('connect')
+@socketio.on("connect")
 def handle_connect():
-    print('Client connected')
+    print("Client connected")
 
 
 def write_env_yaml(data: Dict[str, Any]) -> str:
@@ -109,7 +109,7 @@ def write_env_yaml(data: Dict[str, Any]) -> str:
     return str(path)
 
 
-@app.route('/run', methods=['GET', 'OPTIONS'])
+@app.route("/run", methods=["GET", "OPTIONS"])
 def run():
     session_id = ensure_session_id_set()
     if request.method == "OPTIONS":  # CORS preflight
@@ -164,9 +164,10 @@ def run():
     thread = MainThread(defaults, wu)
     THREADS[session_id] = thread
     thread.start()
-    return 'Commands are being executed', 202
+    return "Commands are being executed", 202
 
-@app.route('/stop')
+
+@app.route("/stop")
 def stop():
     session_id = ensure_session_id_set()
     global THREADS
@@ -178,19 +179,21 @@ def stop():
         thread.stop()
     else:
         print(f"Thread {thread} is not alive")
-    return 'Stopping computation', 202
+    return "Stopping computation", 202
+
 
 def _build_cors_preflight_response():
     response = make_response()
     response.headers.add("Access-Control-Allow-Origin", "*")
-    response.headers.add('Access-Control-Allow-Headers', "*")
-    response.headers.add('Access-Control-Allow-Methods', "*")
+    response.headers.add("Access-Control-Allow-Headers", "*")
+    response.headers.add("Access-Control-Allow-Methods", "*")
     return response
+
 
 if __name__ == "__main__":
     # fixme:
     app.debug = True
-    # Setting this port to be 8000 due to the fact that on newer verions of macOS, 
+    # Setting this port to be 8000 due to the fact that on newer verions of macOS,
     # port 5000 and 7000 are reserved. Hence calls made to these 2 ports will be rejected and returned with 503 code.
-    # Source https://stackoverflow.com/questions/72795799/how-to-solve-403-error-with-flask-in-python 
+    # Source https://stackoverflow.com/questions/72795799/how-to-solve-403-error-with-flask-in-python
     socketio.run(app, port=8000, debug=True)

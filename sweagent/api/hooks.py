@@ -15,7 +15,10 @@ from run import MainHook
 
 
 class StreamToSocketIO(io.StringIO):
-    def __init__(self, wu: "WebUpdate", ):
+    def __init__(
+        self,
+        wu: "WebUpdate",
+    ):
         super().__init__()
         self._wu = wu
 
@@ -28,8 +31,8 @@ class StreamToSocketIO(io.StringIO):
 
 
 class WebUpdate:
-    """This class talks to socketio. It's pretty much a wrapper around socketio.emit.
-    """
+    """This class talks to socketio. It's pretty much a wrapper around socketio.emit."""
+
     def __init__(self, socketio: SocketIO):
         self._socketio = socketio
         self.log_stream = StreamToSocketIO(self)
@@ -40,34 +43,51 @@ class WebUpdate:
 
     def up_log(self, message: str, level="info"):
         """Update the log"""
-        self._emit('log_message', {'message': message, 'level': level})
+        self._emit("log_message", {"message": message, "level": level})
 
     def up_agent(
-            self,
-            message: str,
-            *,
-            format: str = "markdown",
-            thought_idx: Optional[int] =None,
-            type_: str = "info",
+        self,
+        message: str,
+        *,
+        format: str = "markdown",
+        thought_idx: Optional[int] = None,
+        type_: str = "info",
     ):
         """Update the agent feed"""
-        self._emit('update', {'feed': 'agent', 'message': message, 'format': format, 'thought_idx': thought_idx, 'type': type_})
-    
+        self._emit(
+            "update",
+            {
+                "feed": "agent",
+                "message": message,
+                "format": format,
+                "thought_idx": thought_idx,
+                "type": type_,
+            },
+        )
+
     def up_env(
-            self,
-            message: str,
-            *,
-            type_: str,
-            format: str = "markdown",
-            thought_idx: Optional[int] =None,
+        self,
+        message: str,
+        *,
+        type_: str,
+        format: str = "markdown",
+        thought_idx: Optional[int] = None,
     ):
         """Update the environment feed"""
-        self._emit('update', {'feed': 'env',  'message': message, 'format': format, 'thought_idx': thought_idx, 'type': type_})
-    
+        self._emit(
+            "update",
+            {
+                "feed": "env",
+                "message": message,
+                "format": format,
+                "thought_idx": thought_idx,
+                "type": type_,
+            },
+        )
+
     def finish_run(self):
         """Finish the run. We use that to control which buttons are active."""
-        self._emit('finish_run', {}) 
-
+        self._emit("finish_run", {})
 
 
 class MainUpdateHook(MainHook):
@@ -76,8 +96,10 @@ class MainUpdateHook(MainHook):
         self._wu = wu
 
     def on_start(self):
-        self._wu.up_env(message="Environment container initialized", format="text", type_="info")
-    
+        self._wu.up_env(
+            message="Environment container initialized", format="text", type_="info"
+        )
+
     def on_end(self):
         self._wu.up_agent(message="The run has ended", format="text")
         self._wu.finish_run()
@@ -91,6 +113,7 @@ class MainUpdateHook(MainHook):
             )
             self._wu.up_agent(msg, type_="success")
 
+
 class AgentUpdateHook(AgentHook):
     def __init__(self, wu: WebUpdate):
         """This hooks into the Agent class to update the web interface"""
@@ -102,14 +125,19 @@ class AgentUpdateHook(AgentHook):
         self._thought_idx += 1
         for prefix in ["DISCUSSION\n", "THOUGHT\n", "DISCUSSION", "THOUGHT"]:
             thought = thought.replace(prefix, "")
-        self._wu.up_agent(message=thought, format="markdown", thought_idx=self._thought_idx, type_="thought")
-    
+        self._wu.up_agent(
+            message=thought,
+            format="markdown",
+            thought_idx=self._thought_idx,
+            type_="thought",
+        )
+
     def on_sub_action_started(self, *, sub_action: dict):
         # msg = f"```bash\n{sub_action['action']}\n```"
         msg = "$ " + sub_action["action"].strip()
         self._sub_action = sub_action["action"].strip()
         self._wu.up_env(message=msg, thought_idx=self._thought_idx, type_="command")
-    
+
     def on_sub_action_executed(self, *, obs: str, done: bool):
         type_ = "output"
         if self._sub_action == "submit":
@@ -129,16 +157,14 @@ class EnvUpdateHook(EnvHook):
     def on_close(self):
         self._wu.up_env(message="Environment closed", format="text", type_="info")
 
-
-        
     # def on_query_message_added(
-    #         self, 
-    #         *, 
-    #         role: str, 
-    #         content: str, 
-    #         agent: str, 
-    #         is_demo: bool = False, 
-    #         thought: str = "", 
+    #         self,
+    #         *,
+    #         role: str,
+    #         content: str,
+    #         agent: str,
+    #         is_demo: bool = False,
+    #         thought: str = "",
     #         action: str = ""
     #     ):
     #     if role == "assistant":
