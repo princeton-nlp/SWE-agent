@@ -158,7 +158,7 @@ If you seem to be having issues with running docker
 
 Any remaining issues? Please [open a GitHub issue](https://github.com/princeton-nlp/SWE-agent/issues/new/choose)!
 
-## 🔥 Solve real-life GitHub issues! <a name="real-life"></a>
+## 🔥 Solve real Git issues! <a name="real-life"></a>
 
 To start our web UI, simply run
 
