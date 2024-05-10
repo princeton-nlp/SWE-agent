@@ -44,7 +44,7 @@ Read our paper for more details [here](https://swe-agent.com/paper.pdf).
 
 ```
 @misc{yang2024sweagent,
-      title={SWE-agent: Agent-Computer Interfaces Enable Software Engineering Language Models}, 
+      title={SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering}, 
       author={John Yang and Carlos E. Jimenez and Alexander Wettig and Kilian Lieret and Shunyu Yao and Karthik Narasimhan and Ofir Press},
       year={2024},
 }
