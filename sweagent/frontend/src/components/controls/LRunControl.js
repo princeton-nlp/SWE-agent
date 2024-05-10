@@ -112,7 +112,7 @@ function LRunControl({
                 setEnvConfig({ ...envConfig, script_path: e.target.value })
               }
               placeholder="/path/to/setup.sh"
-              value=""
+              defaultValue=""
             />
           </div>
           <div className="alert alert-info" role="alert">
