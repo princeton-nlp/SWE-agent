@@ -70,7 +70,7 @@ def append_results(traj_path, instance_id, content, results, results_file, score
     status = []
     if results is None:
         status.append("Evaluation results not found")
-    elif "not_generated" in results and "generated" in results and "applied" in results and "resolved" in results:
+    elif "no_generation" in results and "generated" in results and "applied" in results and "resolved" in results:
         is_generated = instance_id in results["generated"]
         is_applied = instance_id in results["applied"]
         is_resolved = instance_id in results["resolved"]
