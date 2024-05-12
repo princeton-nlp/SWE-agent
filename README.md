@@ -174,7 +174,8 @@ For the CLI, use the `run.py` script:
 ```bash
 python run.py --model_name gpt4 \
   --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
-  --config_file config/default_from_url.yaml
+  --config_file config/default_from_url.yaml \
+  --per_instance_cost_limit 2.00 
 ```
 
 You can also apply to it to a local repository:
@@ -184,6 +185,7 @@ python run.py --model_name gpt4 \
   --data_path /path/to/my_issue.md \
   --repo_path /path/to/my/local/repo \
   --config_file config/default_from_url.yaml \
+  --per_instance_cost_limit 2.00 \
   --apply_patch_locally
 ```
 
