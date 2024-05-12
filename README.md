@@ -50,7 +50,7 @@ Read our paper for more details [here](https://swe-agent.com/paper.pdf).
 }
 ```
 
-## 🚀 Get started <a name="setup"></a>
+## 🚀 Installation <a name="setup"></a>
 
 ### ☁️ Run from your browser
 
