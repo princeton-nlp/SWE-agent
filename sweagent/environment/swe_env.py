@@ -462,9 +462,10 @@ class SWEEnv(gym.Env):
         self.container_obj = None
         self._reset_container()
 
-    def _init_container(self, cached_image=None) -> None:
+    def _init_container(self, cached_image: Optional[str] = None) -> None:
         """
-        Handles container initialization. Defines container name and creates it
+        Handles container initialization. Defines container name and creates it.
+        If cached_image is provided, it will use that image name instead of the default.
         """
         image_name = self.image_name
         if cached_image is not None:
