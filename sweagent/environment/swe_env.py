@@ -62,7 +62,9 @@ class EnvironmentArguments(FrozenSerializable):
     data_path: str
     image_name: str
     split: str = "dev"
-    base_commit: Optional[str] = None  # used only with data_path as url
+    # Specify a branch name or a commit hash to checkout before running the task.
+    # Only used when running over a single problem statement/issue.
+    base_commit: Optional[str] = None 
     container_name: Optional[str] = None
     install_environment: bool = True
     timeout: int = 35

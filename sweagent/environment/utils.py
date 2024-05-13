@@ -577,18 +577,6 @@ def get_instances(
             raise ValueError(msg)
         return [instance_from_dict(x) for x in instances]
 
-
-    # If file_path is a directory, attempt load from disk
-    if os.path.isdir(file_path):
-        try:
-            dataset_or_dict = load_from_disk(file_path)
-            if isinstance(dataset_or_dict, dict):
-                return postproc_instance_list(dataset_or_dict[split])
-            return postproc_instance_list(dataset_or_dict)
-        except FileNotFoundError:
-            # Raised by load_from_disk if the directory is not a dataset directory
-            pass
-
     # The next if statement is very brittle logic to determine if we're processing a single instance
     if file_path.startswith("text://") or (Path(file_path).is_file() and Path(file_path).suffix in ['.md', '.txt']) or is_github_issue_url(file_path):
         ib = InstanceBuilder(token=token)
@@ -602,18 +590,30 @@ def get_instances(
 
         return [ib.build()]
     
-    if base_commit is not None:
-        raise ValueError("base_commit must be None if data_path is not a github issue url")
+    if base_commit:
+        msg = "base_commit must be empty if running over multiple problem statements"
+        raise ValueError(msg)
+    
+    if repo_path:
+        msg = "repo_path must be empty if running over multiple problem statements"
+        raise ValueError(msg)
+
+    # If file_path is a directory, attempt load from disk
+    if os.path.isdir(file_path):
+        try:
+            dataset_or_dict = load_from_disk(file_path)
+            if isinstance(dataset_or_dict, dict):
+                return postproc_instance_list(dataset_or_dict[split])
+            return postproc_instance_list(dataset_or_dict)
+        except FileNotFoundError:
+            # Raised by load_from_disk if the directory is not a dataset directory
+            pass
 
     # If file_path is a file, load the file
     if file_path.endswith(".json"):
         return postproc_instance_list(json.load(open(file_path)))
     if file_path.endswith(".jsonl"):
         return postproc_instance_list([json.loads(x) for x in open(file_path, 'r').readlines()])
-
-    if repo_path:
-        msg = "repo_path must be empty if data_path is not a github url or local repo url"
-        raise ValueError(msg)
 
     # Attempt load from HF datasets as a last resort
     try:
