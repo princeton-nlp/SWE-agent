@@ -14,7 +14,7 @@ repos:
       - id: check-ast
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.20.7
+    rev: v1.21.0
     hooks:
       - id: typos
         files: \.(py|md|rst|yaml|toml)
@@ -23,7 +23,7 @@ repos:
         exclude: pyproject.toml
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.3
+    rev: v0.4.4
     hooks:
       # Run the linter.
       - id: ruff
@@ -31,7 +31,7 @@ repos:
       # - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "" # Use the sha or tag you want to point at
+    rev: "v4.0.0-alpha.8" # Use the sha or tag you want to point at
     hooks:
       - id: prettier
         types_or: ["javascript", "css"]
