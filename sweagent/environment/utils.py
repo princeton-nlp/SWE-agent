@@ -385,12 +385,21 @@ def get_container(ctr_name: str, image_name: str, persistent: bool = False) -> T
         return _get_non_persistent_container(ctr_name, image_name)
 
 
-def get_commit(api: GhApi, owner: str, repo: str, base_commit: str = None):
-    if base_commit:
-        commit = api.repos.get_commit(owner, repo, base_commit)
-    else:
-        commit = api.repos.list_commits(owner, repo)[0]
-    return commit
+def get_commit(api: GhApi, owner: str, repo: str, ref: Optional[str] = None):
+    """Get commit object from github api
+
+    Args:
+        api (GhApi): 
+        owner (str): Repo owner, e.g., "princeton-nlp"
+        repo (str): Repo, e.g., "SWE-agent"
+        ref (str, optional): Branch, tag or commit hash
+
+    Returns:
+        _type_: _description_
+    """
+    if ref:
+        return api.repos.get_commit(owner, repo, ref)
+    return api.repos.list_commits(owner, repo)[0]
 
 
 
@@ -480,11 +489,9 @@ class InstanceBuilder:
         owner, repo = parse_gh_repo_url(url)
         self.args["repo"] = f"{owner}/{repo}"
         self.args["repo_type"] = "github"
-        if base_commit:
-            self.args["base_commit"] = base_commit
-        else:
-            api = GhApi(token=self.token)
-            self.args["base_commit"] = get_commit(api, owner, repo, base_commit).sha
+        # Always get commit hash, because base_commit can also be branch or tag
+        api = GhApi(token=self.token)
+        self.args["base_commit"] = get_commit(api, owner, repo, ref=base_commit).sha
         self.args["version"] = self.args["base_commit"][:7]
     
     def set_repo_info_from_local_path(self, path: str, base_commit: Optional[str] = None):
