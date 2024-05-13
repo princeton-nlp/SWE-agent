@@ -2,6 +2,7 @@ import http.server
 import json
 import os
 import socketserver
+from typing import List
 import yaml
 
 from pathlib import Path
@@ -47,8 +48,8 @@ def append_patch(instance_id, content, patches, patch_type):
     return content
 
 
-def append_results(traj_path, instance_id, content, results, results_file, scorecards, scorecards_file):
-    stats = []
+def append_results(traj_path: Path, instance_id: str, content, results, results_file, scorecards, scorecards_file):
+    stats: List[str] = []
     model_stats = {}
     if traj_path.exists():
         data = json.loads(traj_path.read_text())
@@ -139,7 +140,7 @@ def load_content(file_name, gold_patches, test_patches):
         with open(scorecards_file) as infile:
             scorecards = json.load(infile)
 
-    content = append_exit(content)  # accomodate new and old format
+    content = append_exit(content)  # accommodate new and old format
     content = append_patch(Path(file_name).stem, content, gold_patches, "Gold")
     content = append_patch(Path(file_name).stem, content, test_patches, "Test")
     content = append_results(

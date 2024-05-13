@@ -55,7 +55,7 @@ logger.propagate = False
 
 @dataclass(frozen=True)
 class EnvironmentArguments(FrozenSerializable):
-    """Configure data sources and setup instructions for th environment in which we solve the tasks.
+    """Configure data sources and setup instructions for the environment in which we solve the tasks.
     """
     # Source of issue statement/problem statement. To run over a batch of issues: Path to a data file
     # (`json`, `jsonl`) or directory. To run over single issue: github issue url or path to markdown file
@@ -63,7 +63,9 @@ class EnvironmentArguments(FrozenSerializable):
     data_path: str
     image_name: str
     split: str = "dev"
-    base_commit: Optional[str] = None  # used only with data_path as url
+    # Specify a branch name or a commit hash to checkout before running the task.
+    # Only used when running over a single problem statement/issue.
+    base_commit: Optional[str] = None 
     container_name: Optional[str] = None
     install_environment: bool = True
     timeout: int = 35
@@ -89,7 +91,10 @@ class EnvHook:
 
     def on_install_env_started(self):
         ...
-
+    
+    def on_close(self):
+        ...
+    
 
 class SWEEnv(gym.Env):
     """Gym environment for SWE-bench. This class should handle all communication with the docker container."""
@@ -435,6 +440,8 @@ class SWEEnv(gym.Env):
             except:
                 pass
             self.logger.info("Agent container stopped")
+        for hook in self.hooks:
+            hook.on_close()
 
     # MARK: Helper functions #
 
@@ -483,7 +490,12 @@ class SWEEnv(gym.Env):
                 raise RuntimeError(
                     "Docker is not running. Please start Docker and try again."
                 ) from e
-        self.container_obj = client.containers.get(self.container_name)
+        try:
+            self.container_obj = client.containers.get(self.container_name)
+        except docker.errors.NotFound:
+            logger.debug("Couldn't find container. Let's wait and retry.")
+            time.sleep(3)
+            self.container_obj = client.containers.get(self.container_name)
         self.logger.info("🌱 Environment Initialized")
 
     def _init_scripts(self):

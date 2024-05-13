@@ -13,11 +13,25 @@ repos:
       - id: detect-private-key
       - id: check-ast
 
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.20.7
+    hooks:
+      - id: typos
+        files: \.(py|md|rst|yaml|toml)
+        # empty to do not write fixes
+        args: []
+        exclude: pyproject.toml
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.2
+    rev: v0.4.3
     hooks:
       # Run the linter.
       - id: ruff
       # Run the formatter.
       # - id: ruff-format
 
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: "" # Use the sha or tag you want to point at
+    hooks:
+      - id: prettier
+        types_or: ["javascript", "css"]

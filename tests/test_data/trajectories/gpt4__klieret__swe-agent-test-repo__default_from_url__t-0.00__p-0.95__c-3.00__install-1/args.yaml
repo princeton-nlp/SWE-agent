@@ -234,7 +234,7 @@ agent:
         "File updated. Please review the changes and make sure they are correct (correct
         indentation, no duplicate lines, etc). Edit the file again if necessary."    else        echo
         "Your proposed edit has introduced new syntax error(s). Please understand
-        the fixes and retry your edit commmand."        echo ""        echo "ERRORS:"        _split_string
+        the fixes and retry your edit command."        echo ""        echo "ERRORS:"        _split_string
         "$lint_output"        echo ""        # Save original values        original_current_line=$CURRENT_LINE        original_window=$WINDOW        #
         Update values        export CURRENT_LINE=$(( (line_count / 2) + start_line
         )) # Set to "center" of edit        export WINDOW=$((line_count + 10)) # Show
@@ -406,7 +406,7 @@ agent:
       \ environment, and run it to make sure you can reproduce the bug.\n   Then start\
       \ trying to fix it.\n   When you think you've fixed the bug, re-run the bug\
       \ reproduction script to make sure that the bug has indeed been fixed.\n   \n\
-      \   If the bug reproduction script does not print anything when it succesfully\
+      \   If the bug reproduction script does not print anything when it successfully\
       \ runs, we recommend adding a print(\"Script completed successfully, no errors.\"\
       ) command at the end of the file,\n   so that you can be sure that the script\
       \ indeed ran fine all the way through. \n\n2. If you run a command and it doesn't\

@@ -31,10 +31,12 @@ GITHUB_REPO_URL_PATTERN = re.compile(r'.*[/@]?github\.com\/([^/]+)\/([^/]+)')
 logger = logging.getLogger(LOGGER_NAME)
 
 
-def get_data_path_name(data_path: str):
+def get_data_path_name(data_path: str) -> str:
     """ if data_path is a file, return the file stem
     elif it's a github url, return the owner__repo_name
     """
+    if data_path.startswith("text://"):
+        return hashlib.sha256(data_path.removeprefix("text://").encode()).hexdigest()[:6]
     match = GITHUB_ISSUE_URL_PATTERN.search(data_path)
     if match:
         owner, repo, _ = match.groups()
@@ -251,7 +253,6 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> Tuple[subpr
         image_name,
         "/bin/bash",
         "-l",
-        "-m",
     ]
     logger.debug(f"Starting container with command: %s", shlex.join(startup_cmd))
     container = subprocess.Popen(
@@ -264,14 +265,10 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> Tuple[subpr
     )
     time.sleep(START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
-    try:
-        with timeout(seconds=2):
-            output = container.stdout.read()
-            if output:
-                logger.error(f"Unexpected container setup output: {output}")
-    except TimeoutError:
-        pass
-    return container, {"1", }  # bash PID is always 1 for non-persistent containers
+    output = read_with_timeout(container, lambda: list(), timeout_duration=2)
+    if output:
+        logger.error(f"Unexpected container setup output: {output}")
+    return container, {"1", } # bash PID is always 1 for non-persistent containers
 
 
 def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool = False) -> Tuple[subprocess.Popen, Set]:
@@ -307,7 +304,6 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
         ctr_name,
         "/bin/bash",
         "-l",
-        "-m",
     ]
     logger.debug(f"Starting container with command: %s", shlex.join(startup_cmd))
     container = subprocess.Popen(
@@ -320,13 +316,9 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
     )
     time.sleep(START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
-    try:
-        with timeout(seconds=2):
-            output = container.stdout.read()
-            if output:
-                logger.error(f"Unexpected container setup output: {output}")
-    except TimeoutError:
-        pass
+    output = read_with_timeout(container, lambda: list(), timeout_duration=2)
+    if output:
+        logger.error(f"Unexpected container setup output: {output}")
     # Get the process IDs of the container
     # There should be at least a head process and possibly one child bash process
     bash_pids, other_pids = get_background_pids(container_obj)
@@ -375,12 +367,12 @@ def image_exists(image_name):
     try:
         client = docker.from_env()
     except docker.errors.DockerException as e:
-        docker_not_runnnig = any((
-            "connection aborted" in str(e).lower(),
+        docker_not_running = any((
+            "connection aborted" in str(e).lower(), 
             "connection refused" in str(e).lower(),
             "error while fetching server api version" in str(e).lower(),
         ))
-        if docker_not_runnnig:
+        if docker_not_running:
             msg = (
                 "Probably the Docker daemon is not running. Please start the Docker daemon and try again. "
                 "You might need to allow the use of the docker socket "
@@ -404,12 +396,21 @@ def image_exists(image_name):
     return True
 
 
-def get_commit(api: GhApi, owner: str, repo: str, base_commit: str = None):
-    if base_commit:
-        commit = api.repos.get_commit(owner, repo, base_commit)
-    else:
-        commit = api.repos.list_commits(owner, repo)[0]
-    return commit
+def get_commit(api: GhApi, owner: str, repo: str, ref: Optional[str] = None):
+    """Get commit object from github api
+
+    Args:
+        api (GhApi): 
+        owner (str): Repo owner, e.g., "princeton-nlp"
+        repo (str): Repo, e.g., "SWE-agent"
+        ref (str, optional): Branch, tag or commit hash
+
+    Returns:
+        _type_: _description_
+    """
+    if ref:
+        return api.repos.get_commit(owner, repo, ref)
+    return api.repos.list_commits(owner, repo)[0]
 
 
 
@@ -499,11 +500,13 @@ class InstanceBuilder:
         owner, repo = parse_gh_repo_url(url)
         self.args["repo"] = f"{owner}/{repo}"
         self.args["repo_type"] = "github"
-        if base_commit:
-            self.args["base_commit"] = base_commit
-        else:
-            api = GhApi(token=self.token)
-            self.args["base_commit"] = get_commit(api, owner, repo, base_commit).sha
+        # Always get commit hash, because base_commit can also be branch or tag
+        api = GhApi(token=self.token)
+        self.args["base_commit"] = get_commit(api, owner, repo, ref=base_commit).sha
+        if base_commit != self.args["base_commit"]:
+            logger.info(
+                f"Base commit reference {base_commit} resolved to commit hash {self.args['base_commit']=}"
+            )
         self.args["version"] = self.args["base_commit"][:7]
 
     def set_repo_info_from_local_path(self, path: str, base_commit: Optional[str] = None):
@@ -596,6 +599,26 @@ def get_instances(
             raise ValueError(msg)
         return [instance_from_dict(x) for x in instances]
 
+    # The next if statement is very brittle logic to determine if we're processing a single instance
+    if file_path.startswith("text://") or (Path(file_path).is_file() and Path(file_path).suffix in ['.md', '.txt']) or is_github_issue_url(file_path):
+        ib = InstanceBuilder(token=token)
+        ib.set_problem_statement(file_path)
+        if repo_path:
+            ib.set_repo_info(repo_path, base_commit=base_commit)
+        elif is_github_repo_url(file_path):
+            ib.set_repo_info_from_gh_url(file_path, base_commit=base_commit)
+        else:
+            raise ValueError(f"Could not determine repo path from {file_path=}, {repo_path=}")
+
+        return [ib.build()]
+    
+    if base_commit:
+        msg = "base_commit must be empty if running over multiple problem statements"
+        raise ValueError(msg)
+    
+    if repo_path:
+        msg = "repo_path must be empty if running over multiple problem statements"
+        raise ValueError(msg)
 
     # If file_path is a directory, attempt load from disk
     if os.path.isdir(file_path):
@@ -629,10 +652,6 @@ def get_instances(
         return postproc_instance_list(json.load(open(file_path)))
     if file_path.endswith(".jsonl"):
         return postproc_instance_list([json.loads(x) for x in open(file_path, 'r').readlines()])
-
-    if repo_path:
-        msg = "repo_path must be empty if data_path is not a github url or local repo url"
-        raise ValueError(msg)
 
     # Attempt load from HF datasets as a last resort
     try:
