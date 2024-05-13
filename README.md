@@ -63,7 +63,7 @@ https://github.com/princeton-nlp/SWE-agent/assets/13602468/44d60674-59ca-4986-9b
 1. Click [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/princeton-nlp/SWE-agent)
 2. Add your API keys to `keys.cfg` (find the file in the left sidebar and fill out the template)
 3. Make sure to wait until the `postCreateCommand` in the terminal window at the bottom is finished
-4. Enter your SWE-agent command ([see below](#-solve-real-life-github-issues-))
+4. Enter your SWE-agent command ([see below](#real-life))
 
 ### Install from source
 
@@ -76,7 +76,7 @@ https://github.com/princeton-nlp/SWE-agent/assets/13602468/44d60674-59ca-4986-9b
 3. Clone this repository.
 4. Run `pip install --editable .` at the repository root (as with any python setup, it's recommended to use [conda][] or [virtual environments][] to manage dependencies).
 5. Run `./setup.sh` to create the `swe-agent` docker image.
-6. Create a `keys.cfg` file at the root of this repository ([see below](#-add-your-api-keystokens)).
+6. Create a `keys.cfg` file at the root of this repository ([see below](#tokens)).
 
 [nodejs-install]: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
 
@@ -95,7 +95,7 @@ Instead of installing SWE-agent from source, you can also run the software direc
 
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
 2. Run `docker pull sweagent/swe-agent:latest`
-3. Add your API tokens to a file `keys.cfg` as explained [below](#-add-your-api-keystokens)
+3. Add your API tokens to a file `keys.cfg` as explained [below](#tokens)
 
 Then run
 
@@ -113,14 +113,14 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 ```
 
 > [!TIP]
-> * For more information on the different API keys/tokens, see [below](#-add-your-api-keystokens).
+> * For more information on the different API keys/tokens, see [below](#tokens).
 > * If you're using docker on Windows, use `-v //var/run/docker.sock:/var/run/docker.sock`
 >   (double slash) to escape it ([more information](https://stackoverflow.com/a/47229180/)).
 > * See the [installation issues section](#more-installation-tips) for more help if you run into
 >   trouble.
 
 
-### 🔑 Add your API keys/tokens
+### 🔑 Add your API keys/tokens <a name="tokens"></a>
 
 Create a `keys.cfg` file at the root of this repository and populate it with your API keys.
 
@@ -149,7 +149,7 @@ OPENAI_API_BASE_URL: 'LM base URL here if using Local or alternative api Endpoin
 
 See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) tokens.
 
-### More installation tips
+### More installation tips <a name="more-installation-tips"></a>
 
 If you seem to be having issues with running docker
 
@@ -158,7 +158,7 @@ If you seem to be having issues with running docker
 
 Any remaining issues? Please [open a GitHub issue](https://github.com/princeton-nlp/SWE-agent/issues/new/choose)!
 
-## 🔥 Solve real Git issues! <a name="real-life"></a>
+## 🔥 Solve real GitHub issues! <a name="real-life"></a>
 
 To start our web UI, simply run
 
@@ -221,7 +221,7 @@ There are two steps to the SWE-agent pipeline. First SWE-agent takes an input Gi
 > At this moment, there are known issues with a small number of repositories that don't install properly for `arm64` / `aarch64` architecture computers. We're working on a fix, but if you'd like to run and evaluate on the entirety of SWE-bench, the easiest way is by using an `x86` machine.
 
 ### 👩‍💻 Inference <a name="inference"></a>
-**Inference on *any* GitHub Issue**: See [above](#-quickstart-solve-real-life-github-issues-).
+**Inference on *any* GitHub Issue**: See [above](#real-life).
 
 **Inference on SWE-bench**: Run SWE-agent on [SWE-bench Lite](https://www.swebench.com/lite.html) and generate patches.
 ```bash
