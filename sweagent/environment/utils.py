@@ -490,6 +490,10 @@ class InstanceBuilder:
         # Always get commit hash, because base_commit can also be branch or tag
         api = GhApi(token=self.token)
         self.args["base_commit"] = get_commit(api, owner, repo, ref=base_commit).sha
+        if base_commit != self.args["base_commit"]:
+            logger.info(
+                f"Base commit reference {base_commit} resolved to commit hash {self.args['base_commit']=}"
+            )
         self.args["version"] = self.args["base_commit"][:7]
     
     def set_repo_info_from_local_path(self, path: str, base_commit: Optional[str] = None):
@@ -589,7 +593,7 @@ def get_instances(
         if repo_path:
             ib.set_repo_info(repo_path, base_commit=base_commit)
         elif is_github_repo_url(file_path):
-            ib.set_repo_info_from_gh_url(file_path)
+            ib.set_repo_info_from_gh_url(file_path, base_commit=base_commit)
         else:
             raise ValueError(f"Could not determine repo path from {file_path=}, {repo_path=}")
 
