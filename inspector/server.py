@@ -2,6 +2,7 @@ import http.server
 import json
 import os
 import socketserver
+from typing import List
 import yaml
 
 from pathlib import Path
@@ -47,8 +48,8 @@ def append_patch(instance_id, content, patches, patch_type):
     return content
 
 
-def append_results(traj_path, instance_id, content, results, results_file, scorecards, scorecards_file):
-    stats = []
+def append_results(traj_path: Path, instance_id: str, content, results, results_file, scorecards, scorecards_file):
+    stats: List[str] = []
     model_stats = {}
     if traj_path.exists():
         data = json.loads(traj_path.read_text())
