@@ -8,7 +8,7 @@
 <p align="center">
   <a href="https://swe-agent.com"><strong>Website & Demo</strong></a>&nbsp; | &nbsp;
   <a href="https://discord.gg/AVEFbBn2rH"><strong>Discord</strong></a>&nbsp; | &nbsp;
-  <a href="https://swe-agent.com/paper.pdf"><strong>Preprint</strong></a>&nbsp; 
+  <a href="https://swe-agent.com/paper.pdf"><strong>Preprint</strong></a>
 </p>
 
 
@@ -17,31 +17,16 @@ SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix b
 
 On [SWE-bench](https://github.com/princeton-nlp/SWE-bench), SWE-agent resolves **12.29%** of issues, achieving the state-of-the-art performance on the full test set.
 
+We accomplish our results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, view, edit and execute code files. We call this an 🤖 **Agent-Computer Interface (ACI)**.
+Read more about it in our [paper](https://swe-agent.com/paper.pdf)!
+
 SWE-agent is built and maintained by researchers from Princeton University. 
 
 <p align="center">
   <img src="assets/results+preview.png" style="width: 80%; height: auto;">
 </p>
 
-### ✨ Use SWE-agent as a dev tool
-
-We provide a command line tool and a graphical web interface:
-
-![My Movie 3](https://github.com/princeton-nlp/SWE-agent/assets/13602468/fa201621-ec31-4644-b658-c1d0feb92253)
-
-### 🤖 Agent-Computer Interface (ACI) <a name="aci"></a>
-We accomplish our results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, view, edit and execute code files. We call this an **Agent-Computer Interface** (ACI) and build the SWE-agent repository to make it easy to iterate on ACI design for repository-level coding agents.
-
-Just like how typical language models requires good prompt engineering, good ACI design leads to much better results when using agents. As we show in our [paper](https://swe-agent.com/paper.pdf), a baseline agent without a well-tuned ACI does much worse than SWE-agent.
-
-SWE-agent contains features that we discovered to be immensely helpful during the agent-computer interface design process:
-1. We add a linter that runs when an edit command is issued, and do not let the edit command go through if the code isn't syntactically correct.
-2. We supply the agent with a special-built file viewer, instead of having it just ```cat``` files. We found that this file viewer works best when displaying just 100 lines in each turn. The file editor that we built has commands for scrolling up and down and for performing a search within the file.
-3. We supply the agent with a special-built full-directory string searching command. We found that it was important for this tool to succinctly list the matches- we simply list each file that had at least one match. Showing the model more context about each match proved to be too confusing for the model. 
-4. When commands have an empty output we return a message saying "Your command ran successfully and did not produce any output."
-
-Read our paper for more details [here](https://swe-agent.com/paper.pdf).
-
+If you found this work helpful, please consider using the following citation:
 ```
 @misc{yang2024sweagent,
       title={SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering}, 
@@ -49,6 +34,12 @@ Read our paper for more details [here](https://swe-agent.com/paper.pdf).
       year={2024},
 }
 ```
+
+### ✨ Use SWE-agent as a dev tool
+
+We provide a command line tool and a graphical web interface:
+
+![My Movie 3](https://github.com/princeton-nlp/SWE-agent/assets/13602468/fa201621-ec31-4644-b658-c1d0feb92253)
 
 ## 🚀 Installation <a name="setup"></a>
 
