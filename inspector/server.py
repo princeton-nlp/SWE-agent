@@ -110,8 +110,7 @@ def append_results(traj_path: Path, instance_id: str, content, results, results_
     else:
         status.append("---------------------------")
         status.append("Note that the evaluation results here may not be accurate or up to date, since they are computed separately from the agent run itself.")
-        results_relative = results_file.resolve().relative_to(Path(__file__).resolve().parent.parent)
-        status.append(f"Check {results_relative} for the most accurate evaluation results.")
+        status.append(f"Check {results_file} for the most accurate evaluation results.")
         status.append("")
         status.append(f"Instance ID: {instance_id}")
         status.append("Based on results:")
