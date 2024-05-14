@@ -6,6 +6,7 @@ import AgentFeed from "./components/panels/AgentFeed";
 import EnvFeed from "./components/panels/EnvFeed";
 import LogPanel from "./components/panels/LogPanel";
 import LRunControl from "./components/controls/LRunControl";
+import { useImmer } from "use-immer";
 
 const url = ""; // Will get this from .env
 // Connect to Socket.io
@@ -15,19 +16,35 @@ function Run() {
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [errorBanner, setErrorBanner] = useState("");
 
-  const [dataPath, setDataPath] = useState(
-    "https://github.com/marshmallow-code/marshmallow/issues/1359",
-  );
-  const [repoPath, setRepoPath] = useState("");
-  const [model, setModel] = useState("gpt4");
-  const envConfigDefault = {
-    python: "3.10",
-    config_type: "manual",
-    install: "pip install --editable .",
-    install_command_active: true,
+  const runConfigDefault = {
+    agent: {
+      model: {
+        model_name: "gpt4",
+      },
+    },
+    environment: {
+      data_path: "",
+      repo_path: "",
+      environment_setup: {
+        input_type: "manual",
+        manual: {
+          python: "3.10",
+          config_type: "manual",
+          install: "pip install --editable .",
+          install_command_active: true,
+          pip_packages: "",
+        },
+        script_path: {
+          script_path: "",
+        },
+      },
+    },
+    extra: {
+      test_run: false,
+    },
   };
-  const [envConfig, setEnvConfig] = useState(envConfigDefault);
-  const [testRun, setTestRun] = useState(false);
+  const [runConfig, setRunConfig] = useImmer(runConfigDefault);
+
   const [agentFeed, setAgentFeed] = useState([]);
   const [envFeed, setEnvFeed] = useState([]);
   const [highlightedStep, setHighlightedStep] = useState(null);
@@ -119,13 +136,7 @@ function Run() {
     setErrorBanner("");
     try {
       await axios.get(`/run`, {
-        params: {
-          data_path: dataPath,
-          test_run: testRun,
-          repo_path: repoPath,
-          model: model,
-          environment: JSON.stringify(envConfig),
-        },
+        params: { runConfig: JSON.stringify(runConfig) },
       });
     } catch (error) {
       console.error("Error:", error);
@@ -257,16 +268,11 @@ function Run() {
         isConnected={isConnected}
         handleStop={handleStop}
         handleSubmit={handleSubmit}
-        setDataPath={setDataPath}
-        setTestRun={setTestRun}
-        setRepoPath={setRepoPath}
-        testRun={testRun}
-        setModel={setModel}
         tabKey={tabKey}
         setTabKey={setTabKey}
-        envConfig={envConfig}
-        setEnvConfig={setEnvConfig}
-        envConfigDefault={envConfigDefault}
+        runConfig={runConfig}
+        setRunConfig={setRunConfig}
+        runConfigDefault={runConfigDefault}
       />
       <div id="demo">
         <hr />

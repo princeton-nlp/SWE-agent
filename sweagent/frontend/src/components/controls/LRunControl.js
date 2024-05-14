@@ -11,20 +11,14 @@ function LRunControl({
   isConnected,
   handleStop,
   handleSubmit,
-  setDataPath,
-  setTestRun,
-  testRun,
-  setRepoPath,
-  setModel,
   tabKey,
   setTabKey,
-  envConfig,
-  setEnvConfig,
-  envConfigDefault,
+  runConfig,
+  setRunConfig,
+  runConfigDefault,
 }) {
   // ps = problem statement
   const [psType, setPsType] = useState("gh");
-  const [envInputType, setEnvInputType] = useState("manual");
   const defaultInstallCommand = "pip install --editable .";
 
   const defaultPS =
@@ -47,7 +41,11 @@ function LRunControl({
           <input
             type="text"
             className="form-control"
-            onChange={(e) => setDataPath(e.target.value)}
+            onChange={(e) =>
+              setRunConfig((draft) => {
+                draft.environment.data_path = e.target.value;
+              })
+            }
             placeholder={"Example: " + defaultPS}
             defaultValue=""
           />
@@ -63,7 +61,11 @@ function LRunControl({
           <input
             type="text"
             className="form-control"
-            onChange={(e) => setDataPath(e.target.value)}
+            onChange={(e) =>
+              setRunConfig((draft) => {
+                draft.environment.data_path = e.target.value;
+              })
+            }
             placeholder="/path/to/your/local/file.md"
             defaultValue=""
           />
@@ -74,7 +76,11 @@ function LRunControl({
       return (
         <textarea
           className="form-control"
-          onChange={(e) => setDataPath("text://" + e.target.value)}
+          onChange={(e) =>
+            setRunConfig((draft) => {
+              draft.environment.data_path = "text://" + e.target.value;
+            })
+          }
           rows="5"
           placeholder="Enter problem statement"
         />
@@ -85,21 +91,22 @@ function LRunControl({
   function getEnvInput() {
     // Get environment configuration input controls based on the
     // "Environment type" dropdown menu.
-    if (envInputType === "conda") {
-      return (
-        <div className="input-group mb-3">
-          <span className="input-group-text">Conda environment</span>
-          <input
-            type="text"
-            className="form-control"
-            onChange={(e) =>
-              setEnvConfig({ ...envConfig, packages: e.target.value })
-            }
-            placeholder="/path/to/conda_env.yml"
-          />
-        </div>
-      );
-    }
+    // if (envInputType === "conda") {
+    //   return (
+    //     <div className="input-group mb-3">
+    //       <span className="input-group-text">Conda environment</span>
+    //       <input
+    //         type="text"
+    //         className="form-control"
+    //         onChange={(e) =>
+    //           setRunConfig(draft => {draft.environment.environment_setup.packages = e.target.value})
+    //         }
+    //         placeholder="/path/to/conda_env.yml"
+    //       />
+    //     </div>
+    //   );
+    // }
+    const envInputType = runConfig.environment.environment_setup.input_type;
     if (envInputType === "script_path") {
       return (
         <div>
@@ -109,7 +116,10 @@ function LRunControl({
               type="text"
               className="form-control"
               onChange={(e) =>
-                setEnvConfig({ ...envConfig, script_path: e.target.value })
+                setRunConfig((draft) => {
+                  draft.environment.environment_setup.script_path.script_path =
+                    e.target.value;
+                })
               }
               placeholder="/path/to/setup.sh"
               defaultValue=""
@@ -132,12 +142,16 @@ function LRunControl({
               type="text"
               className="form-control"
               onChange={(e) =>
-                setEnvConfig({
-                  ...envConfig,
-                  python: e.target.value || envConfigDefault["python"],
+                setRunConfig((draft) => {
+                  draft.environment.environment_setup.manual.python =
+                    e.target.value ||
+                    runConfigDefault.environment.environment_setup.manual
+                      .python;
                 })
               }
-              placeholder={envConfigDefault["python"]}
+              placeholder={
+                runConfigDefault.environment.environment_setup.manual.python
+              }
               defaultValue=""
             />
           </div>
@@ -149,9 +163,9 @@ function LRunControl({
                 aria-label="Run installation command"
                 defaultChecked={true}
                 onChange={(e) =>
-                  setEnvConfig({
-                    ...envConfig,
-                    install_command_active: e.target.value,
+                  setRunConfig((draft) => {
+                    draft.environment.environment_setup.manual.install_command_active =
+                      e.target.checked;
                   })
                 }
               />
@@ -163,9 +177,9 @@ function LRunControl({
               aria-label="Text input with checkbox"
               placeholder={defaultInstallCommand}
               onChange={(e) =>
-                setEnvConfig({
-                  ...envConfig,
-                  install: e.target.value || defaultInstallCommand,
+                setRunConfig((draft) => {
+                  draft.environment.environment_setup.manual.install =
+                    e.target.value;
                 })
               }
             />
@@ -174,32 +188,16 @@ function LRunControl({
           <textarea
             className="form-control"
             onChange={(e) =>
-              setEnvConfig({ ...envConfig, pip_packages: e.target.value })
+              setRunConfig((draft) => {
+                draft.environment.environment_setup.manual.pip_packages =
+                  e.target.value;
+              })
             }
             rows="5"
             placeholder="pip installable packages list, one per line (i.e., requirements.txt)."
           />
         </div>
       );
-    }
-  }
-
-  function handleEnvInputTypeUpdate(value) {
-    // Handle a change in how the user wants to configure the environment.
-    // We need to make sure that we clear out config items that aren't "active" anymore
-    // For example, if we switch from conda to manual, we should clear out conda env path
-    setEnvInputType(value);
-    if (value === "conda") {
-      setEnvConfig({ packages: "", config_type: "conda" });
-    } else if (value === "manual") {
-      setEnvConfig({
-        python: envConfigDefault["python"],
-        config_type: "manual",
-        install: "pip install --editable .",
-        install_command_active: true,
-      });
-    } else if (value === "script_path") {
-      setEnvConfig({ script_path: "", config_type: "script_path" });
     }
   }
 
@@ -244,7 +242,11 @@ function LRunControl({
                 type="text"
                 className="form-control"
                 placeholder="Optional when using GitHub issue as problem source."
-                onChange={(e) => setRepoPath(e.target.value)}
+                onChange={(e) =>
+                  setRunConfig((draft) => {
+                    draft.environment.repo_path = e.target.value;
+                  })
+                }
                 defaultValue=""
               />
             </div>
@@ -258,7 +260,11 @@ function LRunControl({
                 type="text"
                 className="form-control"
                 placeholder="gpt4"
-                onChange={(e) => setModel(e.target.value || "gpt4")}
+                onChange={(e) =>
+                  setRunConfig((draft) => {
+                    draft.agent.model.model_name = e.target.value || "gpt4";
+                  })
+                }
               />
             </div>
             <div className="alert alert-info" role="alert">
@@ -282,8 +288,15 @@ function LRunControl({
               <select
                 className="form-select"
                 aria-label="Select problem statement type"
-                onChange={(e) => handleEnvInputTypeUpdate(e.target.value)}
-                defaultValue={envInputType}
+                onChange={(e) =>
+                  setRunConfig((draft) => {
+                    draft.environment.environment_setup.input_type =
+                      e.target.value;
+                  })
+                }
+                defaultValue={
+                  runConfigDefault.environment.environment_setup.input_type
+                }
               >
                 <option value="manual">Python version and packages</option>
                 <option value="script_path">Path to shell script</option>
@@ -300,8 +313,12 @@ function LRunControl({
               type="switch"
               id="custom-switch"
               label="Test run (dummy agent without LM queries)"
-              checked={testRun}
-              onChange={(e) => setTestRun(e.target.checked)}
+              checked={runConfig.extra.test_run}
+              onChange={(e) =>
+                setRunConfig((draft) => {
+                  draft.extra.test_run = e.target.checked;
+                })
+              }
             />
           </div>
         </Tab>

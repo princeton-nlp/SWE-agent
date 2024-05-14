@@ -7,6 +7,7 @@ except ImportError as e:
     )
     raise RuntimeError(msg) from e
 from contextlib import redirect_stderr, redirect_stdout
+import copy
 import json
 import os
 from pathlib import Path
@@ -21,7 +22,7 @@ import yaml
 from sweagent import CONFIG_DIR, PACKAGE_DIR
 from sweagent.agent.agents import AgentArguments
 from sweagent.agent.models import ModelArguments
-from sweagent.api.utils import ThreadWithExc
+from sweagent.api.utils import ThreadWithExc, AttrDict
 from sweagent.environment.swe_env import EnvironmentArguments
 from sweagent.api.hooks import EnvUpdateHook, WebUpdate, MainUpdateHook, AgentUpdateHook
 import sweagent.environment.utils as env_utils
@@ -102,10 +103,16 @@ def handle_connect():
     print("Client connected")
 
 
-def write_env_yaml(data: Dict[str, Any]) -> str:
+def write_env_yaml(data) -> str:
+    data: Any = AttrDict(copy.deepcopy(dict(data)))
+    if not data.install_command_active:
+        data.install = ""
+    del data.install_command_active
+    data.pip_packages = [p.strip() for p in data.pip_packages.split("\n") if p.strip()]
     path = Path(tempfile.NamedTemporaryFile(delete=False, suffix=".yml").name)
+    # Make sure that the file is deleted when the program exits
     atexit.register(path.unlink)
-    path.write_text(yaml.dump(data))
+    path.write_text(yaml.dump(dict(data)))
     return str(path)
 
 
@@ -122,20 +129,23 @@ def run():
             thread.stop()
     wu = WebUpdate(socketio)
     wu.up_agent("Starting the run")
-    data_path = request.args["data_path"]
-    repo_path = request.args["repo_path"]
-    model_name = request.args["model"]
-    environment = json.loads(request.args["environment"])
+    # Use Any type to silence annoying false positives from mypy
+    run: Any = AttrDict.from_nested_dicts(json.loads(request.args["runConfig"]))
+    print(run)
+    data_path: str = run.environment.data_path
+    repo_path: str = run.environment.repo_path
+    model_name: str = run.agent.model.model_name
     environment_setup = ""
-    if environment["config_type"] == "manual":
-        if not environment["install_command_active"]:
-            environment["install"] = ""
-        environment_setup = str(write_env_yaml(environment))
-    elif environment["config_type"] == "script_path":
-        environment_setup = environment["script_path"]
+    environment_input_type = run.environment.environment_setup.input_type 
+    if environment_input_type == "manual":
+        environment_setup = str(write_env_yaml(run.environment.environment_setup.manual))
+    elif environment_input_type == "script_path":
+        environment_setup = run.environment.environment_setup.script_path["script_path"]
+    else:
+        raise ValueError(f"Unknown input type: {environment_input_type}")
     if not environment_setup.strip():
         environment_setup = None
-    test_run = request.args["test_run"].lower() == "true"
+    test_run: bool = run.extra.test_run
     if test_run:
         model_name = "instant_empty_submit"
     defaults = ScriptArguments(
