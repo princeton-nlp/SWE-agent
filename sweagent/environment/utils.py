@@ -492,7 +492,7 @@ class InstanceBuilder:
         self.args["base_commit"] = get_commit(api, owner, repo, ref=base_commit).sha
         if base_commit != self.args["base_commit"]:
             logger.info(
-                f"Base commit reference {base_commit} resolved to commit hash {self.args['base_commit']=}"
+                f"Base commit reference {base_commit} resolved to commit hash {self.args['base_commit']}"
             )
         self.args["version"] = self.args["base_commit"][:7]
     

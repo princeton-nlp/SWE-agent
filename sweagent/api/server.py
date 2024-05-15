@@ -131,9 +131,6 @@ def run():
     wu.up_agent("Starting the run")
     # Use Any type to silence annoying false positives from mypy
     run: Any = AttrDict.from_nested_dicts(json.loads(request.args["runConfig"]))
-    print(run)
-    data_path: str = run.environment.data_path
-    repo_path: str = run.environment.repo_path
     model_name: str = run.agent.model.model_name
     environment_setup = ""
     environment_input_type = run.environment.environment_setup.input_type 
@@ -152,11 +149,12 @@ def run():
         suffix="",
         environment=EnvironmentArguments(
             image_name="sweagent/swe-agent:latest",
-            data_path=data_path,
+            data_path=run.environment.data_path,
+            base_commit=run.environment.base_commit,
             split="dev",
             verbose=True,
             install_environment=True,
-            repo_path=repo_path,
+            repo_path=run.environment.repo_path,
             environment_setup=environment_setup,
         ),
         skip_existing=False,

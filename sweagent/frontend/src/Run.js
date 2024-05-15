@@ -25,6 +25,7 @@ function Run() {
     environment: {
       data_path: "",
       repo_path: "",
+      base_commit: "",
       environment_setup: {
         input_type: "manual",
         manual: {
