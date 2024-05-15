@@ -27,10 +27,16 @@ jobs:
       - name: Create keys.cfg
         run: |
           touch keys.cfg
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Create uv virtualenv and activate it
+        run: |
+          uv venv && source .venv/bin/activate
       - name: Install dependencies
         run: |
-            pip install .
-            pip install pytest pytest-cov
+            uv pip install .
+            uv pip install pytest pytest-cov
       - name: Run pytest
         run: |
             pytest --cov
