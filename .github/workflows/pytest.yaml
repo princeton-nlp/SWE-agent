@@ -27,10 +27,17 @@ jobs:
       - name: Create keys.cfg
         run: |
           touch keys.cfg
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+      # See https://github.com/princeton-nlp/SWE-agent/actions/runs/9102025526/job/25020661634?pr=360
+      - name: Set the VIRTUAL_ENV variable for uv to work
+        run: |
+          echo "VIRTUAL_ENV=${Python_ROOT_DIR}" >> $GITHUB_ENV
       - name: Install dependencies
         run: |
-            pip install .
-            pip install pytest pytest-cov
+            uv pip install .
+            uv pip install pytest pytest-cov
       - name: Run pytest
         run: |
             pytest --cov
