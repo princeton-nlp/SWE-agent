@@ -41,9 +41,13 @@ class WebUpdate:
         """Directly wrap around socketio.emit"""
         self._socketio.emit(event, data)
 
-    def up_log(self, message: str, level="info"):
+    def up_log(self, message: str):
         """Update the log"""
-        self._emit("log_message", {"message": message, "level": level})
+        self._emit("log_message", {"message": message})
+    
+    def up_banner(self, message: str):
+        """Update the banner"""
+        self._emit("update_banner", {"message": message})
 
     def up_agent(
         self,

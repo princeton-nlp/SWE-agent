@@ -185,13 +185,13 @@ function Run() {
       logsRef.current.scrollTop = logsRef.current.scrollHeight;
     };
 
+    const handleUpdateBanner = (data) => {
+      setErrorBanner(data.message);
+    };
+
     const handleLogMessage = (data) => {
       requeueStopComputeTimeout();
       setLogs((prevLogs) => prevLogs + data.message);
-      if (data.level === "critical") {
-        console.log("Critical error", data.message);
-        setErrorBanner("Critical errror encountered: " + data.message);
-      }
       if (logsRef.current) {
         setTimeout(() => {
           scrollLog();
@@ -205,6 +205,7 @@ function Run() {
 
     socket.on("update", handleUpdate);
     socket.on("log_message", handleLogMessage);
+    socket.on("update_banner", handleUpdateBanner);
     socket.on("finish_run", handleFinishedRun);
     socket.on("connect", () => {
       console.log("Connected to server");
@@ -236,6 +237,7 @@ function Run() {
       socket.off("connect");
       socket.off("disconnect");
       socket.off("connect_error");
+      socket.off("update_banner", handleUpdateBanner);
     };
   }, []);
 
