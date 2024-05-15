@@ -30,9 +30,10 @@ jobs:
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
-      - name: Create uv virtualenv and activate it
+      # See https://github.com/princeton-nlp/SWE-agent/actions/runs/9102025526/job/25020661634?pr=360
+      - name: Set the VIRTUAL_ENV variable for uv to work
         run: |
-          uv venv && source .venv/bin/activate
+          echo "VIRTUAL_ENV=${Python_ROOT_DIR}" >> $GITHUB_ENV
       - name: Install dependencies
         run: |
             uv pip install .
