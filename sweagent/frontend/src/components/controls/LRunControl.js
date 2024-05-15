@@ -235,18 +235,27 @@ function LRunControl({
             </div>
             <div className="input-group mb-3">{getPsInput()}</div>
             <div className="input-group mb-3">
-              <span className="input-group-text">
-                Local repo path or GitHub URL
-              </span>
+              <span className="input-group-text">Repository</span>
               <input
                 type="text"
                 className="form-control"
-                placeholder="Optional when using GitHub issue as problem source."
+                placeholder="Local repo path or GitHub repo URL. Optional when using GitHub issue as problem source."
                 onChange={(e) =>
                   setRunConfig((draft) => {
                     draft.environment.repo_path = e.target.value;
                   })
                 }
+              />
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Optional: branch/tag/hash"
+                onChange={(e) =>
+                  setRunConfig((draft) => {
+                    draft.environment.base_commit = e.target.value;
+                  })
+                }
+                style={{ maxWidth: 250 }}
                 defaultValue=""
               />
             </div>
