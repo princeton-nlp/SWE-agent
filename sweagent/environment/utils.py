@@ -322,6 +322,13 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
     # Get the process IDs of the container
     # There should be at least a head process and possibly one child bash process
     bash_pids, other_pids = get_background_pids(container_obj)
+    total_time_slept = START_UP_DELAY
+    while len(bash_pids) > 1 or len(other_pids) > 0:
+        time.sleep(1)
+        total_time_slept += 1
+        bash_pids, other_pids = get_background_pids(container_obj)
+        if total_time_slept > 5*START_UP_DELAY:
+            break
     bash_pid = 1
     if len(bash_pids) == 1:
         bash_pid = bash_pids[0][0]
