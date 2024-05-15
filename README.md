@@ -242,7 +242,7 @@ and then convert that trajectory into a demonstration by following the guide [he
 
 To edit text in ```human``` mode:
 1. Run the command ```edit edit_start_line:edit_end_line```
-2. Write the text you want to insert
+2. Write the text you want to insert. Feel free to write the text across multiple lines. 
 3. Press ```return``` then write ```end_of_edit``` and then press ```return``` again to submit the edit.
 
 ## 💫 Contributions <a name="contributions"></a>
