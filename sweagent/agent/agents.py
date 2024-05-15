@@ -228,9 +228,6 @@ class AgentHook:
     def on_sub_action_started(self, *, sub_action: str):
         ...
 
-    def on_sub_action_started(self, *, sub_action: str):
-        ...
-
     def on_sub_action_executed(self, *, obs: str, done: bool):
         ...
 
