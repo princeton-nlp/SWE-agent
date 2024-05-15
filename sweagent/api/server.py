@@ -78,10 +78,14 @@ class MainThread(ThreadWithExc):
                     main.env.add_hook(EnvUpdateHook(self._wu))
                     main.main()
                 except Exception as e:
-                    self._wu.up_agent(f"Error (see log for details): {e}")
+                    short_msg = str(e)
+                    max_len = 350
+                    if len(short_msg) > max_len:
+                        short_msg = f"{short_msg[:max_len]}... (see log for details)"
                     traceback_str = traceback.format_exc()
                     self._wu.up_log(traceback_str)
-                    self._wu.up_log(str(e), level="critical")
+                    self._wu.up_agent(f"Error: {short_msg}")
+                    self._wu.up_banner("Critical error: " + short_msg)
                     self._wu.finish_run()
                     raise
 
@@ -131,6 +135,9 @@ def run():
     wu.up_agent("Starting the run")
     # Use Any type to silence annoying false positives from mypy
     run: Any = AttrDict.from_nested_dicts(json.loads(request.args["runConfig"]))
+    print(run)
+    print(run.environment)
+    print(run.environment.base_commit)
     model_name: str = run.agent.model.model_name
     environment_setup = ""
     environment_input_type = run.environment.environment_setup.input_type 
