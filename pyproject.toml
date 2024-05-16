@@ -127,3 +127,11 @@ skip-magic-trailing-comma = false
 
 # Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
+
+[tool.typos.default.extend-identifiers]
+# *sigh* this just isn't worth the cost of fixing
+ACI = "ACI"
+
+[tool.typos.default.extend-words]
+# Don't correct the surname "Teh"
+aci = "aci"

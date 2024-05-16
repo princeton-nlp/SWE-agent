@@ -13,6 +13,9 @@ tenacity
 unidiff
 simple-parsing
 # Versions of together below 1.1.0 are not compatible. see https://github.com/princeton-nlp/SWE-agent/issues/135
-together>=1.1.0 
+together>=1.1.0
 ollama
 rich-argparse
+flask
+flask-cors
+flask-socketio

@@ -1,3 +1,4 @@
+#THIS CONFIG IS EXPERIMENTAL. WE DID NOT USE IT AT ALL FOR THE RESULTS IN THE PAPER. ONLY USE IT IF YOU KNOW WHAT YOU ARE DOING. 
 system_template: |-
   SETTING: You are an autonomous programmer, and you're working directly in the command line with a special interface.
 

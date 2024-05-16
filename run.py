@@ -123,6 +123,16 @@ class _ContinueLoop(Exception):
 
 class MainHook:
     """Hook structure for the web server or other addons to interface with"""
+    
+    @staticmethod
+    def _is_promising_patch(info: Dict[str, Any]) -> bool:
+        """Do we actually believe that the patch will solve the issue?
+        Or are we just submitting the last patch we generated before hitting an error?
+        """
+        # The exit status can also be `submitted (exit_cost)` etc.
+        return info["exit_status"] == "submitted" and info.get("submission") is not None
+
+
     def on_init(self, *, args: ScriptArguments, agent: Agent, env: SWEEnv, traj_dir: Path):
         """Called when hook is initialized"""
         ...
@@ -165,6 +175,8 @@ class SaveApplyPatchHook(MainHook):
         patch_path = self._save_patch(instance_id, info)
         if patch_path:
             if not self._apply_patch_locally:
+                return
+            if not self._is_promising_patch(info):
                 return
             assert self._instance  # mypy
             if not self._instance["repo_type"] == "local":
@@ -211,7 +223,10 @@ class SaveApplyPatchHook(MainHook):
             return
         model_patch = info["submission"]
         patch_output_file.write_text(model_patch)
-        self._print_patch_message(patch_output_file)
+        if self._is_promising_patch(info):
+            # Only print big congratulations if we actually believe 
+            # the patch will solve the issue
+            self._print_patch_message(patch_output_file)
         return patch_output_file
 
     def _apply_patch(self, patch_file: Path, local_dir: Path) -> None:
@@ -367,9 +382,15 @@ class Main:
                 logger.info("Exiting InterCode environment...")
                 self.env.close()
                 break
+            except SystemExit:
+                logger.critical(f"❌ Exiting because SystemExit was called")
+                self.env.close()
+                logger.info("Container closed")
+                raise
             except Exception as e:
                 traceback.print_exc()
                 if self.args.raise_exceptions:
+                    self.env.close()
                     raise e
                 if self.env.record:
                     logger.warning(f"❌ Failed on {self.env.record['instance_id']}: {e}")

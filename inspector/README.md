@@ -2,7 +2,7 @@
 We provide a web interface for visualizing `.traj` files from the `trajectories` folder more easily.
 
 **Set Up**
-* Run `python server.py trajectories`
+* Run `python server.py --directory insert_full_absolute_path_to_the_trajectories_folder_here/trajectories`
 * Open http://localhost:8000 in your browser to use the inspector.
 
 **Additional flags**
@@ -14,7 +14,7 @@ We provide a web interface for visualizing `.traj` files from the `trajectories`
 
 From running the command:
 ```
-python server.py --directory trajectories/carlosejimenez/gpt-4-1106-preview__swe-bench-dev-40-seed24__default_sys-env_window100-detailed_cmd_format-full_history-1_demos__t-0.20__p-0.95__c-4.00__install-1__sweep-01-run-4
+python server.py --directory /Users/ofirp/swe-agent/trajectories
 ```
 The inspector will then be launched in the browser:
 

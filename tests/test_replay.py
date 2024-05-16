@@ -102,8 +102,8 @@ def test_model_replay_local_repo(swe_agent_test_repo_clone, swe_agent_test_repo_
         "--raise_exceptions",
     ]
     print(run_cmd)
-    args, remaing_args = get_args(run_cmd)
-    main(**vars(args), forward_args=remaing_args)
+    args, remaining_args = get_args(run_cmd)
+    main(**vars(args), forward_args=remaining_args)
     solution = (swe_agent_test_repo_traj.parent / "solution_missing_colon.py").read_text().strip()
     solution_retrieved = (local_repo_path / "tests" / "missing_colon.py").read_text().strip()
     assert solution == solution_retrieved
@@ -127,6 +127,6 @@ def test_exception_replay_local_dirty(swe_agent_test_repo_clone, swe_agent_test_
         "--apply_patch",
         "--raise_exceptions",
     ]
-    args, remaing_args = get_args(run_cmd)
+    args, remaining_args = get_args(run_cmd)
     with pytest.raises(ValueError, match=".*dirty.*"):
-        main(**vars(args), forward_args=remaing_args)
+        main(**vars(args), forward_args=remaining_args)

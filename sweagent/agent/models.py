@@ -209,6 +209,11 @@ class OpenAIModel(BaseModel):
             "cost_per_input_token": 1e-05,
             "cost_per_output_token": 3e-05,
         },
+        "gpt-4o-2024-05-13": {
+            "max_context": 128_000,
+            "cost_per_input_token": 5e-06,
+            "cost_per_output_token": 15e-06,
+        },
     }
 
     SHORTCUTS = {
@@ -219,6 +224,7 @@ class OpenAIModel(BaseModel):
         "gpt4-0125": "gpt-4-0125-preview",
         "gpt3-0125": "gpt-3.5-turbo-0125",
         "gpt4-turbo": "gpt-4-turbo-2024-04-09",
+        "gpt4o": "gpt-4o-2024-05-13",
     }
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
@@ -812,7 +818,7 @@ class InstantEmptySubmitTestModel(BaseModel):
     MODELS = {"instant_empty_submit": {}}
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
-        """This model immediately submits an empty reproduce.py. Useful for testing purposes"""
+        """This model immediately submits. Useful for testing purposes"""
         super().__init__(args, commands)
         self._action_idx = 0
 
@@ -820,10 +826,10 @@ class InstantEmptySubmitTestModel(BaseModel):
         # Need to at least do _something_ to submit
         if self._action_idx == 0:
             self._action_idx = 1
-            action = "DISCUSSION\nblah blah\n\n```\ncreate reproduce.py\n```\n"
+            action = "DISCUSSION\nLet's reproduce the bug by creating a `reproduce.py` file.\n\n```\ncreate reproduce.py\n```\n"
         elif self._action_idx == 1:
             self._action_idx = 0
-            action = "DISCUSSION\nblargh glargh\n\n```\nsubmit\n```\n"
+            action = "DISCUSSION\nThe task should be resolved, so let's submit the patch.\n\n```\nsubmit\n```\n"
         return action
 
 
@@ -852,5 +858,7 @@ def get_model(args: ModelArguments, commands: Optional[list[Command]] = None):
         return OllamaModel(args, commands)
     elif args.model_name in TogetherModel.SHORTCUTS:
         return TogetherModel(args, commands)
+    elif args.model_name == "instant_empty_submit":
+        return InstantEmptySubmitTestModel(args, commands)
     else:
         raise ValueError(f"Invalid model name: {args.model_name}")
