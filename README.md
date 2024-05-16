@@ -48,97 +48,23 @@ We provide a command line tool and a graphical web interface:
 <details>
 <summary>🔎 Watch the video</summary>
 
-https://github.com/princeton-nlp/SWE-agent/assets/13602468/44d60674-59ca-4986-9b22-7052a45cbed9
+
 </details>
 
-1. Click [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/princeton-nlp/SWE-agent)
-2. Add your API keys to `keys.cfg` (find the file in the left sidebar and fill out the template)
-3. Make sure to wait until the `postCreateCommand` in the terminal window at the bottom is finished
-4. Enter your SWE-agent command ([see below](#real-life))
+
 
 ### Install from source
 
-> [!WARNING]
-> Expect some issues with Windows (we're working on them).
-> In the meantime, use Docker (see below).
 
-1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
-2. For the web interface only: Install [`nodejs`][nodejs-install].
-3. Clone this repository.
-4. Run `pip install --editable .` at the repository root (as with any python setup, it's recommended to use [conda][] or [virtual environments][] to manage dependencies).
-5. Run `./setup.sh` to create the `swe-agent` docker image.
-6. Create a `keys.cfg` file at the root of this repository ([see below](#tokens)).
-
-[nodejs-install]: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
-
-> [!TIP]
-> If you run into docker issues, see the [installation issues section](#more-installation-tips) for more help
-
-[conda]: https://docs.conda.io/en/latest/
-[virtual environments]: https://realpython.com/python-virtual-environments-a-primer/
 
 ### Fallback: Run with docker
 
-> [!warning]
-> The latest containerized version does not yet provide the web interface.
 
-Instead of installing SWE-agent from source, you can also run the software directly using Docker. 
-
-1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
-2. Run `docker pull sweagent/swe-agent:latest`
-3. Add your API tokens to a file `keys.cfg` as explained [below](#tokens)
-
-Then run
-
-```bash
-# NOTE:
-# This assumes that keys.cfg is in your current directory (else fix the path below)
-# This command is equivalent to the script shown in the quickstart 
-docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
-  -v $(pwd)/keys.cfg:/app/keys.cfg \
-  sweagent/swe-agent-run:latest \
-  python run.py --image_name=sweagent/swe-agent:latest \
-  --model_name gpt4 \
-  --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
-  --config_file config/default_from_url.yaml  --skip_existing=False
-```
-
-> [!TIP]
-> * For more information on the different API keys/tokens, see [below](#tokens).
-> * If you're using docker on Windows, use `-v //var/run/docker.sock:/var/run/docker.sock`
->   (double slash) to escape it ([more information](https://stackoverflow.com/a/47229180/)).
-> * See the [installation issues section](#more-installation-tips) for more help if you run into
->   trouble.
 
 
 ### 🔑 Add your API keys/tokens <a name="tokens"></a>
 
-Create a `keys.cfg` file at the root of this repository and populate it with your API keys.
 
-```
-GITHUB_TOKEN: 'GitHub Token Here (optional)'
-OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model (optional)'
-```
-
-<details>
-<summary>🔎 More options for different keys (click to unfold)</summary>
-
-All keys are optional.
-
-```
-GITHUB_TOKEN: 'GitHub Token for access to private repos'  # <-- delete line if not used
-OPENAI_API_KEY: 'OpenAI API Key Here if using OpenAI Model'
-ANTHROPIC_API_KEY: 'Anthropic API Key Here if using Anthropic Model'
-TOGETHER_API_KEY: 'Together API Key Here if using Together Model'
-AZURE_OPENAI_API_KEY: 'Azure OpenAI API Key Here if using Azure OpenAI Model'
-AZURE_OPENAI_ENDPOINT: 'Azure OpenAI Endpoint Here if using Azure OpenAI Model'
-AZURE_OPENAI_DEPLOYMENT: 'Azure OpenAI Deployment Here if using Azure OpenAI Model'
-AZURE_OPENAI_API_VERSION: 'Azure OpenAI API Version Here if using Azure OpenAI Model'
-OPENAI_API_BASE_URL: 'LM base URL here if using Local or alternative api Endpoint'
-```  
-</details>
-
-See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) tokens.
 
 ### More installation tips <a name="more-installation-tips"></a>
 
@@ -160,30 +86,7 @@ To start our web UI, simply run
 If the user interface doesn't automatically open in your browser, please open it at `http://localhost:3000`.
 
 Currently, the web interface only has a subset of the options of the command line interface (CLI). 
-For the CLI, use the `run.py` script:
 
-```bash
-python run.py --model_name gpt4 \
-  --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
-  --config_file config/default_from_url.yaml \
-  --per_instance_cost_limit 2.00 
-```
-
-You can also apply to it to a local repository:
-
-```bash
-python run.py --model_name gpt4 \
-  --data_path /path/to/my_issue.md \
-  --repo_path /path/to/my/local/repo \
-  --config_file config/default_from_url.yaml \
-  --per_instance_cost_limit 2.00 \
-  --apply_patch_locally
-```
-
-> [!TIP]
-> * Run `python run.py --help` to see all available options.
-> * You can have the agent automatically open a PR if the issue has been solved by supplying the `--open_pr`
->   flag. Please use this feature responsibly (on your own repositories or after careful consideration).
 
 * See the [`scripts/`](scripts/) folder for other useful scripts and details.
 * See the [`config/`](config/) folder for details about how you can define your own configuration!
@@ -237,13 +140,7 @@ Replace `<predictions_path>` with the path to the model's predictions, which sho
 * See the [`evaluation/`](evaluation/) folder for details about how evaluation works.
 
 ## 🦺 Modifying SWE-agent <a name="modifying"></a>
-If you'd like to modify the example demonstration that we feed the model at the start of each run, first generate a trajectory manually by running the agent with ```--model_name human``` 
-and then convert that trajectory into a demonstration by following the guide [here](https://github.com/princeton-nlp/SWE-agent/tree/main/make_demos). 
 
-To edit text in ```human``` mode:
-1. Run the command ```edit edit_start_line:edit_end_line```
-2. Write the text you want to insert. Feel free to write the text across multiple lines. 
-3. Press ```return``` then write ```end_of_edit``` and then press ```return``` again to submit the edit.
 
 ## 💫 Contributions <a name="contributions"></a>
 - If you'd like to ask questions, learn about upcoming features, and participate in future development, join our [Discord community](https://discord.gg/AVEFbBn2rH)!
