@@ -2,7 +2,7 @@ import http.server
 import json
 import os
 import socketserver
-from typing import List
+from typing import Any, Dict, Optional, List
 import yaml
 
 from pathlib import Path
@@ -124,14 +124,11 @@ def append_results(traj_path: Path, instance_id: str, content, results, results_
     return content
 
 
-def load_content(file_name, gold_patches, test_patches):
+def load_content(file_name, gold_patches, test_patches) -> Dict[str, Any]:
     with open(file_name) as infile:
         content = json.load(infile)
     results_file = Path(file_name).parent / "results.json"
-    results = None
-    if results_file.exists():
-        with open(results_file) as infile:
-            results = json.load(infile)
+    results = load_results(results_file)
 
     scorecards_file = Path(file_name).parent / "scorecards.json"
     scorecards = None
@@ -154,16 +151,27 @@ def load_content(file_name, gold_patches, test_patches):
     return content
 
 
-def load_results(traj_path):
-    results_file = Path(traj_path).parent / "results.json"
-    if results_file.exists():
-        with open(results_file) as infile:
-            return json.load(infile)
-    return None
+def load_results(results_path: Path) -> Optional[Dict[str, Any]]:
+    """Load results from results.json.
+
+    If file is not found, return None.
+    """
+    if not results_path.exists():
+        return None
+    with open(results_path) as infile:
+        results = json.load(infile)
+    # Different versions of the code used "not_generated" or "no_generation".
+    # Let's standardize this here
+    if "no_generation" in results:
+        results["not_generated"] = results["no_generation"]
+        del results["no_generation"]
+    return results
 
 
-def get_status(traj_path):
-    results = load_results(traj_path)
+# todo: shouldn't reload results fore very status
+def get_status(traj_path) -> str:
+    """Return results emoji for single trajectory"""
+    results = load_results(Path(traj_path).parent / "results.json")
     instance_id = Path(traj_path).stem
     if results is None:
         return "❓"
