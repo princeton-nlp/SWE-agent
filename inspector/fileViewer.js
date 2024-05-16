@@ -34,6 +34,19 @@ function fetchFiles() {
     });
 }
 
+// translate item.role to what we show the user
+const roleMap = {
+  user: "Environment",
+  assistant: "SWE-Agent",
+  subroutine: "SWE-Agent subroutine",
+  default: "Default",
+  system: "System",
+};
+
+function getRoleText(role) {
+  return roleMap[role] || role;
+}
+
 function viewFile(fileName) {
   // Clear any pending message loading from previous files
   timeoutIds.forEach((timeoutId) => clearTimeout(timeoutId));
@@ -78,7 +91,7 @@ function viewFile(fileName) {
             historyItem.innerHTML = `
                             <div class="role-bar ${roleClass}">
                                 <strong>
-                                    <span>${item.role}</span>
+                                    <span>${getRoleText(item.role)}</span>
                                 </strong>
                             </div>
                             <div class="content-container">
