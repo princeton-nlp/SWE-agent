@@ -32,4 +32,13 @@ python run.py --model_name gpt4 \
 * You can have the agent automatically open a PR if the issue has been solved by supplying the `--open_pr`
   flag. Please use this feature responsibly (on your own repositories or after careful consideration).
 
-## More examples
+## Ollama supports
+
+Models served with an ollama server can be used by specifying `--model` with `ollama:model_name` and `--host_url` to point to the url used to serve ollama (`http://localhost:11434` by default). See more details about using ollama [here](https://github.com/ollama/ollama/tree/main/docs).
+
+```bash
+python run.py --model_name ollama:deepseek-coder:6.7b-instruct \
+  --host_url http://localhost:11434 \
+  --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
+  --config_file config/default_from_url.yaml
+```

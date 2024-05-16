@@ -1,5 +1,13 @@
 # Modifying the behavior of SWE-agent
 
+## Code structure
+
+* See the [`scripts/`](scripts/) folder for other useful scripts and details.
+* See the [`config/`](config/) folder for details about how you can define your own configuration!
+* See the [`sweagent/agent/`](sweagent/agent/) folder for details about the logic behind configuration based workflows.
+* See the [`sweagent/environment/`](sweagent/environment/) folder for details about the `SWEEnv` environment (interface + implementation).
+* See the [`trajectories/`](trajectories) folder for details about the output of `run.py`.
+
 ## Changing the demonstrations
 
 If you'd like to modify the example demonstration that we feed the model at the start of each run, first generate a trajectory manually by running the agent with ```--model_name human``` 

@@ -12,7 +12,6 @@
 </p>
 
 
-## 👋 Overview <a name="overview"></a>
 SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix bugs and issues in real GitHub repositories.
 
 On [SWE-bench](https://github.com/princeton-nlp/SWE-bench), SWE-agent resolves **12.29%** of issues, achieving the state-of-the-art performance on the full test set.
@@ -27,6 +26,7 @@ SWE-agent is built and maintained by researchers from Princeton University.
 </p>
 
 If you found this work helpful, please consider using the following citation:
+
 ```
 @misc{yang2024sweagent,
       title={SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering}, 
@@ -41,105 +41,9 @@ We provide a command line tool and a graphical web interface:
 
 ![My Movie 3](https://github.com/princeton-nlp/SWE-agent/assets/13602468/fa201621-ec31-4644-b658-c1d0feb92253)
 
-## 🚀 Installation <a name="setup"></a>
+## 🚀 Get started 
 
-### ☁️ Run from your browser
-
-<details>
-<summary>🔎 Watch the video</summary>
-
-
-</details>
-
-
-
-### Install from source
-
-
-
-### Fallback: Run with docker
-
-
-
-
-### 🔑 Add your API keys/tokens <a name="tokens"></a>
-
-
-
-### More installation tips <a name="more-installation-tips"></a>
-
-If you seem to be having issues with running docker
-
-* Make sure that you allow the use of the Docker socket. In Docker desktop, click *Settings* > *Advanced* > *Allow the default Docker socket to be used (requires password)*
-* If your docker installation uses a different socket, you might have to symlink them, see [this command for example](https://github.com/princeton-nlp/SWE-agent/issues/20#issuecomment-2047506005)
-
-Any remaining issues? Please [open a GitHub issue](https://github.com/princeton-nlp/SWE-agent/issues/new/choose)!
-
-## 🔥 Solve real GitHub issues! <a name="real-life"></a>
-
-To start our web UI, simply run
-
-```bash
-./start_web_ui.sh
-```
-
-If the user interface doesn't automatically open in your browser, please open it at `http://localhost:3000`.
-
-Currently, the web interface only has a subset of the options of the command line interface (CLI). 
-
-
-* See the [`scripts/`](scripts/) folder for other useful scripts and details.
-* See the [`config/`](config/) folder for details about how you can define your own configuration!
-* See the [`sweagent/agent/`](sweagent/agent/) folder for details about the logic behind configuration based workflows.
-* See the [`sweagent/environment/`](sweagent/environment/) folder for details about the `SWEEnv` environment (interface + implementation).
-* See the [`trajectories/`](trajectories) folder for details about the output of `run.py`.
-
-<details>
-<summary> Ollama Support</summary>
-
-Models served with an ollama server can be used by specifying `--model` with `ollama:model_name` and `--host_url` to point to the url used to serve ollama (`http://localhost:11434` by default). See more details about using ollama [here](https://github.com/ollama/ollama/tree/main/docs).
-
-```bash
-python run.py --model_name ollama:deepseek-coder:6.7b-instruct \
-  --host_url http://localhost:11434 \
-  --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
-  --config_file config/default_from_url.yaml
-```
-</details>
-
-## 💽 Benchmarking <a name="benchmarking"></a>
-
-There are two steps to the SWE-agent pipeline. First SWE-agent takes an input GitHub issue and returns a pull request that attempts to fix it. We call that step *inference*. The second step (currently, only available for issues in the SWE-bench benchmark) is to *evaluate* the pull request to verify that it has indeed fixed the issue. 
-
-> [!WARNING]
-> At this moment, there are known issues with a small number of repositories that don't install properly for `arm64` / `aarch64` architecture computers. We're working on a fix, but if you'd like to run and evaluate on the entirety of SWE-bench, the easiest way is by using an `x86` machine.
-
-### 👩‍💻 Inference <a name="inference"></a>
-**Inference on *any* GitHub Issue**: See [above](#real-life).
-
-**Inference on SWE-bench**: Run SWE-agent on [SWE-bench Lite](https://www.swebench.com/lite.html) and generate patches.
-```bash
-python run.py --model_name gpt4 \
-  --per_instance_cost_limit 2.00 \
-  --config_file ./config/default.yaml
-```
-
-If you'd like to run on a *single* issue from SWE-bench, use the `--instance_filter` option as follows:
-```bash
-python run.py --model_name gpt4 \
-  --instance_filter marshmallow-code__marshmallow-1359
-```
-
-### 🧪 Evaluation <a name="evaluation"></a>
-This step is only available for issues from the SWE-bench set. To evaluate generated pull requests:
-```bash
-cd evaluation/
-./run_eval.sh <predictions_path>
-```
-Replace `<predictions_path>` with the path to the model's predictions, which should be generated from the *Inference* step. The `<predictions_path>` arguments should look like `../trajectories/<username>/<model>-<dataset>-<hyperparams>/all_preds.jsonl`
-* See the [`evaluation/`](evaluation/) folder for details about how evaluation works.
-
-## 🦺 Modifying SWE-agent <a name="modifying"></a>
+Following the guide in our documentation.
 
 
 ## 💫 Contributions <a name="contributions"></a>
