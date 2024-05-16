@@ -6,7 +6,7 @@ There are two steps to the SWE-agent pipeline. First SWE-agent takes an input Gi
     At this moment, there are known issues with a small number of repositories that don't install properly for `arm64` / `aarch64` architecture computers. We're working on a fix, but if you'd like to run and evaluate on the entirety of SWE-bench, the easiest way is by using an `x86` machine.
 
 ## 👩‍💻 Inference <a name="inference"></a>
-**Inference on *any* GitHub Issue**: See [above](#real-life).
+**Inference on *any* GitHub Issue**: See [above](cl_tutorial.md).
 
 **Inference on SWE-bench**: Run SWE-agent on [SWE-bench Lite](https://www.swebench.com/lite.html) and generate patches.
 
@@ -29,4 +29,4 @@ cd evaluation/
 ./run_eval.sh <predictions_path>
 ```
 Replace `<predictions_path>` with the path to the model's predictions, which should be generated from the *Inference* step. The `<predictions_path>` arguments should look like `../trajectories/<username>/<model>-<dataset>-<hyperparams>/all_preds.jsonl`
-* See the [`evaluation/`](evaluation/) folder for details about how evaluation works.
+* See the [`evaluation/`](https://github.com/princeton-nlp/SWE-agent/tree/main/evaluation/) folder for details about how evaluation works.

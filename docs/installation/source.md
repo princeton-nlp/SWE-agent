@@ -9,12 +9,12 @@
 3. Clone this repository.
 4. Run `pip install --editable .` at the repository root (as with any python setup, it's recommended to use [conda][] or [virtual environments][] to manage dependencies).
 5. Run `./setup.sh` to create the `swe-agent` docker image.
-6. Create a `keys.cfg` file at the root of this repository ([see below](#tokens)).
+6. Create a `keys.cfg` file at the root of this repository ([more information](keys.md)).
 
 [nodejs-install]: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
 
 !!! tip "Docker issues"
-    If you run into docker issues, see the [installation issues section](#more-installation-tips) for more help
+    If you run into docker issues, see the [installation tips section](tips.md) for more help
 
 [conda]: https://docs.conda.io/en/latest/
 [virtual environments]: https://realpython.com/python-virtual-environments-a-primer/
