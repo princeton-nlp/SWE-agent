@@ -49,6 +49,7 @@ def _load_file(file_name, gold_patches, test_patches):
             "subroutine": "SWE-Agent subroutine",
             "default": "Default",
             "system": "System",
+            "demo": "Demonstration",
         }
         content = load_content(file_name, gold_patches, test_patches)
         if 'history' in content and isinstance(content['history'], list):

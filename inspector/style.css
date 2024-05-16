@@ -128,21 +128,21 @@ h2 {
   padding-right: 35px; /* Same padding on the right for balance */
 }
 .role-bar.user {
-  background-image: url("icons/swellama_brown.png");
+  background-image: url("icons/computer.png");
   background-color: #9cdcff;
   justify-content: flex-end; /* Aligns content to the right */
   background-position: right 10px center; /* Moves the image to the right */
   text-align: right; /* Text aligned right */
 }
 .role-bar.tool {
-  background-image: url("icons/swellama_brown.png");
+  background-image: url("icons/computer.png");
   background-color: #1eacf8;
   justify-content: flex-end; /* Aligns content to the right */
   background-position: right 10px center; /* Moves the image to the right */
   text-align: right; /* Text aligned right */
 }
 .role-bar.system {
-  background-image: url("icons/swellama_blue.png");
+  background-image: url("icons/computer.png");
   background-color: #8aa8bd;
   justify-content: center; /* Center the flex container contents */
   background-position: calc(50% - 32px) center; /* Adjust position */
@@ -152,7 +152,7 @@ h2 {
   padding-left: 32px;
 }
 .role-bar.subroutine {
-  background-image: url("icons/swellama_blue.png");
+  background-image: url("icons/computer.png");
   background-color: #7bb776;
   justify-content: center;
   background-position: calc(50% - 45px) center;

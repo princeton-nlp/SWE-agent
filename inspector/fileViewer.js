@@ -41,6 +41,7 @@ const roleMap = {
   subroutine: "SWE-Agent subroutine",
   default: "Default",
   system: "System",
+  demo: "Demonstration",
 };
 
 function getRoleText(role) {
