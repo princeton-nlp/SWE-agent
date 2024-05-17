@@ -1,3 +1,4 @@
+import logging
 import re
 import json
 import shlex
@@ -127,6 +128,55 @@ class ThoughtActionParser(ParseFunction):
             start, end = last_valid_block
             thought = model_response[:start.start()] + model_response[end.end():]
             return thought, model_response[start.end():end.start()]
+        raise FormatError("No action found in model response.")
+
+
+class ThoughtActionGreedyParser(ParseFunction):
+    """
+    Expects the model response to be a discussion followed by a command wrapped in backticks.
+    Example:
+    Let's look at the files in the current directory.
+    ```
+    ls -l
+    ```
+    """
+    _error_message = """\
+    Your output was not formatted correctly. You must always include one discussion and one command as part of your response. Make sure you do not have multiple discussion/command tags.
+    Please make sure your output precisely matches the following format:
+    DISCUSSION
+    Discuss here with yourself about what your planning and what you're going to do in this step.
+    
+    ```
+    command(s) that you're going to run
+    ```
+    """
+
+    def __call__(self, model_response, commands: List[Command], strict=False):
+        """
+        Parses the action from the output of the API call.
+        We assume that the action is the outermost code block in the model_response.
+        For instance:
+        ```
+        This is another code block.
+        ```
+        This is an inner comment code block.
+        ```
+        still code
+        ```
+
+        In this case, the outer code block will be parsed as the action, containing the inner as plain text.
+        """
+        code_block_pat = re.compile(r'([\w\W]*?)```(\S*)\n?([\w\W]*)\n```|([\w\W]+)', re.DOTALL)
+        for match in code_block_pat.finditer(model_response):
+            thought = match.group(1)
+            # language = match.group(2)
+            action = match.group(3)
+            no_action_thought = match.group(4)
+            if thought is not None and action is not None:
+                return thought, action
+            elif no_action_thought is not None:
+                logging.error(f'ThoughtActionGreedyParser: No action found in model response: {model_response}')
+                return no_action_thought, 'skip'
         raise FormatError("No action found in model response.")
 
 
