@@ -27,7 +27,7 @@ system_template: |-
   You're free to use any other bash commands you want (e.g. find, grep, cat, ls, cd) in addition to the special commands listed above.
   However, the environment does NOT support interactive session commands (e.g. python, vim), so please do not invoke them.
 instance_template: |-
-  Here is a map of our repository showing files and signatures in code files:
+  Here is a map of your working directory's latest state, showing files and signatures in code files:
   {repo_map}
   
   We're currently solving the following issue within our repository. Here's the issue text:

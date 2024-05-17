@@ -1,15 +1,18 @@
+from time import sleep
+
 import config
 import json
 import logging
 import os
 import together
 import vertexai
+from google.api_core.exceptions import ResourceExhausted, InternalServerError
 
 from vertexai.generative_models import GenerativeModel, Content, Part
 from collections import defaultdict
 from anthropic import Anthropic, AnthropicBedrock, HUMAN_PROMPT, AI_PROMPT
 from dataclasses import dataclass, fields
-from openai import BadRequestError, OpenAI, AzureOpenAI
+from openai import BadRequestError, OpenAI, AzureOpenAI, RateLimitError
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
 from sweagent.agent.commands import Command
 from tenacity import (
@@ -695,15 +698,30 @@ class GoogleModel(BaseModel):
 
         messages = self.history_to_messages(history)
 
-        response = model.generate_content(
-            [Content(role=message['role'], parts=[Part.from_text(message['content'])]) for message in messages],
-            generation_config={
-                "max_output_tokens": self.max_output_tokens,
-                "temperature": self.args.temperature,
-                "top_p": self.args.top_p,
-            },
-            safety_settings={},
-        )
+        for i in range(10):
+            try:
+                response = model.generate_content(
+                    [Content(role=message['role'], parts=[Part.from_text(message['content'])]) for message in messages],
+                    generation_config={
+                        "max_output_tokens": self.max_output_tokens,
+                        "temperature": self.args.temperature,
+                        "top_p": self.args.top_p,
+                    },
+                    safety_settings={},
+                )
+                break
+            except ResourceExhausted:
+                pass
+            except RateLimitError:
+                pass
+            except InternalServerError:
+                logger.warning('Internal server error occurred in LLM provider, waiting 15 seconds')
+                logger.debug("\n\n".join([x['role'] + ': ' + x['content'] for x in messages]))
+                sleep(15)
+                continue
+            time = int(60*2**i)
+            logger.warning(f'Rate limit exceeded, waiting {time} seconds')
+            sleep(time)
 
         # Approximate + update costs, return response
         self.update_stats(
