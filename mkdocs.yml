@@ -1,6 +1,8 @@
 site_name: SWE-agent documentation
 theme:
   name: material
+  icon:
+    repo: fontawesome/brands/github
   logo: assets/swe-agent.svg
   palette: 
     - media: "(prefers-color-scheme)"
@@ -20,6 +22,7 @@ theme:
         name: Switch to light mode
   features:
     - navigation.indexes 
+    - content.action.edit
 
 markdown_extensions:
   - admonition
@@ -43,4 +46,6 @@ nav:
     - "Contribution guide": "dev.md"
 
 
-
+repo_url: https://github.com/princeton-nlp/SWE-agent
+repo_name: princeton-nlp/SWE-agent
+edit_uri: edit/main/docs/
