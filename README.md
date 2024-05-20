@@ -54,7 +54,7 @@ All information is provided in our [documentation][docs]:
 and many more topics.
 
 <div align="center">
-<a href="https://princeton-nlp.github.io/SWE-agent/"><img src="assets/doc-scrot.png" style="max-width:500px"/></a>
+<a href="https://princeton-nlp.github.io/SWE-agent/"><img src="assets/doc-scrot.png" style="width: 500px"/></a>
 </div>
 
 [docs]: https://princeton-nlp.github.io/SWE-agent/
