@@ -5,9 +5,17 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - 'mkdocs.yml'
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - 'mkdocs.yml'
 
 jobs:
   setup_job:
