@@ -22,6 +22,7 @@ var/
 wheels/
 pip-wheel-metadata/
 share/python-wheels/
+workspace/
 *.egg-info/
 .installed.cfg
 *.egg

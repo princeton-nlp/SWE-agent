@@ -1,13 +1,18 @@
+from time import sleep
+
 import config
 import json
 import logging
 import os
 import together
+import vertexai
+from google.api_core.exceptions import ResourceExhausted, InternalServerError
 
+from vertexai.generative_models import GenerativeModel, Content, Part
 from collections import defaultdict
 from anthropic import Anthropic, AnthropicBedrock, HUMAN_PROMPT, AI_PROMPT
 from dataclasses import dataclass, fields
-from openai import BadRequestError, OpenAI, AzureOpenAI
+from openai import BadRequestError, OpenAI, AzureOpenAI, RateLimitError
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
 from sweagent.agent.commands import Command
 from tenacity import (
@@ -608,6 +613,124 @@ class OllamaModel(BaseModel):
         return response["message"]["content"]
 
 
+class GoogleModel(BaseModel):
+    MODELS = {
+        "gemini-1.0-pro-vision-001": {
+            "max_context": 30_720,
+            "max_tokens": 2048,
+            "cost_per_input_token": 0.5e-6,
+            "cost_per_output_token": 1.5e-6,
+            "generation_config": {
+                "max_output_tokens": 2048,
+                "temperature": 1,
+                "top_p": 0.95,
+            }
+        },
+        "gemini-1.5-pro-preview-0409": {
+            "max_context": 1_048_576,
+            "max_tokens": 8192,
+            "cost_per_input_token": 7.0e-6,
+            "cost_per_output_token": 2.1e-5,
+            "generation_config": {
+                "max_output_tokens": 8192,
+                "temperature": 1,
+                "top_p": 0.95,
+            }
+        },
+    }
+
+    SHORTCUTS = {
+        "gemini-pro": "gemini-1.0-pro-vision-001",
+        "gemini-1.5-pro": "gemini-1.5-pro-preview-0409",
+    }
+
+    def __init__(self, args: ModelArguments, commands: list[Command]):
+        super().__init__(args, commands)
+
+        cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
+        vertexai.init(project=cfg.VERTEX_PROJECT, location=cfg.VERTEX_LOCATION)
+        self.max_output_tokens = self.MODELS[self.api_model]["max_tokens"]
+
+    def history_to_messages(
+            self, history: list[dict[str, str]], is_demonstration: bool = False
+    ) -> list[dict[str, str]]:
+        """
+        Create `prompt` by filtering out all keys except for role/content per `history` turn
+        """
+        # Return history components with just role, content fields (no system message)
+        messages = [
+            {
+                'role': entry['role'],
+                'content': entry['content']
+            }
+            for entry in history if entry['role'] != "system"
+        ]
+        compiled_messages = []  # Combine messages from the same role
+        last_role = None
+        for message in reversed(messages):
+            if last_role == message["role"]:
+                compiled_messages[-1]["content"] += "\n" + message["content"]
+            else:
+                compiled_messages.append(message)
+            last_role = message["role"]
+        compiled_messages = list(reversed(compiled_messages))
+        # Replace any empty content values with a "(No output)"
+        for message in compiled_messages:
+            if message["content"].strip() == "":
+                message["content"] = "(No output)"
+        return compiled_messages
+
+    @retry(
+        wait=wait_random_exponential(min=60, max=120),
+        reraise=True,
+        stop=stop_after_attempt(3),
+        retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
+    )
+    def query(self, history: list[dict[str, str]]) -> str:
+        """
+        Query the Vertex API with the given `history` and return the response.
+        """
+
+        system_message = "\n".join([
+            entry["content"] for entry in history if entry["role"] == "system"
+        ])
+        model = GenerativeModel(self.api_model, system_instruction=system_message)
+
+        messages = self.history_to_messages(history)
+
+        for i in range(10):
+            try:
+                response = model.generate_content(
+                    [Content(role=message['role'], parts=[Part.from_text(message['content'])]) for message in messages],
+                    generation_config={
+                        "max_output_tokens": self.max_output_tokens,
+                        "temperature": self.args.temperature,
+                        "top_p": self.args.top_p,
+                    },
+                    safety_settings={},
+                )
+                break
+            except ResourceExhausted:
+                pass
+            except RateLimitError:
+                pass
+            except InternalServerError:
+                logger.warning('Internal server error occurred in LLM provider, waiting 15 seconds')
+                logger.debug("\n\n".join([x['role'] + ': ' + x['content'] for x in messages]))
+                sleep(15)
+                continue
+            time = int(60*2**i)
+            logger.warning(f'Rate limit exceeded, waiting {time} seconds')
+            sleep(time)
+
+        # Approximate + update costs, return response
+        self.update_stats(
+            len((system_message + '\n\n'.join([m['role'] + ': ' + m['content'] for m in messages]))) // 3,
+            len(response.text) // 3
+        )
+        return response.text
+
+
 class TogetherModel(BaseModel):
     # Check https://docs.together.ai/docs/inference-models for model names, context
     # Check https://www.together.ai/pricing for pricing
@@ -856,6 +979,8 @@ def get_model(args: ModelArguments, commands: Optional[list[Command]] = None):
         return BedrockModel(args, commands)
     elif args.model_name.startswith("ollama"):
         return OllamaModel(args, commands)
+    elif args.model_name.startswith("gemini"):
+        return GoogleModel(args, commands)
     elif args.model_name in TogetherModel.SHORTCUTS:
         return TogetherModel(args, commands)
     elif args.model_name == "instant_empty_submit":
