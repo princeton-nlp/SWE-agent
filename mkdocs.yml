@@ -44,8 +44,10 @@ nav:
     - "Adding your keys": "installation/keys.md"
     - "Installation tips": "installation/tips.md"
   - Usage:
+    - "usage/index.md"
     - "Command line usage": "usage/cl_tutorial.md"
     - "Using the web UI": "usage/web_ui.md"
+    - "FAQ": "usage/faq.md"
     - "Benchmarking": "usage/benchmarking.md"
   - Development:
     - "Modifying swe-agent": "modify.md"
