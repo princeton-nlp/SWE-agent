@@ -53,7 +53,7 @@ nav:
   - Development:
     - "Modifying swe-agent": "dev/modify.md"
     - "Config files": "dev/config.md"
-    - "Contribution guide": "dev/dev.md"
+    - "Contribution guide": "dev/contribute.md"
 
 plugins:
    - glightbox

@@ -87,9 +87,7 @@ Possible variables that can be used in templates are:
 ## Template Workflow
 The following diagram illustrates where each template is shown within a single episode of solving one task instance.
 
-<p align="center">
-  <img src="/assets/readme_assets/template_workflow.png" alt="Template Workflow">
-</p>
+![template workflow](/assets/template_workflow.png)
 
 One of three templates can be shown per turn:
 
