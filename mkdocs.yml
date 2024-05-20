@@ -1,6 +1,32 @@
 site_name: SWE-agent documentation
 theme:
   name: material
+  logo: assets/swe-agent.svg
+
+  palette: 
+
+
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    - scheme: default
+      media: "(prefers-color-scheme: light)"
+      toggle:
+        icon: material/weather-night
+
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - scheme: slate
+      media: "(prefers-color-scheme: dark)"
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
 markdown_extensions:
   - admonition
   - pymdownx.details
