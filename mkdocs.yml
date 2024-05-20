@@ -5,17 +5,22 @@ theme:
     repo: fontawesome/brands/github
   logo: assets/swe-agent.svg
   palette: 
+
     - media: "(prefers-color-scheme)"
       toggle:
         icon: material/brightness-auto
         name: Switch to light mode
     - scheme: default
+      primary: black
+      accent: deep orange
       media: "(prefers-color-scheme: light)"
       toggle:
         icon: material/weather-night
 
         name: Switch to dark mode
     - scheme: slate
+      primary: black
+      accent: deep orange
       media: "(prefers-color-scheme: dark)"
       toggle:
         icon: material/weather-sunny
