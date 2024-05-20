@@ -44,13 +44,11 @@ git clone git@github.com:SWE-agent/test-repo.git
 
 and then run
 
-```bash
+```bash hl_lines="2 3 5"
 python run.py \
-  --model_name gpt4 \
   --data_path /path/to/test-repo/problem_statements/1.md \
   --repo_path /path/to/test-repo \
   --config_file config/default_from_url.yaml \
-  --per_instance_cost_limit 2.00 \
   --apply_patch_locally
 ```
 
@@ -85,7 +83,7 @@ In most circumstances, GPT4 will attempt to install the package and requirements
 
 Let's try it:
 
-```bash
+```bash hl_lines="4"
 python run.py \
   --data_path https://github.com/SWE-agent/test-repo/issues/22 \
   --config_file config/default_from_url.yaml \

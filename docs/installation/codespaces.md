@@ -1,5 +1,7 @@
 # Running SWE-agent in your browser
 
+Running SWE-agent in your browser is the easiest way to try out our project.
+
 <video controls>
 <source src=" https://github.com/princeton-nlp/SWE-agent/assets/13602468/44d60674-59ca-4986-9b22-7052a45cbed9" type="video/mp4">
 </video>

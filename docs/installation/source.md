@@ -1,5 +1,7 @@
 # Installation from source
 
+Installation from source is the preferred way to set up SWE-agent on your machine.
+
 !!! warning "Issues on Windows"
     Expect some issues with Windows (we're working on them).
     In the meantime, use Docker (see below).

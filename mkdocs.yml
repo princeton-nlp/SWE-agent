@@ -29,6 +29,7 @@ theme:
     - navigation.indexes 
     - content.action.edit
     - navigation.footer
+    - content.code.copy
 
 markdown_extensions:
   - admonition
