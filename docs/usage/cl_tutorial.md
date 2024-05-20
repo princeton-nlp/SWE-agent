@@ -22,7 +22,7 @@ Here,
 
 * `--model_name` sets the language model that is used by SWE-agent (with `gpt4` being the default). More information on the available models in our [FAQ](faq.md)
 * `--data_path` points to the source of the *problem statement* (for example, the GitHub issue that you want to solve). You can also point it to local files (see [below](#specifying-the-repository))
-* `--config_file` includes settings such as the prompts. Changing the config file is the easiest way to get started with modifying SWE-agent (more advanced options are discussed [here](../modify.md)).
+* `--config_file` includes settings such as the prompts. Changing the config file is the easiest way to get started with modifying SWE-agent (more advanced options are discussed [here](../dev/config.md)).
 * `--per_instance_cost_limit` limits the total inference cost to $2 (default is $3).
 
 !!! tip "All options"

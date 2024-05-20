@@ -51,9 +51,12 @@ nav:
     - "FAQ": "usage/faq.md"
     - "Benchmarking": "usage/benchmarking.md"
   - Development:
-    - "Modifying swe-agent": "modify.md"
-    - "Contribution guide": "dev.md"
+    - "Modifying swe-agent": "dev/modify.md"
+    - "Config files": "dev/config.md"
+    - "Contribution guide": "dev/dev.md"
 
+plugins:
+   - glightbox
 
 repo_url: https://github.com/princeton-nlp/SWE-agent
 repo_name: princeton-nlp/SWE-agent

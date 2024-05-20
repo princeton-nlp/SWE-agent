@@ -30,6 +30,6 @@ jobs:
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
-      - run: uv pip install mkdocs-material
+      - run: uv pip install mkdocs-material mkdocs-glightbox
       - run: mkdocs gh-deploy --force
 
