@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../codespaces/">
+        <link rel="prev" href="../../usage/benchmarking/">
       
       
-        <link rel="next" href="../docker/">
+        <link rel="next" href="../config/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>Install from source - SWE-agent documentation</title>
+        <title>Modifying swe-agent - SWE-agent documentation</title>
       
     
     
@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#installation-from-source" class="md-skip">
+        <a href="#modifying-the-behavior-of-swe-agent" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Install from source
+              Modifying swe-agent
             
           </span>
         </div>
@@ -248,8 +248,6 @@
       
   
   
-    
-  
   
   
     
@@ -272,16 +270,16 @@
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../installation/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -298,7 +296,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Installation
@@ -314,7 +312,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../codespaces/" class="md-nav__link">
+      <a href="../../installation/codespaces/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -332,19 +330,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../installation/source/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -353,7 +342,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -366,7 +354,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../docker/" class="md-nav__link">
+      <a href="../../installation/docker/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -387,7 +375,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../keys/" class="md-nav__link">
+      <a href="../../installation/keys/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -408,7 +396,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tips/" class="md-nav__link">
+      <a href="../../installation/tips/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -583,8 +571,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -597,11 +587,11 @@
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
           <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
@@ -615,7 +605,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             Development
@@ -626,10 +616,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../dev/modify/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Modifying swe-agent
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -638,6 +648,53 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#changing-prompts-and-other-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changing prompts and other configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#changing-the-demonstrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changing the demonstrations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Code structure
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -650,7 +707,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev/config/" class="md-nav__link">
+      <a href="../config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -671,7 +728,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev/dev.md" class="md-nav__link">
+      <a href="../dev.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -712,6 +769,41 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#changing-prompts-and-other-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changing prompts and other configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#changing-the-demonstrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changing the demonstrations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Code structure
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -725,7 +817,7 @@
                   
 
   
-    <a href="https://github.com/princeton-nlp/SWE-agent/edit/main/docs/installation/source.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/princeton-nlp/SWE-agent/edit/main/docs/dev/modify.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
     </a>
@@ -733,25 +825,28 @@
   
 
 
-<h1 id="installation-from-source">Installation from source</h1>
-<p>Installation from source is the preferred way to set up SWE-agent on your machine.</p>
-<div class="admonition warning">
-<p class="admonition-title">Issues on Windows</p>
-<p>Expect some issues with Windows (we're working on them).
-In the meantime, use Docker (see below).</p>
-</div>
+<h1 id="modifying-the-behavior-of-swe-agent">Modifying the behavior of SWE-agent</h1>
+<h2 id="changing-prompts-and-other-configuration">Changing prompts and other configuration</h2>
+<p>The easiest way to modify the behavior of SWE-agent is to change prompts and similar settings.
+This can be done using the config files. See <a href="../config/">here</a> for more information.</p>
+<h2 id="changing-the-demonstrations">Changing the demonstrations</h2>
+<p>If you'd like to modify the example demonstration that we feed the model at the start of each run, first generate a trajectory manually by running the agent with <code>--model_name human</code> 
+and then convert that trajectory into a demonstration by following the guide <a href="https://github.com/princeton-nlp/SWE-agent/tree/main/make_demos">here</a>. </p>
+<p>To edit text in <code>human</code> mode:</p>
 <ol>
-<li><a href="https://docs.docker.com/engine/install/">Install Docker</a>, then start Docker locally.</li>
-<li>For the web interface only: Install <a href="https://docs.npmjs.com/downloading-and-installing-node-js-and-npm"><code>nodejs</code></a>.</li>
-<li>Clone this repository.</li>
-<li>Run <code>pip install --editable .</code> at the repository root (as with any python setup, it's recommended to use <a href="https://docs.conda.io/en/latest/">conda</a> or <a href="https://realpython.com/python-virtual-environments-a-primer/">virtual environments</a> to manage dependencies).</li>
-<li>Run <code>./setup.sh</code> to create the <code>swe-agent</code> docker image.</li>
-<li>Create a <code>keys.cfg</code> file at the root of this repository (<a href="../keys/">more information</a>).</li>
+<li>Run the command <code>edit edit_start_line:edit_end_line</code></li>
+<li>Write the text you want to insert. Feel free to write the text across multiple lines. </li>
+<li>Press <code>return</code> then write <code>end_of_edit</code> and then press <code>return</code> again to submit the edit.</li>
 </ol>
-<div class="admonition tip">
-<p class="admonition-title">Docker issues</p>
-<p>If you run into docker issues, see the <a href="../tips/">installation tips section</a> for more help</p>
-</div>
+<h2 id="code-structure">Code structure</h2>
+<ul>
+<li>See the <a href="https://github.com/princeton-nlp/SWE-agent/tree/main/scripts/"><code>scripts/</code></a> folder for other useful scripts and details.</li>
+<li>See the <a href="https://github.com/princeton-nlp/SWE-agent/tree/main/config/"><code>config/</code></a> folder for details about how you can define your own configuration!</li>
+<li>See the <a href="https://github.com/princeton-nlp/SWE-agent/tree/main/sweagent/agent/"><code>sweagent/agent/</code></a> folder for details about the logic behind configuration based workflows.</li>
+<li>See the <a href="https://github.com/princeton-nlp/SWE-agent/tree/main/sweagent/environment/"><code>sweagent/environment/</code></a> folder for details about the <code>SWEEnv</code> environment (interface + implementation).</li>
+<li>See the <a href="https://github.com/princeton-nlp/SWE-agent/tree/main/trajectories"><code>trajectories/</code></a> folder for details about the output of <code>run.py</code>.</li>
+<li>See the <a href="https://github.com/princeton-nlp/SWE-agent/tree/main/evaluation/"><code>evaluation/</code></a> folder for details about how evaluation works.</li>
+</ul>
 
 
 
@@ -781,7 +876,7 @@ In the meantime, use Docker (see below).</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../codespaces/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Use in-browser">
+          <a href="../../usage/benchmarking/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Benchmarking">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
@@ -791,20 +886,20 @@ In the meantime, use Docker (see below).</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Use in-browser
+                Benchmarking
               </div>
             </div>
           </a>
         
         
           
-          <a href="../docker/" class="md-footer__link md-footer__link--next" aria-label="Next: Docker">
+          <a href="../config/" class="md-footer__link md-footer__link--next" aria-label="Next: Config files">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Docker
+                Config files
               </div>
             </div>
             <div class="md-footer__button md-icon">

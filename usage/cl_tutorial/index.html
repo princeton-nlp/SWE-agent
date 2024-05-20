@@ -53,7 +53,16 @@
     
     
     
-  </head>
+   <link href="../../assets/stylesheets/glightbox.min.css" rel="stylesheet"/><style>
+    html.glightbox-open { overflow: initial; height: 100%; }
+    .gslide-title { margin-top: 0px; user-select: text; }
+    .gslide-desc { color: #666; user-select: text; }
+    .gslide-image img { background: white; }
+    .gscrollbar-fixer { padding-right: 15px; }
+    .gdesc-inner { font-size: 0.75rem; }
+    body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color);}
+    body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color);}
+    body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color);}</style> <script src="../../assets/javascripts/glightbox.min.js"></script></head>
   
   
     
@@ -154,43 +163,6 @@
       <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
     
     
-    
-      <label class="md-header__button md-icon" for="__search">
-        
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
-      </label>
-      <div class="md-search" data-md-component="search" role="dialog">
-  <label class="md-search__overlay" for="__search"></label>
-  <div class="md-search__inner" role="search">
-    <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
-      <label class="md-search__icon md-icon" for="__search">
-        
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
-        
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
-      </label>
-      <nav class="md-search__options" aria-label="Search">
-        
-        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
-          
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
-        </button>
-      </nav>
-      
-    </form>
-    <div class="md-search__output">
-      <div class="md-search__scrollwrap" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="search-result">
-          <div class="md-search-result__meta">
-            Initializing search
-          </div>
-          <ol class="md-search-result__list" role="presentation"></ol>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
     
     
       <div class="md-header__source">
@@ -686,6 +658,8 @@
       
         
       
+        
+      
     
     
     
@@ -721,7 +695,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../modify/" class="md-nav__link">
+      <a href="../../dev/modify/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -742,7 +716,28 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev/" class="md-nav__link">
+      <a href="../../dev/config/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Config files
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev/dev.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -866,7 +861,7 @@ Let's start with an absolutely trivial example and solve an issue about a simple
 <ul>
 <li><code>--model_name</code> sets the language model that is used by SWE-agent (with <code>gpt4</code> being the default). More information on the available models in our <a href="../faq/">FAQ</a></li>
 <li><code>--data_path</code> points to the source of the <em>problem statement</em> (for example, the GitHub issue that you want to solve). You can also point it to local files (see <a href="#specifying-the-repository">below</a>)</li>
-<li><code>--config_file</code> includes settings such as the prompts. Changing the config file is the easiest way to get started with modifying SWE-agent (more advanced options are discussed <a href="../../modify/">here</a>).</li>
+<li><code>--config_file</code> includes settings such as the prompts. Changing the config file is the easiest way to get started with modifying SWE-agent (more advanced options are discussed <a href="../../dev/config/">here</a>).</li>
 <li><code>--per_instance_cost_limit</code> limits the total inference cost to $2 (default is $3).</li>
 </ul>
 <div class="admonition tip">
@@ -886,13 +881,11 @@ URLs or paths to local repositories.</p>
 </code></pre></div>
 <p>and then run</p>
 <div class="highlight"><pre><span></span><code>python<span class="w"> </span>run.py<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--model_name<span class="w"> </span>gpt4<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--data_path<span class="w"> </span>/path/to/test-repo/problem_statements/1.md<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--repo_path<span class="w"> </span>/path/to/test-repo<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--config_file<span class="w"> </span>config/default_from_url.yaml<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--per_instance_cost_limit<span class="w"> </span><span class="m">2</span>.00<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--apply_patch_locally
-</code></pre></div>
+<span class="hll"><span class="w">  </span>--data_path<span class="w"> </span>/path/to/test-repo/problem_statements/1.md<span class="w"> </span><span class="se">\</span>
+</span><span class="hll"><span class="w">  </span>--repo_path<span class="w"> </span>/path/to/test-repo<span class="w"> </span><span class="se">\</span>
+</span><span class="w">  </span>--config_file<span class="w"> </span>config/default_from_url.yaml<span class="w"> </span><span class="se">\</span>
+<span class="hll"><span class="w">  </span>--apply_patch_locally
+</span></code></pre></div>
 <p>where you replaced paths with the prefix <code>/path/to/.../</code> with the actual paths to the corresponding file/directory.</p>
 <p>We have also added a new flag, <code>--apply_patch_locally</code>, which will make SWE-agent apply the changes to the local repository (if it believes that it has successfully solved the issue).</p>
 <p>You can mix and match the different ways of specifying problem statements and repositories. For example, any of the following combination of options also works</p>
@@ -920,8 +913,8 @@ URLs or paths to local repositories.</p>
 <div class="highlight"><pre><span></span><code>python<span class="w"> </span>run.py<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--data_path<span class="w"> </span>https://github.com/SWE-agent/test-repo/issues/22<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--config_file<span class="w"> </span>config/default_from_url.yaml<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--environment_setup<span class="w"> </span>config/environment_setup/py310_default.yaml
-</code></pre></div>
+<span class="hll"><span class="w">  </span>--environment_setup<span class="w"> </span>config/environment_setup/py310_default.yaml
+</span></code></pre></div>
 <p>This time, <code>pip install -e .</code> is called before SWE-agent gets to work, installing the package defined in the repository.</p>
 <p>Let's take a look at the config file</p>
 <div class="highlight"><pre><span></span><code><span class="nt">python</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;3.10&#39;</span>
@@ -1041,11 +1034,13 @@ Watch out for the followoing message in the log:</p>
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.indexes", "content.action.edit", "navigation.footer"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.indexes", "content.action.edit", "navigation.footer", "content.code.copy"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.081f42fc.min.js"></script>
       
     
-  </body>
+  <script id="init-glightbox">const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
+document$.subscribe(() => { lightbox.reload() });
+</script></body>
 </html>

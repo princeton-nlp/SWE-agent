@@ -13,19 +13,19 @@
       
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.24">
     
     
       
-        <title>Contribution guide - SWE-agent documentation</title>
+        <title>Config files - SWE-agent documentation</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.6543a935.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.6543a935.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -44,14 +44,23 @@
       
     
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
     
     
     
-  </head>
+   <link href="../../assets/stylesheets/glightbox.min.css" rel="stylesheet"/><style>
+    html.glightbox-open { overflow: initial; height: 100%; }
+    .gslide-title { margin-top: 0px; user-select: text; }
+    .gslide-desc { color: #666; user-select: text; }
+    .gslide-image img { background: white; }
+    .gscrollbar-fixer { padding-right: 15px; }
+    .gdesc-inner { font-size: 0.75rem; }
+    body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color);}
+    body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color);}
+    body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color);}</style> <script src="../../assets/javascripts/glightbox.min.js"></script></head>
   
   
     
@@ -69,6 +78,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#configuration" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -81,9 +95,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="SWE-agent documentation" class="md-header__button md-logo" aria-label="SWE-agent documentation" data-md-component="logo">
+    <a href="../.." title="SWE-agent documentation" class="md-header__button md-logo" aria-label="SWE-agent documentation" data-md-component="logo">
       
-  <img src="../assets/swe-agent.svg" alt="logo">
+  <img src="../../assets/swe-agent.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -100,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Contribution guide
+              Config files
             
           </span>
         </div>
@@ -148,43 +162,6 @@
     
     
     
-      <label class="md-header__button md-icon" for="__search">
-        
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
-      </label>
-      <div class="md-search" data-md-component="search" role="dialog">
-  <label class="md-search__overlay" for="__search"></label>
-  <div class="md-search__inner" role="search">
-    <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
-      <label class="md-search__icon md-icon" for="__search">
-        
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
-        
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
-      </label>
-      <nav class="md-search__options" aria-label="Search">
-        
-        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
-          
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
-        </button>
-      </nav>
-      
-    </form>
-    <div class="md-search__output">
-      <div class="md-search__scrollwrap" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="search-result">
-          <div class="md-search-result__meta">
-            Initializing search
-          </div>
-          <ol class="md-search-result__list" role="presentation"></ol>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-    
     
       <div class="md-header__source">
         <a href="https://github.com/princeton-nlp/SWE-agent" title="Go to repository" class="md-source" data-md-component="source">
@@ -223,9 +200,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="SWE-agent documentation" class="md-nav__button md-logo" aria-label="SWE-agent documentation" data-md-component="logo">
+    <a href="../.." title="SWE-agent documentation" class="md-nav__button md-logo" aria-label="SWE-agent documentation" data-md-component="logo">
       
-  <img src="../assets/swe-agent.svg" alt="logo">
+  <img src="../../assets/swe-agent.svg" alt="logo">
 
     </a>
     SWE-agent documentation
@@ -252,7 +229,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -300,7 +277,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../installation/" class="md-nav__link ">
+            <a href="../../installation/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -333,7 +310,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../installation/codespaces/" class="md-nav__link">
+      <a href="../../installation/codespaces/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -354,7 +331,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../installation/source/" class="md-nav__link">
+      <a href="../../installation/source/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -375,7 +352,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../installation/docker/" class="md-nav__link">
+      <a href="../../installation/docker/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -396,7 +373,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../installation/keys/" class="md-nav__link">
+      <a href="../../installation/keys/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -417,7 +394,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../installation/tips/" class="md-nav__link">
+      <a href="../../installation/tips/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -471,7 +448,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../usage/" class="md-nav__link ">
+            <a href="../../usage/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -504,7 +481,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../usage/cl_tutorial/" class="md-nav__link">
+      <a href="../../usage/cl_tutorial/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -525,7 +502,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../usage/web_ui/" class="md-nav__link">
+      <a href="../../usage/web_ui/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -546,7 +523,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../usage/faq/" class="md-nav__link">
+      <a href="../../usage/faq/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -567,7 +544,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../usage/benchmarking/" class="md-nav__link">
+      <a href="../../usage/benchmarking/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -598,6 +575,8 @@
   
     
     
+      
+        
       
         
       
@@ -665,8 +644,89 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Config files
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Config files
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-file-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration File Fields
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-a-configuration-file-is-processed" class="md-nav__link">
+    <span class="md-ellipsis">
+      How a Configuration File is Processed
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#template-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Template Workflow
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -675,7 +735,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -705,6 +764,43 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-file-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration File Fields
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-a-configuration-file-is-processed" class="md-nav__link">
+    <span class="md-ellipsis">
+      How a Configuration File is Processed
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#template-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Template Workflow
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -719,7 +815,7 @@
                   
 
   
-    <a href="https://github.com/princeton-nlp/SWE-agent/edit/main/docs/dev.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/princeton-nlp/SWE-agent/edit/main/docs/dev/config.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
     </a>
@@ -727,9 +823,99 @@
   
 
 
-  <h1>Contribution guide</h1>
+<h1 id="configuration">Configuration</h1>
+<p>This page contains details describing how to write your own configurations to control how agents can interact with the <code>SWEEnv</code> environment.</p>
+<p>A configuration is represented as a single <code>.yaml</code> file, specified by the <code>--config</code> flag in the <a href="../../usage/cl_tutorial/">command line interface</a>, allowing you to...</p>
+<ul>
+<li>Define the <strong>commands</strong> that agents may use to traverse + modify a codebase.</li>
+<li>Write <strong>prompts</strong> that are deterministically/conditionally shown to the agent over the course of a single trajectory.</li>
+<li>Control the <strong>input/output interface</strong> that sits between the agent and <code>SWEEnv</code>.</li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Default config files</p>
+<p>Our default config files are in the <a href="https://github.com/princeton-nlp/SWE-agent/tree/main/config"><code>config/</code></a> directory.</p>
+</div>
+<h2 id="configuration-file-fields">Configuration File Fields</h2>
+<p>The configuration is a <code>.yaml</code> file that consists of several fields. They are fully represented in this following outline:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Prompt Templates: Control how observations of environment are shown to agent</span>
+<span class="nt">system_template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span><span class="w"> </span><span class="c1"># .yaml syntax for multi-line string value</span>
+<span class="w">  </span><span class="no">First `system` message shown to agent</span>
+<span class="nt">instance_template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|-</span><span class="w"> </span><span class="c1"># .yaml syntax for multi-line string value w/ no new line</span>
+<span class="w">  </span><span class="no">Instance prompt, contains task instance-specific content</span>
+<span class="nt">next_step_template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|-</span>
+<span class="w">  </span><span class="no">Format template of per-turn observation (Contains standard output from agent&#39;s action)</span>
+<span class="nt">next_step_no_output_template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|-</span>
+<span class="w">  </span><span class="no">Format template of observation when there is no standard output from the agent&#39;s action</span>
+<span class="nt">format_error_template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|-</span>
+<span class="w">  </span><span class="no">Format template of error message (Used when agent&#39;s action causes an error)</span>
+<span class="nt">demonstration_template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">  </span><span class="no">Format template for showing a demonstration to the agent</span>
+<span class="nt">demonstrations</span><span class="p">:</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="err">`</span><span class="l l-Scalar l-Scalar-Plain">trajectories/&lt;username&gt;/&lt;experiment folder&gt;/*.traj`</span><span class="w"> </span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">File is a demonstration of how to solve a task. This could an agent generated trajectory.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">You can include 1+ demonstrations</span>
 
+<span class="c1"># Environment States: Define features of the SWEEnv environment</span>
+<span class="nt">env_variables</span><span class="p">:</span>
+<span class="c1"># Default variables for SWEEnv at the beginning of each instance</span>
+<span class="w">  </span><span class="nt">CURRENT_FILE</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">  </span><span class="nt">CURRENT_LINE</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">OVERLAP</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">SEARCH_FILES</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">SEARCH_INDEX</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">SEARCH_RESULTS</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">WINDOW_SIZE</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">START_INDEX</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">END_INDEX</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">START_CURSOR</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">END_CUROSR</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">START_CURSORS_MARK</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">END_CURSOR_MARK</span><span class="p">:</span>
+<span class="nt">state_command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="c1"># `state_command` allows you to update state variables to reflect any aspect of the environment (e.g. current working directory)</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">state</span>
+<span class="w">  </span><span class="nt">code</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">    </span><span class="no">state() { echo &#39;{&quot;pwd&quot;: &quot;&#39;$PWD&#39;&quot;}&#39;;</span>
 
+<span class="c1"># Action Interface: Define how an agent interacts with the SWEEnv environment</span>
+<span class="nt">command_files</span><span class="p">:</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">path/to/bash_file.sh</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Each file contains a list of commands implemented in bash</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">You can include 1+ command files</span>
+<span class="nt">parse_command</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Reference to functionality for defining command documentation</span>
+<span class="nt">history_processor</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Reference to functionality for controlling agent&#39;s message history</span>
+<span class="nt">parse_function</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Parser run on agent output</span>
+</code></pre></div>
+<p>In this directory, we recommend looking at...
+* <code>configs/</code> for examples of properly formatted configuration files. Each configuration differs in its set of commands, input/output format, demonstrations, etc.
+* <code>commands/</code> for the bash implementations of the custom commands that SWE-agent uses to navigate + edit the codebase.</p>
+<h2 id="how-a-configuration-file-is-processed">How a Configuration File is Processed</h2>
+<p>Some notes on processing that occurs on config fields when SWE-agent is run:</p>
+<ul>
+<li>Commands specified in <code>command_files</code> will be parsed into a single block of documentation text that can be referenced as <code>{command_docs}</code>.</li>
+<li><code>env_variables</code> are the default variables for the bash environment at the beginning of each instance.</li>
+<li><code>state_command</code> is used to extract state information from the bash environment (formatted as json) to be used in the templates given to the agent.</li>
+</ul>
+<p>Possible variables that can be used in templates are:
+- <code>{command_docs}</code> (an automatically compiled collection of available commands + their docstrings)
+- any variable given in <code>env_variables</code> (same spelling), e.g., <code>{WINDOW_SIZE}</code>
+- any variable extracted as json as part of the <code>state_command</code> function
+- the last observation <code>{observation}</code> 
+- ... this list will grow as we implement more features!</p>
+<h2 id="template-workflow">Template Workflow</h2>
+<p>The following diagram illustrates where each template is shown within a single episode of solving one task instance.</p>
+<p align="center">
+  <a class="glightbox" href="/assets/readme_assets/template_workflow.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img src="/assets/readme_assets/template_workflow.png" alt="Template Workflow"></a>
+</p>
+
+<p>One of three templates can be shown per turn:</p>
+<ul>
+<li>"Next Step" (<code>next_step_template</code>): Displayed if the model's action successfully runs. The output and a prompt for the next action is shown</li>
+<li>"Next Step (No Output)" (<code>next_step_no_output_template</code>): Displayed if the model's action successfully runs, but does not produce any standard output (e.g. <code>rm</code>, <code>cd</code>)</li>
+<li>"Format Error" (<code>format_error_template</code>): Displayed if the model's response is malformed. Over the next two turns...</li>
+<li>If one of the model's next response is correct, the message history is updated such that the "Format Error" turn is not kept. The episode continues.</li>
+<li>If the model's next two responses are both malformed, the episode terminates.</li>
+</ul>
 
 
 
@@ -800,11 +986,13 @@
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.indexes", "content.action.edit", "navigation.footer"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.indexes", "content.action.edit", "navigation.footer", "content.code.copy"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.081f42fc.min.js"></script>
+      <script src="../../assets/javascripts/bundle.081f42fc.min.js"></script>
       
     
-  </body>
+  <script id="init-glightbox">const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
+document$.subscribe(() => { lightbox.reload() });
+</script></body>
 </html>
