@@ -28,6 +28,7 @@ theme:
   features:
     - navigation.indexes 
     - content.action.edit
+    - navigation.footer
 
 markdown_extensions:
   - admonition
