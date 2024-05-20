@@ -2,30 +2,24 @@ site_name: SWE-agent documentation
 theme:
   name: material
   logo: assets/swe-agent.svg
-
   palette: 
-
-
-
-    # Palette toggle for light mode
     - media: "(prefers-color-scheme)"
       toggle:
         icon: material/brightness-auto
         name: Switch to light mode
-
     - scheme: default
       media: "(prefers-color-scheme: light)"
       toggle:
         icon: material/weather-night
 
         name: Switch to dark mode
-
-    # Palette toggle for dark mode
     - scheme: slate
       media: "(prefers-color-scheme: dark)"
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
+  features:
+    - navigation.indexes 
 
 markdown_extensions:
   - admonition
@@ -34,6 +28,7 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Installation:
+    - "installation/index.md"
     - "Use in-browser": "installation/codespaces.md"
     - "Install from source": "installation/source.md"
     - "Docker": "installation/docker.md"
