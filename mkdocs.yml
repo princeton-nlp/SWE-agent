@@ -35,6 +35,7 @@ markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
+  - pymdownx.magiclink
 nav:
   - Home: index.md
   - Installation:
@@ -44,6 +45,7 @@ nav:
     - "Docker": "installation/docker.md"
     - "Adding your keys": "installation/keys.md"
     - "Installation tips": "installation/tips.md"
+    - "Changelog": "installation/changelog.md"
   - Usage:
     - "usage/index.md"
     - "Command line usage": "usage/cl_tutorial.md"
