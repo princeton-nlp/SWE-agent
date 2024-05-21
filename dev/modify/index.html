@@ -461,6 +461,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -548,6 +552,48 @@
   
   
     <li class="md-nav__item">
+      <a href="../../usage/trajectories/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Trajectories
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/inspector/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Trajectory inspector
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../usage/faq/" class="md-nav__link">
         
   
@@ -600,6 +646,10 @@
   
     
     
+      
+        
+      
+        
       
         
       
@@ -751,6 +801,48 @@
   
   
     <li class="md-nav__item">
+      <a href="../commands/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Command definitions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demonstrations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Demonstrations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../contribute/" class="md-nav__link">
         
   
@@ -853,14 +945,7 @@
 <p>The easiest way to modify the behavior of SWE-agent is to change prompts and similar settings.
 This can be done using the config files. See <a href="../config/">here</a> for more information.</p>
 <h2 id="changing-the-demonstrations">Changing the demonstrations</h2>
-<p>If you'd like to modify the example demonstration that we feed the model at the start of each run, first generate a trajectory manually by running the agent with <code>--model_name human</code> 
-and then convert that trajectory into a demonstration by following the guide <a href="https://github.com/princeton-nlp/SWE-agent/tree/main/make_demos">here</a>. </p>
-<p>To edit text in <code>human</code> mode:</p>
-<ol>
-<li>Run the command <code>edit edit_start_line:edit_end_line</code></li>
-<li>Write the text you want to insert. Feel free to write the text across multiple lines. </li>
-<li>Press <code>return</code> then write <code>end_of_edit</code> and then press <code>return</code> again to submit the edit.</li>
-</ol>
+<p>Any <a href="../../usage/trajectories/">trajectory</a> can be turned into a new demonstrations. See <a href="../demonstrations/">here</a> for how it's done.</p>
 <h2 id="code-structure">Code structure</h2>
 <ul>
 <li>See the <a href="https://github.com/princeton-nlp/SWE-agent/tree/main/scripts/"><code>scripts/</code></a> folder for other useful scripts and details.</li>

@@ -463,6 +463,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -626,6 +630,48 @@
   
   
     <li class="md-nav__item">
+      <a href="../trajectories/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Trajectories
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../inspector/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Trajectory inspector
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../faq/" class="md-nav__link">
         
   
@@ -676,6 +722,10 @@
   
     
     
+      
+        
+      
+        
       
         
       
@@ -744,6 +794,48 @@
   
   <span class="md-ellipsis">
     Config files
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev/commands/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Command definitions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev/demonstrations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Demonstrations
   </span>
   
 
@@ -889,8 +981,12 @@ Let's start with an absolutely trivial example and solve an issue about a simple
 </ul>
 <div class="admonition tip">
 <p class="admonition-title">All options</p>
+<p>Run <code>python run.py --help</code> to see all available options for <code>run.py</code>. This tutorial will only cover a subset of options.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Running more than once</p>
 <ul>
-<li>Run <code>python run.py --help</code> to see all available options for <code>run.py</code>. This tutorial will only cover a subset of options.</li>
+<li>The complete details of the run are saved as a "trajectory" file (more about them <a href="../trajectories/">here</a>). They can also be turned into new <a href="../../dev/modify/">demonstrations</a>.</li>
 <li>If you run the same command more than once, you will find that SWE-agent aborts with <code>Skipping existing trajectory</code>. You can either remove the trajectory from the warning message, or add the <code>--skip_existing=False</code> flag.</li>
 </ul>
 </div>

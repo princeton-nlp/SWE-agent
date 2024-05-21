@@ -12,7 +12,7 @@
         <link rel="prev" href="../modify/">
       
       
-        <link rel="next" href="../contribute/">
+        <link rel="next" href="../commands/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -461,6 +461,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -548,6 +552,48 @@
   
   
     <li class="md-nav__item">
+      <a href="../../usage/trajectories/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Trajectories
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/inspector/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Trajectory inspector
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../usage/faq/" class="md-nav__link">
         
   
@@ -600,6 +646,10 @@
   
     
     
+      
+        
+      
+        
       
         
       
@@ -751,6 +801,48 @@
   
   
     <li class="md-nav__item">
+      <a href="../commands/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Command definitions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demonstrations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Demonstrations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../contribute/" class="md-nav__link">
         
   
@@ -852,7 +944,7 @@
 <p>This page contains details describing how to write your own configurations to control how agents can interact with the <code>SWEEnv</code> environment.</p>
 <p>A configuration is represented as a single <code>.yaml</code> file, specified by the <code>--config</code> flag in the <a href="../../usage/cl_tutorial/">command line interface</a>, allowing you to...</p>
 <ul>
-<li>Define the <strong>commands</strong> that agents may use to traverse + modify a codebase.</li>
+<li>Define the <strong>commands</strong> that agents may use to traverse + modify a codebase (see <a href="../commands/">here</a> for more details)</li>
 <li>Write <strong>prompts</strong> that are deterministically/conditionally shown to the agent over the course of a single trajectory.</li>
 <li>Control the <strong>input/output interface</strong> that sits between the agent and <code>SWEEnv</code>.</li>
 </ul>
@@ -911,9 +1003,11 @@
 <span class="nt">history_processor</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Reference to functionality for controlling agent&#39;s message history</span>
 <span class="nt">parse_function</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Parser run on agent output</span>
 </code></pre></div>
-<p>In this directory, we recommend looking at...
-* <code>configs/</code> for examples of properly formatted configuration files. Each configuration differs in its set of commands, input/output format, demonstrations, etc.
-* <code>commands/</code> for the bash implementations of the custom commands that SWE-agent uses to navigate + edit the codebase.</p>
+<p>In the <a href="https://github.com/princeton-nlp/SWE-agent/tree/main/config"><code>config/</code></a> directory, we recommend looking at...</p>
+<ul>
+<li><a href="https://github.com/princeton-nlp/SWE-agent/tree/main/config/configs"><code>configs/</code></a> for examples of properly formatted configuration files. Each configuration differs in its set of commands, input/output format, demonstrations, etc.</li>
+<li><a href="https://github.com/princeton-nlp/SWE-agent/tree/main/config/commands"><code>commands/</code></a> for the bash implementations of the custom commands that SWE-agent uses to navigate + edit the codebase. More information <a href="../commands/">here</a>.</li>
+</ul>
 <h2 id="how-a-configuration-file-is-processed">How a Configuration File is Processed</h2>
 <p>Some notes on processing that occurs on config fields when SWE-agent is run:</p>
 <ul>
@@ -984,13 +1078,13 @@
         
         
           
-          <a href="../contribute/" class="md-footer__link md-footer__link--next" aria-label="Next: Contribution guide">
+          <a href="../commands/" class="md-footer__link md-footer__link--next" aria-label="Next: Command definitions">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Contribution guide
+                Command definitions
               </div>
             </div>
             <div class="md-footer__button md-icon">
