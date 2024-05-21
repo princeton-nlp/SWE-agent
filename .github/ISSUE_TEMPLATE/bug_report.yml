@@ -61,9 +61,9 @@ body:
         required: true
       - label: I've searched the other issues for a duplicate
         required: true
-      - label: I have copied the full command/code that I ran
+      - label: I have copied the full command/code that I ran (as text, not as screenshot!)
         required: true
-      - label: I have copied the **full** log file/error message that was the result (if applicable)
+      - label: If applicable: I have copied the **full** log file/error message that was the result (as text, not as screenshot!)
         required: true
       - label: I have enclosed code/log messages in triple backticks ([docs](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#quoting-code)) and clicked "Preview" to make sure it's displayed correctly.
         required: true
