@@ -26,8 +26,12 @@ Here,
 * `--per_instance_cost_limit` limits the total inference cost to $2 (default is $3).
 
 !!! tip "All options"
-    * Run `python run.py --help` to see all available options for `run.py`. This tutorial will only cover a subset of options.
+    Run `python run.py --help` to see all available options for `run.py`. This tutorial will only cover a subset of options.
+
+!!! tip "Running more than once"
+    * The complete details of the run are saved as a "trajectory" file (more about them [here](trajectories.md)). They can also be turned into new [demonstrations](../dev/modify.md).
     * If you run the same command more than once, you will find that SWE-agent aborts with ` Skipping existing trajectory`. You can either remove the trajectory from the warning message, or add the `--skip_existing=False` flag.
+
 
 ## Specifying the repository
 

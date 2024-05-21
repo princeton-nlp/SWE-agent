@@ -50,11 +50,15 @@ nav:
     - "usage/index.md"
     - "Command line usage": "usage/cl_tutorial.md"
     - "Using the web UI": "usage/web_ui.md"
+    - "Trajectories": "usage/trajectories.md"
+    - "Trajectory inspector": "usage/inspector.md"
     - "FAQ": "usage/faq.md"
     - "Benchmarking": "usage/benchmarking.md"
   - Development:
     - "Modifying swe-agent": "dev/modify.md"
     - "Config files": "dev/config.md"
+    - "Command definitions": "dev/commands.md"
+    - "Demonstrations": "dev/demonstrations.md"
     - "Contribution guide": "dev/contribute.md"
 
 plugins:

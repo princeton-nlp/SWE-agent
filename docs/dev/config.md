@@ -4,7 +4,7 @@ This page contains details describing how to write your own configurations to co
 
 A configuration is represented as a single `.yaml` file, specified by the `--config` flag in the [command line interface](../usage/cl_tutorial.md), allowing you to...
 
-* Define the **commands** that agents may use to traverse + modify a codebase.
+* Define the **commands** that agents may use to traverse + modify a codebase (see [here](commands.md) for more details)
 * Write **prompts** that are deterministically/conditionally shown to the agent over the course of a single trajectory.
 * Control the **input/output interface** that sits between the agent and `SWEEnv`.
 
@@ -66,9 +66,10 @@ history_processor: Reference to functionality for controlling agent's message hi
 parse_function: Parser run on agent output
 ```
 
-In this directory, we recommend looking at...
-* `configs/` for examples of properly formatted configuration files. Each configuration differs in its set of commands, input/output format, demonstrations, etc.
-* `commands/` for the bash implementations of the custom commands that SWE-agent uses to navigate + edit the codebase.
+In the [`config/`](https://github.com/princeton-nlp/SWE-agent/tree/main/config) directory, we recommend looking at...
+
+* [`configs/`](https://github.com/princeton-nlp/SWE-agent/tree/main/config/configs) for examples of properly formatted configuration files. Each configuration differs in its set of commands, input/output format, demonstrations, etc.
+* [`commands/`](https://github.com/princeton-nlp/SWE-agent/tree/main/config/commands) for the bash implementations of the custom commands that SWE-agent uses to navigate + edit the codebase. More information [here](commands.md).
 
 ## How a Configuration File is Processed
 Some notes on processing that occurs on config fields when SWE-agent is run:
