@@ -890,6 +890,9 @@
 <ul>
 <li>Make sure that you allow the use of the Docker socket. In Docker desktop, click <em>Settings</em> &gt; <em>Advanced</em> &gt; <em>Allow the default Docker socket to be used (requires password)</em></li>
 <li>If your docker installation uses a different socket, you might have to symlink them, see <a href="https://github.com/princeton-nlp/SWE-agent/issues/20#issuecomment-2047506005">this command for example</a></li>
+<li>If you are using any containers from dockerhub (i.e., you ran <code>docker pull ...</code> or you are running <code>docker run ...</code>), please make sure that you are using the latest
+  versions. Just because an image has the <code>latest</code> tag (e.g., <code>sweagent/swe-agent-run:latest</code>) does not mean that it will auto-update. Please run
+  <code>docker pull sweagent/swe-agent-run:latest</code> to make sure you actually have the most recent version!</li>
 </ul>
 <p>Any remaining issues? Please <a href="https://github.com/princeton-nlp/SWE-agent/issues/new/choose">open a GitHub issue</a>!</p>
 
