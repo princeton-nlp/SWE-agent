@@ -17,4 +17,4 @@ body:
   attributes:
     label: "Optional: Relevant documentation page"
     description: >
-      If something is missung in a specific page, put the URL here
+      If something is missing in a specific page, put the URL here
