@@ -5,7 +5,15 @@ set -euo pipefail
 this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 function stop_react {
+    echo "Stopping react server"
     npx --prefix "${this_dir}/sweagent/frontend" pm2 delete swe-agent
+}
+
+function print_log {
+    echo "Something went wrong. Here's web_api.log:"
+    echo "----------"
+    cat web_api.log
+    echo "----------"
 }
 
 cd "${this_dir}/sweagent/frontend"
@@ -24,4 +32,5 @@ echo "* Something went wrong? Please check "
 echo "  web_api.log for error messages!"
 
 cd ../../
+trap print_log ERR
 python sweagent/api/server.py > web_api.log 2>&1
