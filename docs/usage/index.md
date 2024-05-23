@@ -1,6 +1,6 @@
 # Usage
 
-We currently provide two interfaces to SWE-agent: The [command line interface (CLI)](cl_tutorial.md) and our [graphical web interface](web_ui.md). 
+We currently provide two interfaces to SWE-agent: 
 
 <div class="grid cards" markdown>
 
@@ -21,5 +21,3 @@ We currently provide two interfaces to SWE-agent: The [command line interface (C
     [:octicons-arrow-right-24: Get started](web_ui.md)
 
 </div>
-
-While the latter is more beginner-friendly, the CLI currently still has more expert options.
