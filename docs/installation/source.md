@@ -7,9 +7,9 @@ Installation from source is the preferred way to set up SWE-agent on your machin
     In the meantime, use Docker (see below).
 
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
-2. For the web interface only: Install [`nodejs`][nodejs-install].
-3. Clone this repository.
-4. Run `pip install --editable .` at the repository root (as with any python setup, it's recommended to use [conda][] or [virtual environments][] to manage dependencies).
+2. If you plan on using the web-based GUI: Install [`nodejs`][nodejs-install].
+3. Clone the repository (`git clone https://github.com/princeton-nlp/SWE-agent.git`)
+4. Run `pip install --editable .` at the repository root (as with any python setup, it's recommended to use [conda][] or [virtual environments][] to manage dependencies). Error about editable install? Please update pip[^1].
 5. Run `./setup.sh` to create the `swe-agent` docker image.
 6. Create a `keys.cfg` file at the root of this repository ([more information](keys.md)).
 
@@ -20,3 +20,5 @@ Installation from source is the preferred way to set up SWE-agent on your machin
 
 [conda]: https://docs.conda.io/en/latest/
 [virtual environments]: https://realpython.com/python-virtual-environments-a-primer/
+
+[^1]: You can update `pip` with `pip install --upgrade pip`.
