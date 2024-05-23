@@ -10,7 +10,7 @@ body:
       Tell us about the confusion you have about SWE-agent *or*
       the information that is missing in the documentation.
       If you face error messages and more, please open a bug report
-      instead: https://github.com/princeton-nlp/SWE-agent/issues/new?template=bug_report.yml
+      instead https://github.com/princeton-nlp/SWE-agent/issues/new?template=bug_report.yml
   validations:
     required: true
 - type: input
