@@ -579,6 +579,17 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Using the web UI
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -588,6 +599,43 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quickstart" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quickstart
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manually-starting-frontend-and-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manually starting frontend and backend
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -864,6 +912,32 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quickstart" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quickstart
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manually-starting-frontend-and-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manually starting frontend and backend
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -886,6 +960,9 @@
 
 
 <h1 id="using-the-web-interface">Using the web interface</h1>
+<p>Our graphical web interface is optimized for using SWE-agent as a developer tool, fixing single GitHub issues or working in local repositories. 
+However, it is still missing some of the options of the <a href="../cl_tutorial/">command line interface</a>.</p>
+<h2 id="quickstart">Quickstart</h2>
 <p>To start our web UI, simply run</p>
 <div class="highlight"><pre><span></span><code>./start_web_ui.sh
 </code></pre></div>
@@ -895,9 +972,50 @@
 <p>If the user interface doesn't automatically open in your browser, please open it at <code>http://localhost:3000</code>. 
 Running from GitHub codespaces? More tips <a href="../../installation/codespaces/#running-the-web-ui">here</a>.</p>
 </div>
-<div class="admonition warning">
-<p class="admonition-title">Limitations</p>
-<p>Currently, the web interface only has a subset of the options of the command line interface (CLI). </p>
+<h2 id="manually-starting-frontend-and-backend">Manually starting frontend and backend</h2>
+<p>The web UI consists of a frontend written in <a href="https://react.dev/">react</a> (showing the pretty control elements) and a backend written with <a href="https://flask.palletsprojects.com/">flask</a>. 
+The <code>./start_web_ui.sh</code> starts both of them in the background.
+However, this might not be best for development and debugging.
+This section explains how to start both parts separately.</p>
+<p>First, let's start the backend:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>sweagent/api/server.py
+</code></pre></div>
+<p>You should see output similar to the following:</p>
+<div class="highlight"><pre><span></span><code> * Serving Flask app &#39;server&#39;
+ * Debug mode: on
+2024-05-23 11:30:45,436 - werkzeug - INFO - WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8000
+2024-05-23 11:30:45,437 - werkzeug - INFO - Press CTRL+C to quit
+2024-05-23 11:30:45,437 - werkzeug - INFO -  * Restarting with watchdog (fsevents)
+2024-05-23 11:30:46,484 - werkzeug - WARNING -  * Debugger is active!
+2024-05-23 11:30:46,492 - werkzeug - INFO -  * Debugger PIN: 123-594-933
+</code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Port availability</p>
+<p>If see an error about port 8000 not being available, 
+please first close any application that occupies it. 
+The frontend currently expects the <code>flask</code> server on port 8000, so choosing 
+a different port won't work.</p>
+</div>
+<p>Now, open a new terminal tab and navigate to the <code>frontend</code> directory:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>sweagent/frontend
+</code></pre></div>
+<p>First, let's install the react dependencies:</p>
+<div class="highlight"><pre><span></span><code>npm<span class="w"> </span>install
+</code></pre></div>
+<p>And start the server:</p>
+<div class="highlight"><pre><span></span><code>npm<span class="w"> </span>start
+</code></pre></div>
+<p>This should also open the corresponding page in your browser. 
+If not, check with the tips above. 
+The default port that is being served is port 3000.</p>
+<div class="admonition tip">
+<p class="admonition-title">Possible errors</p>
+<p>If you see errors</p>
+<div class="highlight"><pre><span></span><code>Proxy error: Could not proxy request /socket.io/?EIO=4&amp;transport=polling&amp;t=O-c5kv9 from localhost:3000 to http://localhost:8000.
+See https://nodejs.org/api/errors.html#errors_common_system_errors for more information (ECONNREFUSED).
+</code></pre></div>
+<p>something went wrong with the backend part.</p>
 </div>
 
 
