@@ -54,3 +54,5 @@ Next, run your configuration and see how your agent uses the commands!
 ```bash
 python run.py --config_file config/[your config].yaml ...
 ```
+
+{% include-markdown "../_footer.md" %}

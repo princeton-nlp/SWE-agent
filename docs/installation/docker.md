@@ -30,3 +30,5 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
     (double slash) to escape it ([more information](https://stackoverflow.com/a/47229180/)).
     * See the [installation issues section](tips.md) for more help if you run into
     trouble.
+  
+{% include-markdown "../_footer.md" %}

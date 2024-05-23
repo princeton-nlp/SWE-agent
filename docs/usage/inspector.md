@@ -24,3 +24,5 @@ python server.py --directory /Users/ofirp/swe-agent/trajectories
 The inspector will then be launched in the browser:
 
 ![trajectory inspector](../assets/inspector.png)
+
+{% include-markdown "../_footer.md" %}

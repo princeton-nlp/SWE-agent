@@ -22,3 +22,5 @@ Installation from source is the preferred way to set up SWE-agent on your machin
 [virtual environments]: https://realpython.com/python-virtual-environments-a-primer/
 
 [^1]: You can update `pip` with `pip install --upgrade pip`.
+
+{% include-markdown "../_footer.md" %}
