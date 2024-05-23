@@ -894,15 +894,23 @@ In the meantime, use Docker (see below).</p>
 </div>
 <ol>
 <li><a href="https://docs.docker.com/engine/install/">Install Docker</a>, then start Docker locally.</li>
-<li>For the web interface only: Install <a href="https://docs.npmjs.com/downloading-and-installing-node-js-and-npm"><code>nodejs</code></a>.</li>
-<li>Clone this repository.</li>
-<li>Run <code>pip install --editable .</code> at the repository root (as with any python setup, it's recommended to use <a href="https://docs.conda.io/en/latest/">conda</a> or <a href="https://realpython.com/python-virtual-environments-a-primer/">virtual environments</a> to manage dependencies).</li>
+<li>If you plan on using the web-based GUI: Install <a href="https://docs.npmjs.com/downloading-and-installing-node-js-and-npm"><code>nodejs</code></a>.</li>
+<li>Clone the repository (<code>git clone https://github.com/princeton-nlp/SWE-agent.git</code>)</li>
+<li>Run <code>pip install --editable .</code> at the repository root (as with any python setup, it's recommended to use <a href="https://docs.conda.io/en/latest/">conda</a> or <a href="https://realpython.com/python-virtual-environments-a-primer/">virtual environments</a> to manage dependencies). Error about editable install? Please update pip<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup>.</li>
 <li>Run <code>./setup.sh</code> to create the <code>swe-agent</code> docker image.</li>
 <li>Create a <code>keys.cfg</code> file at the root of this repository (<a href="../keys/">more information</a>).</li>
 </ol>
 <div class="admonition tip">
 <p class="admonition-title">Docker issues</p>
 <p>If you run into docker issues, see the <a href="../tips/">installation tips section</a> for more help</p>
+</div>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>You can update <code>pip</code> with <code>pip install --upgrade pip</code>.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
 </div>
 
 
@@ -990,7 +998,7 @@ In the meantime, use Docker (see below).</p>
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.indexes", "content.action.edit", "navigation.footer", "content.code.copy"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.indexes", "content.action.edit", "navigation.footer", "content.code.copy", "content.footnote.tooltips"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.081f42fc.min.js"></script>
