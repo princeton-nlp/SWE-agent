@@ -15,6 +15,6 @@ body:
     required: true
 - type: input
   attributes:
-    label: Optional: Relevant documentation page
+    label: "Optional: Relevant documentation page"
     description: >
       If something is missung in a specific page, put the URL here
