@@ -28,3 +28,5 @@ If you instead only see the offer to forward port `8000`, do not click it (this 
 Instead, click on the `Ports` tab, and click on the globe next to port `3000`:
 
 ![port 3000 forwarding manual](../assets/open_port_in_browser.png)
+
+{% include-markdown "../_footer.md" %}

@@ -34,3 +34,5 @@ We also provide models for testing SWE-agent without spending any credits
 * `HumanModel` and `HumandThoughtModel` will prompt for input from the user that stands in for the output of the LM
 * `ReplayModel` takes a trajectory as input and "replays it"
 * `InstantEmptySubmitTestModel` will create an empty `reproduce.py` and then submit 
+
+{% include-markdown "../_footer.md" %}

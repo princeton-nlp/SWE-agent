@@ -97,3 +97,5 @@ One of three templates can be shown per turn:
 * "Format Error" (`format_error_template`): Displayed if the model's response is malformed. Over the next two turns...
   * If one of the model's next response is correct, the message history is updated such that the "Format Error" turn is not kept. The episode continues.
   * If the model's next two responses are both malformed, the episode terminates.
+
+{% include-markdown "../_footer.md" %}

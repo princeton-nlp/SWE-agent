@@ -67,6 +67,7 @@ nav:
 plugins:
    - glightbox
    - search
+   - include-markdown
 repo_url: https://github.com/princeton-nlp/SWE-agent
 repo_name: princeton-nlp/SWE-agent
 edit_uri: edit/main/docs/

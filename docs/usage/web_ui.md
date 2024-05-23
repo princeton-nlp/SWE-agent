@@ -83,3 +83,5 @@ The default port that is being served is port 3000.
     ```
 
     something went wrong with the backend part.
+
+{% include-markdown "../_footer.md" %}

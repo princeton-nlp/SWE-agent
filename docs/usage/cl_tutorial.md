@@ -138,3 +138,5 @@ And follow the instructions below it:
  cd <your local repo root>
  git apply "${PATCH_FILE_PATH}"
 ```
+
+{% include-markdown "../_footer.md" %}
