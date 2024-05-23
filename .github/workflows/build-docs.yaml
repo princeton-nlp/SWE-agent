@@ -30,9 +30,6 @@ jobs:
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
-      - name: Set the VIRTUAL_ENV variable for uv to work
-        run: |
-          echo "VIRTUAL_ENV=${Python_ROOT_DIR}" >> $GITHUB_ENV
-      - run: uv pip install mkdocs-material mkdocs-glightbox
+      - run: uv pip install --python ${Python_ROOT_DIR} mkdocs-material mkdocs-glightbox
       - run: mkdocs gh-deploy --force
 
