@@ -1,9 +1,29 @@
 # Setting up SWE-agent
 
-We currently offer three options:
+<div class="grid cards" markdown>
 
-1. Run SWE-agent completely **in your browser**: This is done using GitHub pages, basically a VSCode environment that runs in your browser. All necessary packages will be pre-installed, so you can get started directly. Read more [here](codespaces.md).
+-   :material-github:{ .lg .middle } __All in browser__
 
-2. **Local installation**: Install SWE-agent from source using `pip`. Read more [here](source.md).
+    --- 
 
-3. **Fully containerized** deployment using docker: Pull a docker container and directly run SWE-agent. This is our fallback solution if the local installation does not work for you. Read more [here](docker.md).
+    Run SWE-agent using GitHub codespaces. All necessary packages will be pre-installedn in an in-browser VSCode environment. 
+    
+    [:octicons-arrow-right-24: Get started](codespaces.md)
+
+-   :material-cog:{ .lg .middle } __Install from source__
+
+    --- 
+
+    Install SWE-agent from source using `pip`. 
+    
+    [:octicons-arrow-right-24: Get started](source.md)
+
+
+-   :material-docker:{ .lg .middle } __Run in docker__
+
+    --- 
+
+    Pull a docker container and directly run SWE-agent. This is our fallback solution if the local installation does not work for you.
+
+    [:octicons-arrow-right-24: Get started](docker.md)
+</div>
