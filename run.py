@@ -251,6 +251,7 @@ class OpenPRHook(MainHook):
     def on_init(self, *, args: ScriptArguments, agent: Agent, env: SWEEnv, traj_dir: Path):
         self._env = env
         self._token: str = env._github_token
+        assert self._token
         self._data_path = args.environment.data_path
         self._open_pr = args.actions.open_pr
         self._skip_if_commits_reference_issue = args.actions.skip_if_commits_reference_issue
