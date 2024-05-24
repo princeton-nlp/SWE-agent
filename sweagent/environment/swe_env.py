@@ -917,6 +917,7 @@ class SWEEnv(gym.Env):
             f"to close [#{issue.number}]({issue_url}) ({issue.title}).\n\nCloses #{issue.number}."
         )
         body += "\n\n" + format_trajectory_markdown(trajectory)
+        assert self._github_token
         api = GhApi(token=self._github_token)
         if not _dry_run:
             pr_info = api.pulls.create(
