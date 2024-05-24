@@ -1,8 +1,7 @@
-requests < 2.32.0 # https://github.com/docker/docker-py/issues/3256
 anthropic[bedrock]
 config
 datasets
-docker
+docker >= 7.1.0  # https://github.com/princeton-nlp/SWE-agent/issues/379
 gymnasium
 numpy
 openai>=1.0
