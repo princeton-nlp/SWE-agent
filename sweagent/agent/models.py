@@ -799,17 +799,32 @@ class ReplayModel(BaseModel):
         self.replay_idx = 0
         self.action_idx = 0
 
+    def _next_replay(self) -> None:
+        """Called after last action"""
+        self.replay_idx += 1
+        self.action_idx = 0
+
     def query(self, history: list[dict[str, str]]) -> str:
         """
         Logic for tracking which replay action to pass to SWEEnv
         """
-        action = self.replays[self.replay_idx][self.action_idx]
+        actions = self.replays[self.replay_idx]
+        try:
+            action = actions[self.action_idx]
+        except IndexError:
+            msg = (
+                "This seems to be an incomplete trajectory. "
+                "We reached the end of it, but `submit` was not called. "
+                "Calling it now."
+            )
+            logger.warning(msg)
+            action = "```\nsubmit\n```"
+
         self.action_idx += 1
 
         # Assuming `submit` is always last action of replay trajectory
         if action == "submit":
-            self.replay_idx += 1
-            self.action_idx = 0
+            self._next_replay()
 
         return action
 
