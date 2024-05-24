@@ -40,8 +40,7 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Install dependencies
         run: |
-            uv pip install --python ${Python_ROOT_DIR} .
-            uv pip install --python ${Python_ROOT_DIR} pytest pytest-cov
+            uv pip install --python ${Python_ROOT_DIR} '.[dev]'
       - name: Run pytest
         run: |
             pytest --cov

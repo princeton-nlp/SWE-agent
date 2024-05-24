@@ -36,6 +36,16 @@ classifiers = [
   "Programming Language :: Python :: 3 :: Only",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "mkdocs-material",
+    "mkdocs-glightbox",
+    "mkdocs-include-markdown-plugin",
+    "pytest",
+    "pytest-cov",
+    "pipx",
+]
+
 [tool.setuptools]
 include-package-data = true
 
