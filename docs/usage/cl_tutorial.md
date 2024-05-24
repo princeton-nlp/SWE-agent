@@ -22,14 +22,14 @@ Here,
 
 * `--model_name` sets the language model that is used by SWE-agent (with `gpt4` being the default). More information on the available models in our [FAQ](faq.md)
 * `--data_path` points to the source of the *problem statement* (for example, the GitHub issue that you want to solve). You can also point it to local files (see [below](#specifying-the-repository))
-* `--config_file` includes settings such as the prompts. Changing the config file is the easiest way to get started with modifying SWE-agent (more advanced options are discussed [here](../dev/config.md)).
+* `--config_file` includes settings such as the prompts. Changing the config file is the easiest way to get started with modifying SWE-agent (more advanced options are discussed [here](../config/config.md)).
 * `--per_instance_cost_limit` limits the total inference cost to $2 (default is $3).
 
 !!! tip "All options"
     Run `python run.py --help` to see all available options for `run.py`. This tutorial will only cover a subset of options.
 
 !!! tip "Running more than once"
-    * The complete details of the run are saved as a "trajectory" file (more about them [here](trajectories.md)). They can also be turned into new [demonstrations](../dev/modify.md).
+    * The complete details of the run are saved as a "trajectory" file (more about them [here](trajectories.md)). They can also be turned into new [demonstrations](../config/demonstrations.md).
     * If you run the same command more than once, you will find that SWE-agent aborts with ` Skipping existing trajectory`. You can either remove the trajectory from the warning message, or add the `--skip_existing=False` flag.
 
 

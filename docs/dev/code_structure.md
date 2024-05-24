@@ -1,15 +1,4 @@
-# Modifying the behavior of SWE-agent
-
-## Changing prompts and other configuration
-
-The easiest way to modify the behavior of SWE-agent is to change prompts and similar settings.
-This can be done using the config files. See [here](config.md) for more information.
-
-## Changing the demonstrations
-
-Any [trajectory](../usage/trajectories.md) can be turned into a new demonstrations. See [here](demonstrations.md) for how it's done.
-
-## Code structure
+# Code structure
 
 * See the [`scripts/`](https://github.com/princeton-nlp/SWE-agent/tree/main/scripts/) folder for other useful scripts and details.
 * See the [`config/`](https://github.com/princeton-nlp/SWE-agent/tree/main/config/) folder for details about how you can define your own configuration!
