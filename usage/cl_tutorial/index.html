@@ -766,10 +766,6 @@
       
         
       
-        
-      
-        
-      
     
     
     
@@ -784,7 +780,7 @@
             
   
   <span class="md-ellipsis">
-    Development
+    Configuration
   </span>
   
 
@@ -794,7 +790,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            Development
+            Configuration
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -805,28 +801,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev/modify/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Modifying swe-agent
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../dev/config/" class="md-nav__link">
+      <a href="../../config/config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -847,7 +822,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev/commands/" class="md-nav__link">
+      <a href="../../config/commands/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -868,11 +843,80 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev/demonstrations/" class="md-nav__link">
+      <a href="../../config/demonstrations/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
     Demonstrations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Development
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Development
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev/contribute/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contribution guide
   </span>
   
 
@@ -889,11 +933,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev/contribute/" class="md-nav__link">
+      <a href="../../dev/code_structure/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Contribution guide
+    Code structure
   </span>
   
 
@@ -1013,7 +1057,7 @@ Let's start with an absolutely trivial example and solve an issue about a simple
 <ul>
 <li><code>--model_name</code> sets the language model that is used by SWE-agent (with <code>gpt4</code> being the default). More information on the available models in our <a href="../faq/">FAQ</a></li>
 <li><code>--data_path</code> points to the source of the <em>problem statement</em> (for example, the GitHub issue that you want to solve). You can also point it to local files (see <a href="#specifying-the-repository">below</a>)</li>
-<li><code>--config_file</code> includes settings such as the prompts. Changing the config file is the easiest way to get started with modifying SWE-agent (more advanced options are discussed <a href="../../dev/config/">here</a>).</li>
+<li><code>--config_file</code> includes settings such as the prompts. Changing the config file is the easiest way to get started with modifying SWE-agent (more advanced options are discussed <a href="../../config/config/">here</a>).</li>
 <li><code>--per_instance_cost_limit</code> limits the total inference cost to $2 (default is $3).</li>
 </ul>
 <div class="admonition tip">
@@ -1023,7 +1067,7 @@ Let's start with an absolutely trivial example and solve an issue about a simple
 <div class="admonition tip">
 <p class="admonition-title">Running more than once</p>
 <ul>
-<li>The complete details of the run are saved as a "trajectory" file (more about them <a href="../trajectories/">here</a>). They can also be turned into new <a href="../../dev/modify/">demonstrations</a>.</li>
+<li>The complete details of the run are saved as a "trajectory" file (more about them <a href="../trajectories/">here</a>). They can also be turned into new <a href="../../config/demonstrations/">demonstrations</a>.</li>
 <li>If you run the same command more than once, you will find that SWE-agent aborts with <code>Skipping existing trajectory</code>. You can either remove the trajectory from the warning message, or add the <code>--skip_existing=False</code> flag.</li>
 </ul>
 </div>
