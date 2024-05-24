@@ -67,13 +67,14 @@ def test_get_associated_commit_urls():
     assoc = get_associated_commit_urls(
         org="princeton-nlp",
         repo="SWE-agent",
-        issue_number="41"
+        issue_number="41",
+        token=os.environ.get("GITHUB_TOKEN", "")
     )
     assert len(assoc) > 0
 
 
 def test_get_instance_gh_issue():
-    instance = get_instances("https://github.com/klieret/swe-agent-test-repo/issues/1")[0]
+    instance = get_instances("https://github.com/klieret/swe-agent-test-repo/issues/1", **_TOKEN)[0]
     compare_with = {
         'repo': 'klieret/swe-agent-test-repo',
         'instance_id': 'klieret__swe-agent-test-repo-i1',
