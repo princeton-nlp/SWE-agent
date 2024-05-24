@@ -348,17 +348,15 @@ class Agent:
         return self.config.history_processor(
             [entry for entry in self.history if entry["agent"] == self.name]
         )
-
-    def save_trajectory(self, trajectory, traj_dir, env, info):
-        log_path = traj_dir / (env.record["instance_id"] + ".traj")
+    
+    def save_trajectory(self, trajectory, log_path: Path, env_name: str, info: Dict[str, Any]):
         log_dict = {
-            "environment": env.name,
+            "environment": env_name,
             "trajectory": trajectory,
             "history": self.history,
             "info": info,
         }
-        with log_path.open("w") as f:
-            json.dump(log_dict, f, indent=2)
+        log_path.write_text(json.dumps(log_dict, indent=2))
         logger.info(f"Saved trajectory to {log_path}")
 
     def _get_first_match(self, action: str, pattern_type: str) -> Optional[re.Match]:
@@ -789,8 +787,10 @@ class Agent:
         Return the final value of the specified return type.
         """
         done = False
+        # mypy checks
         assert env.container_obj is not None
-        assert self.config is not None  # mypy
+        assert env.record is not None
+        assert self.config is not None
 
         if env.container_obj.id != self.last_container_id:
             logger.info(
@@ -807,6 +807,8 @@ class Agent:
         # Run action/observation loop
         trajectory = []
         info = {}
+        traj_log_path = traj_dir / (env.record["instance_id"] + ".traj") 
+        logger.info("Trajectory will be saved to %s", traj_log_path)
         while not done:
             for hook in self.hooks:
                 hook.on_step_start()
@@ -853,12 +855,14 @@ class Agent:
             model_stats: APIStats = self.model.stats
             info["model_stats"] = model_stats.to_dict()
             if traj_dir:
-                self.save_trajectory(trajectory, traj_dir, env, info)
+                self.save_trajectory(trajectory, traj_log_path, env_name=env.name, info=info)
             for hook in self.hooks:
                 hook.on_step_done(trajectory_step=trajectory_step, model_stats=model_stats)
         
         for hook in self.hooks:
             hook.on_run_done()
+        
+        logger.info("Trajectory saved to %s", traj_log_path)
 
         if return_type == "info":
             return info
