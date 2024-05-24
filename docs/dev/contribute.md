@@ -1,5 +1,13 @@
 # Contribute to SWE-agent
 
+{% 
+    include-markdown "../CONTRIBUTING.md" 
+    start="<!-- INCLUSION START -->"
+    end="<!-- INCLUSION END -->"
+%}
+
+Wanna do more and actually contribute code? Great! Please see the following sections for tips and guidelines!
+
 ## Development repository set-up
 
 Please install the repository from source, following our [usual instructions](../installation/source.md) but add the `[dev]` option to the `pip` command (you can just run the command again):
