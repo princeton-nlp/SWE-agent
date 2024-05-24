@@ -58,12 +58,13 @@ nav:
     - "Trajectory inspector": "usage/inspector.md"
     - "FAQ": "usage/faq.md"
     - "Benchmarking": "usage/benchmarking.md"
+  - Configuration:
+    - "Config files": "config/config.md"
+    - "Command definitions": "config/commands.md"
+    - "Demonstrations": "config/demonstrations.md"
   - Development:
-    - "Modifying swe-agent": "dev/modify.md"
-    - "Config files": "dev/config.md"
-    - "Command definitions": "dev/commands.md"
-    - "Demonstrations": "dev/demonstrations.md"
     - "Contribution guide": "dev/contribute.md"
+    - "Code structure": "dev/code_structure.md"
 plugins:
    - glightbox
    - search
