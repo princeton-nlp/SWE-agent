@@ -1,7 +1,7 @@
 # Contribute to SWE-agent
 
-{% 
-    include-markdown "../CONTRIBUTING.md" 
+{%
+    include-markdown "../../CONTRIBUTING.md"
     start="<!-- INCLUSION START -->"
     end="<!-- INCLUSION END -->"
 %}
