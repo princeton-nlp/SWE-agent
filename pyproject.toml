@@ -44,6 +44,7 @@ dev = [
     "pytest",
     "pytest-cov",
     "pipx",
+    "pre-commit",
 ]
 
 [tool.setuptools]
