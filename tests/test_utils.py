@@ -1,7 +1,11 @@
 import hashlib
+import os
 import subprocess
 import pytest
 from sweagent.environment.utils import InvalidGithubURL, format_trajectory_markdown, _MARKDOWN_TRAJECTORY_EMOJI_MAPPING, get_instances, is_github_repo_url, remove_triple_backticks, parse_gh_repo_url, parse_gh_issue_url, is_github_issue_url, get_associated_commit_urls
+
+
+_TOKEN = {"token": os.environ.get("GITHUB_TOKEN", "")}
 
 def test_format_trajectory_markdown(test_trajectory):
     formatted = format_trajectory_markdown(test_trajectory["trajectory"])
@@ -92,6 +96,7 @@ def test_get_instance_gh_issue_local_repo(tmp_path):
     instance = get_instances(
         file_path="https://github.com/klieret/swe-agent-test-repo/issues/1",
         repo_path=str(tmp_path / "swe-agent-test-repo"),
+        **_TOKEN
     )[0]
     compare_with = {
         'repo': str(tmp_path.resolve() / "swe-agent-test-repo"),
@@ -129,6 +134,7 @@ def test_get_instance_gh_issue_gh_repo(tmp_path):
     instance = get_instances(
         file_path="https://github.com/klieret/swe-agent-test-repo/issues/1",
         repo_path="https://github.com/princeton-nlp/SWE-agent",
+        **_TOKEN
     )[0]
     compare_with = {
         'repo': "princeton-nlp/SWE-agent",
@@ -146,6 +152,7 @@ def test_get_instance_text_issue_gh_repo(tmp_path):
     instance = get_instances(
         file_path="text://this is a test",
         repo_path="https://github.com/princeton-nlp/SWE-agent",
+        **_TOKEN
     )[0]
     compare_with = {
         'repo': "princeton-nlp/SWE-agent",
@@ -162,4 +169,4 @@ def test_load_instances(test_data_path, caplog):
     test_data_sources = test_data_path / "data_sources"
     examples = list(test_data_sources.iterdir())
     for example in examples:
-        get_instances(file_path=str(example))
+        get_instances(file_path=str(example), **_TOKEN)
