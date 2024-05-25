@@ -128,7 +128,6 @@ class SWEEnv(gym.Env):
         ):
             cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
             self._github_token: str = cfg.get("GITHUB_TOKEN", "")  # type: ignore
-        assert self._github_token
 
         # Load Task Instances
         self.data_path = self.args.data_path
