@@ -10,7 +10,7 @@ DEMO_COMMENT = """# This is a demo file generated from trajectory file:
 # {traj_path}
 # You can use this demo file to replay the actions in the trajectory with run_replay.py.
 # You can edit the content of the actions in this file to modify the replay behavior.
-# NOTICE: 
+# NOTICE:
 #         Only the actions of the assistant will be replayed.
 #         You do not need to modify the observation's contents or any other fields.
 #         You can add or remove actions to modify the replay behavior."""

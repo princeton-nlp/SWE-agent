@@ -69,7 +69,7 @@ class ActionParser(ParseFunction):
 
     _error_message = """\
     The command you provided was not recognized. Please specify one of the commands (+ any necessary arguments) from the following list in your response. Do not include any other text.
-    
+
     COMMANDS:
     {command_docs}
     """
@@ -97,7 +97,7 @@ class ThoughtActionParser(ParseFunction):
     Please make sure your output precisely matches the following format:
     DISCUSSION
     Discuss here with yourself about what your planning and what you're going to do in this step.
-    
+
     ```
     command(s) that you're going to run
     ```
@@ -198,9 +198,9 @@ class EditFormat(ThoughtActionParser):
     Please make sure your output precisely matches the following format:
     COMMENTS
     You can write comments here about what you're going to do if you want.
-    
+
     ```
-    New window contents. 
+    New window contents.
     Make sure you copy the entire contents of the window here, with the required indentation.
     Make the changes to the window above directly in this window.
     Remember that all of the window's contents will be replaced with the contents of this window.

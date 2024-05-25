@@ -21,7 +21,7 @@ while IFS= read -r line; do
     # into a format suitable for passing to the Python script
     # xargs -n 2 groups them back into pairs to handle as arguments correctly
     ARGS=$(echo "$line" | jq -r '. | to_entries | .[] | "--\(.key) \(.value)"' | xargs -n 2 echo)
-    
+
     # Execute the Python script with the constructed arguments
     echo $ARGS
     python run.py $ARGS

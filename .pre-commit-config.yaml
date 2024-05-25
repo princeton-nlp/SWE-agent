@@ -12,6 +12,7 @@ repos:
       - id: mixed-line-ending
       - id: detect-private-key
       - id: check-ast
+      - id: trailing-whitespace
 
   - repo: https://github.com/crate-ci/typos
     rev: v1.21.0
