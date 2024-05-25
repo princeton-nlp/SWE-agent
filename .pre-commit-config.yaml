@@ -28,7 +28,7 @@ repos:
       # Run the linter.
       - id: ruff
       # Run the formatter.
-      # - id: ruff-format
+      - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: "v4.0.0-alpha.8" # Use the sha or tag you want to point at

@@ -140,7 +140,7 @@ def run():
     print(run.environment.base_commit)
     model_name: str = run.agent.model.model_name
     environment_setup = ""
-    environment_input_type = run.environment.environment_setup.input_type 
+    environment_input_type = run.environment.environment_setup.input_type
     if environment_input_type == "manual":
         environment_setup = str(write_env_yaml(run.environment.environment_setup.manual))
     elif environment_input_type == "script_path":

@@ -12,4 +12,3 @@ if __name__ == "__main__":
         print(division(23, 0))
     except ValueError as e:
         print(e)
-
