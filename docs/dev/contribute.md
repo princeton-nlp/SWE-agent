@@ -38,6 +38,8 @@ pipx run ruff check --fix
 * When changing the behavior of the agent, we need to have some indication that it actually improves the success rate of SWE-agent.
   However, if you make the behavior optional without complicating SWE-agent (for example by providing new [commands](../config/commands.md)),
   we might be less strict.
+* Seeing a lot of formatting-related merge conflicts on your PR? Please make sure you ran `pipx run ruff format` on your code
+  (this is usually run as part of `pre-commit`)
 
 ## Building the documentation
 

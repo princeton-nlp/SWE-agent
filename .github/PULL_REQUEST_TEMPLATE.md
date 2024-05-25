@@ -1,5 +1,11 @@
-<!--
-Thanks for contributing a pull request!
+<!-- Thank you for contributing to SWE-agent -->
+
+<!---
+IMPORTANT NOTE: IF YOU SEE A LOT OF FORMATTING RELATED MERGE CONFLICTS
+PLEASE MAKE SURE THAT YOU ARE USING OUR CODE FORMATTER.
+
+You can run `pipx run ruff format`, or follow the instructions
+at https://princeton-nlp.github.io/SWE-agent/dev/contribute/
 -->
 
 #### Reference Issues/PRs
@@ -16,7 +22,3 @@ Please include a brief explanation of how your solution
 fixes the tagged issue(s), along with what files / entities have
 been modified for this fix.
 -->
-
-#### Any other comments?
-
-🧡 Thanks for contributing!
