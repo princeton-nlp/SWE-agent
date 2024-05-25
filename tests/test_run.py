@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 import subprocess
 from typing import Any, Dict
@@ -22,8 +23,7 @@ def test_run_cli_help():
 @pytest.fixture
 def open_pr_hook_init_for_sop():
     hook = OpenPRHook()
-    hook._token = ""
-    hook._env = None
+    hook._token = os.environ.get("GITHUB_TOKEN", "")
     hook._data_path = "https://github.com/klieret/swe-agent-test-repo/issues/1"
     hook._open_pr = True
     hook._skip_if_commits_reference_issue = True
