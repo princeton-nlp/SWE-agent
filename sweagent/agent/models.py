@@ -17,8 +17,13 @@ from tenacity import (
     retry_if_not_exception_type,
 )
 from typing import Optional, Union
+from rich.logging import RichHandler
 
 logger = logging.getLogger("api_models")
+handler = RichHandler(show_time=False, show_path=False)
+handler.setLevel(logging.DEBUG)
+logger.addHandler(handler)
+logger.propagate = False
 
 
 @dataclass(frozen=True)
@@ -137,16 +142,16 @@ class BaseModel:
 
         # Log updated cost values to std. out.
         logger.info(
-            f"input_tokens={input_tokens:_}, "
-            f"output_tokens={output_tokens:_}, "
+            f"input_tokens={input_tokens:,}, "
+            f"output_tokens={output_tokens:,}, "
             f"instance_cost={self.stats.instance_cost:.2f}, "
             f"cost={cost:.2f}"
         )
         logger.info(
-            f"total_tokens_sent={self.stats.tokens_sent:_}, "
-            f"total_tokens_received={self.stats.tokens_received:_}, "
+            f"total_tokens_sent={self.stats.tokens_sent:,}, "
+            f"total_tokens_received={self.stats.tokens_received:,}, "
             f"total_cost={self.stats.total_cost:.2f}, "
-            f"total_api_calls={self.stats.api_calls:_}"
+            f"total_api_calls={self.stats.api_calls:,}"
         )
 
         # Check whether total cost or instance cost limits have been exceeded
@@ -229,6 +234,9 @@ class OpenAIModel(BaseModel):
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
         super().__init__(args, commands)
+
+        logging.getLogger("openai").setLevel(logging.WARNING)
+        logging.getLogger("httpx").setLevel(logging.WARNING)
 
         # Set OpenAI key
         cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
