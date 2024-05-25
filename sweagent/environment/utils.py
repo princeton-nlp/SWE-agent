@@ -438,7 +438,6 @@ def get_gh_issue_data(issue_url: str, *, token: str = ""):
     for return format
     """
     owner, repo, issue_number = parse_gh_issue_url(issue_url)
-    assert token
     api = GhApi(token=token)
     return api.issues.get(owner, repo, issue_number)
 
@@ -446,7 +445,6 @@ def get_gh_issue_data(issue_url: str, *, token: str = ""):
 
 def get_problem_statement_from_github_issue(owner: str, repo: str, issue_number: str, *, token: Optional[str] = "") -> str:
     """Return problem statement from github issue"""
-    assert token
     api = GhApi(token=token)
     issue = api.issues.get(owner, repo, issue_number)
     title = issue.title if issue.title else ""
@@ -497,7 +495,6 @@ class InstanceBuilder:
         self.args["repo"] = f"{owner}/{repo}"
         self.args["repo_type"] = "github"
         # Always get commit hash, because base_commit can also be branch or tag
-        assert self.token
         api = GhApi(token=self.token)
         self.args["base_commit"] = get_commit(api, owner, repo, ref=base_commit).sha
         if base_commit != self.args["base_commit"]:
@@ -646,7 +643,6 @@ def get_instances(
 
 def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token: str = "") -> list[str]:
     """Return the URLs of commits that would close an issue."""
-    assert token
     api = GhApi(token=token)
     # Strangely the "pull_request" field of api.issues.get is often not set
     # so we have to go through the events to check if there's a commit
