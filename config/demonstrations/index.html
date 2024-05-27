@@ -776,6 +776,17 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Demonstrations
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -785,6 +796,43 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#converting-an-existing-demonstration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Converting an existing demonstration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manually-creating-a-custom-trajectory" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manually creating a custom trajectory
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -908,6 +956,32 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#converting-an-existing-demonstration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Converting an existing demonstration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manually-creating-a-custom-trajectory" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manually creating a custom trajectory
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -930,9 +1004,23 @@
 
 
 <h1 id="changing-the-demonstrations">Changing the demonstrations</h1>
-<p>If you'd like to modify the example demonstration that we feed the model at the start of each run, first generate a trajectory manually by running the agent with <code>--model_name human</code> 
-and then convert that trajectory into a demonstration by following the guide <a href="https://github.com/princeton-nlp/SWE-agent/tree/main/make_demos">here</a>. </p>
-<p>To edit text in <code>human</code> mode:</p>
+<p>An important way to show LMs how to use commands and interact with the environment is through providing a demonstration - which is basically a completed <a href="../../usage/trajectories/">trajectory</a> that the LM can learn from.</p>
+<p>For simplicity we only ingest demonstrations in the from of a trajectory file. However, since trajectory files are usually JSON, you can convert them to yaml using the <code>make_demos/convert_traj_to_demo.py</code> script to be more human-readable and easier to edit.</p>
+<p>Demo (yaml) files are stored in the <code>make_demos/demos</code> directory by default and consist primarily of the sequence of actions that an LM would need to take to complete a task. It's important that your demo have the proper format to be parsed by SWE-agent and your config.</p>
+<h2 id="converting-an-existing-demonstration">Converting an existing demonstration</h2>
+<p>Here's how you can make a demo:</p>
+<ol>
+<li>Find a basic trajectory that you already like and want to use as the basis for your demo.
+   For instance, consider the <code>.traj</code> files in the <a href="https://github.com/princeton-nlp/SWE-agent/tree/main/trajectories/demonstrations"><code>trajectories/demonstrations/</code> folder</a>.</li>
+<li>Run <code>python convert_traj_to_demo.py &lt;path to trajectory file.traj&gt;</code> to convert the trajectory to a demo.
+   This demo will be saved as a readable yaml file in the <code>make_demos/demos</code> directory.</li>
+<li>Edit the demo by hand to make it work for your particular use case and configuration.</li>
+<li>Run <code>python run_replay.py --traj_path &lt;path to demo&gt; --config_file &lt;path to config file&gt;</code> to execute the actions of the demo, have the system generate the execution output, and ensure that it works as expected.</li>
+<li>Inspect the resulting trajectory to ensure it was executed correctly.</li>
+</ol>
+<h2 id="manually-creating-a-custom-trajectory">Manually creating a custom trajectory <a name="manual"></a></h2>
+<p>You can also manually generate a trajectory by running the agent with <code>--model_name human</code> (which allows you to enter the commands that would usually be suggested by the LM) and then convert that trajectory into a demonstration as above.
+To edit text in <code>human</code> mode:</p>
 <ol>
 <li>Run the command <code>edit edit_start_line:edit_end_line</code></li>
 <li>Write the text you want to insert. Feel free to write the text across multiple lines. </li>
