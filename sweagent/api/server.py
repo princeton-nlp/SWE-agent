@@ -209,4 +209,4 @@ def _build_cors_preflight_response():
 
 if __name__ == "__main__":
     app.debug = True
-    socketio.run(app, port=8000, debug=True)
+    socketio.run(app, port=8000, debug=True, allow_unsafe_werkzeug=True)

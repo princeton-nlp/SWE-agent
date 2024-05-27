@@ -33,4 +33,7 @@ echo "  web_api.log for error messages!"
 
 cd ../../
 trap print_log ERR
-python sweagent/api/server.py > web_api.log 2>&1
+python sweagent/api/server.py > web_api.log 2>&1 &
+
+wait -n
+exit $?
