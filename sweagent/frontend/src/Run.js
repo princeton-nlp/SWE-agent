@@ -208,7 +208,6 @@ function Run() {
           },
         ]);
         if (envFeedRef.current) {
-          console.log("checking env");
           setTimeout(() => {
             scrollEnv();
           }, 100);
@@ -225,7 +224,6 @@ function Run() {
         ]);
         if (agentFeedRef.current) {
           setTimeout(() => {
-            console.log("checking agent");
             scrollAgent();
           }, 100);
         }
