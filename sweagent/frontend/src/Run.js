@@ -57,6 +57,9 @@ function Run() {
   const agentFeedRef = useRef(null);
   const envFeedRef = useRef(null);
   const logsRef = useRef(null);
+  const isLogScrolled = useRef(false);
+  const isEnvScrolled = useRef(false);
+  const isAgentScrolled = useRef(false);
 
   const [tabKey, setTabKey] = useState("problem");
 
@@ -154,8 +157,44 @@ function Run() {
     }
   };
 
+  const checkScrollPosition = (ref, scrollStateRef, offset = 0) => {
+    scrollStateRef.current =
+      ref.current.scrollTop + ref.current.clientHeight + offset <
+      ref.current.scrollHeight;
+  };
+
+  const scrollToBottom = (ref, scrollStateRef) => {
+    if (!scrollStateRef.current) {
+      ref.current.scrollTop = ref.current.scrollHeight;
+    }
+  };
+
+  const scrollDetected = () => checkScrollPosition(logsRef, isLogScrolled, 58);
+  const scrollLog = () => scrollToBottom(logsRef, isLogScrolled);
+
+  const scrollDetectedEnv = () =>
+    checkScrollPosition(envFeedRef, isEnvScrolled);
+  const scrollEnv = () => scrollToBottom(envFeedRef, isEnvScrolled);
+
+  const scrollDetectedAgent = () =>
+    checkScrollPosition(agentFeedRef, isAgentScrolled);
+  const scrollAgent = () => scrollToBottom(agentFeedRef, isAgentScrolled);
+
   // Use effect to listen to socket updates
   React.useEffect(() => {
+    logsRef.current.removeEventListener("scroll", scrollDetected);
+    logsRef.current.addEventListener("scroll", scrollDetected, {
+      passive: true,
+    });
+    envFeedRef.current.removeEventListener("scroll", scrollDetectedEnv);
+    envFeedRef.current.addEventListener("scroll", scrollDetectedEnv, {
+      passive: true,
+    });
+    agentFeedRef.current.removeEventListener("scroll", scrollDetectedAgent);
+    agentFeedRef.current.addEventListener("scroll", scrollDetectedAgent, {
+      passive: true,
+    });
+
     const handleUpdate = (data) => {
       requeueStopComputeTimeout();
       if (data.feed === "agent") {
@@ -168,6 +207,12 @@ function Run() {
             step: data.thought_idx,
           },
         ]);
+        if (envFeedRef.current) {
+          console.log("checking env");
+          setTimeout(() => {
+            scrollEnv();
+          }, 100);
+        }
       } else if (data.feed === "env") {
         setEnvFeed((prevMessages) => [
           ...prevMessages,
@@ -178,11 +223,18 @@ function Run() {
             step: data.thought_idx,
           },
         ]);
+        if (agentFeedRef.current) {
+          setTimeout(() => {
+            console.log("checking agent");
+            scrollAgent();
+          }, 100);
+        }
       }
-    };
-
-    const scrollLog = () => {
-      logsRef.current.scrollTop = logsRef.current.scrollHeight;
+      return () => {
+        logsRef.current.removeEventListener("scroll", scrollDetected);
+        envFeedRef.current.removeEventListener("scroll", scrollDetectedEnv);
+        agentFeedRef.current.removeEventListener("scroll", scrollDetectedAgent);
+      };
     };
 
     const handleUpdateBanner = (data) => {
