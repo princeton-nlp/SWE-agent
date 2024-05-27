@@ -325,6 +325,7 @@ class SWEEnv(gym.Env):
         """
         Apply test patch for oracle setting
         """
+        assert self.record is not None
         path_to_patch = "test.patch"
         with open(path_to_patch, "w") as f:
             f.write(self.record["test_patch"])
