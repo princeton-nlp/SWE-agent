@@ -6,7 +6,6 @@ import logging
 import os
 import re
 import select
-import signal
 import subprocess
 import tarfile
 import tempfile
@@ -211,22 +210,6 @@ def read_with_timeout_experimental(container, timeout_duration):
         raise ValueError(f"Could not find process done marker in last line: {last_line=}, {body=}")
     exit_code = _results.group(1)
     return body, exit_code
-
-
-class timeout:
-    def __init__(self, seconds=TIMEOUT_DURATION, error_message="Timeout"):
-        self.seconds = seconds
-        self.error_message = error_message
-
-    def handle_timeout(self, signum, frame):
-        raise TimeoutError(self.error_message)
-
-    def __enter__(self):
-        signal.signal(signal.SIGALRM, self.handle_timeout)
-        signal.alarm(self.seconds)
-
-    def __exit__(self, type, value, traceback):
-        signal.alarm(0)
 
 
 def get_background_pids(container_obj):
