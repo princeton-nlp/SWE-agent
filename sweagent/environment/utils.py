@@ -1,11 +1,11 @@
 import hashlib
+import platform
 import shlex
 import docker
 import json
 import logging
 import os
 import re
-import select
 import subprocess
 import tarfile
 import tempfile
@@ -138,14 +138,26 @@ def read_with_timeout(container, pid_func, timeout_duration):
     fd = container.stdout.fileno()
     end_time = time.time() + timeout_duration
 
+    # Select is not available on windows
+    is_windows = platform.system() == "Windows"
+    if not is_windows:
+        import select
+    else:
+        os.set_blocking(fd, False)
+
+    def ready_to_read(fd) -> bool:
+        if is_windows:
+            # We can't do the extra check
+            return True
+        return bool(select.select([fd], [], [], 0.01)[0])
+
     while time.time() < end_time:
         pids = pid_func()
         if len(pids) > 0:
             # There are still PIDs running
             time.sleep(0.05)
             continue
-        ready_to_read, _, _ = select.select([fd], [], [], 0.1)
-        if ready_to_read:
+        if ready_to_read(fd):
             data = os.read(fd, 4096)
             if data:
                 buffer += data
@@ -188,10 +200,25 @@ def read_with_timeout_experimental(container, timeout_duration):
     fd = container.stdout.fileno()
     end_time = time.time() + timeout_duration
 
+    # Select is not available on windows
+    is_windows = platform.system() == "Windows"
+    if not is_windows:
+        import select
+    else:
+        os.set_blocking(fd, False)
+
+    def ready_to_read(fd) -> bool:
+        if is_windows:
+            # We can't do the extra check
+            return True
+        return bool(select.select([fd], [], [], 0.01)[0])
+
     while time.time() < end_time:
-        ready_to_read, _, _ = select.select([fd], [], [], 0.01)
-        if ready_to_read:
-            data = os.read(fd, 4096)
+        if ready_to_read(fd):
+            try:
+                data = os.read(fd, 4096)
+            except BlockingIOError:
+                break
             if data:
                 buffer += data
         if PROCESS_DONE_MARKER_START in buffer.decode():
