@@ -23,7 +23,7 @@ repos:
         exclude: pyproject.toml
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.4
+    rev: v0.4.5
     hooks:
       # Run the linter.
       - id: ruff
