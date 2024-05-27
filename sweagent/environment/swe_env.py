@@ -39,7 +39,7 @@ from swebench import (
     get_requirements,
     MAP_VERSION_TO_INSTALL
 )
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 LONG_TIMEOUT = 500
 PATH_TO_REQS = "/root/requirements.txt"
@@ -142,19 +142,27 @@ class SWEEnv(gym.Env):
         self.image_name = args.image_name
         self._reset_container()
 
-        # Prepare image tag prefix for cached task environments
+        #: Prefix for cached task docker images
+        self.cached_image_prefix: str = ""
         if self.args.cache_task_images:
             logger.info("Task environment caching enabled")
-            tag = f"{self.args.data_path.replace('/', '_')}__{self.args.split}__{self.args.base_commit or 'head'}__"
-            assert len(tag) < 128, f"Cached image tag {tag} too long, probably due to long data path or base commit hash."
-            image_name_without_tag = self.image_name.split(":")[0]
-            self.cached_image_prefix = f"{image_name_without_tag}:{tag}"
+            self.cached_image_prefix = self._get_cached_task_image_prefix()
 
         # Set timeout
         self.timeout = self.args.timeout
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
         self.hooks = []
+
+    def _get_cached_task_image_prefix(self) -> str:
+        inputs: List[str] = [
+            self.args.data_path,
+            self.args.split,
+            self.args.base_commit or "head",
+        ]
+        tag = hashlib.sha256("".join(inputs).encode()).hexdigest()[:50]
+        image_name_without_tag = self.image_name.split(":")[0]
+        return f"{image_name_without_tag}:task-{tag}"
 
     def add_hook(self, hook: EnvHook):
         hook.on_init()
