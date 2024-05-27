@@ -1,6 +1,6 @@
 # Changing the demonstrations
 
-An important way to show LMs how to use commands and interact with the environment is through providing a demonstration - which is basically a completed [trajectory](../usage/trajectories.mdj) that the LM can learn from.
+An important way to show LMs how to use commands and interact with the environment is through providing a demonstration - which is basically a completed [trajectory](../usage/trajectories.md) that the LM can learn from.
 
 For simplicity we only ingest demonstrations in the from of a trajectory file. However, since trajectory files are usually JSON, you can convert them to yaml using the `make_demos/convert_traj_to_demo.py` script to be more human-readable and easier to edit.
 
@@ -18,7 +18,7 @@ Here's how you can make a demo:
 4. Run `python run_replay.py --traj_path <path to demo> --config_file <path to config file>` to execute the actions of the demo, have the system generate the execution output, and ensure that it works as expected.
 5. Inspect the resulting trajectory to ensure it was executed correctly.
 
-## Manually creating a custom trajectory
+## Manually creating a custom trajectory <a name="manual"></a>
 
 You can also manually generate a trajectory by running the agent with `--model_name human` (which allows you to enter the commands that would usually be suggested by the LM) and then convert that trajectory into a demonstration as above.
 To edit text in `human` mode:
