@@ -17,6 +17,10 @@ from the root of the repository.
     If the user interface doesn't automatically open in your browser, please open it at `http://localhost:3000`. 
     Running from GitHub codespaces? More tips [here](../installation/codespaces.md#running-the-web-ui).
 
+!!! note "Running from Docker"
+    If you run SWE-agent from the `docker-run` Docker container, please see [here](../installation/docker.md)
+    for how to start the web server.
+
 ## Manually starting frontend and backend
 
 The web UI consists of a frontend written in [react][] (showing the pretty control elements) and a backend written with [flask][]. 
