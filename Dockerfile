@@ -18,4 +18,7 @@ RUN curl -fsSL https://get.docker.com -o get-docker.sh && \
 COPY . /app
 
 # Install Python dependencies
-RUN pip install .
+RUN pip install -e '.'
+
+# Install react dependencies ahead of time
+RUN cd sweagent/frontend && npm install
