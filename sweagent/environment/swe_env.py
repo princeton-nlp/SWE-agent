@@ -100,6 +100,7 @@ class SWEEnv(gym.Env):
     """Gym environment for SWE-bench. This class should handle all communication with the docker container."""
 
     name = "swe_main"
+    cached_image_prefix = "swe-agent-task-env-"
 
     def __init__(self, args: EnvironmentArguments):
         super().__init__()
@@ -142,27 +143,21 @@ class SWEEnv(gym.Env):
         self.image_name = args.image_name
         self._reset_container()
 
-        #: Prefix for cached task docker images
-        self.cached_image_prefix: str = ""
-        if self.args.cache_task_images:
-            logger.info("Task environment caching enabled")
-            self.cached_image_prefix = self._get_cached_task_image_prefix()
-
         # Set timeout
         self.timeout = self.args.timeout
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
         self.hooks = []
 
-    def _get_cached_task_image_prefix(self) -> str:
+    def _get_cached_task_image_name(self) -> str:
+        assert self.record is not None
         inputs: List[str] = [
-            self.args.data_path,
-            self.args.split,
-            self.args.base_commit or "head",
+            self.record["repo"],
+            self.record["base_commit"],
+            self.args.environment_setup or "no_setup",
         ]
         tag = hashlib.sha256("".join(inputs).encode()).hexdigest()[:50]
-        image_name_without_tag = self.image_name.split(":")[0]
-        return f"{image_name_without_tag}:task-{tag}"
+        return f"{self.cached_image_prefix}{tag}"
 
     def add_hook(self, hook: EnvHook):
         hook.on_init()
@@ -241,7 +236,7 @@ class SWEEnv(gym.Env):
         ### Reset Container ###
 
         if self.args.cache_task_images:
-            cached_image = f"{self.cached_image_prefix}{index}"
+            cached_image = self._get_cached_task_image_name()
             if image_exists(cached_image):
                 logger.info(f"Restore environment from cached image {cached_image}")
                 self.close() # stop current container
@@ -317,6 +312,7 @@ class SWEEnv(gym.Env):
             envs = self.communicate("env")
             logger.debug(f"Environment variables to save:\n{envs}\n")
             self.communicate("env >> /.env")
+            assert self.container_obj is not None  # mypy
             self.container_obj.commit(cached_image)
             logger.info(f"Container with environment {self.container_obj.id} cached as image {cached_image}")
 
