@@ -31,6 +31,9 @@ Here,
 !!! tip "Running more than once"
     * The complete details of the run are saved as a "trajectory" file (more about them [here](trajectories.md)). They can also be turned into new [demonstrations](../config/demonstrations.md).
     * If you run the same command more than once, you will find that SWE-agent aborts with ` Skipping existing trajectory`. You can either remove the trajectory from the warning message, or add the `--skip_existing=False` flag.
+    * If you solve multiple issues from the same repository/in the same environment, you can specify the
+      `--cache_task_images` flag. This will create a persistent docker image with the initialized environment
+      required for the problem.
 
 
 ## Specifying the repository
