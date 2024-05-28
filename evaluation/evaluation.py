@@ -177,7 +177,7 @@ def main(
     print(f"- Wrote per-instance scorecards to {path_scorecards}")
 
     # Get results and write to file
-    print(f"Reference Report:")
+    print("Reference Report:")
     report = get_model_report(directory_name, pred_path_orig, swe_bench_tasks, log_dir)
     for k, v in report.items():
         print(f"- {k}: {len(v)}")

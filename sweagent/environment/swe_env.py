@@ -194,7 +194,7 @@ class SWEEnv(gym.Env):
             )
             return self._repo_name
         else:
-            logger.info(f"Trying to clone from non-mirror...")
+            logger.info("Trying to clone from non-mirror...")
             self.communicate_with_handling(
                 input=f"git clone https://{token_prefix}github.com/{self.record['repo']}.git {self._repo_name}",
                 error_msg="Failed to clone repository from non-mirror",
@@ -290,7 +290,7 @@ class SWEEnv(gym.Env):
         arch = self.communicate("uname -m").strip().lower()
         if system == "linux" and arch == "x86_64":
             self.communicate_with_handling(
-                f"apt update; apt install build-essential -y",
+                "apt update; apt install build-essential -y",
                 error_msg="Failed to install build-essential",
                 timeout_duration=LONG_TIMEOUT,
             )
@@ -299,7 +299,7 @@ class SWEEnv(gym.Env):
         if self.install_environment:
             self.install_env()
         # Install mypy for linting purposes
-        self.communicate_with_handling(f"pip install flake8", error_msg="Failed to install flake8 (lint library)")
+        self.communicate_with_handling("pip install flake8", error_msg="Failed to install flake8 (lint library)")
 
         if self.args.cache_task_images:
             envs = self.communicate("env")
@@ -865,12 +865,12 @@ class SWEEnv(gym.Env):
         try:
             issue = get_gh_issue_data(issue_url, token=self._github_token)
         except InvalidGithubURL as e:
-            msg = f"Data path must be a github issue URL if --open_pr is set."
+            msg = "Data path must be a github issue URL if --open_pr is set."
             raise ValueError(msg) from e
         branch_name = f"swe-agent-fix-#{issue.number}-" + str(random.random())[2:10]
 
         self.communicate_with_handling(
-            input=f"rm -f model.patch",
+            input="rm -f model.patch",
             error_msg="Failed to remove model patch",
             timeout_duration=10,
         )
@@ -880,7 +880,7 @@ class SWEEnv(gym.Env):
             timeout_duration=10,
         )
         self.communicate_with_handling(
-            input=f"git add .",
+            input="git add .",
             error_msg="Failed to add commits",
             timeout_duration=10,
         )

@@ -342,7 +342,7 @@ class Agent:
         else:
             raise ValueError(f"Unknown pattern type: {pattern_type}")
         matches = list()
-        for name, pat in patterns.items():
+        for _, pat in patterns.items():
             match = pat.search(action)
             if match:
                 matches.append(match)
@@ -610,10 +610,10 @@ class Agent:
                 f"exit due to runtime error: {e}",
             )
         except ContextWindowExceededError:
-            logger.warning(f"Context window exceeded")
+            logger.warning("Context window exceeded")
             return "Exit due to context window", "exit_context", "Exit due to context window"
         except CostLimitExceededError:
-            logger.warning(f"Cost limit exceeded")
+            logger.warning("Cost limit exceeded")
             return "Exit due to cost limit", "exit_cost", "Exit due to cost limit"
         except RetryError as e:
             logger.warning(f"Retry error: {e}")

@@ -69,7 +69,7 @@ def append_results(traj_path: Path, instance_id: str, content, results, results_
     tokens_received = f"{tokens_received:,}" if tokens_received is not None else "N/A"
     api_calls = model_stats.get("api_calls", None)
     api_calls = f"{api_calls:,}" if api_calls is not None else "N/A"
-    stats.append(f"**** Run Stats ****")
+    stats.append("**** Run Stats ****")
     stats.append(f"Instance Cost: ${instance_cost}")
     stats.append(f"Tokens Sent: {tokens_sent}")
     stats.append(f"Tokens Received: {tokens_received}")

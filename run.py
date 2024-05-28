@@ -209,12 +209,12 @@ class SaveApplyPatchHook(MainHook):
         console.print(panel)
         content = [
             "```bash",
-            f"# The patch has been saved to your local filesystem at:",
+            "# The patch has been saved to your local filesystem at:",
             f"PATCH_FILE_PATH='{patch_output_file.resolve()}'",
             "# Inspect it:",
             'cat "${PATCH_FILE_PATH}"',
             "# Apply it to a local repository:",
-            f"cd <your local repo root>",
+            "cd <your local repo root>",
             'git apply "${PATCH_FILE_PATH}"',
             "```",
         ]
@@ -385,7 +385,7 @@ class Main:
                 self.env.close()
                 break
             except SystemExit:
-                logger.critical(f"❌ Exiting because SystemExit was called")
+                logger.critical("❌ Exiting because SystemExit was called")
                 self.env.close()
                 logger.info("Container closed")
                 raise
@@ -397,7 +397,7 @@ class Main:
                 if self.env.record:
                     logger.warning(f"❌ Failed on {self.env.record['instance_id']}: {e}")
                 else:
-                    logger.warning(f"❌ Failed on unknown instance")
+                    logger.warning("❌ Failed on unknown instance")
                 self.env.reset_container()
                 continue
         for hook in self.hooks:

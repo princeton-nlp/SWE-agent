@@ -25,7 +25,7 @@ class Config:
             try:
                 self._keys_cfg = config_file.Config(PACKAGE_DIR / "keys.cfg")
             except Exception as e:
-                raise RuntimeError(f"Error loading keys.cfg. Please check the file.") from e
+                raise RuntimeError("Error loading keys.cfg. Please check the file.") from e
         else:
             logger.error(f"keys.cfg not found in {PACKAGE_DIR}")
 

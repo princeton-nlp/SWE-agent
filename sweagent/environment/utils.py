@@ -264,7 +264,7 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> tuple[subpr
         "/bin/bash",
         "-l",
     ]
-    logger.debug(f"Starting container with command: %s", shlex.join(startup_cmd))
+    logger.debug("Starting container with command: %s", shlex.join(startup_cmd))
     container = subprocess.Popen(
         startup_cmd,
         stdin=PIPE,
@@ -317,7 +317,7 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
         "/bin/bash",
         "-l",
     ]
-    logger.debug(f"Starting container with command: %s", shlex.join(startup_cmd))
+    logger.debug("Starting container with command: %s", shlex.join(startup_cmd))
     container = subprocess.Popen(
         startup_cmd,
         stdin=PIPE,
