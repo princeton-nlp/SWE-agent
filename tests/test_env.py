@@ -1,17 +1,23 @@
+from __future__ import annotations
+
 import dataclasses
 import os
-from pathlib import Path
 import subprocess
 import time
+from contextlib import contextmanager
+from pathlib import Path
+
 import pytest
 import yaml
-from sweagent.environment.swe_env import EnvHook, EnvironmentArguments, SWEEnv
-from contextlib import contextmanager
+
 import docker
+from sweagent.environment.swe_env import EnvHook, EnvironmentArguments, SWEEnv
 
 
 @pytest.fixture(scope="module")
-def test_env_args(tmpdir_factory, ):
+def test_env_args(
+    tmpdir_factory,
+):
     """This will use a persistent container"""
     local_repo_path = tmpdir_factory.getbasetemp() / "swe-agent-test-repo"
     clone_cmd = ["git", "clone", "https://github.com/klieret/swe-agent-test-repo", local_repo_path]
@@ -43,26 +49,26 @@ def swe_env_context(env_args):
         env.close()
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_init_swe_env(test_env_args):
     with swe_env_context(test_env_args) as env:
         env.reset()
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_init_swe_env_non_persistent(test_env_args):
     test_env_args = dataclasses.replace(test_env_args, container_name=None)
     with swe_env_context(test_env_args) as env:
         env.reset()
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_init_swe_env_cached_task_image(test_env_args):
     test_env_args = dataclasses.replace(test_env_args, cache_task_images=True)
     start = time.perf_counter()
     with swe_env_context(test_env_args) as env:
         env.reset()
-    duration_no_cache = time.perf_counter() - start 
+    duration_no_cache = time.perf_counter() - start
     start = time.perf_counter()
     # now it should be cached, so let's run again
     image_prefix = None
@@ -83,7 +89,7 @@ def test_init_swe_env_cached_task_image(test_env_args):
         client.images.remove(image.id)
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_execute_setup_script(tmp_path, test_env_args):
     test_script = "echo 'hello world'"
     script_path = Path(tmp_path / "test_script.sh")
@@ -93,7 +99,7 @@ def test_execute_setup_script(tmp_path, test_env_args):
         env.reset()
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_execute_environment(tmp_path, test_env_args):
     test_env = {
         "python": "3.6",
@@ -108,22 +114,24 @@ def test_execute_environment(tmp_path, test_env_args):
         env.reset()
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_open_pr(test_env_args):
-    test_env_args = dataclasses.replace(test_env_args, data_path="https://github.com/klieret/swe-agent-test-repo/issues/1", repo_path="")
+    test_env_args = dataclasses.replace(
+        test_env_args, data_path="https://github.com/klieret/swe-agent-test-repo/issues/1", repo_path=""
+    )
     with swe_env_context(test_env_args) as env:
         env.reset()
         env.open_pr(_dry_run=True, trajectory=[])
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_interrupt_close(test_env_args):
     with swe_env_context(test_env_args) as env:
         env.reset()
         env.interrupt()
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_communicate_old(test_env_args):
     del os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"]
     try:
@@ -135,7 +143,7 @@ def test_communicate_old(test_env_args):
         os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"] = "1"
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_env_with_hook(test_env_args):
     with swe_env_context(test_env_args) as env:
         env.add_hook(EnvHook())

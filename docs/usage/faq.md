@@ -30,9 +30,9 @@ python run.py --model_name ollama:deepseek-coder:6.7b-instruct \
 ### Models for testing
 
 We also provide models for testing SWE-agent without spending any credits
- 
+
 * `HumanModel` and `HumandThoughtModel` will prompt for input from the user that stands in for the output of the LM. This can be used to create new [demonstrations](../config/demonstrations.md#manual).
 * `ReplayModel` takes a trajectory as input and "replays it"
-* `InstantEmptySubmitTestModel` will create an empty `reproduce.py` and then submit 
+* `InstantEmptySubmitTestModel` will create an empty `reproduce.py` and then submit
 
 {% include-markdown "../_footer.md" %}

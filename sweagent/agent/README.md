@@ -2,7 +2,7 @@
 The `agent` folder contains the logic for handling model inference and facilitating their interaction with `SWEEnv`.
 The following documentation describing the purpose and classes of each file.
 
-#### `agents.py` 
+#### `agents.py`
 This file defines the `Agent` class, which facilitates the interaction between an agent and the environment. The `AgentConfig` and `AgentArguments` data classes compile all arguments into a single file.
 - `Agent`: Main class for handling model behavior + interaction with environment
     - `__init__`: Sets up model, assistant, configurations, and arguments

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import ctypes
 import inspect
 import re
@@ -13,17 +15,18 @@ def _async_raise(tid, exctype):
     URL: https://stackoverflow.com/a/325528/
     """
     if not inspect.isclass(exctype):
-        raise TypeError("Only types can be raised (not instances)")
-    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
-        ctypes.c_long(tid), ctypes.py_object(exctype)
-    )
+        msg = "Only types can be raised (not instances)"
+        raise TypeError(msg)
+    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid), ctypes.py_object(exctype))
     if res == 0:
-        raise ValueError("invalid thread id")
+        msg = "invalid thread id"
+        raise ValueError(msg)
     elif res != 1:
         # "if it returns a number greater than one, you're in trouble,
         # and you should call it again with exc=NULL to revert the effect"
         ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid), None)
-        raise SystemError("PyThreadState_SetAsyncExc failed")
+        msg = "PyThreadState_SetAsyncExc failed"
+        raise SystemError(msg)
 
 
 class ThreadWithExc(threading.Thread):
@@ -44,7 +47,8 @@ class ThreadWithExc(threading.Thread):
         instance.
         """
         if not self.is_alive():
-            raise threading.ThreadError("the thread is not active")
+            msg = "the thread is not active"
+            raise threading.ThreadError(msg)
 
         # do we have it cached?
         if hasattr(self, "_thread_id"):
@@ -56,7 +60,8 @@ class ThreadWithExc(threading.Thread):
                 self._thread_id = tid
                 return tid
 
-        raise RuntimeError("could not determine the thread's id")
+        msg = "could not determine the thread's id"
+        raise RuntimeError(msg)
 
     def raise_exc(self, exctype):
         """Raises the given exception type in the context of this thread.
@@ -107,7 +112,7 @@ def strip_ansi_sequences(string: str) -> str:
 
 
 class AttrDict(dict):
-    """ Dictionary subclass whose entries can be accessed by attributes (as well
+    """Dictionary subclass whose entries can be accessed by attributes (as well
         as normally).
 
     Author: https://stackoverflow.com/users/355230/martineau
@@ -128,15 +133,15 @@ class AttrDict(dict):
     >>> print len(obj)
     0
     """
+
     def __init__(self, *args, **kwargs):
-        super(AttrDict, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.__dict__ = self
 
     @classmethod
     def from_nested_dicts(cls, data):
-        """ Construct nested AttrDicts from nested dictionaries. """
+        """Construct nested AttrDicts from nested dictionaries."""
         if not isinstance(data, dict):
             return data
         else:
             return cls({key: cls.from_nested_dicts(data[key]) for key in data})
-

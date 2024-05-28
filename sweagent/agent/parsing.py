@@ -1,24 +1,28 @@
-import re
+from __future__ import annotations
+
 import json
+import re
 import shlex
 import string
 import textwrap
-
 from abc import abstractmethod
 from dataclasses import dataclass
+
 from sweagent.agent.commands import Command
-from typing import List
 
 
 class FormatError(Exception):
     pass
 
+
 # ABSTRACT BASE CLASSES
+
 
 class ParseFunctionMeta(type):
     """
     Registry maps all inherited classes to their names.
     """
+
     _registry = {}
 
     def __new__(cls, name, bases, attrs):
@@ -26,7 +30,7 @@ class ParseFunctionMeta(type):
         if name != "ParseFunction":
             cls._registry[name] = new_cls
         return new_cls
-    
+
 
 @dataclass
 class ParseFunction(metaclass=ParseFunctionMeta):
@@ -34,47 +38,53 @@ class ParseFunction(metaclass=ParseFunctionMeta):
     Abstract class for parsing functions.
     We use get to generate the right parser based on the name of the parser.
     """
+
     _error_message = None
 
     @abstractmethod
-    def __call__(self, model_response, commands: List[Command], strict=False):
+    def __call__(self, model_response, commands: list[Command], strict=False):
         raise NotImplementedError
-    
+
     @property
     def format_error_template(self):
         if self._error_message is None:
-            raise NotImplementedError("You must define an error message for your parser.")
+            msg = "You must define an error message for your parser."
+            raise NotImplementedError(msg)
         return textwrap.dedent(self._error_message)
-    
+
     @classmethod
     def get(cls, name):
         try:
             return cls._registry[name]()
         except KeyError:
-            raise ValueError(f"Model output parser ({name}) not found.")
+            msg = f"Model output parser ({name}) not found."
+            raise ValueError(msg)
 
 
 # DEFINE NEW PARSING FUNCTIONS BELOW THIS LINE
+
 
 class ActionParser(ParseFunction):
     """
     Expects the model response to be a single command.
     Example: "ls -l"
     """
+
     _error_message = """\
     The command you provided was not recognized. Please specify one of the commands (+ any necessary arguments) from the following list in your response. Do not include any other text.
-    
+
     COMMANDS:
     {command_docs}
     """
-    
-    def __call__(self, model_response, commands: List[Command], strict=False):
+
+    def __call__(self, model_response, commands: list[Command], strict=False):
         if model_response.split():
             action = model_response.strip().split()[0]
             if action in {command.name for command in commands}:
                 return model_response, model_response
-        raise FormatError("First word in model response is not a valid command.")
-    
+        msg = "First word in model response is not a valid command."
+        raise FormatError(msg)
+
 
 class ThoughtActionParser(ParseFunction):
     """
@@ -85,18 +95,19 @@ class ThoughtActionParser(ParseFunction):
     ls -l
     ```
     """
+
     _error_message = """\
     Your output was not formatted correctly. You must always include one discussion and one command as part of your response. Make sure you do not have multiple discussion/command tags.
     Please make sure your output precisely matches the following format:
     DISCUSSION
     Discuss here with yourself about what your planning and what you're going to do in this step.
-    
+
     ```
     command(s) that you're going to run
     ```
     """
 
-    def __call__(self, model_response, commands: List[Command], strict=False):
+    def __call__(self, model_response, commands: list[Command], strict=False):
         """
         Parses the action from the output of the API call.
         We assume that the action is the last code block in the model_response.
@@ -109,10 +120,10 @@ class ThoughtActionParser(ParseFunction):
         ```
         This is another code block.
         ```
-        
+
         In this case, only the second code block will be parsed as the action.
         """
-        code_block_pat = re.compile(r'^```(\S*)\s*\n|^```\s*$', re.MULTILINE)
+        code_block_pat = re.compile(r"^```(\S*)\s*\n|^```\s*$", re.MULTILINE)
         stack = []
         last_valid_block = None
         for match in code_block_pat.finditer(model_response):
@@ -125,9 +136,10 @@ class ThoughtActionParser(ParseFunction):
                 stack.append(match)
         if last_valid_block:
             start, end = last_valid_block
-            thought = model_response[:start.start()] + model_response[end.end():]
-            return thought, model_response[start.end():end.start()]
-        raise FormatError("No action found in model response.")
+            thought = model_response[: start.start()] + model_response[end.end() :]
+            return thought, model_response[start.end() : end.start()]
+        msg = "No action found in model response."
+        raise FormatError(msg)
 
 
 class XMLThoughtActionParser(ParseFunction):
@@ -139,12 +151,13 @@ class XMLThoughtActionParser(ParseFunction):
     ls -l
     </command>
     """
+
     _error_message = """\
     Your output was not formatted correctly. You must always include one discussion and one command as part of your response. Make sure you do not have multiple discussion/command tags.
     Please make sure your output precisely matches the following format:
     """
 
-    def __call__(self, model_response, commands: List[Command], strict=False):
+    def __call__(self, model_response, commands: list[Command], strict=False):
         """
         Parses the action from the output of the API call.
         We assume that the action is the last code block in the model_response.
@@ -161,18 +174,19 @@ class XMLThoughtActionParser(ParseFunction):
         In this case, only the second code block will be parsed as the action.
         """
         if "<command>" not in model_response or "</command>" not in model_response:
-            raise FormatError("No action found in model response.")
+            msg = "No action found in model response."
+            raise FormatError(msg)
         # `action` is everything between the last <command> and </command> tags
-        start_action = model_response.rfind('<command>') + len('<command>')  # start after the last <command> tag
-        end_thought = model_response.rfind('<command>')  # end before the last <command> tag
-        end_action = model_response.rfind('</command>')  # end before the last </command> tag
-        restart_thought = model_response.rfind('</command>') + len('</command>')  # start after the last </command> tag
+        start_action = model_response.rfind("<command>") + len("<command>")  # start after the last <command> tag
+        end_thought = model_response.rfind("<command>")  # end before the last <command> tag
+        end_action = model_response.rfind("</command>")  # end before the last </command> tag
+        restart_thought = model_response.rfind("</command>") + len("</command>")  # start after the last </command> tag
         # `thought` is everything not in between <command> and </command> tags (includes after the last </command> tag)
         action = model_response[start_action:end_action]
         thought = model_response[:end_thought] + model_response[restart_thought:]
 
         return thought.strip(), action.strip()
-    
+
 
 class EditFormat(ThoughtActionParser):
     """
@@ -184,14 +198,15 @@ class EditFormat(ThoughtActionParser):
     os.listdir()
     ```
     """
+
     _error_message = """\
     Your output was not formatted correctly. You must wrap the replacement text in backticks (```).
     Please make sure your output precisely matches the following format:
     COMMENTS
     You can write comments here about what you're going to do if you want.
-    
+
     ```
-    New window contents. 
+    New window contents.
     Make sure you copy the entire contents of the window here, with the required indentation.
     Make the changes to the window above directly in this window.
     Remember that all of the window's contents will be replaced with the contents of this window.
@@ -204,11 +219,12 @@ class Identity(ParseFunction):
     """
     This parser does not do any parsing. It just returns the model response as both the thought and action.
     """
+
     _error_message = """\
     It seems like something went wrong with your output. Please try again.
     """
-    
-    def __call__(self, model_response, commands: List[Command], strict=False):
+
+    def __call__(self, model_response, commands: list[Command], strict=False):
         """
         This doesn't do any parsing. It just returns the model response as the thought and action.
         """
@@ -219,13 +235,14 @@ class JsonParser(ParseFunction):
     """
     Expects the model response to be a JSON object.
     """
+
     _error_message = """\
     Your output could not be parsed as JSON. Please make sure your output 1) is valid JSON and
     2) Includes the "thought" and "command" fields.
 
     """
-    
-    def __call__(self, model_response, commands: List[Command], strict=False):
+
+    def __call__(self, model_response, commands: list[Command], strict=False):
         """
         Parses the action from the output of the API call.
         We assume that model output is a JSON object with the following fields:
@@ -244,41 +261,44 @@ class JsonParser(ParseFunction):
         try:
             data = json.loads(model_response)
             if not isinstance(data, dict):
-                raise FormatError("Model output is not a JSON object.")
-            
+                msg = "Model output is not a JSON object."
+                raise FormatError(msg)
+
             # Check if required keys are present
             required_keys = ["thought", "command"]
             for key in required_keys:
                 if key not in data:
-                    raise FormatError(f"Key '{key}' is missing from model output.")
-            
+                    msg = f"Key '{key}' is missing from model output."
+                    raise FormatError(msg)
+
             # Check structure of 'command' key
             data_command = data["command"]
             if not isinstance(data_command, dict):
-                raise FormatError("Value of 'command' key is not a JSON object.")
-            
+                msg = "Value of 'command' key is not a JSON object."
+                raise FormatError(msg)
+
             # Check if required keys are present in 'command' object
             command_keys = ["name"]
             for key in command_keys:
                 if key not in data_command:
-                    raise FormatError(f"Key '{key}' is missing from 'command' object.")
-            
+                    msg = f"Key '{key}' is missing from 'command' object."
+                    raise FormatError(msg)
+
             thought = data["thought"]
 
             # Generate action
             commands_dict = {c.name: c for c in commands}
             command = commands_dict.get(data_command["name"])
             if command is None:
-                action = data_command['name']
+                action = data_command["name"]
                 if "arguments" in data_command:
-                    action += " " + ' '.join(data_command["arguments"].values())
+                    action += " " + " ".join(data_command["arguments"].values())
             else:
                 signature = command.signature
-                signature = signature.replace("[", "").replace("]", "")\
-                    .replace("<", "{").replace(">", "}")
+                signature = signature.replace("[", "").replace("]", "").replace("<", "{").replace(">", "}")
                 signature_args = extract_keys(signature)
                 command_args = {k: "" for k in signature_args}
-                
+
                 if "arguments" in data_command:
                     for arg in signature_args:
                         if arg in data_command["arguments"]:
@@ -290,7 +310,8 @@ class JsonParser(ParseFunction):
             action = action.strip()
             return thought, action
         except json.JSONDecodeError:
-            raise FormatError("Model output is not valid JSON.")
+            msg = "Model output is not valid JSON."
+            raise FormatError(msg)
 
 
 def extract_keys(format_string):
@@ -309,4 +330,4 @@ def should_quote(value, command):
     """
     Returns True if the value should be quoted, False otherwise.
     """
-    return (isinstance(value, str) and command.end_name is None)
+    return isinstance(value, str) and command.end_name is None
