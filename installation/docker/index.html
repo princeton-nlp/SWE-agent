@@ -930,9 +930,12 @@
 
 
 <h1 id="fallback-usage-with-docker">Fallback: Usage with docker</h1>
-<div class="admonition warning">
-<p class="admonition-title">Limitations</p>
-<p>The latest containerized version does not yet provide the web interface.</p>
+<div class="admonition note">
+<p class="admonition-title">Versions</p>
+<p>The docker image gets updated with every release. This means that there is some
+time lag between the introduction of the latest features and their availability
+in docker.
+We generally recommend <a href="../source/">installing from source</a>.</p>
 </div>
 <p>Instead of installing SWE-agent from source, you can also run the software directly using Docker. </p>
 <ol>
@@ -950,7 +953,7 @@
 <span class="w">  </span>--data_path<span class="w"> </span>https://github.com/pvlib/pvlib-python/issues/1603<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--config_file<span class="w"> </span>config/default_from_url.yaml<span class="w">  </span>--skip_existing<span class="o">=</span>False
 </code></pre></div>
-<div class="admonition note">
+<div class="admonition tip">
 <p class="admonition-title">Windows</p>
 <p>If you're using docker on Windows, use <code>-v //var/run/docker.sock:/var/run/docker.sock</code>
 (double slash) to escape it (<a href="https://stackoverflow.com/a/47229180/">more information</a>).</p>
@@ -961,6 +964,23 @@
 <span class="w">  </span>-e<span class="w"> </span><span class="nv">OPENAI_API_KEY</span><span class="o">=</span><span class="s2">&quot;youropenaikey&quot;</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>sweagent/swe-agent-run:latest<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span><span class="c1"># rest of the command above</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Getting updates</p>
+<p>Even though the image <code>sweagent/swe-agent:latest</code> has the tag <code>latest</code>,
+it is not automatically updated every time you run <code>docker run</code>. Instead,
+you need to manually run <code>docker pull sweagent/swe-agent:latest</code> periodically.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Retrieving generated files</p>
+<p>The optional <code>--rm</code> flag removes the docker container after the command has terminated.
+Therefore, to retrieve files (like generated patch files) from the container, please
+remove this flag.</p>
+</div>
+<p>To run the web server, make sure to forward port 3000:</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>run<span class="w"> </span>-p<span class="w"> </span><span class="m">3000</span>:3000<span class="w"> </span>-it<span class="w"> </span>-v<span class="w"> </span>/var/run/docker.sock:/var/run/docker.sock<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/keys.cfg:/app/keys.cfg<span class="w"> </span><span class="se">\ </span>
+<span class="w">  </span>sweagent/swe-agent-run:latest<span class="w"> </span>bash<span class="w"> </span>start_web_ui.sh<span class="w">    </span>
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">More tips</p>
