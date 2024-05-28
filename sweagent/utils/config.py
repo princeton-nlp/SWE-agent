@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
 from typing import Any
 
 import config as config_file
@@ -10,22 +11,22 @@ logger = logging.getLogger("config")
 
 
 class Config:
-    def __init__(
-        self,
-    ):
+    def __init__(self, *, keys_cfg_path: Path | None = None):
         """This wrapper class is used to load keys from environment variables or keys.cfg file.
         Whenever both are presents, the environment variable is used.
         """
-        # Defer import to avoid circular import
-        from sweagent import PACKAGE_DIR
+        if keys_cfg_path is None:
+            # Defer import to avoid circular import
+            from sweagent import PACKAGE_DIR
 
+            keys_cfg_path = PACKAGE_DIR.parent / "keys.cfg"
         self._keys_cfg = None
-        keys_cfg_path = PACKAGE_DIR / "keys.cfg"
         if keys_cfg_path.exists():
             try:
-                self._keys_cfg = config_file.Config(PACKAGE_DIR / "keys.cfg")
+                self._keys_cfg = config_file.Config(str(keys_cfg_path))
             except Exception as e:
-                raise RuntimeError("Error loading keys.cfg. Please check the file.") from e
+                msg = f"Error loading keys.cfg from {keys_cfg_path}. Please check the file."
+                raise RuntimeError(msg) from e
         else:
             logger.error(f"keys.cfg not found in {PACKAGE_DIR}")
 
