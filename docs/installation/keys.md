@@ -4,7 +4,7 @@ In order to access the LM of your choice (and to access private GitHub repositor
 
 There are two options to do this:
 
-1. Set the corresponding [environment variables](https://linuxize.com/post/how-to-set-and-list-environment-variables-in-linux/)
+1. Set the corresponding [environment variables](https://www.cherryservers.com/blog/how-to-set-list-and-manage-linux-environment-variables).
 2. Create a `keys.cfg` file at the root of this repository.
 
 The following `keys.cfg` example shows you how the keys are named:
