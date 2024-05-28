@@ -117,8 +117,10 @@ target-version = "py39"
 # McCabe complexity (`C901`) by default.
 # I001: Isort, I002: required import
 select = [
-    "E999",
-    "E902",
+    # Error (E)
+    "E",
+    # Error (PLE)
+    "PLE",
     # pycodestyle
     "E713",  # not in
     "E714",  # is not
@@ -147,8 +149,26 @@ select = [
     "B007",  # unused loop var
     # flake8-errmsg
     "EM",
+    # flake8-implicit-str-concat
+    "ISC001",
+    # flake8-future-annotations
+    "FA102",
+    # flake8-return
+    "RET",
+    # RUF
+    "RUF019",  # unneded key in dict check
 ]
-ignore = []
+ignore = [
+    # flake8-return
+    "RET505",  # can't autofix
+    "RET506",  # can't autofix
+    "RET507",  # can't autofix
+    # error (E)
+    "E501",    # line too long
+    "E402",    # import not on top of file
+    "E722",    # bare except
+    "E741",    # ambiguous symbol
+]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]

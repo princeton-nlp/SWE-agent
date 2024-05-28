@@ -153,7 +153,7 @@ def load_content(file_name, gold_patches, test_patches) -> dict[str, Any]:
     content = append_exit(content)  # accommodate new and old format
     content = append_patch(Path(file_name).stem, content, gold_patches, "Gold")
     content = append_patch(Path(file_name).stem, content, test_patches, "Test")
-    content = append_results(
+    return append_results(
         Path(file_name),
         Path(file_name).stem,
         content,
@@ -162,7 +162,6 @@ def load_content(file_name, gold_patches, test_patches) -> dict[str, Any]:
         scorecards,
         scorecards_file,
     )
-    return content
 
 
 def load_results(results_path: Path) -> dict[str, Any] | None:

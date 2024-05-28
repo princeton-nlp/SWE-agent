@@ -146,8 +146,7 @@ def find_relative_path(from_path, to_path):
     to_target = to_path.parts[common_parts:]
 
     # Combine to get the relative path
-    relative_path = Path(*back_to_ancestor, *to_target)
-    return relative_path
+    return Path(*back_to_ancestor, *to_target)
 
 
 def save_all_trajectories(directory):

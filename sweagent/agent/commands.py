@@ -160,7 +160,7 @@ class ParseCommandBash(ParseCommand):
         if len(matches) == 0:
             return []
         elif len(matches) > 1:
-            msg = "Non-shell file contains multiple @yaml tags.\n" "Only one @yaml tag is allowed per script."
+            msg = "Non-shell file contains multiple @yaml tags.\nOnly one @yaml tag is allowed per script."
             raise ValueError(msg)
         else:
             yaml_content = matches[0]

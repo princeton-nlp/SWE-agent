@@ -233,7 +233,7 @@ class SaveApplyPatchHook(MainHook):
         patch_output_file = patch_output_dir / f"{instance_id}.patch"
         if not info.get("submission"):
             logger.info("No patch to save.")
-            return
+            return None
         model_patch = info["submission"]
         patch_output_file.write_text(model_patch)
         if self._is_promising_patch(info):
