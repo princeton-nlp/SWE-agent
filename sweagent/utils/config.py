@@ -18,7 +18,7 @@ class Config:
         keys_cfg_path = PACKAGE_DIR / "keys.cfg"
         if keys_cfg_path.exists():
             try:
-                self._keys_cfg = config_file.Config(PACKAGE_DIR / "keys.cfg")
+                self._keys_cfg = config_file.Config(PACKAGE_DIR.parent / "keys.cfg")
             except Exception as e:
                 raise RuntimeError(f"Error loading keys.cfg. Please check the file.") from e
         else:
