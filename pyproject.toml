@@ -105,18 +105,46 @@ exclude = [
     "venv",
 ]
 
-# Same as Black.
-line-length = 88
+line-length = 120
 indent-width = 4
 
-# Assume Python 3.8
-target-version = "py38"
+target-version = "py39"
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
 # McCabe complexity (`C901`) by default.
-select = ["F821", "F822", "E999", "E902", "F401", "F841"]
+# I001: Isort, I002: required import
+select = [
+    "E999",
+    "E902",
+    # pycodestyle
+    "E713",  # not in
+    "E714",  # is not
+    "E711",  # comparison with None
+    # pyflakes
+    "F821",
+    "F822",
+    "F401",  # unused-import
+    "F841",  # unused var
+    "F541",  # f-string without args
+    "F901",  # raise NotImplemented should be raise NotImplementedError
+    # isort
+    "I001",  # isort
+    "I002",  # required import
+    # pyupgrade and related
+    "UP",    # pyupgrade
+    "C401",  # flake8-comprehensions: unnecessary-generator-set
+    "C402",  # flake8-comprehensions: unnecessary-generator-dict
+    "C403",  # flake8-comprehensions: unnecessary-list-comprehension-set
+    "C404",  # flake8-comprehensions: unnecessary-list-comprehension-dict
+    "C405",  # flake8-comprehensions: unnecessary-literal-set
+    "F632",  # pyflakes: is-literal
+    "W605",  # pycodestyle: invalid-escape-sequence
+    # bugbear
+    "B006",  # mutable default
+    "B007",  # unused loop var
+]
 ignore = []
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
@@ -146,3 +174,6 @@ ACI = "ACI"
 [tool.typos.default.extend-words]
 # Don't correct the surname "Teh"
 aci = "aci"
+
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]

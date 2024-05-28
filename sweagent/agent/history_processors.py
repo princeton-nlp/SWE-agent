@@ -1,5 +1,6 @@
-import re
+from __future__ import annotations
 
+import re
 from abc import abstractmethod
 from dataclasses import dataclass
 
@@ -7,7 +8,9 @@ from dataclasses import dataclass
 class FormatError(Exception):
     pass
 
+
 # ABSTRACT BASE CLASSES
+
 
 class HistoryProcessorMeta(type):
     _registry = {}
@@ -27,7 +30,7 @@ class HistoryProcessor(metaclass=HistoryProcessorMeta):
     @abstractmethod
     def __call__(self, history: list[str]) -> list[str]:
         raise NotImplementedError
-    
+
     @classmethod
     def get(cls, name, *args, **kwargs):
         try:
@@ -44,16 +47,16 @@ class DefaultHistoryProcessor(HistoryProcessor):
 
 def last_n_history(history, n):
     if n <= 0:
-        raise ValueError('n must be a positive integer')
+        raise ValueError("n must be a positive integer")
     new_history = list()
-    user_messages = len([entry for entry in history if (entry['role'] == 'user' and not entry.get('is_demo', False))])
+    user_messages = len([entry for entry in history if (entry["role"] == "user" and not entry.get("is_demo", False))])
     user_msg_idx = 0
     for entry in history:
         data = entry.copy()
-        if data['role'] != 'user':
+        if data["role"] != "user":
             new_history.append(entry)
             continue
-        if data.get('is_demo', False):
+        if data.get("is_demo", False):
             new_history.append(entry)
             continue
         else:
@@ -61,7 +64,7 @@ def last_n_history(history, n):
         if user_msg_idx == 1 or user_msg_idx in range(user_messages - n + 1, user_messages + 1):
             new_history.append(entry)
         else:
-            data['content'] = f'Old output omitted ({len(entry["content"].splitlines())} lines)'
+            data["content"] = f'Old output omitted ({len(entry["content"].splitlines())} lines)'
             new_history.append(data)
     return new_history
 
@@ -69,7 +72,7 @@ def last_n_history(history, n):
 class LastNObservations(HistoryProcessor):
     def __init__(self, n):
         self.n = n
-    
+
     def __call__(self, history):
         return last_n_history(history, self.n)
 
@@ -85,8 +88,8 @@ class Last5Observations(HistoryProcessor):
 
 
 class ClosedWindowHistoryProcessor(HistoryProcessor):
-    pattern = re.compile(r'^(\d+)\:.*?(\n|$)', re.MULTILINE)
-    file_pattern = re.compile(r'\[File:\s+(.*)\s+\(\d+\s+lines\ total\)\]')
+    pattern = re.compile(r"^(\d+)\:.*?(\n|$)", re.MULTILINE)
+    file_pattern = re.compile(r"\[File:\s+(.*)\s+\(\d+\s+lines\ total\)\]")
 
     def __call__(self, history):
         new_history = list()
@@ -96,15 +99,15 @@ class ClosedWindowHistoryProcessor(HistoryProcessor):
         windows = set()
         for entry in reversed(history):
             data = entry.copy()
-            if data['role'] != 'user':
+            if data["role"] != "user":
                 new_history.append(entry)
                 continue
-            if data.get('is_demo', False):
+            if data.get("is_demo", False):
                 new_history.append(entry)
                 continue
-            matches = list(self.pattern.finditer(entry['content']))
+            matches = list(self.pattern.finditer(entry["content"]))
             if len(matches) >= 1:
-                file_match = self.file_pattern.search(entry['content'])
+                file_match = self.file_pattern.search(entry["content"])
                 if file_match:
                     file = file_match.group(1)
                 else:
@@ -112,10 +115,10 @@ class ClosedWindowHistoryProcessor(HistoryProcessor):
                 if file in windows:
                     start = matches[0].start()
                     end = matches[-1].end()
-                    data['content'] = (
-                        entry['content'][:start] +\
-                        f'Outdated window with {len(matches)} lines omitted...\n' +\
-                        entry['content'][end:]                    
+                    data["content"] = (
+                        entry["content"][:start]
+                        + f"Outdated window with {len(matches)} lines omitted...\n"
+                        + entry["content"][end:]
                     )
                 windows.add(file)
             new_history.append(data)

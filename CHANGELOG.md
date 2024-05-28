@@ -16,7 +16,7 @@ We’re excited to launch the SWE-agent web UI! Specify a bug, press start and w
 * Add GPT4-turbo model by @zgrannan in https://github.com/princeton-nlp/SWE-agent/pull/252
 * feat: Amazon Bedrock support (Claude models) by @JGalego in https://github.com/princeton-nlp/SWE-agent/pull/207
 
-### Fixed 
+### Fixed
 
 * Better error handling for --open_pr by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/239
 * Fixed a potential error by @DanjieTang in https://github.com/princeton-nlp/SWE-agent/pull/242

@@ -30,7 +30,7 @@ format_error_template: |-
 demonstration_template: |
   Format template for showing a demonstration to the agent
 demonstrations:
-- `trajectories/<username>/<experiment folder>/*.traj` 
+- `trajectories/<username>/<experiment folder>/*.traj`
 - File is a demonstration of how to solve a task. This could an agent generated trajectory.
 - You can include 1+ demonstrations
 
@@ -82,7 +82,7 @@ Possible variables that can be used in templates are:
 - `{command_docs}` (an automatically compiled collection of available commands + their docstrings)
 - any variable given in `env_variables` (same spelling), e.g., `{WINDOW_SIZE}`
 - any variable extracted as json as part of the `state_command` function
-- the last observation `{observation}` 
+- the last observation `{observation}`
 - ... this list will grow as we implement more features!
 
 ## Template Workflow

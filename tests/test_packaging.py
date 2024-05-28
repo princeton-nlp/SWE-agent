@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from sweagent import __version__
 
 

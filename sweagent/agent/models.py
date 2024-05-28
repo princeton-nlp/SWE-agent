@@ -1,23 +1,25 @@
+from __future__ import annotations
+
 import json
 import logging
 import os
-import together
-
 from collections import defaultdict
-from anthropic import Anthropic, AnthropicBedrock, HUMAN_PROMPT, AI_PROMPT
 from dataclasses import dataclass, fields
-from openai import BadRequestError, OpenAI, AzureOpenAI
+
+import together
+from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
+from openai import AzureOpenAI, BadRequestError, OpenAI
+from rich.logging import RichHandler
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
-from sweagent.utils.config import Config
-from sweagent.agent.commands import Command
 from tenacity import (
     retry,
+    retry_if_not_exception_type,
     stop_after_attempt,
     wait_random_exponential,
-    retry_if_not_exception_type,
 )
-from typing import Optional, Union
-from rich.logging import RichHandler
+
+from sweagent.agent.commands import Command
+from sweagent.utils.config import Config
 
 logger = logging.getLogger("api_models")
 handler = RichHandler(show_time=False, show_path=False)
@@ -29,6 +31,7 @@ logger.propagate = False
 @dataclass(frozen=True)
 class ModelArguments(FrozenSerializable):
     """Arguments configuring the model and its behavior."""
+
     model_name: str
     per_instance_cost_limit: float = 0.0
     total_cost_limit: float = 0.0
@@ -50,18 +53,15 @@ class APIStats(Serializable):
         if not isinstance(other, APIStats):
             raise TypeError("Can only add APIStats with APIStats")
 
-        return APIStats(**{
-            field.name: getattr(self, field.name) + getattr(other, field.name)
-            for field in fields(self)
-        })
+        return APIStats(
+            **{field.name: getattr(self, field.name) + getattr(other, field.name) for field in fields(self)}
+        )
+
     def replace(self, other):
         if not isinstance(other, APIStats):
             raise TypeError("Can only replace APIStats with APIStats")
 
-        return APIStats(**{
-            field.name: getattr(other, field.name)
-            for field in fields(self)
-        })
+        return APIStats(**{field.name: getattr(other, field.name) for field in fields(self)})
 
 
 class ContextWindowExceededError(Exception):
@@ -84,9 +84,7 @@ class BaseModel:
 
         # Map `model_name` to API-compatible name `api_model`
         self.api_model = (
-            self.SHORTCUTS[self.args.model_name]
-            if self.args.model_name in self.SHORTCUTS
-            else self.args.model_name
+            self.SHORTCUTS[self.args.model_name] if self.args.model_name in self.SHORTCUTS else self.args.model_name
         )
 
         # Map model name to metadata (cost, context info)
@@ -100,7 +98,7 @@ class BaseModel:
             ft_model = args.model_name.split(":")[1]
             self.model_metadata = MODELS[ft_model]
         elif args.model_name.startswith("ollama:"):
-            self.api_model = args.model_name.split('ollama:', 1)[1]
+            self.api_model = args.model_name.split("ollama:", 1)[1]
             self.model_metadata = self.MODELS[self.api_model]
         elif args.model_name.startswith("azure:"):
             azure_model = args.model_name.split("azure:", 1)[1]
@@ -109,9 +107,11 @@ class BaseModel:
             self.api_model = args.model_name.split("bedrock:", 1)[1]
             self.model_metadata = MODELS[self.api_model]
         else:
-            raise ValueError(f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}")
+            raise ValueError(
+                f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}"
+            )
 
-    def reset_stats(self, other: Optional[APIStats] = None):
+    def reset_stats(self, other: APIStats | None = None):
         if other is None:
             self.stats = APIStats(total_cost=self.stats.total_cost)
             logger.info("Resetting model stats")
@@ -156,15 +156,11 @@ class BaseModel:
 
         # Check whether total cost or instance cost limits have been exceeded
         if 0 < self.args.total_cost_limit <= self.stats.total_cost:
-            logger.warning(
-                f"Cost {self.stats.total_cost:.2f} exceeds limit {self.args.total_cost_limit:.2f}"
-            )
+            logger.warning(f"Cost {self.stats.total_cost:.2f} exceeds limit {self.args.total_cost_limit:.2f}")
             raise CostLimitExceededError("Total cost limit exceeded")
 
         if 0 < self.args.per_instance_cost_limit <= self.stats.instance_cost:
-            logger.warning(
-                f"Cost {self.stats.instance_cost:.2f} exceeds limit {self.args.per_instance_cost_limit:.2f}"
-            )
+            logger.warning(f"Cost {self.stats.instance_cost:.2f} exceeds limit {self.args.per_instance_cost_limit:.2f}")
             raise CostLimitExceededError("Instance cost limit exceeded")
         return cost
 
@@ -242,26 +238,27 @@ class OpenAIModel(BaseModel):
         cfg = Config()
         if self.args.model_name.startswith("azure"):
             self.api_model = cfg["AZURE_OPENAI_DEPLOYMENT"]
-            self.client = AzureOpenAI(api_key=cfg["AZURE_OPENAI_API_KEY"], azure_endpoint=cfg["AZURE_OPENAI_ENDPOINT"], api_version=cfg.get("AZURE_OPENAI_API_VERSION", "2024-02-01"))
+            self.client = AzureOpenAI(
+                api_key=cfg["AZURE_OPENAI_API_KEY"],
+                azure_endpoint=cfg["AZURE_OPENAI_ENDPOINT"],
+                api_version=cfg.get("AZURE_OPENAI_API_VERSION", "2024-02-01"),
+            )
         else:
-            api_base_url: Optional[str] = cfg.get("OPENAI_API_BASE_URL", None)
+            api_base_url: str | None = cfg.get("OPENAI_API_BASE_URL", None)
             self.client = OpenAI(api_key=cfg["OPENAI_API_KEY"], base_url=api_base_url)
 
     def history_to_messages(
         self, history: list[dict[str, str]], is_demonstration: bool = False
-    ) -> Union[str, list[dict[str, str]]]:
+    ) -> str | list[dict[str, str]]:
         """
         Create `messages` by filtering out all keys except for role/content per `history` turn
         """
         # Remove system messages if it is a demonstration
         if is_demonstration:
             history = [entry for entry in history if entry["role"] != "system"]
-            return '\n'.join([entry["content"] for entry in history])
+            return "\n".join([entry["content"] for entry in history])
         # Return history components with just role, content fields
-        return [
-            {k: v for k, v in entry.items() if k in ["role", "content"]}
-            for entry in history
-        ]
+        return [{k: v for k, v in entry.items() if k in ["role", "content"]} for entry in history]
 
     @retry(
         wait=wait_random_exponential(min=1, max=15),
@@ -343,7 +340,7 @@ class AnthropicModel(BaseModel):
 
     def history_to_messages(
         self, history: list[dict[str, str]], is_demonstration: bool = False
-    ) -> Union[str, list[dict[str, str]]]:
+    ) -> str | list[dict[str, str]]:
         """
         Create `prompt` by filtering out all keys except for role/content per `history` turn
         Reference: https://docs.anthropic.com/claude/reference/complete_post
@@ -408,7 +405,7 @@ class BedrockModel(BaseModel):
 
         # Extract provider from model ID
         # https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html
-        self.model_provider = self.api_model.split('.')[0]
+        self.model_provider = self.api_model.split(".")[0]
         if self.model_provider == "anthropic":
             # Note: this assumes AWS credentials are already configured.
             # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
@@ -420,7 +417,7 @@ class BedrockModel(BaseModel):
 
     def history_to_messages(
         self, history: list[dict[str, str]], is_demonstration: bool = False
-    ) -> Union[str, list[dict[str, str]]]:
+    ) -> str | list[dict[str, str]]:
         """
         Create `prompt` from the history of messages
         """
@@ -446,15 +443,16 @@ class BedrockModel(BaseModel):
 
 
 def anthropic_history_to_messages(
-        model: Union[AnthropicModel, BedrockModel], history: list[dict[str, str]], is_demonstration: bool = False
-    ) -> Union[str, list[dict[str, str]]]:
+    model: AnthropicModel | BedrockModel, history: list[dict[str, str]], is_demonstration: bool = False
+) -> str | list[dict[str, str]]:
     """
     Create `prompt` by filtering out all keys except for role/content per `history` turn
     Reference: https://docs.anthropic.com/claude/reference/complete_post
     """
     # Preserve behavior for older models
-    if model.api_model in ["claude-instant", "claude-2.0"] or \
-       (isinstance(model, BedrockModel) and model.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]):
+    if model.api_model in ["claude-instant", "claude-2.0"] or (
+        isinstance(model, BedrockModel) and model.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]
+    ):
         # Remove system messages if it is a demonstration
         if is_demonstration:
             history = [entry for entry in history if entry["role"] != "system"]
@@ -471,15 +469,11 @@ def anthropic_history_to_messages(
     # Remove system messages if it is a demonstration
     if is_demonstration:
         history = [entry for entry in history if entry["role"] != "system"]
-        return '\n'.join([entry["content"] for entry in history])
+        return "\n".join([entry["content"] for entry in history])
 
     # Return history components with just role, content fields (no system message)
     messages = [
-        {
-            k: v for k, v in entry.items()
-            if k in ["role", "content"]
-        }
-        for entry in history if entry["role"] != "system"
+        {k: v for k, v in entry.items() if k in ["role", "content"]} for entry in history if entry["role"] != "system"
     ]
     compiled_messages = []  # Combine messages from the same role
     last_role = None
@@ -497,13 +491,14 @@ def anthropic_history_to_messages(
     return compiled_messages
 
 
-def anthropic_query(model: Union[AnthropicModel, BedrockModel], history: list[dict[str, str]]) -> str:
+def anthropic_query(model: AnthropicModel | BedrockModel, history: list[dict[str, str]]) -> str:
     """
     Query the Anthropic API with the given `history` and return the response.
     """
     # Preserve behavior for older models
-    if model.api_model in ["claude-instant", "claude-2.0", "claude-2.1"] or \
-       (isinstance(model, BedrockModel) and model.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]):
+    if model.api_model in ["claude-instant", "claude-2.0", "claude-2.1"] or (
+        isinstance(model, BedrockModel) and model.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]
+    ):
         # Perform Anthropic API call
         prompt = anthropic_history_to_messages(model, history)
         if isinstance(model, BedrockModel):
@@ -516,7 +511,9 @@ def anthropic_query(model: Union[AnthropicModel, BedrockModel], history: list[di
         completion = model.api.completions.create(
             model=model.api_model,
             prompt=prompt,
-            max_tokens_to_sample=model.model_metadata["max_context"] - input_tokens if isinstance(model, Anthropic) else model.model_metadata["max_tokens_to_sample"],
+            max_tokens_to_sample=model.model_metadata["max_context"] - input_tokens
+            if isinstance(model, Anthropic)
+            else model.model_metadata["max_tokens_to_sample"],
             temperature=model.args.temperature,
             top_p=model.args.top_p,
         )
@@ -530,9 +527,7 @@ def anthropic_query(model: Union[AnthropicModel, BedrockModel], history: list[di
         return response
 
     # Get system message(s)
-    system_message = "\n".join([
-        entry["content"] for entry in history if entry["role"] == "system"
-    ])
+    system_message = "\n".join([entry["content"] for entry in history if entry["role"] == "system"])
     messages = anthropic_history_to_messages(model, history)
 
     # Perform Anthropic API call
@@ -546,41 +541,38 @@ def anthropic_query(model: Union[AnthropicModel, BedrockModel], history: list[di
     )
 
     # Calculate + update costs, return response
-    model.update_stats(
-        response.usage.input_tokens,
-        response.usage.output_tokens
-    )
+    model.update_stats(response.usage.input_tokens, response.usage.output_tokens)
     response = "\n".join([x.text for x in response.content])
     return response
 
 
 class OllamaModel(BaseModel):
-    MODELS = defaultdict(lambda: {
-        "max_context": 128_000,
-        "cost_per_input_token": 0,
-        "cost_per_output_token": 0,
-    })
+    MODELS = defaultdict(
+        lambda: {
+            "max_context": 128_000,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        }
+    )
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
         super().__init__(args, commands)
         from ollama import Client
+
         self.client = Client(host=args.host_url)
 
     def history_to_messages(
         self, history: list[dict[str, str]], is_demonstration: bool = False
-    ) -> Union[str, list[dict[str, str]]]:
+    ) -> str | list[dict[str, str]]:
         """
         Create `messages` by filtering out all keys except for role/content per `history` turn
         """
         # Remove system messages if it is a demonstration
         if is_demonstration:
             history = [entry for entry in history if entry["role"] != "system"]
-            return '\n'.join([entry["content"] for entry in history])
+            return "\n".join([entry["content"] for entry in history])
         # Return history components with just role, content fields
-        return [
-            {k: v for k, v in entry.items() if k in ["role", "content"]}
-            for entry in history
-        ]
+        return [{k: v for k, v in entry.items() if k in ["role", "content"]} for entry in history]
 
     @retry(
         wait=wait_random_exponential(min=1, max=15),
@@ -598,7 +590,7 @@ class OllamaModel(BaseModel):
             options={
                 "temperature": self.args.temperature,
                 "top_p": self.args.top_p,
-            }
+            },
         )
         # Calculate + update costs, return response
         if "prompt_eval_count" in response:
@@ -657,15 +649,13 @@ class TogetherModel(BaseModel):
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
         super().__init__(args, commands)
-        assert together.version >= '1.1.0', "Please upgrade to Together SDK v1.1.0 or later."
+        assert together.version >= "1.1.0", "Please upgrade to Together SDK v1.1.0 or later."
 
         # Set Together key
         cfg = Config()
         together.api_key = cfg.TOGETHER_API_KEY
 
-    def history_to_messages(
-        self, history: list[dict[str, str]], is_demonstration: bool = False
-    ) -> str:
+    def history_to_messages(self, history: list[dict[str, str]], is_demonstration: bool = False) -> str:
         """
         Create `prompt` by filtering out all keys except for role/content per `history` turn
         """
@@ -717,26 +707,21 @@ class HumanModel(BaseModel):
 
         # Determine which commands require multi-line input
         self.multi_line_command_endings = {
-            command.name: command.end_name
-            for command in commands
-            if command.end_name is not None
+            command.name: command.end_name for command in commands if command.end_name is not None
         }
 
     def history_to_messages(
         self, history: list[dict[str, str]], is_demonstration: bool = False
-    ) -> Union[str, list[dict[str, str]]]:
+    ) -> str | list[dict[str, str]]:
         """
         Create `messages` by filtering out all keys except for role/content per `history` turn
         """
         # Remove system messages if it is a demonstration
         if is_demonstration:
             history = [entry for entry in history if entry["role"] != "system"]
-            return '\n'.join([entry["content"] for entry in history])
+            return "\n".join([entry["content"] for entry in history])
         # Return history components with just role, content fields
-        return [
-            {k: v for k, v in entry.items() if k in ["role", "content"]}
-            for entry in history
-        ]
+        return [{k: v for k, v in entry.items() if k in ["role", "content"]} for entry in history]
 
     def query(self, history: list[dict[str, str]], action_prompt: str = "> ") -> str:
         """
@@ -796,14 +781,9 @@ class ReplayModel(BaseModel):
         super().__init__(args, commands)
 
         if self.args.replay_path is None or not os.path.exists(self.args.replay_path):
-            raise ValueError(
-                "--replay_path must point to a file that exists to run a replay policy"
-            )
+            raise ValueError("--replay_path must point to a file that exists to run a replay policy")
 
-        self.replays = [
-            list(json.loads(x).values())[0]
-            for x in open(self.args.replay_path, "r").readlines()
-        ]
+        self.replays = [list(json.loads(x).values())[0] for x in open(self.args.replay_path).readlines()]
         self.replay_idx = 0
         self.action_idx = 0
 
@@ -856,8 +836,7 @@ class InstantEmptySubmitTestModel(BaseModel):
         return action
 
 
-
-def get_model(args: ModelArguments, commands: Optional[list[Command]] = None):
+def get_model(args: ModelArguments, commands: list[Command] | None = None):
     """
     Returns correct model object given arguments and commands
     """
@@ -871,7 +850,11 @@ def get_model(args: ModelArguments, commands: Optional[list[Command]] = None):
         return HumanThoughtModel(args, commands)
     if args.model_name == "replay":
         return ReplayModel(args, commands)
-    elif args.model_name.startswith("gpt") or args.model_name.startswith("ft:gpt") or args.model_name.startswith("azure:gpt"):
+    elif (
+        args.model_name.startswith("gpt")
+        or args.model_name.startswith("ft:gpt")
+        or args.model_name.startswith("azure:gpt")
+    ):
         return OpenAIModel(args, commands)
     elif args.model_name.startswith("claude"):
         return AnthropicModel(args, commands)

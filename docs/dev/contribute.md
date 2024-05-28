@@ -23,7 +23,7 @@ Then, make sure to set up [`pre-commit`](https://pre-commit.com):
 pre-commit install
 ```
 
-`pre-commit` will check for formatting and basic syntax errors before your commits. 
+`pre-commit` will check for formatting and basic syntax errors before your commits.
 
 Some issues can be automatically fixed with [`ruff`](https://github.com/charliermarsh/ruff) (part of the checks):
 
