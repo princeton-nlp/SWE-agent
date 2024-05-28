@@ -690,6 +690,8 @@
       
         
       
+        
+      
     
     
     
@@ -839,6 +841,27 @@
   
   <span class="md-ellipsis">
     Demonstrations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../env/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Environment variables
   </span>
   
 
@@ -1089,6 +1112,11 @@
 <li><a href="https://github.com/princeton-nlp/SWE-agent/tree/main/config/configs"><code>configs/</code></a> for examples of properly formatted configuration files. Each configuration differs in its set of commands, input/output format, demonstrations, etc.</li>
 <li><a href="https://github.com/princeton-nlp/SWE-agent/tree/main/config/commands"><code>commands/</code></a> for the bash implementations of the custom commands that SWE-agent uses to navigate + edit the codebase. More information <a href="../commands/">here</a>.</li>
 </ul>
+<div class="admonition hint">
+<p class="admonition-title">Relative paths</p>
+<p>Relative paths in config files are resolved to the <code>SWE_AGENT_CONFIG_ROOT</code> environment variable (if set)
+or the SWE-agent repository root.</p>
+</div>
 <h2 id="how-a-configuration-file-is-processed">How a Configuration File is Processed</h2>
 <p>Some notes on processing that occurs on config fields when SWE-agent is run:</p>
 <ul>
