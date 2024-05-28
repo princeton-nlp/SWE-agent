@@ -16,7 +16,12 @@ Installation from source is the preferred way to set up SWE-agent on your machin
 [nodejs-install]: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
 
 !!! tip "Docker issues"
-    If you run into docker issues, see the [installation tips section](tips.md) for more help
+    If you run into docker issues, see the [installation tips section](tips.md) for more help.
+
+!!! tip "Updating"
+    SWE-agent is still in active development. Features and enhancement are added often.
+    To make sure you are on the latest version, periodically run `git pull`
+    (there is no need to redo the `pip install`).
 
 [conda]: https://docs.conda.io/en/latest/
 [virtual environments]: https://realpython.com/python-virtual-environments-a-primer/
