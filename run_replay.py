@@ -1,16 +1,18 @@
 """Replay a trajectory"""
 
+from __future__ import annotations
+
 import json
 import os
 from argparse import ArgumentParser
-from typing import Any, Dict, List
+from typing import Any
 
 import yaml
 
 import run as runscript
 
 
-def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix: str, *, forward_args: List[str]):
+def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix: str, *, forward_args: list[str]):
     """
 
     Args:
@@ -47,7 +49,7 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
         data_path = args["environment"]["data_path"]
 
     # Identify the relevant task instance and create it
-    def create_task_instances_tmp_file(data: List[Dict[str, Any]]) -> str:
+    def create_task_instances_tmp_file(data: list[dict[str, Any]]) -> str:
         """Helper function to create a temporary file to write task instances to.
         Returns path to the temporary file.
         """
@@ -103,7 +105,7 @@ def main(
     data_path: str,
     suffix: str,
     *,
-    forward_args: List[str],
+    forward_args: list[str],
 ):
     process_single_traj(traj_path, config_file, data_path, suffix, forward_args=forward_args)
 

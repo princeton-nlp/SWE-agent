@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import json
 import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, TypedDict
+from typing import Any, TypedDict
 
 from simple_parsing.helpers.fields import field
 from simple_parsing.helpers.flatten import FlattenedAccess
@@ -32,22 +34,22 @@ class Subroutine(FrozenSerializable):
     agent_file: str
     # one of "action", "observation", "response", "state", "thought"
     return_type: str = None  # type: ignore
-    init_observation: Optional[str] = None
-    end_name: Optional[str] = None
-    signature: Optional[str] = None
-    docstring: Optional[str] = None
-    model: Optional[ModelArguments] = None
-    agent_args: Optional[Any] = None
+    init_observation: str | None = None
+    end_name: str | None = None
+    signature: str | None = None
+    docstring: str | None = None
+    model: ModelArguments | None = None
+    agent_args: Any | None = None
 
 
 @dataclass(frozen=True)
 class AgentConfig(FrozenSerializable):
     system_template: str
     instance_template: str
-    next_step_template: Optional[str] = None  # defaults to instance_template
-    next_step_no_output_template: Optional[str] = None  # defaults to next_step_template
-    strategy_template: Optional[str] = None
-    demonstration_template: Optional[str] = None
+    next_step_template: str | None = None  # defaults to instance_template
+    next_step_no_output_template: str | None = None  # defaults to next_step_template
+    strategy_template: str | None = None
+    demonstration_template: str | None = None
     demonstrations: list[str] = field(default_factory=list)
     put_demos_in_history: bool = False  # if True, add demonstration to history instead of as a single message
     # defaults to format_error_template in ParseFunction
@@ -62,7 +64,7 @@ class AgentConfig(FrozenSerializable):
     history_processor_args: dict[str, Any] = field(default_factory=dict)
     command_docs: str = None  # type: ignore
     blocklist_error_template: str = "Interactive operation '{name}' is not supported by this environment"
-    blocklist: Tuple[str, ...] = (
+    blocklist: tuple[str, ...] = (
         "vim",
         "vi",
         "emacs",
@@ -70,7 +72,7 @@ class AgentConfig(FrozenSerializable):
         "nohup",
         "git",
     )
-    blocklist_standalone: Tuple[str, ...] = (
+    blocklist_standalone: tuple[str, ...] = (
         "python",
         "python3",
         "ipython",
@@ -167,8 +169,8 @@ class AgentArguments(FlattenedAccess, FrozenSerializable):
     model: ModelArguments = None
 
     # Policy can only be set via config yaml file from command line
-    config_file: Optional[Path] = None
-    config: Optional[AgentConfig] = field(default=None, cmd=False)
+    config_file: Path | None = None
+    config: AgentConfig | None = field(default=None, cmd=False)
 
     def __post_init__(self):
         if self.config is None and self.config_file is not None:
@@ -190,7 +192,7 @@ class TrajectoryStep(TypedDict):
     action: str
     observation: str
     response: str
-    state: Optional[str]
+    state: str | None
     thought: str
 
 
@@ -244,7 +246,7 @@ class Agent:
         hook.on_init()
         self.hooks.append(hook)
 
-    def _append_history(self, item: Dict):
+    def _append_history(self, item: dict):
         for hook in self.hooks:
             hook.on_query_message_added(**item)
         self.history.append(item)
@@ -258,7 +260,7 @@ class Agent:
         system_msg = self.config.system_template.format(**self.system_args)
         logger.info(f"SYSTEM ({self.name})\n{system_msg}")
 
-        self.history: List[Dict[str, Any]] = []
+        self.history: list[dict[str, Any]] = []
         self._append_history({"role": "system", "content": system_msg, "agent": self.name})
 
         if len(self.config.demonstrations) > 0 and "history_to_messages" in dir(self.model):
@@ -311,7 +313,7 @@ class Agent:
         """Return the history of the agent since the last reset."""
         return self.config.history_processor([entry for entry in self.history if entry["agent"] == self.name])
 
-    def save_trajectory(self, trajectory, log_path: Path, env_name: str, info: Dict[str, Any]):
+    def save_trajectory(self, trajectory, log_path: Path, env_name: str, info: dict[str, Any]):
         log_dict = {
             "environment": env_name,
             "trajectory": trajectory,
@@ -321,7 +323,7 @@ class Agent:
         log_path.write_text(json.dumps(log_dict, indent=2))
         logger.info(f"Saved trajectory to {log_path}")
 
-    def _get_first_match(self, action: str, pattern_type: str) -> Optional[re.Match]:
+    def _get_first_match(self, action: str, pattern_type: str) -> re.Match | None:
         """Return the first match of a command pattern in the action string."""
         assert self.config is not None  # mypy
         if pattern_type == "subroutine":
@@ -379,7 +381,7 @@ class Agent:
                 rem_action = ""
         return "\n".join(parsed_action)
 
-    def split_actions(self, action: str, pattern_type="subroutine") -> List[Dict[str, Any]]:
+    def split_actions(self, action: str, pattern_type="subroutine") -> list[dict[str, Any]]:
         """Split an action into a list of actions in a greedy manner, each of which is a subroutine call or a single command."""
         parsed_action = list()
         rem_action = action
@@ -448,7 +450,7 @@ class Agent:
         self.subroutine_patterns[self.config.submit_command] = submit_pat
         self.command_patterns[self.config.submit_command] = submit_pat
 
-    def forward(self, observation: str, available_actions: list[str], state: str) -> Tuple[str, str, str]:
+    def forward(self, observation: str, available_actions: list[str], state: str) -> tuple[str, str, str]:
         thought, action, output = self.forward_with_error_check(observation, state)
 
         self._append_history(
@@ -474,7 +476,7 @@ class Agent:
 
         state_vars = json.loads(state)
 
-        templates: List[str] = []
+        templates: list[str] = []
         # Determine observation template based on what prior observation was
         if self.history[-1]["role"] == "system" or self.history[-1].get("is_demo", False):
             # Show instance template if prev. obs. was initial system message
@@ -551,7 +553,7 @@ class Agent:
     def check_format_and_requery(
         self,
         output: str,
-    ) -> Tuple[str, str, str]:
+    ) -> tuple[str, str, str]:
         """Query the model with the current state and observation with the appropriate template.
 
         Try to parse the output into a thought and action. Retry if the output is malformatted or the action is blocked.
@@ -592,7 +594,7 @@ class Agent:
         logger.warning(f"Malformat limit reached: \n{output}")
         return "Exit due to format error", "exit_format", output
 
-    def forward_with_error_check(self, observation: str, state: str) -> Tuple[str, str, str]:
+    def forward_with_error_check(self, observation: str, state: str) -> tuple[str, str, str]:
         """Wrapper around `self.forward_model` that handles errors and retries
         due to format errors or blocked actions.
         """
@@ -661,11 +663,9 @@ class Agent:
                     datum["type"] = "utility"
                 else:
                     raise ValueError(
-                        (
-                            f"Non-shell script file {file} does not start with shebang.\n"
-                            "Either add a shebang (#!) or change the file extension to .sh if you want to source it.\n"
-                            "You can override this behavior by adding an underscore to the file name (e.g. _utils.py)."
-                        )
+                        f"Non-shell script file {file} does not start with shebang.\n"
+                        "Either add a shebang (#!) or change the file extension to .sh if you want to source it.\n"
+                        "You can override this behavior by adding an underscore to the file name (e.g. _utils.py)."
                     )
             else:
                 # scripts are made executable
@@ -710,12 +710,12 @@ class Agent:
 
     def run(
         self,
-        setup_args: Dict[str, Any],
+        setup_args: dict[str, Any],
         env: SWEEnv,
-        observation: Optional[str] = None,
-        traj_dir: Optional[Path] = None,
-        return_type: Optional[str] = "info",
-        init_model_stats: Optional[APIStats] = None,
+        observation: str | None = None,
+        traj_dir: Path | None = None,
+        return_type: str | None = "info",
+        init_model_stats: APIStats | None = None,
     ):
         """
         Run the agent on an environment.

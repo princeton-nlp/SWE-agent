@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 try:
     import flask  # noqa
 except ImportError as e:
@@ -16,7 +18,7 @@ import time
 import traceback
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from uuid import uuid4
 
 import yaml
@@ -45,7 +47,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 app.secret_key = "super secret key"
 app.config["SESSION_TYPE"] = "memcache"
 
-THREADS: Dict[str, "MainThread"] = {}
+THREADS: dict[str, MainThread] = {}
 
 os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"] = "1"
 env_utils.START_UP_DELAY = 1

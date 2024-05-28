@@ -114,8 +114,8 @@ target-version = "py39"
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
 # McCabe complexity (`C901`) by default.
-# I001: Isort
-select = ["F821", "F822", "E999", "E902", "F401", "F841", "I001"]
+# I001: Isort, I002: required import
+select = ["F821", "F822", "E999", "E902", "F401", "F841", "I001", "I002"]
 ignore = []
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
@@ -145,3 +145,6 @@ ACI = "ACI"
 [tool.typos.default.extend-words]
 # Don't correct the surname "Teh"
 aci = "aci"
+
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]

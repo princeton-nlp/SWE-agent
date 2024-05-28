@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import json
 import logging
 import os
 from collections import defaultdict
 from dataclasses import dataclass, fields
-from typing import Optional, Union
 
 import together
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
@@ -110,7 +111,7 @@ class BaseModel:
                 f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}"
             )
 
-    def reset_stats(self, other: Optional[APIStats] = None):
+    def reset_stats(self, other: APIStats | None = None):
         if other is None:
             self.stats = APIStats(total_cost=self.stats.total_cost)
             logger.info("Resetting model stats")
@@ -243,12 +244,12 @@ class OpenAIModel(BaseModel):
                 api_version=cfg.get("AZURE_OPENAI_API_VERSION", "2024-02-01"),
             )
         else:
-            api_base_url: Optional[str] = cfg.get("OPENAI_API_BASE_URL", None)
+            api_base_url: str | None = cfg.get("OPENAI_API_BASE_URL", None)
             self.client = OpenAI(api_key=cfg["OPENAI_API_KEY"], base_url=api_base_url)
 
     def history_to_messages(
         self, history: list[dict[str, str]], is_demonstration: bool = False
-    ) -> Union[str, list[dict[str, str]]]:
+    ) -> str | list[dict[str, str]]:
         """
         Create `messages` by filtering out all keys except for role/content per `history` turn
         """
@@ -339,7 +340,7 @@ class AnthropicModel(BaseModel):
 
     def history_to_messages(
         self, history: list[dict[str, str]], is_demonstration: bool = False
-    ) -> Union[str, list[dict[str, str]]]:
+    ) -> str | list[dict[str, str]]:
         """
         Create `prompt` by filtering out all keys except for role/content per `history` turn
         Reference: https://docs.anthropic.com/claude/reference/complete_post
@@ -416,7 +417,7 @@ class BedrockModel(BaseModel):
 
     def history_to_messages(
         self, history: list[dict[str, str]], is_demonstration: bool = False
-    ) -> Union[str, list[dict[str, str]]]:
+    ) -> str | list[dict[str, str]]:
         """
         Create `prompt` from the history of messages
         """
@@ -442,8 +443,8 @@ class BedrockModel(BaseModel):
 
 
 def anthropic_history_to_messages(
-    model: Union[AnthropicModel, BedrockModel], history: list[dict[str, str]], is_demonstration: bool = False
-) -> Union[str, list[dict[str, str]]]:
+    model: AnthropicModel | BedrockModel, history: list[dict[str, str]], is_demonstration: bool = False
+) -> str | list[dict[str, str]]:
     """
     Create `prompt` by filtering out all keys except for role/content per `history` turn
     Reference: https://docs.anthropic.com/claude/reference/complete_post
@@ -490,7 +491,7 @@ def anthropic_history_to_messages(
     return compiled_messages
 
 
-def anthropic_query(model: Union[AnthropicModel, BedrockModel], history: list[dict[str, str]]) -> str:
+def anthropic_query(model: AnthropicModel | BedrockModel, history: list[dict[str, str]]) -> str:
     """
     Query the Anthropic API with the given `history` and return the response.
     """
@@ -562,7 +563,7 @@ class OllamaModel(BaseModel):
 
     def history_to_messages(
         self, history: list[dict[str, str]], is_demonstration: bool = False
-    ) -> Union[str, list[dict[str, str]]]:
+    ) -> str | list[dict[str, str]]:
         """
         Create `messages` by filtering out all keys except for role/content per `history` turn
         """
@@ -711,7 +712,7 @@ class HumanModel(BaseModel):
 
     def history_to_messages(
         self, history: list[dict[str, str]], is_demonstration: bool = False
-    ) -> Union[str, list[dict[str, str]]]:
+    ) -> str | list[dict[str, str]]:
         """
         Create `messages` by filtering out all keys except for role/content per `history` turn
         """
@@ -835,7 +836,7 @@ class InstantEmptySubmitTestModel(BaseModel):
         return action
 
 
-def get_model(args: ModelArguments, commands: Optional[list[Command]] = None):
+def get_model(args: ModelArguments, commands: list[Command] | None = None):
     """
     Returns correct model object given arguments and commands
     """

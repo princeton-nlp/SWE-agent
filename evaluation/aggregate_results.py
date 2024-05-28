@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import glob
 import json
@@ -188,7 +190,7 @@ if __name__ == "__main__":
                 "Generated": "mean",
                 "Applied": "mean",
                 "Resolved": "mean",
-                "Resolved IDs": lambda x: len(set([item for sublist in x for item in sublist])),
+                "Resolved IDs": lambda x: len({item for sublist in x for item in sublist}),
                 "Costs Success": lambda x: np.mean([item for sublist in x for item in sublist]),
                 "Costs Failure": lambda x: np.mean([item for sublist in x for item in sublist]),
                 "Costs Overall": lambda x: np.mean([item for sublist in x for item in sublist]),

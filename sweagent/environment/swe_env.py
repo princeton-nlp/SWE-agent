@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 import hashlib
 import logging
@@ -9,7 +11,6 @@ import time
 import traceback
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 import gymnasium as gym
 import yaml
@@ -62,8 +63,8 @@ class EnvironmentArguments(FrozenSerializable):
     split: str = "dev"
     # Specify a branch name or a commit hash to checkout before running the task.
     # Only used when running over a single problem statement/issue.
-    base_commit: Optional[str] = None
-    container_name: Optional[str] = None
+    base_commit: str | None = None
+    container_name: str | None = None
     install_environment: bool = True
     timeout: int = 35
     verbose: bool = False
@@ -73,7 +74,7 @@ class EnvironmentArguments(FrozenSerializable):
     # This needs to be either a string pointing to a yaml file (with yaml, yml file extension)
     # or a shell script (with sh extension).
     # See https://github.com/princeton-nlp/SWE-agent/pull/153 for more information
-    environment_setup: Optional[str] = None
+    environment_setup: str | None = None
     # Only used when running on single issue. Path to local repository or github repository.
     repo_path: str = ""
 
@@ -144,7 +145,7 @@ class SWEEnv(gym.Env):
 
     def _get_cached_task_image_name(self) -> str:
         assert self.record is not None
-        inputs: List[str] = [
+        inputs: list[str] = [
             self.record["repo"],
             self.record["base_commit"],
             self.args.environment_setup or "no_setup",
@@ -201,7 +202,7 @@ class SWEEnv(gym.Env):
             )
             return self._repo_name
 
-    def reset(self, index: Optional[int] = None, apply_test_patch: bool = False) -> Tuple[Optional[str], dict]:
+    def reset(self, index: int | None = None, apply_test_patch: bool = False) -> tuple[str | None, dict]:
         """
         Function to reset container between each task instance.
         * Clones instance's repository
@@ -330,7 +331,7 @@ class SWEEnv(gym.Env):
         )
         os.remove(path_to_patch)
 
-    def step(self, action: str) -> Tuple[Optional[str], int, bool, dict]:
+    def step(self, action: str) -> tuple[str | None, int, bool, dict]:
         """
         Runs given action in environment and returns corresponding output
 
@@ -458,7 +459,7 @@ class SWEEnv(gym.Env):
         self.container_obj = None
         self._reset_container()
 
-    def _init_container(self, cached_image: Optional[str] = None) -> None:
+    def _init_container(self, cached_image: str | None = None) -> None:
         """
         Handles container initialization. Defines container name and creates it.
         If cached_image is provided, it will use that image name instead of the default.
@@ -679,11 +680,9 @@ class SWEEnv(gym.Env):
             self.record["problem_statement_source"] != "swe-bench" or self.record["repo_type"] == "local"
         ) and self.args.environment_setup is None:
             logger.warning(
-                (
-                    "install_environment is set to True, but the data path is a GitHub URL "
-                    "without an environment config file (environment_config key/flag). "
-                    "Skipping conda environment installation."
-                )
+                "install_environment is set to True, but the data path is a GitHub URL "
+                "without an environment config file (environment_config key/flag). "
+                "Skipping conda environment installation."
             )
             return
         for hook in self.hooks:

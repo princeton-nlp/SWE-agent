@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -159,8 +161,8 @@ def main(
             scorecard["patch_files"] = [
                 x.path for x in diff_obj.modified_files + diff_obj.added_files + diff_obj.removed_files
             ]
-            scorecard["patch_lines_add"] = sum([f.added for f in diff_obj])
-            scorecard["patch_lines_del"] = sum([f.removed for f in diff_obj])
+            scorecard["patch_lines_add"] = sum(f.added for f in diff_obj)
+            scorecard["patch_lines_del"] = sum(f.removed for f in diff_obj)
         except Exception as e:
             print(f"[{p[KEY_INSTANCE_ID]}] Error parsing prediction diff: {e}")
             scorecard["patch_files"] = []

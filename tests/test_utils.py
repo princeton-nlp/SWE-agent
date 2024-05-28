@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 import os
 import subprocess
@@ -136,7 +138,7 @@ def test_get_instance_local_issue_local_repo(tmp_path):
     compare_with = {
         "repo": str(tmp_path.resolve() / "swe-agent-test-repo"),
         "repo_type": "local",
-        "instance_id": hashlib.sha256("asdf".encode()).hexdigest()[:6],
+        "instance_id": hashlib.sha256(b"asdf").hexdigest()[:6],
         "problem_statement": "asdf",
     }
     for key in compare_with:
