@@ -22,7 +22,18 @@ from swebench.harness.constants import (
 from unidiff import PatchSet
 
 
-def main(predictions_path, log_dir, swe_bench_tasks, testbed, skip_existing, timeout, verbose, conda_link, log_suffix, num_processes):
+def main(
+    predictions_path,
+    log_dir,
+    swe_bench_tasks,
+    testbed,
+    skip_existing,
+    timeout,
+    verbose,
+    conda_link,
+    log_suffix,
+    num_processes,
+):
     # Check if paths exist
     if not os.path.exists(predictions_path):
         raise FileNotFoundError(f"Predictions path {predictions_path} does not exist")
@@ -65,7 +76,7 @@ def main(predictions_path, log_dir, swe_bench_tasks, testbed, skip_existing, tim
             verbose=verbose,
             conda_link=conda_link,
             log_suffix=log_suffix,
-            num_processes=num_processes
+            num_processes=num_processes,
         )
         print("✅ Finished evaluation")
     except Exception as e:
@@ -98,11 +109,7 @@ def main(predictions_path, log_dir, swe_bench_tasks, testbed, skip_existing, tim
                     ]
                 )
             )
-            scorecard["exit_status"] = (
-                traj_data["info"]["exit_status"]
-                if "exit_status" in traj_data["info"]
-                else "n/a"
-            )
+            scorecard["exit_status"] = traj_data["info"]["exit_status"] if "exit_status" in traj_data["info"] else "n/a"
 
         # Check that a prediction was generated
         if p[KEY_PREDICTION] is None or p[KEY_PREDICTION].strip() == "":
@@ -112,9 +119,7 @@ def main(predictions_path, log_dir, swe_bench_tasks, testbed, skip_existing, tim
         scorecard["statuses"].append("generated")
 
         # Get log file
-        log_path = os.path.join(
-            log_dir, f"{p[KEY_INSTANCE_ID]}.{directory_name}.eval.log"
-        )
+        log_path = os.path.join(log_dir, f"{p[KEY_INSTANCE_ID]}.{directory_name}.eval.log")
         if not os.path.exists(log_path):
             scorecard["statuses"].append("build_failure")
             scorecards.append(scorecard)
@@ -144,7 +149,7 @@ def main(predictions_path, log_dir, swe_bench_tasks, testbed, skip_existing, tim
             "success": {
                 "FAIL_TO_PASS": report["FAIL_TO_PASS"]["success"],
                 "PASS_TO_PASS": report["PASS_TO_PASS"]["success"],
-            }
+            },
         }
         resolution_status = get_resolution_status(report)
         scorecard["statuses"].append(resolution_status)
@@ -152,10 +157,7 @@ def main(predictions_path, log_dir, swe_bench_tasks, testbed, skip_existing, tim
         try:
             diff_obj = PatchSet(p[KEY_PREDICTION])
             scorecard["patch_files"] = [
-                x.path
-                for x in diff_obj.modified_files
-                + diff_obj.added_files
-                + diff_obj.removed_files
+                x.path for x in diff_obj.modified_files + diff_obj.added_files + diff_obj.removed_files
             ]
             scorecard["patch_lines_add"] = sum([f.added for f in diff_obj])
             scorecard["patch_lines_del"] = sum([f.removed for f in diff_obj])
@@ -193,38 +195,24 @@ if __name__ == "__main__":
         help="Path to predictions file (.jsonl)",
         required=True,
     )
-    parser.add_argument(
-        "--log_dir", type=str, help="Path to log directory", required=True
-    )
+    parser.add_argument("--log_dir", type=str, help="Path to log directory", required=True)
     parser.add_argument(
         "--swe_bench_tasks",
         type=str,
         help="Path to SWE-bench task instances file",
         required=True,
     )
-    parser.add_argument(
-        "--testbed", type=str, help="Path to testbed directory", required=True
-    )
-    parser.add_argument(
-        "--skip_existing", action="store_true", help="(Optional) Skip existing logs"
-    )
+    parser.add_argument("--testbed", type=str, help="Path to testbed directory", required=True)
+    parser.add_argument("--skip_existing", action="store_true", help="(Optional) Skip existing logs")
     parser.add_argument(
         "--timeout",
         type=int,
         help="(Optional) Timeout in seconds (default: 900)",
         default=900,
     )
-    parser.add_argument(
-        "--verbose", action="store_true", help="(Optional) Verbose mode"
-    )
-    parser.add_argument(
-        "--conda_link", default=None, type=str, help="(Optional) URL to conda installation to use"
-    )
-    parser.add_argument(
-        "--log_suffix", default=None, type=str, help="(Optional) Log suffix"
-    )
-    parser.add_argument(
-        "--num_processes", default=-1, type=int, help="Num processes"
-    )
+    parser.add_argument("--verbose", action="store_true", help="(Optional) Verbose mode")
+    parser.add_argument("--conda_link", default=None, type=str, help="(Optional) URL to conda installation to use")
+    parser.add_argument("--log_suffix", default=None, type=str, help="(Optional) Log suffix")
+    parser.add_argument("--num_processes", default=-1, type=int, help="Num processes")
     args = parser.parse_args()
     main(**vars(args))

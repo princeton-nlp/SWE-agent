@@ -10,6 +10,7 @@ from sweagent.agent.agents import Agent, AgentArguments, AgentHook
 from sweagent.agent.models import ModelArguments
 from sweagent.environment.swe_env import EnvironmentArguments, SWEEnv
 
+
 def test_run_cli_help():
     args = [
         "python",
@@ -17,7 +18,6 @@ def test_run_cli_help():
         "--help",
     ]
     subprocess.run(args, check=True)
-
 
 
 @pytest.fixture
@@ -73,6 +73,7 @@ def test_should_open_pr_fail_locked(open_pr_hook_init_for_sop, info_dict):
     hook._data_path = "https://github.com/klieret/swe-agent-test-repo/issues/18"
     assert not hook.should_open_pr(info_dict)
 
+
 def test_should_open_pr_fail_has_pr(open_pr_hook_init_for_sop, info_dict):
     hook = open_pr_hook_init_for_sop
     hook._data_path = "https://github.com/klieret/swe-agent-test-repo/issues/19"
@@ -89,6 +90,7 @@ def test_should_open_pr_success_has_pr_override(open_pr_hook_init_for_sop, info_
 class RaisesExceptionHook(MainHook):
     def on_instance_start(self, *, index: int, instance: Dict[str, Any]):
         raise ValueError("test exception")
+
 
 @pytest.fixture
 def test_script_args():
@@ -127,24 +129,23 @@ def test_exception_raised(test_script_args):
 
 class CreateFakeLogFile(MainHook):
     """Testing the skip functionality"""
+
     def on_init(self, *, args: ScriptArguments, agent: Agent, env: SWEEnv, traj_dir: Path):
         self._traj_dir = traj_dir
         (traj_dir / "args.yaml").write_text("asdf")
-    
+
     def on_instance_start(self, *, index: int, instance: Dict[str, Any]):
         instance_id = instance["instance_id"]
         dct = {
             "info": {"exit_status": "submitted"},
         }
         (self._traj_dir / f"{instance_id}.traj").write_text(json.dumps(dct))
-    
 
 
 def test_existing_corrupted_args(test_script_args):
     main = Main(test_script_args)
     main.add_hook(CreateFakeLogFile())
     main.main()
-
 
 
 def test_main_hook(test_script_args):

@@ -20,9 +20,7 @@ import rich.markdown
 try:
     from rich_argparse import RichHelpFormatter
 except ImportError:
-    msg = (
-        "Please install the rich_argparse package with `pip install rich_argparse`."
-    )
+    msg = "Please install the rich_argparse package with `pip install rich_argparse`."
     raise ImportError(msg)
 import yaml
 from rich.markdown import Markdown
@@ -44,7 +42,12 @@ from sweagent import (
 from swebench import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
 from unidiff import PatchSet
 
-from sweagent.environment.utils import InvalidGithubURL, get_associated_commit_urls, get_gh_issue_data, parse_gh_issue_url
+from sweagent.environment.utils import (
+    InvalidGithubURL,
+    get_associated_commit_urls,
+    get_gh_issue_data,
+    parse_gh_issue_url,
+)
 
 __doc__: str = """ Run inference. Usage examples:
 
@@ -68,14 +71,15 @@ logging.getLogger("simple_parsing").setLevel(logging.WARNING)
 @dataclass(frozen=True)
 class ActionsArguments(FlattenedAccess, FrozenSerializable):
     """Run real-life actions (opening PRs, etc.) if we can solve the issue."""
+
     # Open a PR with the patch if we can solve the issue
-    open_pr: bool = False  
+    open_pr: bool = False
     # When working with local repository: Apply patch
     apply_patch_locally: bool = False
-    # Option to be used with open_pr: Skip action if there are already commits claiming 
-    # to fix the issue. Please only set this to False if you are sure the commits are 
+    # Option to be used with open_pr: Skip action if there are already commits claiming
+    # to fix the issue. Please only set this to False if you are sure the commits are
     # not fixes or if this is your own repository!
-    skip_if_commits_reference_issue: bool = True  
+    skip_if_commits_reference_issue: bool = True
     # OBSOLETE. Do not use, will raise error. Please specify --repo_path instead.
     push_gh_repo_url: str = ""
 
@@ -83,9 +87,11 @@ class ActionsArguments(FlattenedAccess, FrozenSerializable):
         if self.push_gh_repo_url:
             raise ValueError("push_gh_repo_url is obsolete. Use repo_path instead")
 
+
 @dataclass(frozen=True)
 class ScriptArguments(FlattenedAccess, FrozenSerializable):
     """Configure the control flow of the run.py script"""
+
     environment: EnvironmentArguments
     agent: AgentArguments
     actions: ActionsArguments
@@ -118,12 +124,13 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
 
 class _ContinueLoop(Exception):
     """Used for internal control flow"""
+
     ...
 
 
 class MainHook:
     """Hook structure for the web server or other addons to interface with"""
-    
+
     @staticmethod
     def _is_promising_patch(info: Dict[str, Any]) -> bool:
         """Do we actually believe that the patch will solve the issue?
@@ -132,27 +139,28 @@ class MainHook:
         # The exit status can also be `submitted (exit_cost)` etc.
         return info["exit_status"] == "submitted" and info.get("submission") is not None
 
-
     def on_init(self, *, args: ScriptArguments, agent: Agent, env: SWEEnv, traj_dir: Path):
         """Called when hook is initialized"""
         ...
 
     def on_start(self):
         """Called at the beginning of `Main.main`"""
-        ... 
+        ...
 
     def on_end(self):
         """Called at the end of `Main.main`"""
         ...
-    
+
     def on_instance_start(self, *, index: int, instance: Dict[str, Any]):
         """Called at the beginning of each instance loop in `Main.run`"""
         ...
-    
-    def on_instance_skipped(self, ):
+
+    def on_instance_skipped(
+        self,
+    ):
         """Called when an instance is skipped in `Main.run`"""
         ...
-    
+
     def on_instance_completed(self, *, info, trajectory):
         """Called when an instance is completed in `Main.run`"""
         ...
@@ -165,12 +173,12 @@ class SaveApplyPatchHook(MainHook):
         self._traj_dir = traj_dir
         self._apply_patch_locally = args.actions.apply_patch_locally
         self._instance = None
-    
+
     def on_instance_start(self, *, index: int, instance: Dict[str, Any]):
         self._instance = instance
-    
+
     def on_instance_completed(self, *, info, trajectory):
-        assert self._instance is not None # mypy
+        assert self._instance is not None  # mypy
         instance_id = self._instance["instance_id"]
         patch_path = self._save_patch(instance_id, info)
         if patch_path:
@@ -189,7 +197,7 @@ class SaveApplyPatchHook(MainHook):
         console = rich.console.Console()
         msg = [
             "SWE-agent has produced a patch that it believes will solve the issue you submitted!",
-            "Use the code snippet below to inspect or apply it!"
+            "Use the code snippet below to inspect or apply it!",
         ]
         panel = rich.panel.Panel.fit(
             "\n".join(msg),
@@ -201,17 +209,17 @@ class SaveApplyPatchHook(MainHook):
             f"# The patch has been saved to your local filesystem at:",
             f"PATCH_FILE_PATH='{patch_output_file.resolve()}'",
             "# Inspect it:",
-            "cat \"${PATCH_FILE_PATH}\"",
+            'cat "${PATCH_FILE_PATH}"',
             "# Apply it to a local repository:",
             f"cd <your local repo root>",
-            "git apply \"${PATCH_FILE_PATH}\"",
+            'git apply "${PATCH_FILE_PATH}"',
             "```",
         ]
         console.print(rich.markdown.Markdown("\n".join(content)))
 
     def _save_patch(self, instance_id: str, info) -> Optional[Path]:
         """Create patch files that can be applied with `git am`.
-        
+
         Returns:
             The path to the patch file, if it was saved. Otherwise, returns None.
         """
@@ -224,14 +232,14 @@ class SaveApplyPatchHook(MainHook):
         model_patch = info["submission"]
         patch_output_file.write_text(model_patch)
         if self._is_promising_patch(info):
-            # Only print big congratulations if we actually believe 
+            # Only print big congratulations if we actually believe
             # the patch will solve the issue
             self._print_patch_message(patch_output_file)
         return patch_output_file
 
     def _apply_patch(self, patch_file: Path, local_dir: Path) -> None:
         """Apply a patch to a local directory."""
-        
+
         assert local_dir.is_dir()
         assert patch_file.exists()
         # The resolve() is important, because we're gonna run the cmd
@@ -258,7 +266,7 @@ class OpenPRHook(MainHook):
     def on_instance_completed(self, *, info, trajectory):
         if self._open_pr and self.should_open_pr(info):
             self._env.open_pr(trajectory=trajectory)
-    
+
     def should_open_pr(self, info: Dict[str, Any]) -> bool:
         """Does opening a PR make sense?"""
         if not info.get("submission"):
@@ -282,7 +290,7 @@ class OpenPRHook(MainHook):
             logger.info("Issue is locked. Skipping PR creation.")
             return False
         org, repo, issue_number = parse_gh_issue_url(self._data_path)
-        associated_commits = get_associated_commit_urls(org, repo, issue_number, token=self._token) 
+        associated_commits = get_associated_commit_urls(org, repo, issue_number, token=self._token)
         if associated_commits:
             commit_url_strs = ", ".join(associated_commits)
             if self._skip_if_commits_reference_issue:
@@ -313,7 +321,7 @@ class Main:
         self.hooks: List[MainHook] = []
         for hook in default_hooks:
             self.add_hook(hook)
-    
+
     def add_hook(self, hook: MainHook):
         hook.on_init(args=self.args, agent=self.agent, env=self.env, traj_dir=self.traj_dir)
         self.hooks.append(hook)
@@ -339,26 +347,17 @@ class Main:
         files = []
         assert self.env.record is not None  # mypy
         if "patch" in self.env.record:
-            files = "\n".join(
-                [f"- {x.path}" for x in PatchSet(self.env.record["patch"]).modified_files]
-            )
+            files = "\n".join([f"- {x.path}" for x in PatchSet(self.env.record["patch"]).modified_files])
         # Get test files, F2P tests information
         test_files = []
         if "test_patch" in self.env.record:
             test_patch_obj = PatchSet(self.env.record["test_patch"])
-            test_files = "\n".join(
-                [f"- {x.path}" for x in test_patch_obj.modified_files + test_patch_obj.added_files]
-            )
+            test_files = "\n".join([f"- {x.path}" for x in test_patch_obj.modified_files + test_patch_obj.added_files])
         tests = ""
         if "FAIL_endTO_PASS" in self.env.record:
             tests = "\n".join([f"- {x}" for x in self.env.record["FAIL_TO_PASS"]])
 
-        setup_args = {
-            "issue": issue,
-            "files": files,
-            "test_files": test_files,
-            "tests": tests
-        }
+        setup_args = {"issue": issue, "files": files, "test_files": test_files, "tests": tests}
         info, trajectory = self.agent.run(
             setup_args=setup_args,
             env=self.env,
@@ -369,7 +368,7 @@ class Main:
         self._save_predictions(instance_id, info)
         for hook in self.hooks:
             hook.on_instance_completed(info=info, trajectory=trajectory)
-    
+
     def main(self):
         for hook in self.hooks:
             hook.on_start()
@@ -401,7 +400,6 @@ class Main:
         for hook in self.hooks:
             hook.on_end()
 
-    
     def _save_arguments(self) -> None:
         """Save the arguments to a yaml file to the run's trajectory directory."""
         log_path = self.traj_dir / "args.yaml"
@@ -409,7 +407,7 @@ class Main:
         if log_path.exists():
             try:
                 other_args = self.args.load_yaml(log_path)
-                if (self.args.dumps_yaml() != other_args.dumps_yaml()):  # check yaml equality instead of object equality
+                if self.args.dumps_yaml() != other_args.dumps_yaml():  # check yaml equality instead of object equality
                     logger.warning("**************************************************")
                     logger.warning("Found existing args.yaml with different arguments!")
                     logger.warning("**************************************************")
@@ -418,7 +416,6 @@ class Main:
 
         with log_path.open("w") as f:
             self.args.dump_yaml(f)
-
 
     def should_skip(self, instance_id: str) -> bool:
         """Check if we should skip this instance based on the instance filter and skip_existing flag."""
@@ -447,7 +444,6 @@ class Main:
                 return True
         return False
 
-
     def _save_predictions(self, instance_id: str, info):
         output_file = self.traj_dir / "all_preds.jsonl"
         model_patch = info["submission"] if "submission" in info else None
@@ -463,7 +459,7 @@ class Main:
 
 def get_args(args=None) -> ScriptArguments:
     """Parse command line arguments and return a ScriptArguments object.
-    
+
     Args:
         args: Optional list of arguments to parse. If not provided, uses sys.argv.
     """
@@ -502,8 +498,14 @@ def get_args(args=None) -> ScriptArguments:
 
     yaml.add_representer(str, multiline_representer)
 
-    return parse(ScriptArguments, default=defaults, add_config_path_arg=False, args=args, formatter_class=RichHelpFormatter, description=Markdown(__doc__))
-
+    return parse(
+        ScriptArguments,
+        default=defaults,
+        add_config_path_arg=False,
+        args=args,
+        formatter_class=RichHelpFormatter,
+        description=Markdown(__doc__),
+    )
 
 
 def main(args: ScriptArguments):
