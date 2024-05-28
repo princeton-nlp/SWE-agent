@@ -1,5 +1,10 @@
 # Contribute to SWE-agent
 
+!!! tip "Formatting change"
+    We've recently added automated formatting to our code base.
+    If you are dealing with merge-conflicts when opening a PR or updating your fork,
+    please first install `pre-commit` and run `pre-commit run --all-files` and try again.
+
 {%
     include-markdown "../../CONTRIBUTING.md"
     start="<!-- INCLUSION START -->"
