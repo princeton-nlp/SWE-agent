@@ -930,16 +930,23 @@
 
 
 <h1 id="adding-your-api-keys">Adding your API keys</h1>
-<p>Create a <code>keys.cfg</code> file at the root of this repository and populate it with your API keys.</p>
-<div class="highlight"><pre><span></span><code>GITHUB_TOKEN: &#39;GitHub Token for access to private repos&#39;  # &lt;-- delete line if not used
-OPENAI_API_KEY: &#39;OpenAI API Key Here if using OpenAI Model&#39;
-ANTHROPIC_API_KEY: &#39;Anthropic API Key Here if using Anthropic Model&#39;
-TOGETHER_API_KEY: &#39;Together API Key Here if using Together Model&#39;
-AZURE_OPENAI_API_KEY: &#39;Azure OpenAI API Key Here if using Azure OpenAI Model&#39;
-AZURE_OPENAI_ENDPOINT: &#39;Azure OpenAI Endpoint Here if using Azure OpenAI Model&#39;
-AZURE_OPENAI_DEPLOYMENT: &#39;Azure OpenAI Deployment Here if using Azure OpenAI Model&#39;
-AZURE_OPENAI_API_VERSION: &#39;Azure OpenAI API Version Here if using Azure OpenAI Model&#39;
-OPENAI_API_BASE_URL: &#39;LM base URL here if using Local or alternative api Endpoint&#39;
+<p>In order to access the LM of your choice (and to access private GitHub repositories), you need to supply the corresponding keys.</p>
+<p>There are two options to do this:</p>
+<ol>
+<li>Set the corresponding <a href="https://www.cherryservers.com/blog/how-to-set-list-and-manage-linux-environment-variables">environment variables</a>.</li>
+<li>Create a <code>keys.cfg</code> file at the root of this repository.</li>
+</ol>
+<p>The following <code>keys.cfg</code> example shows you how the keys are named:</p>
+<div class="highlight"><pre><span></span><code># Remove the comment &#39;#&#39; in front of the line for all keys that you have set
+# GITHUB_TOKEN: &#39;GitHub Token for access to private repos&#39;
+# OPENAI_API_KEY: &#39;OpenAI API Key Here if using OpenAI Model&#39;
+# ANTHROPIC_API_KEY: &#39;Anthropic API Key Here if using Anthropic Model&#39;
+# TOGETHER_API_KEY: &#39;Together API Key Here if using Together Model&#39;
+# AZURE_OPENAI_API_KEY: &#39;Azure OpenAI API Key Here if using Azure OpenAI Model&#39;
+# AZURE_OPENAI_ENDPOINT: &#39;Azure OpenAI Endpoint Here if using Azure OpenAI Model&#39;
+# AZURE_OPENAI_DEPLOYMENT: &#39;Azure OpenAI Deployment Here if using Azure OpenAI Model&#39;
+# AZURE_OPENAI_API_VERSION: &#39;Azure OpenAI API Version Here if using Azure OpenAI Model&#39;
+# OPENAI_API_BASE_URL: &#39;LM base URL here if using Local or alternative api Endpoint&#39;
 </code></pre></div>
 <p>See the following links for tutorials on obtaining <a href="https://docs.anthropic.com/claude/reference/getting-started-with-the-api">Anthropic</a>, <a href="https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key">OpenAI</a>, and <a href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens">Github</a> tokens.</p>
 
