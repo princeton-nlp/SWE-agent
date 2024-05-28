@@ -1,11 +1,5 @@
 # Fallback: Usage with docker
 
-!!! note "Versions"
-    The docker image gets updated with every release. This means that there is some
-    time lag between the introduction of the latest features and their availability
-    in docker.
-    We generally recommend [installing from source](source.md).
-
 Instead of installing SWE-agent from source, you can also run the software directly using Docker.
 
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
