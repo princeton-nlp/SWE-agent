@@ -181,7 +181,7 @@ def load_results(results_path: Path) -> dict[str, Any] | None:
     return results
 
 
-# todo: shouldn't reload results fore very status
+# TODO: shouldn't reload results fore very status
 def get_status(traj_path) -> str:
     """Return results emoji for single trajectory"""
     results = load_results(Path(traj_path).parent / "results.json")
