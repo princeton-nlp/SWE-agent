@@ -31,6 +31,20 @@ Some issues can be automatically fixed with [`ruff`](https://github.com/charlier
 pipx run ruff check --fix
 ```
 
+## Running tests
+
+We provide a lot of tests that can be very helpful for rapid development.
+Run them with
+
+```bash
+pytest
+```
+
+Some of the tests might be slwoer than others. You can exclude them with
+
+```bash
+pytest -
+
 ## Tips for pull requests
 
 * Please open separate PRs for separate issues. This makes it easier to incorporate part of your changes.
@@ -38,6 +52,8 @@ pipx run ruff check --fix
 * When changing the behavior of the agent, we need to have some indication that it actually improves the success rate of SWE-agent.
   However, if you make the behavior optional without complicating SWE-agent (for example by providing new [commands](../config/commands.md)),
   we might be less strict.
+* Please add simple unit tests or integration tests wherever possible. Take a look in the [tests directory](https://github.com/princeton-nlp/SWE-agent/tree/main/tests)
+  for inspiration. We emphasize simple easy-tow-rite tests that get a lot of coverage.
 
 ## Building the documentation
 

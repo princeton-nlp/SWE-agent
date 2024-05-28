@@ -10,6 +10,8 @@ from sweagent.agent.agents import Agent, AgentArguments, AgentHook
 from sweagent.agent.models import ModelArguments
 from sweagent.environment.swe_env import EnvironmentArguments, SWEEnv
 
+
+@pytest.mark.slow
 def test_run_cli_help():
     args = [
         "python",
@@ -117,6 +119,7 @@ def test_script_args():
     )
 
 
+@pytest.mark.slow
 def test_exception_raised(test_script_args):
     assert test_script_args.raise_exceptions
     main = Main(test_script_args)
@@ -125,6 +128,7 @@ def test_exception_raised(test_script_args):
         main.main()
 
 
+@pytest.mark.slow
 class CreateFakeLogFile(MainHook):
     """Testing the skip functionality"""
     def on_init(self, *, args: ScriptArguments, agent: Agent, env: SWEEnv, traj_dir: Path):
@@ -140,6 +144,7 @@ class CreateFakeLogFile(MainHook):
     
 
 
+@pytest.mark.slow
 def test_existing_corrupted_args(test_script_args):
     main = Main(test_script_args)
     main.add_hook(CreateFakeLogFile())
@@ -147,12 +152,14 @@ def test_existing_corrupted_args(test_script_args):
 
 
 
+@pytest.mark.slow
 def test_main_hook(test_script_args):
     main = Main(test_script_args)
     main.add_hook(MainHook())
     main.main()
 
 
+@pytest.mark.slow
 def test_agent_with_hook(test_script_args):
     main = Main(test_script_args)
     main.agent.add_hook(AgentHook())
