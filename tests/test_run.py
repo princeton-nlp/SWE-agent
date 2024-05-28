@@ -14,7 +14,7 @@ from sweagent.agent.models import ModelArguments
 from sweagent.environment.swe_env import EnvironmentArguments, SWEEnv
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_run_cli_help():
     args = [
         "python",
@@ -24,7 +24,7 @@ def test_run_cli_help():
     subprocess.run(args, check=True)
 
 
-@pytest.fixture
+@pytest.fixture()
 def open_pr_hook_init_for_sop():
     hook = OpenPRHook()
     hook._token = os.environ.get("GITHUB_TOKEN", "")
@@ -34,7 +34,7 @@ def open_pr_hook_init_for_sop():
     return hook
 
 
-@pytest.fixture
+@pytest.fixture()
 def info_dict():
     return {
         "submission": "asdf",
@@ -97,7 +97,7 @@ class RaisesExceptionHook(MainHook):
         raise ValueError(msg)
 
 
-@pytest.fixture
+@pytest.fixture()
 def test_script_args():
     return ScriptArguments(
         suffix="",
@@ -124,7 +124,7 @@ def test_script_args():
     )
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_exception_raised(test_script_args):
     assert test_script_args.raise_exceptions
     main = Main(test_script_args)
@@ -133,7 +133,7 @@ def test_exception_raised(test_script_args):
         main.main()
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 class CreateFakeLogFile(MainHook):
     """Testing the skip functionality"""
 
@@ -149,21 +149,21 @@ class CreateFakeLogFile(MainHook):
         (self._traj_dir / f"{instance_id}.traj").write_text(json.dumps(dct))
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_existing_corrupted_args(test_script_args):
     main = Main(test_script_args)
     main.add_hook(CreateFakeLogFile())
     main.main()
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_main_hook(test_script_args):
     main = Main(test_script_args)
     main.add_hook(MainHook())
     main.main()
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_agent_with_hook(test_script_args):
     main = Main(test_script_args)
     main.agent.add_hook(AgentHook())

@@ -159,6 +159,8 @@ select = [
     "RUF019",  # unneded key in dict check
     # other
     "COM812",  # use trailing commas
+    # pytest
+    "PT",
 ]
 ignore = [
     # flake8-return
@@ -170,6 +172,9 @@ ignore = [
     "E402",    # import not on top of file
     "E722",    # bare except
     "E741",    # ambiguous symbol
+    # pytest
+    "PT011",
+    "PT018",
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
