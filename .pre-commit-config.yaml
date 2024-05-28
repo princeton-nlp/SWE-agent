@@ -19,8 +19,6 @@ repos:
     hooks:
       - id: typos
         files: \.(py|md|rst|yaml|toml)
-        # empty to do not write fixes
-        args: []
         exclude: pyproject.toml
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
