@@ -29,11 +29,12 @@ def append_exit(content):
                 {
                     "role": "model_patch",
                     "content": submission,
-                }
+                },
             )
         # else submission should be in history already
         else:
-            raise ValueError("No submission in history or info")
+            msg = "No submission in history or info"
+            raise ValueError(msg)
     # elif content.get("info", {}).get("exit_status", None) is not None:
     #     content["history"].append({
     #         "role": "system",
@@ -49,7 +50,7 @@ def append_patch(instance_id, content, patches, patch_type):
                 {
                     "role": f"{patch_type} Patch",
                     "content": patches[instance_id],
-                }
+                },
             )
     return content
 
@@ -85,15 +86,15 @@ def append_results(traj_path: Path, instance_id: str, content, results, results_
         status.append("**** Statuses ****")
         status.append(
             f"  {'✅' if is_generated else '❌'} Generated (The agent was {'' if is_generated else 'not '}"
-            "able to generate a pull request to address this issue)"
+            "able to generate a pull request to address this issue)",
         )
         status.append(
             f"  {'✅' if is_applied else '❌'} Applied (The pull request was {'' if is_applied else 'not '}"
-            "successfully applied to the repo during eval)"
+            "successfully applied to the repo during eval)",
         )
         status.append(
             f"  {'✅' if is_resolved else '❌'} Resolved (The pull request {'' if is_resolved else 'not '}"
-            "successfully resolved the issue during eval)"
+            "successfully resolved the issue during eval)",
         )
     else:
         status.append("Results format not recognized")
@@ -121,7 +122,7 @@ def append_results(traj_path: Path, instance_id: str, content, results, results_
     else:
         status.append("---------------------------")
         status.append(
-            "Note that the evaluation results here may not be accurate or up to date, since they are computed separately from the agent run itself."
+            "Note that the evaluation results here may not be accurate or up to date, since they are computed separately from the agent run itself.",
         )
         status.append(f"Check {results_file} for the most accurate evaluation results.")
         status.append("")
@@ -152,7 +153,7 @@ def load_content(file_name, gold_patches, test_patches) -> dict[str, Any]:
     content = append_exit(content)  # accommodate new and old format
     content = append_patch(Path(file_name).stem, content, gold_patches, "Gold")
     content = append_patch(Path(file_name).stem, content, test_patches, "Test")
-    content = append_results(
+    return append_results(
         Path(file_name),
         Path(file_name).stem,
         content,
@@ -161,7 +162,6 @@ def load_content(file_name, gold_patches, test_patches) -> dict[str, Any]:
         scorecards,
         scorecards_file,
     )
-    return content
 
 
 def load_results(results_path: Path) -> dict[str, Any] | None:
@@ -181,7 +181,7 @@ def load_results(results_path: Path) -> dict[str, Any] | None:
     return results
 
 
-# todo: shouldn't reload results fore very status
+# TODO: shouldn't reload results fore very status
 def get_status(traj_path) -> str:
     """Return results emoji for single trajectory"""
     results = load_results(Path(traj_path).parent / "results.json")

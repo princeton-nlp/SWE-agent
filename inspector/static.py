@@ -111,7 +111,8 @@ def save_static_viewer(file_path):
     icons_path = Path(__file__).parent / "icons"
     relative_icons_path = find_relative_path(file_path, icons_path)
     style_sheet = STYLE_SHEET.replace("url('icons/", f"url('{relative_icons_path.as_posix()}/").replace(
-        'url("icons/', f'url("{relative_icons_path.as_posix()}/'
+        'url("icons/',
+        f'url("{relative_icons_path.as_posix()}/',
     )
     data = TEMPLATE.format(file_content=content, style_sheet=style_sheet, file_path_tree=file_path_tree)
     output_file = file_path.with_suffix(".html")
@@ -129,7 +130,8 @@ def find_relative_path(from_path, to_path):
     if to_path.is_file():
         to_path = to_path.parent
     if not from_path.is_dir() or not to_path.is_dir():
-        raise ValueError(f"Both from_path and to_path must be directories, but got {from_path} and {to_path}")
+        msg = f"Both from_path and to_path must be directories, but got {from_path} and {to_path}"
+        raise ValueError(msg)
 
     # Identify the common ancestor and the parts of each path beyond it
     common_parts = 0
@@ -145,8 +147,7 @@ def find_relative_path(from_path, to_path):
     to_target = to_path.parts[common_parts:]
 
     # Combine to get the relative path
-    relative_path = Path(*back_to_ancestor, *to_target)
-    return relative_path
+    return Path(*back_to_ancestor, *to_target)
 
 
 def save_all_trajectories(directory):

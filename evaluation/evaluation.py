@@ -38,7 +38,8 @@ def main(
 ):
     # Check if paths exist
     if not os.path.exists(predictions_path):
-        raise FileNotFoundError(f"Predictions path {predictions_path} does not exist")
+        msg = f"Predictions path {predictions_path} does not exist"
+        raise FileNotFoundError(msg)
     eval_refs = get_eval_refs(swe_bench_tasks)
     for k, v in eval_refs.items():
         eval_refs[k] = {key: v[key] for key in [KEY_INSTANCE_ID, "FAIL_TO_PASS", "PASS_TO_PASS"]}
@@ -61,7 +62,7 @@ def main(
                 f.write("\n")
                 pred_will_eval += 1
     print(
-        f"Found {pred_total} total predictions, will evaluate {pred_will_eval} ({pred_total-pred_will_eval} are empty)"
+        f"Found {pred_total} total predictions, will evaluate {pred_will_eval} ({pred_total-pred_will_eval} are empty)",
     )
 
     # Run evaluation
@@ -108,8 +109,8 @@ def main(
                         if entry["role"] == "assistant" and "action" in entry and len(entry["action"]) > 0
                         else None
                         for entry in traj_data["history"]
-                    ]
-                )
+                    ],
+                ),
             )
             scorecard["exit_status"] = traj_data["info"]["exit_status"] if "exit_status" in traj_data["info"] else "n/a"
 

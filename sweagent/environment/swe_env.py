@@ -173,7 +173,9 @@ class SWEEnv(gym.Env):
             hook.on_copy_repo_started(repo_type=self.record["repo_type"], repo_path=self.record["repo"])
         if self.record["repo_type"] == "local":
             copy_anything_to_container(
-                self.container_obj, self.record["repo"].removeprefix("local://"), "/" + self._repo_name
+                self.container_obj,
+                self.record["repo"].removeprefix("local://"),
+                "/" + self._repo_name,
             )
             self.communicate_with_handling(
                 input=f"chown -R root:root {self._repo_name}",
@@ -325,9 +327,11 @@ class SWEEnv(gym.Env):
         subprocess.run(
             f"docker cp {path_to_patch} {self.container_name}:/root/test.patch",
             shell=True,
+            check=False,
         )
         self.communicate_with_handling(
-            input="git apply /root/test.patch", error_msg="Failed to apply test patch correctly"
+            input="git apply /root/test.patch",
+            error_msg="Failed to apply test patch correctly",
         )
         os.remove(path_to_patch)
 
@@ -483,7 +487,8 @@ class SWEEnv(gym.Env):
             client = docker.from_env(timeout=600)
         except docker.errors.DockerException as e:
             if "Error while fetching server API version" in str(e):
-                raise RuntimeError("Docker is not running. Please start Docker and try again.") from e
+                msg = "Docker is not running. Please start Docker and try again."
+                raise RuntimeError(msg) from e
         try:
             self.container_obj = client.containers.get(self.container_name)
         except docker.errors.NotFound:
@@ -531,7 +536,8 @@ class SWEEnv(gym.Env):
         except BrokenPipeError:
             traceback.print_exc()
             self.logger.error("Failed to communicate with container. Check docker logs for more information.")
-            raise RuntimeError("Failed to communicate with container")
+            msg = "Failed to communicate with container"
+            raise RuntimeError(msg)
 
         buffer, exit_code = read_with_timeout_experimental(self.container, timeout_duration)
         self.returncode = int(exit_code)
@@ -553,7 +559,8 @@ class SWEEnv(gym.Env):
         except BrokenPipeError:
             traceback.print_exc()
             self.logger.error("Failed to communicate with container. Check docker logs for more information.")
-            raise RuntimeError("Failed to communicate with container")
+            msg = "Failed to communicate with container"
+            raise RuntimeError(msg)
         try:
             buffer = read_with_timeout(self.container, self.get_pids, timeout_duration)
             self.container.stdin.write("echo $?\n")
@@ -564,7 +571,8 @@ class SWEEnv(gym.Env):
             self.logger.error(f"Read with timeout failed on input:\n---\n{input}\n---")
             raise e
         if not exit_code.isdigit():
-            raise RuntimeError(f"Container crashed. Failed to get exit code. Output:\n---\n{buffer}\n---")
+            msg = f"Container crashed. Failed to get exit code. Output:\n---\n{buffer}\n---"
+            raise RuntimeError(msg)
         self.returncode = int(exit_code)
         return buffer
 
@@ -613,7 +621,8 @@ class SWEEnv(gym.Env):
         if self.returncode != 0:
             self.logger.error(f"{error_msg}: {logs}")
             self.close()
-            raise RuntimeError(f"{error_msg}: {logs}")
+            msg = f"{error_msg}: {logs}"
+            raise RuntimeError(msg)
         return logs
 
     def get_available_actions(self) -> list[str]:
@@ -657,12 +666,14 @@ class SWEEnv(gym.Env):
             return self._run_shell_script_host(script_path)
         elif location == "container":
             raise NotImplementedError
-        raise ValueError(f"Invalid 'location': {location}")
+        msg = f"Invalid 'location': {location}"
+        raise ValueError(msg)
 
     def _run_shell_script_host(self, script_path: Path) -> None:
         """Run shell script file (located on host) in container"""
         if not script_path.is_file():
-            raise FileNotFoundError(f"Script not found at {script_path}")
+            msg = f"Script not found at {script_path}"
+            raise FileNotFoundError(msg)
         shell_commands = Path(script_path).read_text().splitlines()
         for i, cmd in enumerate(shell_commands):
             self.communicate_with_handling(
@@ -682,7 +693,7 @@ class SWEEnv(gym.Env):
             logger.warning(
                 "install_environment is set to True, but the data path is a GitHub URL "
                 "without an environment config file (environment_config key/flag). "
-                "Skipping conda environment installation."
+                "Skipping conda environment installation.",
             )
             return
         for hook in self.hooks:
@@ -699,7 +710,8 @@ class SWEEnv(gym.Env):
                 self.run_shell_script(Path(self.args.environment_setup), location="host")
                 return
             else:
-                raise ValueError("Environment config file needs to be a yaml file or shell script")
+                msg = "Environment config file needs to be a yaml file or shell script"
+                raise ValueError(msg)
         else:
             try:
                 install_configs = MAP_VERSION_TO_INSTALL[self.record["repo"]][str(self.record["version"])]
@@ -742,7 +754,9 @@ class SWEEnv(gym.Env):
                     content_env_yml = get_environment_yml(self.record, env_name)
                 else:
                     content_env_yml = get_environment_yml(
-                        self.record, env_name, python_version=install_configs["python"]
+                        self.record,
+                        env_name,
+                        python_version=install_configs["python"],
                     )
                 copy_file_to_container(self.container_obj, content_env_yml, PATH_TO_ENV_YML)
                 if install_configs.get("no_use_env", False):
@@ -796,7 +810,9 @@ class SWEEnv(gym.Env):
         if install_configs.get("install", False):
             install_cmd = install_configs["install"]
             self.communicate_with_handling(
-                install_cmd, error_msg="Install command failed to execute successfully", timeout_duration=LONG_TIMEOUT
+                install_cmd,
+                error_msg="Install command failed to execute successfully",
+                timeout_duration=LONG_TIMEOUT,
             )
         if install_configs.get("post_install", False):
             self.logger.info("Running post-install commands...")
@@ -831,7 +847,8 @@ class SWEEnv(gym.Env):
                 # nothing to do for utility scripts
                 pass
             else:
-                raise ValueError(f"Invalid command type: {command['type']}")
+                msg = f"Invalid command type: {command['type']}"
+                raise ValueError(msg)
 
     def interrupt(self):
         """
@@ -849,7 +866,8 @@ class SWEEnv(gym.Env):
             output = self.communicate(input="echo 'interrupted'", timeout_duration=5)
             assert output.strip().endswith("interrupted"), "container health check failed"
         except TimeoutError:
-            raise RuntimeError("Failed to interrupt container")
+            msg = "Failed to interrupt container"
+            raise RuntimeError(msg)
 
     def open_pr(self, *, trajectory, _dry_run: bool = False):
         """Create PR to repository
@@ -859,7 +877,7 @@ class SWEEnv(gym.Env):
             _dry_run: Whether to actually push anything or just simulate it
         """
         logger.info("Opening PR")
-        # todo: have better way of handling this
+        # TODO: have better way of handling this
         # Adding random string suffix to avoid name conflicts if we had a previously failed run
         issue_url = self.args.data_path
         try:
@@ -895,7 +913,7 @@ class SWEEnv(gym.Env):
         # If `--repo_path` was specified with a different github URL, then the record will contain
         # the forking user
         assert self.record is not None
-        if not self.record["repo_type"] == "github":
+        if self.record["repo_type"] != "github":
             # We already validated that `--data_path` is a github issue URL
             # so this is the only case where we can reach here
             msg = "--repo_path must point to a github URL if --open_pr is set"
@@ -944,5 +962,5 @@ class SWEEnv(gym.Env):
             logger.info(
                 f"🎉 PR created as a draft at {pr_info.html_url}. Please review it carefully, push "
                 "any required changes onto the branch and then click "
-                "'Ready for Review' to bring it to the attention of the maintainers."
+                "'Ready for Review' to bring it to the attention of the maintainers.",
             )

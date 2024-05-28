@@ -116,7 +116,8 @@ class AgentConfig(FrozenSerializable):
 
         for subroutine in self.subroutine_types:
             if subroutine.name == "submit":
-                raise ValueError("Cannot use 'submit' as a subroutine name")
+                msg = "Cannot use 'submit' as a subroutine name"
+                raise ValueError(msg)
             agent_args = AgentArguments(
                 model=subroutine.model,
                 config_file=subroutine.agent_file,
@@ -179,7 +180,7 @@ class AgentArguments(FlattenedAccess, FrozenSerializable):
             object.__setattr__(self, "config", config)
         assert self.config is not None  # mypy
         for subroutine in getattr(self.config, "subroutines", {}).values():
-            model_args = getattr(subroutine, "model")
+            model_args = subroutine.model
             object.__setattr__(
                 model_args,
                 "per_instance_cost_limit",
@@ -217,10 +218,16 @@ class AgentHook:
 
     def on_model_query(self, *, query: str, agent: str):
         """Actually query the model with the complete history."""
-        ...
 
     def on_query_message_added(
-        self, *, role: str, content: str, agent: str, is_demo: bool = False, thought: str = "", action: str = ""
+        self,
+        *,
+        role: str,
+        content: str,
+        agent: str,
+        is_demo: bool = False,
+        thought: str = "",
+        action: str = "",
     ): ...
 
 
@@ -266,9 +273,8 @@ class Agent:
         if len(self.config.demonstrations) > 0 and "history_to_messages" in dir(self.model):
             for demonstration_path in self.config.demonstrations:
                 if self.config.demonstration_template is None and not self.config.put_demos_in_history:
-                    raise ValueError(
-                        "Cannot use demonstrations without a demonstration template or put_demos_in_history=True"
-                    )
+                    msg = "Cannot use demonstrations without a demonstration template or put_demos_in_history=True"
+                    raise ValueError(msg)
 
                 # Load history
                 logger.info(f"DEMONSTRATION: {demonstration_path}")
@@ -293,14 +299,14 @@ class Agent:
                         demo_history,
                         is_demonstration=True,
                     )
-                    demonstration = self.config.demonstration_template.format(**{"demonstration": demo_message})
+                    demonstration = self.config.demonstration_template.format(demonstration=demo_message)
                     self._append_history(
                         {
                             "agent": self.name,
                             "content": demonstration,
                             "is_demo": True,
                             "role": "user",
-                        }
+                        },
                     )
 
     @property
@@ -340,7 +346,8 @@ class Agent:
         elif pattern_type == "multi_line_no_subroutines":
             patterns = {k: v for k, v in self.command_patterns.items() if k in self.config.multi_line_command_endings}
         else:
-            raise ValueError(f"Unknown pattern type: {pattern_type}")
+            msg = f"Unknown pattern type: {pattern_type}"
+            raise ValueError(msg)
         matches = list()
         for _, pat in patterns.items():
             match = pat.search(action)
@@ -400,7 +407,7 @@ class Agent:
                                 "agent": self.name,
                                 "action": match_action,
                                 "cmd_name": first_match.group(1),
-                            }
+                            },
                         )  # submit command is not a subroutine
                     else:
                         parsed_action.append(
@@ -409,7 +416,7 @@ class Agent:
                                 "args": first_match.group(2),
                                 "action": match_action,
                                 "cmd_name": first_match.group(1),
-                            }
+                            },
                         )
             else:
                 parsed_action.append({"agent": self.name, "action": rem_action, "cmd_name": None})
@@ -460,7 +467,7 @@ class Agent:
                 "thought": thought,
                 "action": action,
                 "agent": self.name,
-            }
+            },
         )
 
         logger.info(f"💭 THOUGHT ({self.name})\n{thought}")
@@ -499,7 +506,7 @@ class Agent:
                     **self.system_args,
                     **state_vars,
                     observation=(observation if observation is not None else ""),
-                )
+                ),
             )
 
         message = "\n".join(messages)
@@ -640,7 +647,8 @@ class Agent:
         try:
             output = env.communicate(commands)
             if env.returncode != 0:
-                raise RuntimeError(f"Nonzero return code: {env.returncode}\nOutput: {output}")
+                msg = f"Nonzero return code: {env.returncode}\nOutput: {output}"
+                raise RuntimeError(msg)
         except KeyboardInterrupt:
             raise
         except Exception as e:
@@ -662,11 +670,12 @@ class Agent:
                     datum["name"] = Path(file).name
                     datum["type"] = "utility"
                 else:
-                    raise ValueError(
+                    msg = (
                         f"Non-shell script file {file} does not start with shebang.\n"
                         "Either add a shebang (#!) or change the file extension to .sh if you want to source it.\n"
                         "You can override this behavior by adding an underscore to the file name (e.g. _utils.py)."
                     )
+                    raise ValueError(msg)
             else:
                 # scripts are made executable
                 datum["name"] = Path(file).name.rsplit(".", 1)[0]
@@ -692,7 +701,8 @@ class Agent:
             obs = None
         if env.returncode != 0:
             self._append_history({"role": "user", "content": obs, "agent": agent_name})
-            raise RuntimeError(f"Nonzero return code: {env.returncode} for init_observation in {agent_name}.\n{obs}")
+            msg = f"Nonzero return code: {env.returncode} for init_observation in {agent_name}.\n{obs}"
+            raise RuntimeError(msg)
         return_type = self.config._subroutines[agent_name].return_type
         sub_agent = Agent(agent_name, self.config._subroutines[agent_name].agent_args)
         sub_agent_output = sub_agent.run(
@@ -777,7 +787,7 @@ class Agent:
                     "response": output,
                     "state": state,
                     "thought": thought,
-                }
+                },
             )
             trajectory.append(trajectory_step)
             model_stats: APIStats = self.model.stats

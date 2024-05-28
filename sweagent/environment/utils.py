@@ -57,7 +57,7 @@ def is_github_repo_url(data_path: str) -> bool:
     return GITHUB_REPO_URL_PATTERN.search(data_path) is not None
 
 
-# todo: Why not just use copy_anything_to_container?
+# TODO: Why not just use copy_anything_to_container?
 def copy_file_to_container(container, contents, container_path):
     """
     Copies a given string into a Docker container at a specified path.
@@ -169,11 +169,11 @@ def read_with_timeout(container, pid_func, timeout_duration):
         time.sleep(0.05)  # Prevents CPU hogging
 
     if container.poll() is not None:
-        raise RuntimeError(f"Subprocess exited unexpectedly.\nCurrent buffer: {buffer.decode()}")
+        msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {buffer.decode()}"
+        raise RuntimeError(msg)
     if time.time() >= end_time:
-        raise TimeoutError(
-            f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}\nRunning PIDs: {pids}"
-        )
+        msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}\nRunning PIDs: {pids}"
+        raise TimeoutError(msg)
     return buffer.decode()
 
 
@@ -230,15 +230,18 @@ def read_with_timeout_experimental(container, timeout_duration):
         time.sleep(0.01)  # Prevents CPU hogging
 
     if container.poll() is not None:
-        raise RuntimeError(f"Subprocess exited unexpectedly.\nCurrent buffer: {buffer.decode()}")
+        msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {buffer.decode()}"
+        raise RuntimeError(msg)
     if time.time() >= end_time:
-        raise TimeoutError(f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}")
+        msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}"
+        raise TimeoutError(msg)
     decoded = buffer.decode()
     body = "\n".join(line for line in decoded.splitlines() if not line.startswith(PROCESS_DONE_MARKER_START))
     last_line = decoded.splitlines()[-1]
     _results = PROCESS_DONE_REGEX.search(last_line)
     if _results is None:
-        raise ValueError(f"Could not find process done marker in last line: {last_line=}, {body=}")
+        msg = f"Could not find process done marker in last line: {last_line=}, {body=}"
+        raise ValueError(msg)
     exit_code = _results.group(1)
     return body, exit_code
 
@@ -297,7 +300,8 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
         elif container_obj.status in {"paused"}:
             container_obj.unpause()
         else:
-            raise RuntimeError(f"Unexpected container status: {container_obj.status}")
+            msg = f"Unexpected container status: {container_obj.status}"
+            raise RuntimeError(msg)
     else:
         container_obj = client.containers.run(
             image_name,
@@ -345,9 +349,8 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
     if len(bash_pids) == 1:
         bash_pid = bash_pids[0][0]
     elif len(bash_pids) > 1 or len(other_pids) > 0:
-        raise RuntimeError(
-            f"Detected alien processes attached or running. Please ensure that no other agents are running on this container. PIDs: {bash_pids}, {other_pids}"
-        )
+        msg = f"Detected alien processes attached or running. Please ensure that no other agents are running on this container. PIDs: {bash_pids}, {other_pids}"
+        raise RuntimeError(msg)
     return container, set(
         map(
             str,
@@ -355,7 +358,7 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
                 bash_pid,
                 1,
             ],
-        )
+        ),
     )
 
 
@@ -401,7 +404,7 @@ def image_exists(image_name):
                 "connection aborted" in str(e).lower(),
                 "connection refused" in str(e).lower(),
                 "error while fetching server api version" in str(e).lower(),
-            )
+            ),
         )
         if docker_not_running:
             msg = (
@@ -422,7 +425,7 @@ def image_exists(image_name):
     if attrs is not None:
         logger.info(
             f"Found image {image_name} with tags: {attrs['RepoTags']}, created: {attrs['Created']} "
-            f"for {attrs['Os']} {attrs['Architecture']}."
+            f"for {attrs['Os']} {attrs['Architecture']}.",
         )
     return True
 
@@ -451,7 +454,8 @@ def parse_gh_issue_url(issue_url: str) -> tuple[str, str, str]:
     """Return owner, repo, issue number from issue url"""
     match = GITHUB_ISSUE_URL_PATTERN.search(issue_url)
     if not match:
-        raise InvalidGithubURL(f"Invalid GitHub issue URL: {issue_url}")
+        msg = f"Invalid GitHub issue URL: {issue_url}"
+        raise InvalidGithubURL(msg)
     res = match.groups()
     assert len(res) == 3
     return tuple(res)  # type: ignore
@@ -461,7 +465,8 @@ def parse_gh_repo_url(repo_url: str) -> tuple[str, str]:
     """Return owner, repo from repo url"""
     match = GITHUB_REPO_URL_PATTERN.search(repo_url)
     if not match:
-        raise InvalidGithubURL(f"Invalid GitHub issue URL: {repo_url}")
+        msg = f"Invalid GitHub issue URL: {repo_url}"
+        raise InvalidGithubURL(msg)
     res = match.groups()
     assert len(res) == 2
     return tuple(res)  # type: ignore
@@ -500,7 +505,10 @@ class InstanceBuilder:
     def set_problem_statement_from_gh_issue(self, issue_url: str):
         owner, repo, issue_number = parse_gh_issue_url(issue_url)
         self.args["problem_statement"] = get_problem_statement_from_github_issue(
-            owner, repo, issue_number, token=self.token
+            owner,
+            repo,
+            issue_number,
+            token=self.token,
         )
         self.args["instance_id"] = f"{owner}__{repo}-i{issue_number}"
         self.args["problem_statement_source"] = "online"
@@ -560,13 +568,14 @@ class InstanceBuilder:
         elif Path(repo).is_dir():
             self.set_repo_info_from_local_path(repo, base_commit=base_commit)
         else:
-            raise ValueError(f"Could not determine repo path from {repo=}.")
+            msg = f"Could not determine repo path from {repo=}."
+            raise ValueError(msg)
 
     def set_from_dict(self, instance_dict: dict[str, Any]):
         self.args |= instance_dict
 
     def set_missing_fields(self):
-        # todo: This field is only needed while swe_env is using some questionable logic
+        # TODO: This field is only needed while swe_env is using some questionable logic
         # to determine whether to clone from a mirror or not. This should be removed in the future.
         # Values: 'swe-bench' (loaded from json/jsonl for swe-bench style inference),
         # 'online' (loaded from github issue or similar) or 'local' (loaded from local file)
@@ -587,11 +596,14 @@ class InstanceBuilder:
         ]
         if not all(x in self.args for x in required_fields):
             missing = set(required_fields) - set(self.args.keys())
-            raise ValueError(f"Missing required fields: {missing=}")
+            msg = f"Missing required fields: {missing=}"
+            raise ValueError(msg)
         if self.args["repo_type"] not in {"github", "local"}:
-            raise ValueError(f"Invalid repo type: {self.args['repo_type']=}")
+            msg = f"Invalid repo type: {self.args['repo_type']=}"
+            raise ValueError(msg)
         if self.args["repo_type"] == "github" and self.args["repo"].count("/") != 1:
-            raise ValueError(f"Invalid repo format for {self.args['repo_type']=}: {self.args['repo']=}")
+            msg = f"Invalid repo format for {self.args['repo_type']=}: {self.args['repo']=}"
+            raise ValueError(msg)
 
     def build(self) -> dict[str, Any]:
         self.set_missing_fields()
@@ -641,7 +653,8 @@ def get_instances(
         elif is_github_repo_url(file_path):
             ib.set_repo_info_from_gh_url(file_path, base_commit=base_commit)
         else:
-            raise ValueError(f"Could not determine repo path from {file_path=}, {repo_path=}")
+            msg = f"Could not determine repo path from {file_path=}, {repo_path=}"
+            raise ValueError(msg)
 
         return [ib.build()]
 
@@ -677,12 +690,14 @@ def get_instances(
         elif is_github_repo_url(file_path):
             ib.set_repo_info_from_gh_url(file_path)
         else:
-            raise ValueError(f"Could not determine repo path from {file_path=}, {repo_path=}")
+            msg = f"Could not determine repo path from {file_path=}, {repo_path=}"
+            raise ValueError(msg)
 
         return [ib.build()]
 
     if base_commit is not None:
-        raise ValueError("base_commit must be None if data_path is not a github issue url")
+        msg = "base_commit must be None if data_path is not a github issue url"
+        raise ValueError(msg)
 
     # If file_path is a file, load the file
     if file_path.endswith(".json"):
@@ -694,10 +709,11 @@ def get_instances(
     try:
         return postproc_instance_list(load_dataset(file_path, split=split))
     except:
-        raise ValueError(
+        msg = (
             f"Could not load instances from {file_path}. "
             "Please ensure --data_path is a GitHub URL, a SWE-bench HuggingFace dataset, or a JSON/JSONL file."
         )
+        raise ValueError(msg)
 
 
 def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token: str = "") -> list[str]:
@@ -708,7 +724,7 @@ def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token:
     events = api.issues.list_events(org, repo, issue_number)
     commit_urls = []
     for event in events:
-        if not event.event == "referenced":
+        if event.event != "referenced":
             continue
         if not event.commit_id:
             continue

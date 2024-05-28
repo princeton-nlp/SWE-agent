@@ -3,10 +3,11 @@ from __future__ import annotations
 try:
     import rich
 except ModuleNotFoundError as e:
-    raise RuntimeError(
+    msg = (
         "You probably either forgot to install the dependencies "
         "or forgot to activate your conda or virtual environment."
-    ) from e
+    )
+    raise RuntimeError(msg) from e
 import json
 import logging
 import os
@@ -84,7 +85,8 @@ class ActionsArguments(FlattenedAccess, FrozenSerializable):
 
     def __post_init__(self):
         if self.push_gh_repo_url:
-            raise ValueError("push_gh_repo_url is obsolete. Use repo_path instead")
+            msg = "push_gh_repo_url is obsolete. Use repo_path instead"
+            raise ValueError(msg)
 
 
 @dataclass(frozen=True)
@@ -124,8 +126,6 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
 class _ContinueLoop(Exception):
     """Used for internal control flow"""
 
-    ...
-
 
 class MainHook:
     """Hook structure for the web server or other addons to interface with"""
@@ -140,29 +140,23 @@ class MainHook:
 
     def on_init(self, *, args: ScriptArguments, agent: Agent, env: SWEEnv, traj_dir: Path):
         """Called when hook is initialized"""
-        ...
 
     def on_start(self):
         """Called at the beginning of `Main.main`"""
-        ...
 
     def on_end(self):
         """Called at the end of `Main.main`"""
-        ...
 
     def on_instance_start(self, *, index: int, instance: dict[str, Any]):
         """Called at the beginning of each instance loop in `Main.run`"""
-        ...
 
     def on_instance_skipped(
         self,
     ):
         """Called when an instance is skipped in `Main.run`"""
-        ...
 
     def on_instance_completed(self, *, info, trajectory):
         """Called when an instance is completed in `Main.run`"""
-        ...
 
 
 class SaveApplyPatchHook(MainHook):
@@ -186,7 +180,7 @@ class SaveApplyPatchHook(MainHook):
             if not self._is_promising_patch(info):
                 return
             assert self._instance  # mypy
-            if not self._instance["repo_type"] == "local":
+            if self._instance["repo_type"] != "local":
                 return
             local_dir = Path(self._instance["repo"])
             self._apply_patch(patch_path, local_dir)
@@ -227,7 +221,7 @@ class SaveApplyPatchHook(MainHook):
         patch_output_file = patch_output_dir / f"{instance_id}.patch"
         if not info.get("submission"):
             logger.info("No patch to save.")
-            return
+            return None
         model_patch = info["submission"]
         patch_output_file.write_text(model_patch)
         if self._is_promising_patch(info):
@@ -299,7 +293,7 @@ class OpenPRHook(MainHook):
                 logger.warning(
                     "Proceeding with PR creation even though there are already commits "
                     f"({commit_url_strs}) associated with the issue. Please only do this for your own repositories "
-                    "or after verifying that the existing commits do not fix the issue."
+                    "or after verifying that the existing commits do not fix the issue.",
                 )
         return True
 

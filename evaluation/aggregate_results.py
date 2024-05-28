@@ -153,7 +153,7 @@ def convert_experiments_to_rows(folder_name, runs_max):
                     costs_success,
                     costs_failure,
                     costs_overall,
-                ]
+                ],
             )
 
     return rows
@@ -194,7 +194,7 @@ if __name__ == "__main__":
                 "Costs Success": lambda x: np.mean([item for sublist in x for item in sublist]),
                 "Costs Failure": lambda x: np.mean([item for sublist in x for item in sublist]),
                 "Costs Overall": lambda x: np.mean([item for sublist in x for item in sublist]),
-            }
+            },
         )
         .round(2)
         .reset_index()
