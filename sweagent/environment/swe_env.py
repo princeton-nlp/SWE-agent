@@ -327,6 +327,7 @@ class SWEEnv(gym.Env):
         subprocess.run(
             f"docker cp {path_to_patch} {self.container_name}:/root/test.patch",
             shell=True,
+            check=False,
         )
         self.communicate_with_handling(
             input="git apply /root/test.patch",
@@ -876,7 +877,7 @@ class SWEEnv(gym.Env):
             _dry_run: Whether to actually push anything or just simulate it
         """
         logger.info("Opening PR")
-        # todo: have better way of handling this
+        # TODO: have better way of handling this
         # Adding random string suffix to avoid name conflicts if we had a previously failed run
         issue_url = self.args.data_path
         try:

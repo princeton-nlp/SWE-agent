@@ -130,8 +130,6 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
 class _ContinueLoop(Exception):
     """Used for internal control flow"""
 
-    ...
-
 
 class MainHook:
     """Hook structure for the web server or other addons to interface with"""
@@ -146,29 +144,23 @@ class MainHook:
 
     def on_init(self, *, args: ScriptArguments, agent: Agent, env: SWEEnv, traj_dir: Path):
         """Called when hook is initialized"""
-        ...
 
     def on_start(self):
         """Called at the beginning of `Main.main`"""
-        ...
 
     def on_end(self):
         """Called at the end of `Main.main`"""
-        ...
 
     def on_instance_start(self, *, index: int, instance: dict[str, Any]):
         """Called at the beginning of each instance loop in `Main.run`"""
-        ...
 
     def on_instance_skipped(
         self,
     ):
         """Called when an instance is skipped in `Main.run`"""
-        ...
 
     def on_instance_completed(self, *, info, trajectory):
         """Called when an instance is completed in `Main.run`"""
-        ...
 
 
 class SaveApplyPatchHook(MainHook):

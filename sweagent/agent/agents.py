@@ -180,7 +180,7 @@ class AgentArguments(FlattenedAccess, FrozenSerializable):
             object.__setattr__(self, "config", config)
         assert self.config is not None  # mypy
         for subroutine in getattr(self.config, "subroutines", {}).values():
-            model_args = getattr(subroutine, "model")
+            model_args = subroutine.model
             object.__setattr__(
                 model_args,
                 "per_instance_cost_limit",
@@ -218,7 +218,6 @@ class AgentHook:
 
     def on_model_query(self, *, query: str, agent: str):
         """Actually query the model with the complete history."""
-        ...
 
     def on_query_message_added(
         self,
@@ -300,7 +299,7 @@ class Agent:
                         demo_history,
                         is_demonstration=True,
                     )
-                    demonstration = self.config.demonstration_template.format(**{"demonstration": demo_message})
+                    demonstration = self.config.demonstration_template.format(demonstration=demo_message)
                     self._append_history(
                         {
                             "agent": self.name,

@@ -57,7 +57,7 @@ def is_github_repo_url(data_path: str) -> bool:
     return GITHUB_REPO_URL_PATTERN.search(data_path) is not None
 
 
-# todo: Why not just use copy_anything_to_container?
+# TODO: Why not just use copy_anything_to_container?
 def copy_file_to_container(container, contents, container_path):
     """
     Copies a given string into a Docker container at a specified path.
@@ -575,7 +575,7 @@ class InstanceBuilder:
         self.args |= instance_dict
 
     def set_missing_fields(self):
-        # todo: This field is only needed while swe_env is using some questionable logic
+        # TODO: This field is only needed while swe_env is using some questionable logic
         # to determine whether to clone from a mirror or not. This should be removed in the future.
         # Values: 'swe-bench' (loaded from json/jsonl for swe-bench style inference),
         # 'online' (loaded from github issue or similar) or 'local' (loaded from local file)

@@ -147,18 +147,15 @@ select = [
     # bugbear
     "B006",  # mutable default
     "B007",  # unused loop var
+    "B009",  # getattr with constant
     # flake8-errmsg
     "EM",
-    # flake8-implicit-str-concat
-    "ISC001",
     # flake8-future-annotations
     "FA102",
     # flake8-return
     "RET",
     # RUF
     "RUF019",  # unneded key in dict check
-    # other
-    "COM812",  # use trailing commas
     # pytest
     "PT",
     # flake8-simplify (SIM)

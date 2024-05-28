@@ -133,13 +133,12 @@ class ParseCommandBash(ParseCommand):
                     arguments = docs_dict.get("arguments", None)
                     if "signature" in docs_dict:
                         signature = docs_dict["signature"]
-                    else:
-                        if arguments is not None:
-                            for param, settings in arguments.items():
-                                if settings["required"]:
-                                    signature += f" <{param}>"
-                                else:
-                                    signature += f" [<{param}>]"
+                    elif arguments is not None:
+                        for param, settings in arguments.items():
+                            if settings["required"]:
+                                signature += f" <{param}>"
+                            else:
+                                signature += f" [<{param}>]"
                 command = Command.from_dict(
                     {
                         "code": code,
