@@ -26,14 +26,14 @@ pre-commit install
 `pre-commit` will check for formatting and basic syntax errors before your commits.
 
 !!! tip "Autofixes"
-  Most problems (including formatting) will be automatically fixed.
-  Therefore, if `pre-commit`/`git commit` fails on its first run, simply try running it a second time.
+    Most problems (including formatting) will be automatically fixed.
+    Therefore, if `pre-commit`/`git commit` fails on its first run, simply try running it a second time.
 
-  Some more autofixes can be enabled with the `--unsafe-fixes` option from [`ruff`](https://github.com/charliermarsh/ruff):
+    Some more autofixes can be enabled with the `--unsafe-fixes` option from [`ruff`](https://github.com/charliermarsh/ruff):
 
-  ```bash
-  pipx run ruff check --fix --unsafe-fixes
-  ```
+    ```bash
+    pipx run ruff check --fix --unsafe-fixes
+    ```
 
 ## Running tests
 
@@ -44,10 +44,11 @@ Run them with
 pytest
 ```
 
-Some of the tests might be slwoer than others. You can exclude them with
+Some of the tests might be slower than others. You can exclude them with
 
 ```bash
-pytest -
+pytest -m "not slow"
+```
 
 ## Tips for pull requests
 
