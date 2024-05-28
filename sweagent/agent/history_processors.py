@@ -36,7 +36,8 @@ class HistoryProcessor(metaclass=HistoryProcessorMeta):
         try:
             return cls._registry[name](*args, **kwargs)
         except KeyError:
-            raise ValueError(f"Model output parser ({name}) not found.")
+            msg = f"Model output parser ({name}) not found."
+            raise ValueError(msg)
 
 
 # DEFINE NEW PARSING FUNCTIONS BELOW THIS LINE
@@ -47,7 +48,8 @@ class DefaultHistoryProcessor(HistoryProcessor):
 
 def last_n_history(history, n):
     if n <= 0:
-        raise ValueError("n must be a positive integer")
+        msg = "n must be a positive integer"
+        raise ValueError(msg)
     new_history = list()
     user_messages = len([entry for entry in history if (entry["role"] == "user" and not entry.get("is_demo", False))])
     user_msg_idx = 0

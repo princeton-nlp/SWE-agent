@@ -54,7 +54,8 @@ class ParseCommand(metaclass=ParseCommandMeta):
         try:
             return cls._registry[name]()
         except KeyError:
-            raise ValueError(f"Command parser ({name}) not found.")
+            msg = f"Command parser ({name}) not found."
+            raise ValueError(msg)
 
     @abstractmethod
     def parse_command_file(self, path: str) -> list[Command]:
@@ -81,21 +82,23 @@ class ParseCommandBash(ParseCommand):
             commands = self.parse_script(path, contents)
         else:
             if not path.endswith(".sh") and not Path(path).name.startswith("_"):
-                raise ValueError(
+                msg = (
                     f"Source file {path} does not have a .sh extension.\n"
                     "Only .sh files are supported for bash function parsing.\n"
                     "If you want to use a non-shell file as a command (script), "
                     "it should use a shebang (e.g. #!/usr/bin/env python)."
                 )
+                raise ValueError(msg)
             return self.parse_bash_functions(path, contents)
         if len(commands) == 0 and not Path(path).name.startswith("_"):
-            raise ValueError(
+            msg = (
                 f"Non-shell file {path} does not contain any commands.\n"
                 "If you want to use a non-shell file as a command (script), "
                 "it should contain exactly one @yaml docstring. "
                 "If you want to use a file as a utility script, "
                 "it should start with an underscore (e.g. _utils.py)."
             )
+            raise ValueError(msg)
         else:
             return commands
 
@@ -157,9 +160,8 @@ class ParseCommandBash(ParseCommand):
         if len(matches) == 0:
             return []
         elif len(matches) > 1:
-            raise ValueError(
-                "Non-shell file contains multiple @yaml tags.\n" "Only one @yaml tag is allowed per script."
-            )
+            msg = "Non-shell file contains multiple @yaml tags.\n" "Only one @yaml tag is allowed per script."
+            raise ValueError(msg)
         else:
             yaml_content = matches[0]
             yaml_content = re.sub(r"^#", "", yaml_content, flags=re.MULTILINE)

@@ -3,10 +3,11 @@ from __future__ import annotations
 try:
     import rich
 except ModuleNotFoundError as e:
-    raise RuntimeError(
+    msg = (
         "You probably either forgot to install the dependencies "
         "or forgot to activate your conda or virtual environment."
-    ) from e
+    )
+    raise RuntimeError(msg) from e
 import json
 import logging
 import os
@@ -88,7 +89,8 @@ class ActionsArguments(FlattenedAccess, FrozenSerializable):
 
     def __post_init__(self):
         if self.push_gh_repo_url:
-            raise ValueError("push_gh_repo_url is obsolete. Use repo_path instead")
+            msg = "push_gh_repo_url is obsolete. Use repo_path instead"
+            raise ValueError(msg)
 
 
 @dataclass(frozen=True)

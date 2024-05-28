@@ -129,7 +129,8 @@ def find_relative_path(from_path, to_path):
     if to_path.is_file():
         to_path = to_path.parent
     if not from_path.is_dir() or not to_path.is_dir():
-        raise ValueError(f"Both from_path and to_path must be directories, but got {from_path} and {to_path}")
+        msg = f"Both from_path and to_path must be directories, but got {from_path} and {to_path}"
+        raise ValueError(msg)
 
     # Identify the common ancestor and the parts of each path beyond it
     common_parts = 0

@@ -147,7 +147,8 @@ def run():
     elif environment_input_type == "script_path":
         environment_setup = run.environment.environment_setup.script_path["script_path"]
     else:
-        raise ValueError(f"Unknown input type: {environment_input_type}")
+        msg = f"Unknown input type: {environment_input_type}"
+        raise ValueError(msg)
     if not environment_setup.strip():
         environment_setup = None
     test_run: bool = run.extra.test_run

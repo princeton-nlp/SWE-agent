@@ -93,7 +93,8 @@ def test_should_open_pr_success_has_pr_override(open_pr_hook_init_for_sop, info_
 
 class RaisesExceptionHook(MainHook):
     def on_instance_start(self, *, index: int, instance: dict[str, Any]):
-        raise ValueError("test exception")
+        msg = "test exception"
+        raise ValueError(msg)
 
 
 @pytest.fixture

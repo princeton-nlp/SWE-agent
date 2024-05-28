@@ -51,7 +51,8 @@ class APIStats(Serializable):
 
     def __add__(self, other):
         if not isinstance(other, APIStats):
-            raise TypeError("Can only add APIStats with APIStats")
+            msg = "Can only add APIStats with APIStats"
+            raise TypeError(msg)
 
         return APIStats(
             **{field.name: getattr(self, field.name) + getattr(other, field.name) for field in fields(self)}
@@ -59,7 +60,8 @@ class APIStats(Serializable):
 
     def replace(self, other):
         if not isinstance(other, APIStats):
-            raise TypeError("Can only replace APIStats with APIStats")
+            msg = "Can only replace APIStats with APIStats"
+            raise TypeError(msg)
 
         return APIStats(**{field.name: getattr(other, field.name) for field in fields(self)})
 
@@ -107,9 +109,8 @@ class BaseModel:
             self.api_model = args.model_name.split("bedrock:", 1)[1]
             self.model_metadata = MODELS[self.api_model]
         else:
-            raise ValueError(
-                f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}"
-            )
+            msg = f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}"
+            raise ValueError(msg)
 
     def reset_stats(self, other: APIStats | None = None):
         if other is None:
@@ -157,15 +158,18 @@ class BaseModel:
         # Check whether total cost or instance cost limits have been exceeded
         if 0 < self.args.total_cost_limit <= self.stats.total_cost:
             logger.warning(f"Cost {self.stats.total_cost:.2f} exceeds limit {self.args.total_cost_limit:.2f}")
-            raise CostLimitExceededError("Total cost limit exceeded")
+            msg = "Total cost limit exceeded"
+            raise CostLimitExceededError(msg)
 
         if 0 < self.args.per_instance_cost_limit <= self.stats.instance_cost:
             logger.warning(f"Cost {self.stats.instance_cost:.2f} exceeds limit {self.args.per_instance_cost_limit:.2f}")
-            raise CostLimitExceededError("Instance cost limit exceeded")
+            msg = "Instance cost limit exceeded"
+            raise CostLimitExceededError(msg)
         return cost
 
     def query(self, history: list[dict[str, str]]) -> str:
-        raise NotImplementedError("Use a subclass of BaseModel")
+        msg = "Use a subclass of BaseModel"
+        raise NotImplementedError(msg)
 
 
 class OpenAIModel(BaseModel):
@@ -279,7 +283,8 @@ class OpenAIModel(BaseModel):
                 top_p=self.args.top_p,
             )
         except BadRequestError:
-            raise CostLimitExceededError(f"Context window ({self.model_metadata['max_context']} tokens) exceeded")
+            msg = f"Context window ({self.model_metadata['max_context']} tokens) exceeded"
+            raise CostLimitExceededError(msg)
         # Calculate + update costs, return response
         input_tokens = response.usage.prompt_tokens
         output_tokens = response.usage.completion_tokens
@@ -411,9 +416,11 @@ class BedrockModel(BaseModel):
             # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
             self.api = AnthropicBedrock()
         elif self.model_provider in ["ai21", "amazon", "cohere", "meta", "mistral"]:
-            raise NotImplementedError(f"{self.api_model} is not supported!")
+            msg = f"{self.api_model} is not supported!"
+            raise NotImplementedError(msg)
         else:
-            raise ValueError(f"Provider {self.model_provider} is not supported by Amazon Bedrock!")
+            msg = f"Provider {self.model_provider} is not supported by Amazon Bedrock!"
+            raise ValueError(msg)
 
     def history_to_messages(
         self, history: list[dict[str, str]], is_demonstration: bool = False
@@ -424,7 +431,8 @@ class BedrockModel(BaseModel):
         if self.model_provider == "anthropic":
             return anthropic_history_to_messages(self, history, is_demonstration)
         else:
-            raise NotImplementedError(f"{self.api_model} is not supported!")
+            msg = f"{self.api_model} is not supported!"
+            raise NotImplementedError(msg)
 
     @retry(
         wait=wait_random_exponential(min=1, max=15),
@@ -439,7 +447,8 @@ class BedrockModel(BaseModel):
         if self.model_provider == "anthropic":
             return anthropic_query(self, history)
         else:
-            raise NotImplementedError(f"{self.api_model} is not supported!")
+            msg = f"{self.api_model} is not supported!"
+            raise NotImplementedError(msg)
 
 
 def anthropic_history_to_messages(
@@ -781,7 +790,8 @@ class ReplayModel(BaseModel):
         super().__init__(args, commands)
 
         if self.args.replay_path is None or not os.path.exists(self.args.replay_path):
-            raise ValueError("--replay_path must point to a file that exists to run a replay policy")
+            msg = "--replay_path must point to a file that exists to run a replay policy"
+            raise ValueError(msg)
 
         self.replays = [list(json.loads(x).values())[0] for x in open(self.args.replay_path).readlines()]
         self.replay_idx = 0
@@ -867,4 +877,5 @@ def get_model(args: ModelArguments, commands: list[Command] | None = None):
     elif args.model_name == "instant_empty_submit":
         return InstantEmptySubmitTestModel(args, commands)
     else:
-        raise ValueError(f"Invalid model name: {args.model_name}")
+        msg = f"Invalid model name: {args.model_name}"
+        raise ValueError(msg)

@@ -37,7 +37,8 @@ def convert_to_literal_string(d):
     elif isinstance(d, str) and "\n" in d:
         d = LSS(d.replace("\r\n", "\n").replace("\r", "\n"))
     else:
-        raise ValueError(f"Unsupported type: {type(d)}")
+        msg = f"Unsupported type: {type(d)}"
+        raise ValueError(msg)
     return d
 
 
@@ -74,7 +75,8 @@ def main(traj_path: str, output_dir: str = None, suffix: str = "", overwrite: bo
     )
     output_file = Path(output_dir) / filename
     if output_file.exists() and not overwrite:
-        raise FileExistsError(f"Output file already exists: {output_file}")
+        msg = f"Output file already exists: {output_file}"
+        raise FileExistsError(msg)
     output_file.parent.mkdir(parents=True, exist_ok=True)
     convert_traj_to_action_demo(traj_path, output_file, include_user)
 
@@ -85,7 +87,8 @@ def string2bool(s):
     elif s.lower() in {"false", "0"}:
         return False
     else:
-        raise ValueError(f"Invalid boolean string: {s}")
+        msg = f"Invalid boolean string: {s}"
+        raise ValueError(msg)
 
 
 if __name__ == "__main__":
