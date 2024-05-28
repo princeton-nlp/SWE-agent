@@ -57,6 +57,8 @@ python run.py --model_name "gpt4" --data_path "https://github.com/pvlib/pvlib-py
 # Apply a patch in a local repository to an issue specified as Markdown file and run a custom installer script in the container
 python run.py --model_name "gpt4" --data_path "/path/to/my_issue.md" --repo_path "/path/to/my/local/repo" --environment_setup "/path/to/setup.sh" --config_file "config/default_from_url.yaml" --apply_patch_locally
 ```
+
+**For more information**: https://princeton-nlp.github.io/SWE-agent/usage/cl_tutorial/
 """
 
 handler = RichHandler(show_time=False, show_path=False)
@@ -96,8 +98,11 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
     environment: EnvironmentArguments
     agent: AgentArguments
     actions: ActionsArguments
-    instance_filter: str = ".*"  # Only run instances that completely match this regex
-    skip_existing: bool = True  # Skip instances with existing trajectories
+    # Only run instances that completely match this regex
+    instance_filter: str = ".*"
+    # Skip instances with existing trajectories
+    skip_existing: bool = True
+    # Suffix for the run name (used for example in trajectory directory naming)
     suffix: str = ""
     # Raise unhandled exceptions during the run (useful for debugging)
     raise_exceptions: bool = False
