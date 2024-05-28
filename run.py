@@ -305,7 +305,7 @@ class OpenPRHook(MainHook):
                 logger.warning(
                     "Proceeding with PR creation even though there are already commits "
                     f"({commit_url_strs}) associated with the issue. Please only do this for your own repositories "
-                    "or after verifying that the existing commits do not fix the issue."
+                    "or after verifying that the existing commits do not fix the issue.",
                 )
         return True
 

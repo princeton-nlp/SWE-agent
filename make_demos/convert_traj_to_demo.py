@@ -98,7 +98,11 @@ if __name__ == "__main__":
     parser.add_argument("--suffix", type=str, help="Suffix for the output file", default="")
     parser.add_argument("--overwrite", type=string2bool, help="Overwrite existing files", default=False, nargs="?")
     parser.add_argument(
-        "--include_user", type=string2bool, help="Include user responses (computer)", default=False, nargs="?"
+        "--include_user",
+        type=string2bool,
+        help="Include user responses (computer)",
+        default=False,
+        nargs="?",
     )
     args = parser.parse_args()
     main(**vars(args))

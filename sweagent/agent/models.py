@@ -55,7 +55,7 @@ class APIStats(Serializable):
             raise TypeError(msg)
 
         return APIStats(
-            **{field.name: getattr(self, field.name) + getattr(other, field.name) for field in fields(self)}
+            **{field.name: getattr(self, field.name) + getattr(other, field.name) for field in fields(self)},
         )
 
     def replace(self, other):
@@ -146,13 +146,13 @@ class BaseModel:
             f"input_tokens={input_tokens:,}, "
             f"output_tokens={output_tokens:,}, "
             f"instance_cost={self.stats.instance_cost:.2f}, "
-            f"cost={cost:.2f}"
+            f"cost={cost:.2f}",
         )
         logger.info(
             f"total_tokens_sent={self.stats.tokens_sent:,}, "
             f"total_tokens_received={self.stats.tokens_received:,}, "
             f"total_cost={self.stats.total_cost:.2f}, "
-            f"total_api_calls={self.stats.api_calls:,}"
+            f"total_api_calls={self.stats.api_calls:,}",
         )
 
         # Check whether total cost or instance cost limits have been exceeded
@@ -252,7 +252,9 @@ class OpenAIModel(BaseModel):
             self.client = OpenAI(api_key=cfg["OPENAI_API_KEY"], base_url=api_base_url)
 
     def history_to_messages(
-        self, history: list[dict[str, str]], is_demonstration: bool = False
+        self,
+        history: list[dict[str, str]],
+        is_demonstration: bool = False,
     ) -> str | list[dict[str, str]]:
         """
         Create `messages` by filtering out all keys except for role/content per `history` turn
@@ -344,7 +346,9 @@ class AnthropicModel(BaseModel):
         self.api = Anthropic(api_key=cfg["ANTHROPIC_API_KEY"])
 
     def history_to_messages(
-        self, history: list[dict[str, str]], is_demonstration: bool = False
+        self,
+        history: list[dict[str, str]],
+        is_demonstration: bool = False,
     ) -> str | list[dict[str, str]]:
         """
         Create `prompt` by filtering out all keys except for role/content per `history` turn
@@ -423,7 +427,9 @@ class BedrockModel(BaseModel):
             raise ValueError(msg)
 
     def history_to_messages(
-        self, history: list[dict[str, str]], is_demonstration: bool = False
+        self,
+        history: list[dict[str, str]],
+        is_demonstration: bool = False,
     ) -> str | list[dict[str, str]]:
         """
         Create `prompt` from the history of messages
@@ -452,7 +458,9 @@ class BedrockModel(BaseModel):
 
 
 def anthropic_history_to_messages(
-    model: AnthropicModel | BedrockModel, history: list[dict[str, str]], is_demonstration: bool = False
+    model: AnthropicModel | BedrockModel,
+    history: list[dict[str, str]],
+    is_demonstration: bool = False,
 ) -> str | list[dict[str, str]]:
     """
     Create `prompt` by filtering out all keys except for role/content per `history` turn
@@ -560,7 +568,7 @@ class OllamaModel(BaseModel):
             "max_context": 128_000,
             "cost_per_input_token": 0,
             "cost_per_output_token": 0,
-        }
+        },
     )
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
@@ -570,7 +578,9 @@ class OllamaModel(BaseModel):
         self.client = Client(host=args.host_url)
 
     def history_to_messages(
-        self, history: list[dict[str, str]], is_demonstration: bool = False
+        self,
+        history: list[dict[str, str]],
+        is_demonstration: bool = False,
     ) -> str | list[dict[str, str]]:
         """
         Create `messages` by filtering out all keys except for role/content per `history` turn
@@ -608,7 +618,7 @@ class OllamaModel(BaseModel):
                 "Prompt eval count not found in response. Using 0. "
                 "This might be because the prompt has been cached. "
                 "See https://github.com/princeton-nlp/SWE-agent/issues/44 "
-                "and https://github.com/ollama/ollama/issues/3427."
+                "and https://github.com/ollama/ollama/issues/3427.",
             )
             input_tokens = 0
         output_tokens = response["eval_count"]
@@ -718,7 +728,9 @@ class HumanModel(BaseModel):
         }
 
     def history_to_messages(
-        self, history: list[dict[str, str]], is_demonstration: bool = False
+        self,
+        history: list[dict[str, str]],
+        is_demonstration: bool = False,
     ) -> str | list[dict[str, str]]:
         """
         Create `messages` by filtering out all keys except for role/content per `history` turn

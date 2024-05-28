@@ -358,7 +358,7 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
                 bash_pid,
                 1,
             ],
-        )
+        ),
     )
 
 
@@ -404,7 +404,7 @@ def image_exists(image_name):
                 "connection aborted" in str(e).lower(),
                 "connection refused" in str(e).lower(),
                 "error while fetching server api version" in str(e).lower(),
-            )
+            ),
         )
         if docker_not_running:
             msg = (
@@ -425,7 +425,7 @@ def image_exists(image_name):
     if attrs is not None:
         logger.info(
             f"Found image {image_name} with tags: {attrs['RepoTags']}, created: {attrs['Created']} "
-            f"for {attrs['Os']} {attrs['Architecture']}."
+            f"for {attrs['Os']} {attrs['Architecture']}.",
         )
     return True
 
@@ -505,7 +505,10 @@ class InstanceBuilder:
     def set_problem_statement_from_gh_issue(self, issue_url: str):
         owner, repo, issue_number = parse_gh_issue_url(issue_url)
         self.args["problem_statement"] = get_problem_statement_from_github_issue(
-            owner, repo, issue_number, token=self.token
+            owner,
+            repo,
+            issue_number,
+            token=self.token,
         )
         self.args["instance_id"] = f"{owner}__{repo}-i{issue_number}"
         self.args["problem_statement_source"] = "online"

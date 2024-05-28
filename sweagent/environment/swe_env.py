@@ -173,7 +173,9 @@ class SWEEnv(gym.Env):
             hook.on_copy_repo_started(repo_type=self.record["repo_type"], repo_path=self.record["repo"])
         if self.record["repo_type"] == "local":
             copy_anything_to_container(
-                self.container_obj, self.record["repo"].removeprefix("local://"), "/" + self._repo_name
+                self.container_obj,
+                self.record["repo"].removeprefix("local://"),
+                "/" + self._repo_name,
             )
             self.communicate_with_handling(
                 input=f"chown -R root:root {self._repo_name}",
@@ -327,7 +329,8 @@ class SWEEnv(gym.Env):
             shell=True,
         )
         self.communicate_with_handling(
-            input="git apply /root/test.patch", error_msg="Failed to apply test patch correctly"
+            input="git apply /root/test.patch",
+            error_msg="Failed to apply test patch correctly",
         )
         os.remove(path_to_patch)
 
@@ -689,7 +692,7 @@ class SWEEnv(gym.Env):
             logger.warning(
                 "install_environment is set to True, but the data path is a GitHub URL "
                 "without an environment config file (environment_config key/flag). "
-                "Skipping conda environment installation."
+                "Skipping conda environment installation.",
             )
             return
         for hook in self.hooks:
@@ -750,7 +753,9 @@ class SWEEnv(gym.Env):
                     content_env_yml = get_environment_yml(self.record, env_name)
                 else:
                     content_env_yml = get_environment_yml(
-                        self.record, env_name, python_version=install_configs["python"]
+                        self.record,
+                        env_name,
+                        python_version=install_configs["python"],
                     )
                 copy_file_to_container(self.container_obj, content_env_yml, PATH_TO_ENV_YML)
                 if install_configs.get("no_use_env", False):
@@ -804,7 +809,9 @@ class SWEEnv(gym.Env):
         if install_configs.get("install", False):
             install_cmd = install_configs["install"]
             self.communicate_with_handling(
-                install_cmd, error_msg="Install command failed to execute successfully", timeout_duration=LONG_TIMEOUT
+                install_cmd,
+                error_msg="Install command failed to execute successfully",
+                timeout_duration=LONG_TIMEOUT,
             )
         if install_configs.get("post_install", False):
             self.logger.info("Running post-install commands...")
@@ -954,5 +961,5 @@ class SWEEnv(gym.Env):
             logger.info(
                 f"🎉 PR created as a draft at {pr_info.html_url}. Please review it carefully, push "
                 "any required changes onto the branch and then click "
-                "'Ready for Review' to bring it to the attention of the maintainers."
+                "'Ready for Review' to bring it to the attention of the maintainers.",
             )

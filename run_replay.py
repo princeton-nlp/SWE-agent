@@ -63,7 +63,7 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
     is_other = False
     if data_path.endswith(".jsonl"):
         replay_task_instances_path = create_task_instances_tmp_file(
-            [json.loads(x) for x in open(data_path).readlines()]
+            [json.loads(x) for x in open(data_path).readlines()],
         )
     elif data_path.endswith(".json"):
         replay_task_instances_path = create_task_instances_tmp_file(json.load(open(data_path)))

@@ -37,7 +37,9 @@ def swe_agent_test_repo_local_problem_stmt(swe_agent_test_repo_clone) -> Path:
 @pytest.mark.slow
 @pytest.mark.parametrize("problem_statement_source", ["github", "local"])
 def test_model_replay_github_repo(
-    swe_agent_test_repo_traj, problem_statement_source, swe_agent_test_repo_local_problem_stmt
+    swe_agent_test_repo_traj,
+    problem_statement_source,
+    swe_agent_test_repo_local_problem_stmt,
 ):
     if problem_statement_source == "github":
         data_path = "https://github.com/klieret/swe-agent-test-repo/issues/1"
