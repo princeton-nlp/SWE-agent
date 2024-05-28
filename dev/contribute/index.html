@@ -891,18 +891,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tips-for-pull-requests" class="md-nav__link">
+  <a href="#running-tests" class="md-nav__link">
     <span class="md-ellipsis">
-      Tips for pull requests
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#building-the-documentation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Building the documentation
+      Running tests
     </span>
   </a>
   
@@ -981,18 +972,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tips-for-pull-requests" class="md-nav__link">
+  <a href="#running-tests" class="md-nav__link">
     <span class="md-ellipsis">
-      Tips for pull requests
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#building-the-documentation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Building the documentation
+      Running tests
     </span>
   </a>
   
@@ -1047,17 +1029,30 @@ pre-commit<span class="w"> </span>install
 <p>Some issues can be automatically fixed with <a href="https://github.com/charliermarsh/ruff"><code>ruff</code></a> (part of the checks):</p>
 <div class="highlight"><pre><span></span><code>pipx<span class="w"> </span>run<span class="w"> </span>ruff<span class="w"> </span>check<span class="w"> </span>--fix
 </code></pre></div>
-<h2 id="tips-for-pull-requests">Tips for pull requests</h2>
-<ul>
-<li>Please open separate PRs for separate issues. This makes it easier to incorporate part of your changes.</li>
-<li>It might be good to open an issue and discuss first before investing time on an experimental feature.</li>
-<li>When changing the behavior of the agent, we need to have some indication that it actually improves the success rate of SWE-agent.
-  However, if you make the behavior optional without complicating SWE-agent (for example by providing new <a href="../../config/commands/">commands</a>),
-  we might be less strict.</li>
-</ul>
-<h2 id="building-the-documentation">Building the documentation</h2>
-<p>Simply run</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># cd repo root</span>
+<h2 id="running-tests">Running tests</h2>
+<p>We provide a lot of tests that can be very helpful for rapid development.
+Run them with</p>
+<div class="highlight"><pre><span></span><code>pytest
+</code></pre></div>
+<p>Some of the tests might be slwoer than others. You can exclude them with</p>
+<div class="highlight"><pre><span></span><code>pytest<span class="w"> </span>-
+
+<span class="c1">## Tips for pull requests</span>
+
+*<span class="w"> </span>Please<span class="w"> </span>open<span class="w"> </span>separate<span class="w"> </span>PRs<span class="w"> </span><span class="k">for</span><span class="w"> </span>separate<span class="w"> </span>issues.<span class="w"> </span>This<span class="w"> </span>makes<span class="w"> </span>it<span class="w"> </span>easier<span class="w"> </span>to<span class="w"> </span>incorporate<span class="w"> </span>part<span class="w"> </span>of<span class="w"> </span>your<span class="w"> </span>changes.
+*<span class="w"> </span>It<span class="w"> </span>might<span class="w"> </span>be<span class="w"> </span>good<span class="w"> </span>to<span class="w"> </span>open<span class="w"> </span>an<span class="w"> </span>issue<span class="w"> </span>and<span class="w"> </span>discuss<span class="w"> </span>first<span class="w"> </span>before<span class="w"> </span>investing<span class="w"> </span><span class="nb">time</span><span class="w"> </span>on<span class="w"> </span>an<span class="w"> </span>experimental<span class="w"> </span>feature.
+*<span class="w"> </span>When<span class="w"> </span>changing<span class="w"> </span>the<span class="w"> </span>behavior<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>agent,<span class="w"> </span>we<span class="w"> </span>need<span class="w"> </span>to<span class="w"> </span>have<span class="w"> </span>some<span class="w"> </span>indication<span class="w"> </span>that<span class="w"> </span>it<span class="w"> </span>actually<span class="w"> </span>improves<span class="w"> </span>the<span class="w"> </span>success<span class="w"> </span>rate<span class="w"> </span>of<span class="w"> </span>SWE-agent.
+<span class="w">  </span>However,<span class="w"> </span><span class="k">if</span><span class="w"> </span>you<span class="w"> </span>make<span class="w"> </span>the<span class="w"> </span>behavior<span class="w"> </span>optional<span class="w"> </span>without<span class="w"> </span>complicating<span class="w"> </span>SWE-agent<span class="w"> </span><span class="o">(</span><span class="k">for</span><span class="w"> </span>example<span class="w"> </span>by<span class="w"> </span>providing<span class="w"> </span>new<span class="w"> </span><span class="o">[</span>commands<span class="o">](</span>../config/commands.md<span class="o">))</span>,
+<span class="w">  </span>we<span class="w"> </span>might<span class="w"> </span>be<span class="w"> </span>less<span class="w"> </span>strict.
+*<span class="w"> </span>Please<span class="w"> </span>add<span class="w"> </span>simple<span class="w"> </span>unit<span class="w"> </span>tests<span class="w"> </span>or<span class="w"> </span>integration<span class="w"> </span>tests<span class="w"> </span>wherever<span class="w"> </span>possible.<span class="w"> </span>Take<span class="w"> </span>a<span class="w"> </span>look<span class="w"> </span><span class="k">in</span><span class="w"> </span>the<span class="w"> </span><span class="o">[</span>tests<span class="w"> </span>directory<span class="o">](</span>https://github.com/princeton-nlp/SWE-agent/tree/main/tests<span class="o">)</span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span>inspiration.<span class="w"> </span>We<span class="w"> </span>emphasize<span class="w"> </span>simple<span class="w"> </span>easy-tow-rite<span class="w"> </span>tests<span class="w"> </span>that<span class="w"> </span>get<span class="w"> </span>a<span class="w"> </span>lot<span class="w"> </span>of<span class="w"> </span>coverage.
+
+<span class="c1">## Building the documentation</span>
+
+Simply<span class="w"> </span>run
+
+<span class="sb">```</span>bash
+<span class="c1"># cd repo root</span>
 mkdocs<span class="w"> </span>serve
 </code></pre></div>
 <p>and point your browser to port 8000 or click one of the links in the output.</p>
