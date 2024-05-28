@@ -1,15 +1,8 @@
 name: Release to dockerhub
 
 on:
-  push:
-    branches:
-      - main
-      - "docker-release-*"
-    paths-ignore:
-      - 'docs/**'
-      - 'README.md'
-      - 'mkdocs.yml'
-
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
     login:
