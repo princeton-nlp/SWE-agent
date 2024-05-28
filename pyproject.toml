@@ -161,6 +161,8 @@ select = [
     "COM812",  # use trailing commas
     # pytest
     "PT",
+    # flake8-simplify (SIM)
+    "SIM201",
 ]
 ignore = [
     # flake8-return

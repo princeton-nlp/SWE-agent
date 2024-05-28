@@ -724,7 +724,7 @@ def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token:
     events = api.issues.list_events(org, repo, issue_number)
     commit_urls = []
     for event in events:
-        if not event.event == "referenced":
+        if event.event != "referenced":
             continue
         if not event.commit_id:
             continue
