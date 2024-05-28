@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from sweagent import CONFIG_DIR
+
 try:
     import rich
 except ModuleNotFoundError as e:
@@ -480,7 +482,7 @@ def get_args(args=None) -> ScriptArguments:
                 temperature=0.0,
                 top_p=0.95,
             ),
-            config_file=Path("config/default.yaml"),
+            config_file=CONFIG_DIR / "default.yaml",
         ),
         actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
     )

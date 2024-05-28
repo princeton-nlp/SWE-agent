@@ -6,8 +6,27 @@ from pathlib import Path
 from typing import Any
 
 import config as config_file
+from sweagent import REPO_ROOT
 
 logger = logging.getLogger("config")
+
+
+def convert_path_to_abspath(path: Path | str) -> Path:
+    """If path is not absolute, convert it to an absolute path
+    using the SWE_AGENT_CONFIG_ROOT environment variable (if set) or
+    REPO_ROOT as base.
+    """
+    path = Path(path)
+    root = Path(os.environ.get("SWE_AGENT_CONFIG_ROOT", REPO_ROOT))
+    assert root.is_dir()
+    if not path.is_absolute():
+        path = root / path
+    assert path.is_absolute()
+    return path.resolve()
+
+
+def convert_paths_to_abspath(paths: list[Path | str]) -> list[Path]:
+    return [convert_path_to_abspath(p) for p in paths]
 
 
 class Config:

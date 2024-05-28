@@ -21,6 +21,7 @@ from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 from swebench import MAP_VERSION_TO_INSTALL, get_environment_yml, get_requirements
 
 import docker
+from sweagent import REPO_ROOT
 from sweagent.environment.utils import (
     LOGGER_NAME,
     PROCESS_DONE_MARKER_END,
@@ -126,7 +127,7 @@ class SWEEnv(gym.Env):
         #: The commit hash of the swe-agent repository
         self.commit_sha = None
         try:
-            repo = Repo(search_parent_directories=True)
+            repo = Repo(REPO_ROOT, search_parent_directories=True)
             self.commit_sha = repo.head.object.hexsha
         except KeyboardInterrupt:
             raise

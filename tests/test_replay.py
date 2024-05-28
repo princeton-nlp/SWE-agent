@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from run_replay import get_args, main
+from sweagent import CONFIG_DIR
 
 
 @pytest.fixture()
@@ -37,6 +38,7 @@ def swe_agent_test_repo_local_problem_stmt(swe_agent_test_repo_clone) -> Path:
 @pytest.mark.slow()
 @pytest.mark.parametrize("problem_statement_source", ["github", "local"])
 def test_model_replay_github_repo(
+    tmpdir,
     swe_agent_test_repo_traj,
     problem_statement_source,
     swe_agent_test_repo_local_problem_stmt,
@@ -47,17 +49,19 @@ def test_model_replay_github_repo(
         data_path = str(swe_agent_test_repo_local_problem_stmt)
     args = [
         "--traj_path",
-        str(swe_agent_test_repo_traj),
+        str(swe_agent_test_repo_traj.resolve()),
         "--data_path",
         data_path,
         "--config_file",
-        "config/default_from_url.yaml",
+        str(CONFIG_DIR / "default_from_url.yaml"),
         "--raise_exceptions",
     ]
     if problem_statement_source == "local":
         args.extend(["--repo_path", "https://github.com/klieret/swe-agent-test-repo/"])
     args, remaining_args = get_args(args)
-    main(**vars(args), forward_args=remaining_args)
+    with tmpdir.as_cwd():
+        # Test that we can run run.py also independently from repo dir
+        main(**vars(args), forward_args=remaining_args)
 
 
 @pytest.mark.slow()

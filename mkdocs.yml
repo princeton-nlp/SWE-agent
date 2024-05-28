@@ -62,6 +62,7 @@ nav:
     - "Config files": "config/config.md"
     - "Command definitions": "config/commands.md"
     - "Demonstrations": "config/demonstrations.md"
+    - "Environment variables": "config/env.md"
   - Development:
     - "Contribution guide": "dev/contribute.md"
     - "Code structure": "dev/code_structure.md"

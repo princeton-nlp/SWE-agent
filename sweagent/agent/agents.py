@@ -24,6 +24,7 @@ from sweagent.agent.models import (
 from sweagent.agent.parsing import FormatError, ParseFunction
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.environment.utils import LOGGER_NAME
+from sweagent.utils.config import convert_paths_to_abspath
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -50,11 +51,15 @@ class AgentConfig(FrozenSerializable):
     next_step_no_output_template: str | None = None  # defaults to next_step_template
     strategy_template: str | None = None
     demonstration_template: str | None = None
-    demonstrations: list[str] = field(default_factory=list)
+    # Paths to demonstrations. If path is not absolute, it is assumed to be
+    # relative to the SWE_AGENT_CONFIG_ROOT (if set) or the SWE-agent repository root
+    demonstrations: list[str | Path] = field(default_factory=list)
     put_demos_in_history: bool = False  # if True, add demonstration to history instead of as a single message
     # defaults to format_error_template in ParseFunction
     format_error_template: str = None  # type: ignore
-    command_files: list[str] = field(default_factory=list)
+    # Paths to command files. If path is not absolute, it is assumed to be
+    # relative to the SWE_AGENT_CONFIG_ROOT (if set) or the SWE-agent repository root
+    command_files: list[str | Path] = field(default_factory=list)
     env_variables: dict[str, str] = field(default_factory=dict)
     util_functions: list[str] = field(default_factory=list)
     submit_command: str = "submit"
@@ -99,6 +104,9 @@ class AgentConfig(FrozenSerializable):
     subroutine_types: list[Subroutine] = field(default_factory=list)
 
     def __post_init__(self):
+        object.__setattr__(self, "command_files", convert_paths_to_abspath(self.command_files))
+        object.__setattr__(self, "demonstrations", convert_paths_to_abspath(self.demonstrations))
+
         if self.next_step_template is None:
             object.__setattr__(self, "next_step_template", self.instance_template)
         if self.next_step_no_output_template is None:
@@ -270,7 +278,7 @@ class Agent:
         self.history: list[dict[str, Any]] = []
         self._append_history({"role": "system", "content": system_msg, "agent": self.name})
 
-        if len(self.config.demonstrations) > 0 and "history_to_messages" in dir(self.model):
+        if "history_to_messages" in dir(self.model):
             for demonstration_path in self.config.demonstrations:
                 if self.config.demonstration_template is None and not self.config.put_demos_in_history:
                     msg = "Cannot use demonstrations without a demonstration template or put_demos_in_history=True"
@@ -278,7 +286,7 @@ class Agent:
 
                 # Load history
                 logger.info(f"DEMONSTRATION: {demonstration_path}")
-                demo_history = json.load(open(demonstration_path))["history"]
+                demo_history = json.loads(Path(demonstration_path).read_text())["history"]
                 demo_history = [
                     entry
                     for entry in demo_history
