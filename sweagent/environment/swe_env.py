@@ -37,7 +37,7 @@ from sweagent.environment.utils import (
     read_with_timeout,
     read_with_timeout_experimental,
 )
-from sweagent.utils.config import Config
+from sweagent.utils.config import keys_config
 
 LONG_TIMEOUT = 500
 PATH_TO_REQS = "/root/requirements.txt"
@@ -118,7 +118,7 @@ class SWEEnv(gym.Env):
         except:
             logger.warning("Failed to get commit hash for this repo")
 
-        self._github_token: str = Config().get("GITHUB_TOKEN", "")  # type: ignore
+        self._github_token: str = keys_config.get("GITHUB_TOKEN", "")  # type: ignore
 
         # Load Task Instances
         self.data_path = self.args.data_path
@@ -548,7 +548,7 @@ class SWEEnv(gym.Env):
         input: str,
         timeout_duration=25,
     ) -> str:
-        if "SWE_AGENT_EXPERIMENTAL_COMMUNICATE" in Config():
+        if "SWE_AGENT_EXPERIMENTAL_COMMUNICATE" in keys_config:
             return self._communicate_experimental(input, timeout_duration)
         try:
             self.returncode = None

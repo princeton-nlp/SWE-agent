@@ -38,17 +38,13 @@ from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 from swebench import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
 from unidiff import PatchSet
 
-from sweagent import (
-    Agent,
-    AgentArguments,
-    EnvironmentArguments,
-    ModelArguments,
-    SWEEnv,
-    get_data_path_name,
-)
+from sweagent.agent.agents import Agent, AgentArguments
+from sweagent.agent.models import ModelArguments
+from sweagent.environment.swe_env import EnvironmentArguments, SWEEnv
 from sweagent.environment.utils import (
     InvalidGithubURL,
     get_associated_commit_urls,
+    get_data_path_name,
     get_gh_issue_data,
     parse_gh_issue_url,
 )

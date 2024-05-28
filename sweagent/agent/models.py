@@ -19,7 +19,7 @@ from tenacity import (
 )
 
 from sweagent.agent.commands import Command
-from sweagent.utils.config import Config
+from sweagent.utils.config import keys_config
 
 logger = logging.getLogger("api_models")
 handler = RichHandler(show_time=False, show_path=False)
@@ -239,17 +239,16 @@ class OpenAIModel(BaseModel):
         logging.getLogger("httpx").setLevel(logging.WARNING)
 
         # Set OpenAI key
-        cfg = Config()
         if self.args.model_name.startswith("azure"):
-            self.api_model = cfg["AZURE_OPENAI_DEPLOYMENT"]
+            self.api_model = keys_config["AZURE_OPENAI_DEPLOYMENT"]
             self.client = AzureOpenAI(
-                api_key=cfg["AZURE_OPENAI_API_KEY"],
-                azure_endpoint=cfg["AZURE_OPENAI_ENDPOINT"],
-                api_version=cfg.get("AZURE_OPENAI_API_VERSION", "2024-02-01"),
+                api_key=keys_config["AZURE_OPENAI_API_KEY"],
+                azure_endpoint=keys_config["AZURE_OPENAI_ENDPOINT"],
+                api_version=keys_config.get("AZURE_OPENAI_API_VERSION", "2024-02-01"),
             )
         else:
-            api_base_url: str | None = cfg.get("OPENAI_API_BASE_URL", None)
-            self.client = OpenAI(api_key=cfg["OPENAI_API_KEY"], base_url=api_base_url)
+            api_base_url: str | None = keys_config.get("OPENAI_API_BASE_URL", None)
+            self.client = OpenAI(api_key=keys_config["OPENAI_API_KEY"], base_url=api_base_url)
 
     def history_to_messages(
         self,
@@ -342,8 +341,7 @@ class AnthropicModel(BaseModel):
         super().__init__(args, commands)
 
         # Set Anthropic key
-        cfg = Config()
-        self.api = Anthropic(api_key=cfg["ANTHROPIC_API_KEY"])
+        self.api = Anthropic(api_key=keys_config["ANTHROPIC_API_KEY"])
 
     def history_to_messages(
         self,
@@ -670,8 +668,7 @@ class TogetherModel(BaseModel):
         assert together.version >= "1.1.0", "Please upgrade to Together SDK v1.1.0 or later."
 
         # Set Together key
-        cfg = Config()
-        together.api_key = cfg.TOGETHER_API_KEY
+        together.api_key = keys_config["TOGETHER_API_KEY"]
 
     def history_to_messages(self, history: list[dict[str, str]], is_demonstration: bool = False) -> str:
         """

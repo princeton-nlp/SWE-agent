@@ -42,8 +42,11 @@ class Config:
             return os.environ[key]
         if self._keys_cfg is not None and key in self._keys_cfg:
             return self._keys_cfg[key]
-        msg = f"Key {key} not found in environment or keys.cfg"
+        msg = f"Key {key} not found in environment variables or keys.cfg (if existing)"
         raise KeyError(msg)
 
     def __contains__(self, key: str) -> bool:
         return key in os.environ or (self._keys_cfg is not None and key in self._keys_cfg)
+
+
+keys_config = Config()
