@@ -1,0 +1,8 @@
+# Trailing whitespace & black
+51699eb03c3c4f36d4b5ef2725f7bd5223874da7
+70ba97190a781705203ba838bfe0fb8be7cfa32f
+83988093c08ab5f1cb999f97fc3745f3d3af306f
+# Code quality: Convert to make use of PEP 585 and PEP 604
+29a4c6dfb6cceff5e657c707ce809bc78f33b778
+# Sort imports
+f873761e6760a844c1788cb5f4e42de401ab2c38
