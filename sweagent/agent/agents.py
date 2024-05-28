@@ -1,12 +1,15 @@
 import json
-import re
 import logging
-
+import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, TypedDict
+
 from simple_parsing.helpers.fields import field
-from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 from simple_parsing.helpers.flatten import FlattenedAccess
+from simple_parsing.helpers.serialization.serializable import FrozenSerializable
+from tenacity import RetryError
+
 from sweagent.agent.commands import Command, ParseCommand
 from sweagent.agent.history_processors import HistoryProcessor
 from sweagent.agent.models import (
@@ -16,11 +19,9 @@ from sweagent.agent.models import (
     ModelArguments,
     get_model,
 )
-from sweagent.agent.parsing import ParseFunction, FormatError
-from sweagent.environment.utils import LOGGER_NAME
+from sweagent.agent.parsing import FormatError, ParseFunction
 from sweagent.environment.swe_env import SWEEnv
-from tenacity import RetryError
-from typing import Dict, List, Optional, Tuple, Any, TypedDict
+from sweagent.environment.utils import LOGGER_NAME
 
 logger = logging.getLogger(LOGGER_NAME)
 

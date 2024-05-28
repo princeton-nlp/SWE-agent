@@ -1,8 +1,8 @@
 import logging
-from typing import Any
-import config as config_file
 import os
+from typing import Any
 
+import config as config_file
 
 logger = logging.getLogger("config")
 

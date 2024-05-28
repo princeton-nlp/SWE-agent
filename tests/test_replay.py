@@ -1,7 +1,9 @@
-from pathlib import Path
 import subprocess
-from run_replay import get_args, main
+from pathlib import Path
+
 import pytest
+
+from run_replay import get_args, main
 
 
 @pytest.fixture

@@ -1,41 +1,41 @@
-from pathlib import Path
-import random
 import datetime
-import docker
-import gymnasium as gym
 import hashlib
 import logging
 import os
+import random
 import re
 import subprocess
-import traceback
 import time
-
-from ghapi.all import GhApi
+import traceback
 from dataclasses import dataclass
+from pathlib import Path
+from typing import List, Optional, Tuple
+
+import gymnasium as gym
+import yaml
+from ghapi.all import GhApi
 from git import Repo
 from rich.logging import RichHandler
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
-import yaml
+from swebench import MAP_VERSION_TO_INSTALL, get_environment_yml, get_requirements
+
+import docker
 from sweagent.environment.utils import (
+    LOGGER_NAME,
     PROCESS_DONE_MARKER_END,
     PROCESS_DONE_MARKER_START,
     InvalidGithubURL,
-    image_exists,
     copy_anything_to_container,
     copy_file_to_container,
     format_trajectory_markdown,
     get_container,
     get_gh_issue_data,
     get_instances,
+    image_exists,
     parse_gh_issue_url,
     read_with_timeout,
-    LOGGER_NAME,
     read_with_timeout_experimental,
 )
-from swebench import get_environment_yml, get_requirements, MAP_VERSION_TO_INSTALL
-from typing import List, Optional, Tuple
-
 from sweagent.utils.config import Config
 
 LONG_TIMEOUT = 500

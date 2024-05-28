@@ -1,23 +1,24 @@
 import json
 import logging
 import os
-import together
-
 from collections import defaultdict
-from anthropic import Anthropic, AnthropicBedrock, HUMAN_PROMPT, AI_PROMPT
 from dataclasses import dataclass, fields
-from openai import BadRequestError, OpenAI, AzureOpenAI
+from typing import Optional, Union
+
+import together
+from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
+from openai import AzureOpenAI, BadRequestError, OpenAI
+from rich.logging import RichHandler
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
-from sweagent.utils.config import Config
-from sweagent.agent.commands import Command
 from tenacity import (
     retry,
+    retry_if_not_exception_type,
     stop_after_attempt,
     wait_random_exponential,
-    retry_if_not_exception_type,
 )
-from typing import Optional, Union
-from rich.logging import RichHandler
+
+from sweagent.agent.commands import Command
+from sweagent.utils.config import Config
 
 logger = logging.getLogger("api_models")
 handler = RichHandler(show_time=False, show_path=False)

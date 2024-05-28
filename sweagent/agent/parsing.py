@@ -1,13 +1,13 @@
-import re
 import json
+import re
 import shlex
 import string
 import textwrap
-
 from abc import abstractmethod
 from dataclasses import dataclass
-from sweagent.agent.commands import Command
 from typing import List
+
+from sweagent.agent.commands import Command
 
 
 class FormatError(Exception):

@@ -1,9 +1,10 @@
-import os
 import json
+import os
 import sys
 from pathlib import Path
 
 from pytest import fixture
+
 import sweagent.environment.utils as env_utils
 
 # this is a hack and should be removed when we have a better solution

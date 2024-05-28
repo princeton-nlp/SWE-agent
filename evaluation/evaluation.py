@@ -2,19 +2,19 @@ import argparse
 import json
 import os
 import traceback
-
 from collections import Counter
+
 from rich import print
 from swebench import (
     KEY_INSTANCE_ID,
     KEY_MODEL,
     KEY_PREDICTION,
+    get_eval_refs,
     get_eval_report,
     get_logs_eval,
     get_model_report,
     get_resolution_status,
     run_evaluation,
-    get_eval_refs,
 )
 from swebench.harness.constants import (
     INSTALL_FAIL,

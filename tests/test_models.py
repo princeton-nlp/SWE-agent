@@ -1,6 +1,8 @@
 from unittest.mock import MagicMock, Mock, patch
-from sweagent.agent.models import OpenAIModel, ModelArguments, TogetherModel
+
 import pytest
+
+from sweagent.agent.models import ModelArguments, OpenAIModel, TogetherModel
 
 
 @pytest.fixture
