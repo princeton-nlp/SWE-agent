@@ -44,7 +44,7 @@ class WebUpdate:
     def up_log(self, message: str):
         """Update the log"""
         self._emit("log_message", {"message": message})
-    
+
     def up_banner(self, message: str):
         """Update the banner"""
         self._emit("update_banner", {"message": message})
@@ -100,9 +100,7 @@ class MainUpdateHook(MainHook):
         self._wu = wu
 
     def on_start(self):
-        self._wu.up_env(
-            message="Environment container initialized", format="text", type_="info"
-        )
+        self._wu.up_env(message="Environment container initialized", format="text", type_="info")
 
     def on_end(self):
         self._wu.up_agent(message="The run has ended", format="text")

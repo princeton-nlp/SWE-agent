@@ -1,6 +1,6 @@
 # Command Configuration
 In this document, we describe how to implement your own commands for the SWE-agent ACI.
-To see examples of command implementations, open the `.sh` and `.py` files in the 
+To see examples of command implementations, open the `.sh` and `.py` files in the
 [`config/commands`](https://github.com/princeton-nlp/SWE-agent/tree/main/config/commands) folder.
 
 ## Scaffolding
