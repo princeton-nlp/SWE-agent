@@ -81,7 +81,7 @@ class ActionsArguments(FlattenedAccess, FrozenSerializable):
 
     def __post_init__(self):
         if self.push_gh_repo_url:
-            raise ValueError("push_gh_repo_url is obsolete. Use repo_path instead")
+            raise ValueError("push_gh_repo_url test test is obsolete. Use repo_path instead")
 
 @dataclass(frozen=True)
 class ScriptArguments(FlattenedAccess, FrozenSerializable):
@@ -90,7 +90,7 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
     agent: AgentArguments
     actions: ActionsArguments
     instance_filter: str = ".*"  # Only run instances that completely match this regex
-    skip_existing: bool = True  # Skip instances with existing trajectories
+    skip_existing: list[bool] = True  # Skip instances with existing trajectories
     suffix: str = ""
     # Raise unhandled exceptions during the run (useful for debugging)
     raise_exceptions: bool = False
