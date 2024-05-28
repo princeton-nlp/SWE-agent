@@ -33,6 +33,9 @@ If you found this work helpful, please consider using the following citation:
       title={SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering},
       author={John Yang and Carlos E. Jimenez and Alexander Wettig and Kilian Lieret and Shunyu Yao and Karthik Narasimhan and Ofir Press},
       year={2024},
+      eprint={2405.15793},
+      archivePrefix={arXiv},
+      primaryClass={cs.SE}
 }
 ```
 
