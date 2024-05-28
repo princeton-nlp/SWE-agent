@@ -29,7 +29,7 @@ def append_exit(content):
                 {
                     "role": "model_patch",
                     "content": submission,
-                }
+                },
             )
         # else submission should be in history already
         else:
@@ -50,7 +50,7 @@ def append_patch(instance_id, content, patches, patch_type):
                 {
                     "role": f"{patch_type} Patch",
                     "content": patches[instance_id],
-                }
+                },
             )
     return content
 
@@ -86,15 +86,15 @@ def append_results(traj_path: Path, instance_id: str, content, results, results_
         status.append("**** Statuses ****")
         status.append(
             f"  {'✅' if is_generated else '❌'} Generated (The agent was {'' if is_generated else 'not '}"
-            "able to generate a pull request to address this issue)"
+            "able to generate a pull request to address this issue)",
         )
         status.append(
             f"  {'✅' if is_applied else '❌'} Applied (The pull request was {'' if is_applied else 'not '}"
-            "successfully applied to the repo during eval)"
+            "successfully applied to the repo during eval)",
         )
         status.append(
             f"  {'✅' if is_resolved else '❌'} Resolved (The pull request {'' if is_resolved else 'not '}"
-            "successfully resolved the issue during eval)"
+            "successfully resolved the issue during eval)",
         )
     else:
         status.append("Results format not recognized")
@@ -122,7 +122,7 @@ def append_results(traj_path: Path, instance_id: str, content, results, results_
     else:
         status.append("---------------------------")
         status.append(
-            "Note that the evaluation results here may not be accurate or up to date, since they are computed separately from the agent run itself."
+            "Note that the evaluation results here may not be accurate or up to date, since they are computed separately from the agent run itself.",
         )
         status.append(f"Check {results_file} for the most accurate evaluation results.")
         status.append("")

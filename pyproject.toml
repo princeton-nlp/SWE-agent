@@ -157,6 +157,8 @@ select = [
     "RET",
     # RUF
     "RUF019",  # unneded key in dict check
+    # other
+    "COM812",  # use trailing commas
 ]
 ignore = [
     # flake8-return

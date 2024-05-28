@@ -148,7 +148,7 @@ class ParseCommandBash(ParseCommand):
                         "name": name,
                         "arguments": arguments,
                         "signature": signature,
-                    }
+                    },
                 )
                 commands.append(command)
                 docs = []
@@ -189,8 +189,8 @@ class ParseCommandBash(ParseCommand):
                         "name": name,
                         "arguments": arguments,
                         "signature": signature,
-                    }
-                )
+                    },
+                ),
             ]
 
     def generate_command_docs(self, commands: list[Command], subroutine_types, **kwargs) -> str:

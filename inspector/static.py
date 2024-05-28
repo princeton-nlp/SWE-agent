@@ -111,7 +111,8 @@ def save_static_viewer(file_path):
     icons_path = Path(__file__).parent / "icons"
     relative_icons_path = find_relative_path(file_path, icons_path)
     style_sheet = STYLE_SHEET.replace("url('icons/", f"url('{relative_icons_path.as_posix()}/").replace(
-        'url("icons/', f'url("{relative_icons_path.as_posix()}/'
+        'url("icons/',
+        f'url("{relative_icons_path.as_posix()}/',
     )
     data = TEMPLATE.format(file_content=content, style_sheet=style_sheet, file_path_tree=file_path_tree)
     output_file = file_path.with_suffix(".html")

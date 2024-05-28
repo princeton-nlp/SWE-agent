@@ -117,7 +117,9 @@ def test_execute_environment(tmp_path, test_env_args):
 @pytest.mark.slow
 def test_open_pr(test_env_args):
     test_env_args = dataclasses.replace(
-        test_env_args, data_path="https://github.com/klieret/swe-agent-test-repo/issues/1", repo_path=""
+        test_env_args,
+        data_path="https://github.com/klieret/swe-agent-test-repo/issues/1",
+        repo_path="",
     )
     with swe_env_context(test_env_args) as env:
         env.reset()

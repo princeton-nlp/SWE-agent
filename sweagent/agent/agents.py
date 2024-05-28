@@ -221,7 +221,14 @@ class AgentHook:
         ...
 
     def on_query_message_added(
-        self, *, role: str, content: str, agent: str, is_demo: bool = False, thought: str = "", action: str = ""
+        self,
+        *,
+        role: str,
+        content: str,
+        agent: str,
+        is_demo: bool = False,
+        thought: str = "",
+        action: str = "",
     ): ...
 
 
@@ -300,7 +307,7 @@ class Agent:
                             "content": demonstration,
                             "is_demo": True,
                             "role": "user",
-                        }
+                        },
                     )
 
     @property
@@ -401,7 +408,7 @@ class Agent:
                                 "agent": self.name,
                                 "action": match_action,
                                 "cmd_name": first_match.group(1),
-                            }
+                            },
                         )  # submit command is not a subroutine
                     else:
                         parsed_action.append(
@@ -410,7 +417,7 @@ class Agent:
                                 "args": first_match.group(2),
                                 "action": match_action,
                                 "cmd_name": first_match.group(1),
-                            }
+                            },
                         )
             else:
                 parsed_action.append({"agent": self.name, "action": rem_action, "cmd_name": None})
@@ -461,7 +468,7 @@ class Agent:
                 "thought": thought,
                 "action": action,
                 "agent": self.name,
-            }
+            },
         )
 
         logger.info(f"💭 THOUGHT ({self.name})\n{thought}")
@@ -500,7 +507,7 @@ class Agent:
                     **self.system_args,
                     **state_vars,
                     observation=(observation if observation is not None else ""),
-                )
+                ),
             )
 
         message = "\n".join(messages)
@@ -781,7 +788,7 @@ class Agent:
                     "response": output,
                     "state": state,
                     "thought": thought,
-                }
+                },
             )
             trajectory.append(trajectory_step)
             model_stats: APIStats = self.model.stats
