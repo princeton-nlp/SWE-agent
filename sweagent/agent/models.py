@@ -1,4 +1,3 @@
-import config
 import json
 import logging
 import os
@@ -9,6 +8,7 @@ from anthropic import Anthropic, AnthropicBedrock, HUMAN_PROMPT, AI_PROMPT
 from dataclasses import dataclass, fields
 from openai import BadRequestError, OpenAI, AzureOpenAI
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
+from sweagent.utils.config import Config
 from sweagent.agent.commands import Command
 from tenacity import (
     retry,
@@ -239,7 +239,7 @@ class OpenAIModel(BaseModel):
         logging.getLogger("httpx").setLevel(logging.WARNING)
 
         # Set OpenAI key
-        cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
+        cfg = Config()
         if self.args.model_name.startswith("azure"):
             self.api_model = cfg["AZURE_OPENAI_DEPLOYMENT"]
             self.client = AzureOpenAI(api_key=cfg["AZURE_OPENAI_API_KEY"], azure_endpoint=cfg["AZURE_OPENAI_ENDPOINT"], api_version=cfg.get("AZURE_OPENAI_API_VERSION", "2024-02-01"))
@@ -338,7 +338,7 @@ class AnthropicModel(BaseModel):
         super().__init__(args, commands)
 
         # Set Anthropic key
-        cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
+        cfg = Config()
         self.api = Anthropic(api_key=cfg["ANTHROPIC_API_KEY"])
 
     def history_to_messages(
@@ -660,7 +660,7 @@ class TogetherModel(BaseModel):
         assert together.version >= '1.1.0', "Please upgrade to Together SDK v1.1.0 or later."
 
         # Set Together key
-        cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
+        cfg = Config()
         together.api_key = cfg.TOGETHER_API_KEY
 
     def history_to_messages(

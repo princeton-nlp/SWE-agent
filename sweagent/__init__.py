@@ -33,4 +33,5 @@ __all__ = [
     "SWEEnv",
     "get_data_path_name",
     "PACKAGE_DIR",
+    "CONFIG_DIR",
 ]

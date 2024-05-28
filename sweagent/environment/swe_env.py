@@ -1,6 +1,5 @@
 from pathlib import Path
 import random
-import config
 import datetime
 import docker
 import gymnasium as gym
@@ -40,6 +39,8 @@ from swebench import (
     MAP_VERSION_TO_INSTALL
 )
 from typing import List, Optional, Tuple
+
+from sweagent.utils.config import Config
 
 LONG_TIMEOUT = 500
 PATH_TO_REQS = "/root/requirements.txt"
@@ -125,12 +126,7 @@ class SWEEnv(gym.Env):
         except:
             logger.warning("Failed to get commit hash for this repo")
 
-        self._github_token: str = os.environ.get("GITHUB_TOKEN", "")
-        if not self._github_token and os.path.isfile(
-            os.path.join(os.getcwd(), "keys.cfg")
-        ):
-            cfg = config.Config(os.path.join(os.getcwd(), "keys.cfg"))
-            self._github_token: str = cfg.get("GITHUB_TOKEN", "")  # type: ignore
+        self._github_token: str = Config().get("GITHUB_TOKEN", "")  # type: ignore
 
         # Load Task Instances
         self.data_path = self.args.data_path
@@ -556,7 +552,7 @@ class SWEEnv(gym.Env):
         input: str,
         timeout_duration=25,
     ) -> str:
-        if "SWE_AGENT_EXPERIMENTAL_COMMUNICATE" in os.environ:
+        if "SWE_AGENT_EXPERIMENTAL_COMMUNICATE" in Config():
             return self._communicate_experimental(input, timeout_duration)
         try:
             self.returncode = None
