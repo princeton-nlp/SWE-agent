@@ -51,6 +51,8 @@ pytest -
 
 ## Tips for pull requests
 
+* If you see a lot of formatting-related merge conflicts, please make sure that you have `pre-commit` installed.
+  To run it over all files, please run `pre-commit run --all-files`.
 * Please open separate PRs for separate issues. This makes it easier to incorporate part of your changes.
 * It might be good to open an issue and discuss first before investing time on an experimental feature.
 * When changing the behavior of the agent, we need to have some indication that it actually improves the success rate of SWE-agent.
