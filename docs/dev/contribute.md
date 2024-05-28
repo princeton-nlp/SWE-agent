@@ -25,11 +25,15 @@ pre-commit install
 
 `pre-commit` will check for formatting and basic syntax errors before your commits.
 
-Some issues can be automatically fixed with [`ruff`](https://github.com/charliermarsh/ruff) (part of the checks):
+!!! tip "Autofixes"
+  Most problems (including formatting) will be automatically fixed.
+  Therefore, if `pre-commit`/`git commit` fails on its first run, simply try running it a second time.
 
-```bash
-pipx run ruff check --fix
-```
+  Some more autofixes can be enabled with the `--unsafe-fixes` option from [`ruff`](https://github.com/charliermarsh/ruff):
+
+  ```bash
+  pipx run ruff check --fix --unsafe-fixes
+  ```
 
 ## Running tests
 

@@ -551,8 +551,7 @@ def anthropic_query(model: AnthropicModel | BedrockModel, history: list[dict[str
 
     # Calculate + update costs, return response
     model.update_stats(response.usage.input_tokens, response.usage.output_tokens)
-    response = "\n".join([x.text for x in response.content])
-    return response
+    return "\n".join([x.text for x in response.content])
 
 
 class OllamaModel(BaseModel):
@@ -675,8 +674,7 @@ class TogetherModel(BaseModel):
         mapping = {"user": "human", "assistant": "bot", "system": "bot"}
         prompt = [f'<{mapping[d["role"]]}>: {d["content"]}' for d in history]
         prompt = "\n".join(prompt)
-        prompt = f"{prompt}\n<bot>:"
-        return prompt
+        return f"{prompt}\n<bot>:"
 
     @retry(
         wait=wait_random_exponential(min=1, max=15),

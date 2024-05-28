@@ -124,5 +124,4 @@ class ClosedWindowHistoryProcessor(HistoryProcessor):
                     )
                 windows.add(file)
             new_history.append(data)
-        history = list(reversed(new_history))
-        return history
+        return list(reversed(new_history))
