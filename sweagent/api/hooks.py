@@ -1,11 +1,11 @@
-from typing import Optional
-import sys
 import io
+import sys
+from typing import Optional
+
+from flask_socketio import SocketIO
 
 from sweagent import PACKAGE_DIR
 from sweagent.agent.agents import AgentHook
-from flask_socketio import SocketIO
-
 from sweagent.api.utils import strip_ansi_sequences
 from sweagent.environment.swe_env import EnvHook
 

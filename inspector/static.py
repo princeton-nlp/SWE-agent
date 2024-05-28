@@ -1,9 +1,10 @@
 import json
 import logging
-import yaml
-from pathlib import Path
-from tqdm.auto import tqdm
 from argparse import ArgumentParser
+from pathlib import Path
+
+import yaml
+from tqdm.auto import tqdm
 
 try:
     from .server import load_content

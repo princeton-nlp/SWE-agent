@@ -1,20 +1,21 @@
 import hashlib
 import os
 import subprocess
+
 import pytest
+
 from sweagent.environment.utils import (
+    _MARKDOWN_TRAJECTORY_EMOJI_MAPPING,
     InvalidGithubURL,
     format_trajectory_markdown,
-    _MARKDOWN_TRAJECTORY_EMOJI_MAPPING,
-    get_instances,
-    is_github_repo_url,
-    remove_triple_backticks,
-    parse_gh_repo_url,
-    parse_gh_issue_url,
-    is_github_issue_url,
     get_associated_commit_urls,
+    get_instances,
+    is_github_issue_url,
+    is_github_repo_url,
+    parse_gh_issue_url,
+    parse_gh_repo_url,
+    remove_triple_backticks,
 )
-
 
 _TOKEN = {"token": os.environ.get("GITHUB_TOKEN", "")}
 

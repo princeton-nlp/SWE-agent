@@ -2,10 +2,11 @@
 
 import json
 import os
-import yaml
-
 from argparse import ArgumentParser
 from typing import Any, Dict, List
+
+import yaml
+
 import run as runscript
 
 

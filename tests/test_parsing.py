@@ -1,14 +1,15 @@
 import pytest
+
 from sweagent.agent.commands import Command
 from sweagent.agent.parsing import (
-    FormatError,
-    ParseFunction,
     ActionParser,
-    ThoughtActionParser,
-    XMLThoughtActionParser,
     EditFormat,
+    FormatError,
     Identity,
     JsonParser,
+    ParseFunction,
+    ThoughtActionParser,
+    XMLThoughtActionParser,
 )
 
 

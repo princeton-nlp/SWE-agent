@@ -12,25 +12,29 @@ import re
 import subprocess
 import traceback
 from typing import Any, Dict, List, Optional
+
 import rich.console
 import rich.markdown
 import rich.panel
-import rich.markdown
 
 try:
     from rich_argparse import RichHelpFormatter
 except ImportError:
     msg = "Please install the rich_argparse package with `pip install rich_argparse`."
     raise ImportError(msg)
-import yaml
-from rich.markdown import Markdown
 from dataclasses import dataclass
 from getpass import getuser
 from pathlib import Path
+
+import yaml
 from rich.logging import RichHandler
+from rich.markdown import Markdown
 from simple_parsing import parse
-from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 from simple_parsing.helpers.flatten import FlattenedAccess
+from simple_parsing.helpers.serialization.serializable import FrozenSerializable
+from swebench import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
+from unidiff import PatchSet
+
 from sweagent import (
     Agent,
     AgentArguments,
@@ -39,9 +43,6 @@ from sweagent import (
     SWEEnv,
     get_data_path_name,
 )
-from swebench import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
-from unidiff import PatchSet
-
 from sweagent.environment.utils import (
     InvalidGithubURL,
     get_associated_commit_urls,

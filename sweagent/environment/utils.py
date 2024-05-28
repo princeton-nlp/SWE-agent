@@ -1,25 +1,25 @@
 import hashlib
-import platform
-import shlex
-import docker
 import json
 import logging
 import os
+import platform
 import re
+import shlex
 import subprocess
 import tarfile
 import tempfile
 import time
 import traceback
-
-from datasets import load_dataset, load_from_disk
-from ghapi.all import GhApi
 from io import BytesIO
 from pathlib import Path
 from subprocess import PIPE, STDOUT
-from typing import Any, List, Optional, Set, Tuple, Dict
+from typing import Any, Dict, List, Optional, Set, Tuple
 
+from datasets import load_dataset, load_from_disk
+from ghapi.all import GhApi
 from git import InvalidGitRepositoryError, Repo
+
+import docker
 
 LOGGER_NAME = "intercode"
 START_UP_DELAY = 5

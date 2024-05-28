@@ -1,13 +1,15 @@
 import dataclasses
 import os
-from pathlib import Path
 import subprocess
 import time
+from contextlib import contextmanager
+from pathlib import Path
+
 import pytest
 import yaml
-from sweagent.environment.swe_env import EnvHook, EnvironmentArguments, SWEEnv
-from contextlib import contextmanager
+
 import docker
+from sweagent.environment.swe_env import EnvHook, EnvironmentArguments, SWEEnv
 
 
 @pytest.fixture(scope="module")

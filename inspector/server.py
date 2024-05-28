@@ -2,12 +2,12 @@ import http.server
 import json
 import os
 import socketserver
-from typing import Any, Dict, Optional, List
-import yaml
-
-from pathlib import Path
 from argparse import ArgumentParser
 from functools import partial
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import yaml
 
 
 def append_exit(content):

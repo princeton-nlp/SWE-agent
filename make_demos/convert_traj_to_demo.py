@@ -1,10 +1,10 @@
-import json
 import io
+import json
+from argparse import ArgumentParser
+from pathlib import Path
+
 from ruamel.yaml import YAML
 from ruamel.yaml.scalarstring import LiteralScalarString as LSS
-from pathlib import Path
-from argparse import ArgumentParser
-
 
 DEMO_COMMENT = """# This is a demo file generated from trajectory file:
 # {traj_path}
