@@ -12,6 +12,7 @@ from simple_parsing.helpers.flatten import FlattenedAccess
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 from tenacity import RetryError
 
+from sweagent import REPO_ROOT
 from sweagent.agent.commands import Command, ParseCommand
 from sweagent.agent.history_processors import HistoryProcessor
 from sweagent.agent.models import (
@@ -50,6 +51,8 @@ class AgentConfig(FrozenSerializable):
     next_step_no_output_template: str | None = None  # defaults to next_step_template
     strategy_template: str | None = None
     demonstration_template: str | None = None
+    # Paths to demonstrations. If path is not absolute, it is assumed to be
+    # relative the repository root.
     demonstrations: list[str] = field(default_factory=list)
     put_demos_in_history: bool = False  # if True, add demonstration to history instead of as a single message
     # defaults to format_error_template in ParseFunction
@@ -270,15 +273,20 @@ class Agent:
         self.history: list[dict[str, Any]] = []
         self._append_history({"role": "system", "content": system_msg, "agent": self.name})
 
-        if len(self.config.demonstrations) > 0 and "history_to_messages" in dir(self.model):
+        if "history_to_messages" in dir(self.model):
             for demonstration_path in self.config.demonstrations:
+                if not Path(demonstration_path).is_absolute():
+                    demonstration_path = REPO_ROOT / demonstration_path
+                else:
+                    demonstration_path = Path(demonstration_path)
+
                 if self.config.demonstration_template is None and not self.config.put_demos_in_history:
                     msg = "Cannot use demonstrations without a demonstration template or put_demos_in_history=True"
                     raise ValueError(msg)
 
                 # Load history
                 logger.info(f"DEMONSTRATION: {demonstration_path}")
-                demo_history = json.load(open(demonstration_path))["history"]
+                demo_history = json.loads(demonstration_path.read_text())["history"]
                 demo_history = [
                     entry
                     for entry in demo_history
