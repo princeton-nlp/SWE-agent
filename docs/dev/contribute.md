@@ -56,11 +56,15 @@ pytest -m "not slow"
   To run it over all files, please run `pre-commit run --all-files`.
 * Please open separate PRs for separate issues. This makes it easier to incorporate part of your changes.
 * It might be good to open an issue and discuss first before investing time on an experimental feature.
+* Don't know where to get started? Look for issues marked [👋 good first issue][gfi] or [🙏 help wanted][help_wanted]
 * When changing the behavior of the agent, we need to have some indication that it actually improves the success rate of SWE-agent.
   However, if you make the behavior optional without complicating SWE-agent (for example by providing new [commands](../config/commands.md)),
   we might be less strict.
 * Please add simple unit tests or integration tests wherever possible. Take a look in the [tests directory](https://github.com/princeton-nlp/SWE-agent/tree/main/tests)
   for inspiration. We emphasize simple easy-tow-rite tests that get a lot of coverage.
+
+[gfi]: https://github.com/princeton-nlp/SWE-agent/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3A%22%F0%9F%91%8B+good+first+issue%22+
+[help_wanted]: https://github.com/princeton-nlp/SWE-agent/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3A%22%F0%9F%99%8F+help+wanted%22
 
 ## Building the documentation
 
