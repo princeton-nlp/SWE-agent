@@ -13,10 +13,14 @@ logger = logging.getLogger("config")
 
 def convert_path_to_abspath(path: Path | str) -> Path:
     """If path is not absolute, convert it to an absolute path
-    using REPO_ROOT as base."""
+    using the SWE_AGENT_CONFIG_ROOT environment variable (if set) or
+    REPO_ROOT as base.
+    """
     path = Path(path)
+    root = Path(os.environ.get("SWE_AGENT_CONFIG_ROOT", REPO_ROOT))
+    assert root.is_dir()
     if not path.is_absolute():
-        path = REPO_ROOT / path
+        path = root / path
     assert path.is_absolute()
     return path.resolve()
 

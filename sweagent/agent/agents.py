@@ -52,13 +52,13 @@ class AgentConfig(FrozenSerializable):
     strategy_template: str | None = None
     demonstration_template: str | None = None
     # Paths to demonstrations. If path is not absolute, it is assumed to be
-    # relative the repository root.
+    # relative to the SWE_AGENT_CONFIG_ROOT (if set) or the SWE-agent repository root
     demonstrations: list[str | Path] = field(default_factory=list)
     put_demos_in_history: bool = False  # if True, add demonstration to history instead of as a single message
     # defaults to format_error_template in ParseFunction
     format_error_template: str = None  # type: ignore
     # Paths to command files. If path is not absolute, it is assumed to be
-    # relative the repository root.
+    # relative to the SWE_AGENT_CONFIG_ROOT (if set) or the SWE-agent repository root
     command_files: list[str | Path] = field(default_factory=list)
     env_variables: dict[str, str] = field(default_factory=dict)
     util_functions: list[str] = field(default_factory=list)
