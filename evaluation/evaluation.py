@@ -38,7 +38,8 @@ def main(
 ):
     # Check if paths exist
     if not os.path.exists(predictions_path):
-        raise FileNotFoundError(f"Predictions path {predictions_path} does not exist")
+        msg = f"Predictions path {predictions_path} does not exist"
+        raise FileNotFoundError(msg)
     eval_refs = get_eval_refs(swe_bench_tasks)
     for k, v in eval_refs.items():
         eval_refs[k] = {key: v[key] for key in [KEY_INSTANCE_ID, "FAIL_TO_PASS", "PASS_TO_PASS"]}

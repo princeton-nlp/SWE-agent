@@ -48,7 +48,8 @@ class ParseFunction(metaclass=ParseFunctionMeta):
     @property
     def format_error_template(self):
         if self._error_message is None:
-            raise NotImplementedError("You must define an error message for your parser.")
+            msg = "You must define an error message for your parser."
+            raise NotImplementedError(msg)
         return textwrap.dedent(self._error_message)
 
     @classmethod
@@ -56,7 +57,8 @@ class ParseFunction(metaclass=ParseFunctionMeta):
         try:
             return cls._registry[name]()
         except KeyError:
-            raise ValueError(f"Model output parser ({name}) not found.")
+            msg = f"Model output parser ({name}) not found."
+            raise ValueError(msg)
 
 
 # DEFINE NEW PARSING FUNCTIONS BELOW THIS LINE
@@ -80,7 +82,8 @@ class ActionParser(ParseFunction):
             action = model_response.strip().split()[0]
             if action in {command.name for command in commands}:
                 return model_response, model_response
-        raise FormatError("First word in model response is not a valid command.")
+        msg = "First word in model response is not a valid command."
+        raise FormatError(msg)
 
 
 class ThoughtActionParser(ParseFunction):
@@ -135,7 +138,8 @@ class ThoughtActionParser(ParseFunction):
             start, end = last_valid_block
             thought = model_response[: start.start()] + model_response[end.end() :]
             return thought, model_response[start.end() : end.start()]
-        raise FormatError("No action found in model response.")
+        msg = "No action found in model response."
+        raise FormatError(msg)
 
 
 class XMLThoughtActionParser(ParseFunction):
@@ -170,7 +174,8 @@ class XMLThoughtActionParser(ParseFunction):
         In this case, only the second code block will be parsed as the action.
         """
         if "<command>" not in model_response or "</command>" not in model_response:
-            raise FormatError("No action found in model response.")
+            msg = "No action found in model response."
+            raise FormatError(msg)
         # `action` is everything between the last <command> and </command> tags
         start_action = model_response.rfind("<command>") + len("<command>")  # start after the last <command> tag
         end_thought = model_response.rfind("<command>")  # end before the last <command> tag
@@ -256,24 +261,28 @@ class JsonParser(ParseFunction):
         try:
             data = json.loads(model_response)
             if not isinstance(data, dict):
-                raise FormatError("Model output is not a JSON object.")
+                msg = "Model output is not a JSON object."
+                raise FormatError(msg)
 
             # Check if required keys are present
             required_keys = ["thought", "command"]
             for key in required_keys:
                 if key not in data:
-                    raise FormatError(f"Key '{key}' is missing from model output.")
+                    msg = f"Key '{key}' is missing from model output."
+                    raise FormatError(msg)
 
             # Check structure of 'command' key
             data_command = data["command"]
             if not isinstance(data_command, dict):
-                raise FormatError("Value of 'command' key is not a JSON object.")
+                msg = "Value of 'command' key is not a JSON object."
+                raise FormatError(msg)
 
             # Check if required keys are present in 'command' object
             command_keys = ["name"]
             for key in command_keys:
                 if key not in data_command:
-                    raise FormatError(f"Key '{key}' is missing from 'command' object.")
+                    msg = f"Key '{key}' is missing from 'command' object."
+                    raise FormatError(msg)
 
             thought = data["thought"]
 
@@ -301,7 +310,8 @@ class JsonParser(ParseFunction):
             action = action.strip()
             return thought, action
         except json.JSONDecodeError:
-            raise FormatError("Model output is not valid JSON.")
+            msg = "Model output is not valid JSON."
+            raise FormatError(msg)
 
 
 def extract_keys(format_string):

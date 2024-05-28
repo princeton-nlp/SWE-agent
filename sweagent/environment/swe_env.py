@@ -483,7 +483,8 @@ class SWEEnv(gym.Env):
             client = docker.from_env(timeout=600)
         except docker.errors.DockerException as e:
             if "Error while fetching server API version" in str(e):
-                raise RuntimeError("Docker is not running. Please start Docker and try again.") from e
+                msg = "Docker is not running. Please start Docker and try again."
+                raise RuntimeError(msg) from e
         try:
             self.container_obj = client.containers.get(self.container_name)
         except docker.errors.NotFound:
@@ -531,7 +532,8 @@ class SWEEnv(gym.Env):
         except BrokenPipeError:
             traceback.print_exc()
             self.logger.error("Failed to communicate with container. Check docker logs for more information.")
-            raise RuntimeError("Failed to communicate with container")
+            msg = "Failed to communicate with container"
+            raise RuntimeError(msg)
 
         buffer, exit_code = read_with_timeout_experimental(self.container, timeout_duration)
         self.returncode = int(exit_code)
@@ -553,7 +555,8 @@ class SWEEnv(gym.Env):
         except BrokenPipeError:
             traceback.print_exc()
             self.logger.error("Failed to communicate with container. Check docker logs for more information.")
-            raise RuntimeError("Failed to communicate with container")
+            msg = "Failed to communicate with container"
+            raise RuntimeError(msg)
         try:
             buffer = read_with_timeout(self.container, self.get_pids, timeout_duration)
             self.container.stdin.write("echo $?\n")
@@ -564,7 +567,8 @@ class SWEEnv(gym.Env):
             self.logger.error(f"Read with timeout failed on input:\n---\n{input}\n---")
             raise e
         if not exit_code.isdigit():
-            raise RuntimeError(f"Container crashed. Failed to get exit code. Output:\n---\n{buffer}\n---")
+            msg = f"Container crashed. Failed to get exit code. Output:\n---\n{buffer}\n---"
+            raise RuntimeError(msg)
         self.returncode = int(exit_code)
         return buffer
 
@@ -613,7 +617,8 @@ class SWEEnv(gym.Env):
         if self.returncode != 0:
             self.logger.error(f"{error_msg}: {logs}")
             self.close()
-            raise RuntimeError(f"{error_msg}: {logs}")
+            msg = f"{error_msg}: {logs}"
+            raise RuntimeError(msg)
         return logs
 
     def get_available_actions(self) -> list[str]:
@@ -657,12 +662,14 @@ class SWEEnv(gym.Env):
             return self._run_shell_script_host(script_path)
         elif location == "container":
             raise NotImplementedError
-        raise ValueError(f"Invalid 'location': {location}")
+        msg = f"Invalid 'location': {location}"
+        raise ValueError(msg)
 
     def _run_shell_script_host(self, script_path: Path) -> None:
         """Run shell script file (located on host) in container"""
         if not script_path.is_file():
-            raise FileNotFoundError(f"Script not found at {script_path}")
+            msg = f"Script not found at {script_path}"
+            raise FileNotFoundError(msg)
         shell_commands = Path(script_path).read_text().splitlines()
         for i, cmd in enumerate(shell_commands):
             self.communicate_with_handling(
@@ -699,7 +706,8 @@ class SWEEnv(gym.Env):
                 self.run_shell_script(Path(self.args.environment_setup), location="host")
                 return
             else:
-                raise ValueError("Environment config file needs to be a yaml file or shell script")
+                msg = "Environment config file needs to be a yaml file or shell script"
+                raise ValueError(msg)
         else:
             try:
                 install_configs = MAP_VERSION_TO_INSTALL[self.record["repo"]][str(self.record["version"])]
@@ -831,7 +839,8 @@ class SWEEnv(gym.Env):
                 # nothing to do for utility scripts
                 pass
             else:
-                raise ValueError(f"Invalid command type: {command['type']}")
+                msg = f"Invalid command type: {command['type']}"
+                raise ValueError(msg)
 
     def interrupt(self):
         """
@@ -849,7 +858,8 @@ class SWEEnv(gym.Env):
             output = self.communicate(input="echo 'interrupted'", timeout_duration=5)
             assert output.strip().endswith("interrupted"), "container health check failed"
         except TimeoutError:
-            raise RuntimeError("Failed to interrupt container")
+            msg = "Failed to interrupt container"
+            raise RuntimeError(msg)
 
     def open_pr(self, *, trajectory, _dry_run: bool = False):
         """Create PR to repository

@@ -33,7 +33,8 @@ def append_exit(content):
             )
         # else submission should be in history already
         else:
-            raise ValueError("No submission in history or info")
+            msg = "No submission in history or info"
+            raise ValueError(msg)
     # elif content.get("info", {}).get("exit_status", None) is not None:
     #     content["history"].append({
     #         "role": "system",

@@ -145,6 +145,8 @@ select = [
     # bugbear
     "B006",  # mutable default
     "B007",  # unused loop var
+    # flake8-errmsg
+    "EM",
 ]
 ignore = []
 
