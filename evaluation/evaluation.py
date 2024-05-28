@@ -51,7 +51,7 @@ def main(
 
     pred_total, pred_will_eval = 0, 0
     with open(pred_path_temp, "w") as f:
-        for l in open(pred_path_orig, "r").readlines():
+        for l in open(pred_path_orig).readlines():
             pred_total += 1
             p = json.loads(l)
             # Exclude predictions w/ empty strings
@@ -87,7 +87,7 @@ def main(
     os.remove(pred_path_temp)
 
     # Get predictions, define log_dir
-    predictions = [json.loads(l) for l in open(pred_path_orig, "r").readlines()]
+    predictions = [json.loads(l) for l in open(pred_path_orig).readlines()]
     log_dir = os.path.join(log_dir, directory_name)
     print(f"Log directory for evaluation run: {log_dir}")
 
@@ -99,7 +99,7 @@ def main(
         # Add trajectory statistics if traj_path exists
         traj_path = os.path.join(directory, f"{p[KEY_INSTANCE_ID]}.traj")
         if os.path.exists(traj_path):
-            traj_data = json.load(open(traj_path, "r"))
+            traj_data = json.load(open(traj_path))
             scorecard["stats"]["traj_num_steps"] = len(traj_data["trajectory"])
             scorecard["stats"]["traj_action_dist"] = dict(
                 Counter(
@@ -136,7 +136,7 @@ def main(
             continue
         scorecard["statuses"].append("applied")
 
-        with open(log_path, "r") as f:
+        with open(log_path) as f:
             log_contents = f.read()
             if INSTALL_FAIL in log_contents:
                 scorecard["statuses"].append("install_fail")

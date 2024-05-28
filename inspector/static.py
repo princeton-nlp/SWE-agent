@@ -37,7 +37,7 @@ TEMPLATE = """
 """
 
 try:
-    with open(Path(__file__).parent / "style.css", "r") as infile:
+    with open(Path(__file__).parent / "style.css") as infile:
         STYLE_SHEET = infile.read()
 except Exception as e:
     style_file = Path(__file__).parent / "style.css"
@@ -97,11 +97,11 @@ def save_static_viewer(file_path):
         file_path = Path(file_path)
     data = []
     if "args.yaml" in list(map(lambda x: x.name, file_path.parent.iterdir())):
-        args = yaml.safe_load(open(file_path.parent / "args.yaml", "r"))
+        args = yaml.safe_load(open(file_path.parent / "args.yaml"))
         if "environment" in args and "data_path" in args["environment"]:
             data_path = Path(__file__).parent.parent / args["environment"]["data_path"]
             if data_path.exists():
-                data = json.load(open(data_path, "r"))
+                data = json.load(open(data_path))
             if not isinstance(data, list) or not data or "patch" not in data[0] or "test_patch" not in data[0]:
                 data = []
     gold_patches = {x["instance_id"]: x["patch"] for x in data}

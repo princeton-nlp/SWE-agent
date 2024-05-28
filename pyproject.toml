@@ -115,7 +115,17 @@ target-version = "py39"
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
 # McCabe complexity (`C901`) by default.
 # I001: Isort, I002: required import
-select = ["F821", "F822", "E999", "E902", "F401", "F841", "I001", "I002"]
+select = [
+    "F821", "F822", "E999", "E902", "F401", "F841", "I001", "I002",
+    "UP",    # pyupgrade
+    "C401",  # flake8-comprehensions: unnecessary-generator-set
+    "C402",  # flake8-comprehensions: unnecessary-generator-dict
+    "C403",  # flake8-comprehensions: unnecessary-list-comprehension-set
+    "C404",  # flake8-comprehensions: unnecessary-list-comprehension-dict
+    "C405",  # flake8-comprehensions: unnecessary-literal-set
+    "F632",  # pyflakes: is-literal
+    "W605",  # pycodestyle: invalid-escape-sequence
+]
 ignore = []
 
 # Allow fix for all enabled rules (when `--fix`) is provided.

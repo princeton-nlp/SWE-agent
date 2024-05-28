@@ -783,7 +783,7 @@ class ReplayModel(BaseModel):
         if self.args.replay_path is None or not os.path.exists(self.args.replay_path):
             raise ValueError("--replay_path must point to a file that exists to run a replay policy")
 
-        self.replays = [list(json.loads(x).values())[0] for x in open(self.args.replay_path, "r").readlines()]
+        self.replays = [list(json.loads(x).values())[0] for x in open(self.args.replay_path).readlines()]
         self.replay_idx = 0
         self.action_idx = 0
 

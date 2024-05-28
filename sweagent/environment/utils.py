@@ -169,12 +169,10 @@ def read_with_timeout(container, pid_func, timeout_duration):
         time.sleep(0.05)  # Prevents CPU hogging
 
     if container.poll() is not None:
-        raise RuntimeError("Subprocess exited unexpectedly.\nCurrent buffer: {}".format(buffer.decode()))
+        raise RuntimeError(f"Subprocess exited unexpectedly.\nCurrent buffer: {buffer.decode()}")
     if time.time() >= end_time:
         raise TimeoutError(
-            "Timeout reached while reading from subprocess.\nCurrent buffer: {}\nRunning PIDs: {}".format(
-                buffer.decode(), pids
-            )
+            f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}\nRunning PIDs: {pids}"
         )
     return buffer.decode()
 
@@ -232,9 +230,9 @@ def read_with_timeout_experimental(container, timeout_duration):
         time.sleep(0.01)  # Prevents CPU hogging
 
     if container.poll() is not None:
-        raise RuntimeError("Subprocess exited unexpectedly.\nCurrent buffer: {}".format(buffer.decode()))
+        raise RuntimeError(f"Subprocess exited unexpectedly.\nCurrent buffer: {buffer.decode()}")
     if time.time() >= end_time:
-        raise TimeoutError("Timeout reached while reading from subprocess.\nCurrent buffer: {}".format(buffer.decode()))
+        raise TimeoutError(f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}")
     decoded = buffer.decode()
     body = "\n".join(line for line in decoded.splitlines() if not line.startswith(PROCESS_DONE_MARKER_START))
     last_line = decoded.splitlines()[-1]
@@ -690,7 +688,7 @@ def get_instances(
     if file_path.endswith(".json"):
         return postproc_instance_list(json.load(open(file_path)))
     if file_path.endswith(".jsonl"):
-        return postproc_instance_list([json.loads(x) for x in open(file_path, "r").readlines()])
+        return postproc_instance_list([json.loads(x) for x in open(file_path).readlines()])
 
     # Attempt load from HF datasets as a last resort
     try:

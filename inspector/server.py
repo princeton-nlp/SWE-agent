@@ -285,7 +285,7 @@ def main(data_path, directory, port):
         if "environment" in args and "data_path" in args["environment"]:
             data_path = os.path.join(Path(__file__).parent, "..", args["environment"]["data_path"])
             if os.path.exists(data_path):
-                data = json.load(open(data_path, "r"))
+                data = json.load(open(data_path))
 
     gold_patches = {d["instance_id"]: d["patch"] if "patch" in d else None for d in data}
     test_patches = {d["instance_id"]: d["test_patch"] if "test_patch" in d else None for d in data}

@@ -53,7 +53,7 @@ def test_model_replay_github_repo(
         "--raise_exceptions",
     ]
     if problem_statement_source == "local":
-        args.extend(["--repo_path", str("https://github.com/klieret/swe-agent-test-repo/")])
+        args.extend(["--repo_path", "https://github.com/klieret/swe-agent-test-repo/"])
     args, remaining_args = get_args(args)
     main(**vars(args), forward_args=remaining_args)
 

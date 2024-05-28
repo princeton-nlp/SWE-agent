@@ -33,10 +33,10 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
     # Open trajectory file, extract responses as actions
     if traj_path.endswith(".yaml"):
         traj_data = dict()
-        with open(traj_path, "r") as f:
+        with open(traj_path) as f:
             traj_data["history"] = yaml.safe_load(f)
     else:
-        traj_data = json.load(open(traj_path, "r"))
+        traj_data = json.load(open(traj_path))
     actions = [x["content"] for x in traj_data["history"] if x["role"] == "assistant"]
     instance_id = traj_path.split("/")[-1].split(".")[0]
     with open(replay_action_trajs_path, "w") as f:
@@ -63,7 +63,7 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
     is_other = False
     if data_path.endswith(".jsonl"):
         replay_task_instances_path = create_task_instances_tmp_file(
-            [json.loads(x) for x in open(data_path, "r").readlines()]
+            [json.loads(x) for x in open(data_path).readlines()]
         )
     elif data_path.endswith(".json"):
         replay_task_instances_path = create_task_instances_tmp_file(json.load(open(data_path)))

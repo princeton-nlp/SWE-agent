@@ -272,7 +272,7 @@ class Agent:
 
                 # Load history
                 logger.info(f"DEMONSTRATION: {demonstration_path}")
-                demo_history = json.load(open(demonstration_path, "r"))["history"]
+                demo_history = json.load(open(demonstration_path))["history"]
                 demo_history = [
                     entry
                     for entry in demo_history
@@ -649,7 +649,7 @@ class Agent:
         command_files = list()
         for file in self.config.command_files:
             datum = dict()
-            contents = open(file, "r").read()
+            contents = open(file).read()
             datum["contents"] = contents
             filename = Path(file).name
             if not contents.strip().startswith("#!"):
