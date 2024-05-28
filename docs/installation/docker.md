@@ -6,7 +6,7 @@
     in docker.
     We generally recommend [installing from source](source.md).
 
-Instead of installing SWE-agent from source, you can also run the software directly using Docker. 
+Instead of installing SWE-agent from source, you can also run the software directly using Docker.
 
 1. [Install Docker](https://docs.docker.com/engine/install/), then start Docker locally.
 2. Run `docker pull sweagent/swe-agent:latest`
@@ -53,12 +53,12 @@ To run the web server, make sure to forward port 3000:
 
 ```bash
 docker run -p 3000:3000 -it -v /var/run/docker.sock:/var/run/docker.sock \
-  -v $(pwd)/keys.cfg:/app/keys.cfg \ 
-  sweagent/swe-agent-run:latest bash start_web_ui.sh    
+  -v $(pwd)/keys.cfg:/app/keys.cfg \
+  sweagent/swe-agent-run:latest bash start_web_ui.sh
 ```
 
 !!! tip "More tips"
     See the [installation issues section](tips.md) for more help if you run into
     trouble.
-  
+
 {% include-markdown "../_footer.md" %}

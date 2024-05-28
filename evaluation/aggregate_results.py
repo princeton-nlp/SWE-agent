@@ -1,13 +1,18 @@
+from __future__ import annotations
+
 import argparse
 import glob
 import json
-import numpy as np
 import os
-import pandas as pd
 import warnings
+
+import numpy as np
+import pandas as pd
+
 warnings.filterwarnings("ignore")
 
 from pathlib import Path
+
 from rich import print
 
 COLUMNS = [
@@ -79,16 +84,16 @@ def convert_experiments_to_rows(folder_name, runs_max):
             if len(folder_data) != 8:
                 # TODO: This might be too strict?
                 continue
-            temperature = float(folder_data[3][len("t-"):].strip())
-            top_p = float(folder_data[4][len("p-"):].strip())
-            cost = float(folder_data[5][len("c-"):].strip())
+            temperature = float(folder_data[3][len("t-") :].strip())
+            top_p = float(folder_data[4][len("p-") :].strip())
+            cost = float(folder_data[5][len("c-") :].strip())
             install = "Y" if folder_data[6].strip() == "install-1" else "N"
 
             # Parse out run number
             run = folder_data[-1]
             if "run" not in run:
                 continue
-            
+
             try:
                 if "run-" in run:
                     run = int(run.split("run-")[-1].split("-")[0].replace("_", "").strip())
@@ -97,7 +102,7 @@ def convert_experiments_to_rows(folder_name, runs_max):
             except Exception as e:
                 print(run)
                 raise e
-            
+
             if runs_max is not None and run > runs_max:
                 continue
 
@@ -112,7 +117,7 @@ def convert_experiments_to_rows(folder_name, runs_max):
                 resolved_ids = results_data["resolved"]
             elif "counts" in results_data and isinstance(results_data["counts"]["resolved"], list):
                 resolved_ids = results_data["counts"]["resolved"]
-            
+
             # Extract instance costs from trajectories
             costs_overall = []
             costs_success = []
@@ -156,10 +161,7 @@ def convert_experiments_to_rows(folder_name, runs_max):
 
 def get_results_df(folder_name, runs_max):
     rows = convert_experiments_to_rows(folder_name, runs_max)
-    return (
-        pd.DataFrame(rows, columns=COLUMNS)
-        .sort_values(by=COLUMNS[:8])
-    )
+    return pd.DataFrame(rows, columns=COLUMNS).sort_values(by=COLUMNS[:8])
 
 
 def get_results_csv(folder_name):
@@ -170,9 +172,9 @@ def get_results_csv(folder_name):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Aggregate results from experiments")
     parser.add_argument("--folder", type=str, help="Folder containing experiment results", default="../trajectories")
-    parser.add_argument("--model", nargs='+', type=str, help="Model(s) to filter results by.")
-    parser.add_argument("--dataset", nargs='+', type=str, help="Dataset to filter results by.")
-    parser.add_argument("--setup", nargs='+', type=str, help="Setup to filter results by.")
+    parser.add_argument("--model", nargs="+", type=str, help="Model(s) to filter results by.")
+    parser.add_argument("--dataset", nargs="+", type=str, help="Dataset to filter results by.")
+    parser.add_argument("--setup", nargs="+", type=str, help="Setup to filter results by.")
     parser.add_argument("--runs_min", type=int, help="Minimum number of runs that experiment should have been run for.")
     parser.add_argument("--runs_max", type=int, help="Maximum number of runs taken into account")
     args = parser.parse_args()
@@ -188,7 +190,7 @@ if __name__ == "__main__":
                 "Generated": "mean",
                 "Applied": "mean",
                 "Resolved": "mean",
-                "Resolved IDs": lambda x: len(set([item for sublist in x for item in sublist])),
+                "Resolved IDs": lambda x: len({item for sublist in x for item in sublist}),
                 "Costs Success": lambda x: np.mean([item for sublist in x for item in sublist]),
                 "Costs Failure": lambda x: np.mean([item for sublist in x for item in sublist]),
                 "Costs Overall": lambda x: np.mean([item for sublist in x for item in sublist]),
@@ -201,19 +203,19 @@ if __name__ == "__main__":
 
     # Filtering
     if args.model:
-        grouped_data = grouped_data[grouped_data['Model'].isin(args.model)]
+        grouped_data = grouped_data[grouped_data["Model"].isin(args.model)]
     if args.dataset:
-        grouped_data = grouped_data[grouped_data['Dataset'].isin(args.dataset)]
+        grouped_data = grouped_data[grouped_data["Dataset"].isin(args.dataset)]
     if args.setup:
-        grouped_data = grouped_data[grouped_data['Setup'].isin(args.setup)]
+        grouped_data = grouped_data[grouped_data["Setup"].isin(args.setup)]
     if args.runs_min:
-        grouped_data = grouped_data[grouped_data['Run'] >= args.runs_min]
+        grouped_data = grouped_data[grouped_data["Run"] >= args.runs_min]
 
     print(f"Total experiments run: {grouped_data.shape[0]}")
-    grouped_data_sorted = grouped_data.sort_values(by=['Dataset', 'Resolved'], ascending=[True, False])
+    grouped_data_sorted = grouped_data.sort_values(by=["Dataset", "Resolved"], ascending=[True, False])
     pd.set_option("display.max_rows", None)
-    grouped = grouped_data_sorted.groupby('Dataset')
+    grouped = grouped_data_sorted.groupby("Dataset")
 
     for name, group in grouped:
-        print(f'\n-----------------\nDataset: {name}\n-----------------')
+        print(f"\n-----------------\nDataset: {name}\n-----------------")
         print(group.to_string(index=False))

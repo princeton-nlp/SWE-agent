@@ -1,6 +1,6 @@
 # Using the web interface
 
-Our graphical web interface is optimized for using SWE-agent as a developer tool, fixing single GitHub issues or working in local repositories. 
+Our graphical web interface is optimized for using SWE-agent as a developer tool, fixing single GitHub issues or working in local repositories.
 However, it is still missing some of the options of the [command line interface](cl_tutorial.md).
 
 ## Quickstart
@@ -14,7 +14,7 @@ To start our web UI, simply run
 from the root of the repository.
 
 !!! tip "Opening the webpage"
-    If the user interface doesn't automatically open in your browser, please open it at `http://localhost:3000`. 
+    If the user interface doesn't automatically open in your browser, please open it at `http://localhost:3000`.
     Running from GitHub codespaces? More tips [here](../installation/codespaces.md#running-the-web-ui).
 
 !!! note "Running from Docker"
@@ -23,7 +23,7 @@ from the root of the repository.
 
 ## Manually starting frontend and backend
 
-The web UI consists of a frontend written in [react][] (showing the pretty control elements) and a backend written with [flask][]. 
+The web UI consists of a frontend written in [react][] (showing the pretty control elements) and a backend written with [flask][].
 The `./start_web_ui.sh` starts both of them in the background.
 However, this might not be best for development and debugging.
 This section explains how to start both parts separately.
@@ -51,9 +51,9 @@ You should see output similar to the following:
 ```
 
 !!! tip "Port availability"
-    If see an error about port 8000 not being available, 
-    please first close any application that occupies it. 
-    The frontend currently expects the `flask` server on port 8000, so choosing 
+    If see an error about port 8000 not being available,
+    please first close any application that occupies it.
+    The frontend currently expects the `flask` server on port 8000, so choosing
     a different port won't work.
 
 Now, open a new terminal tab and navigate to the `frontend` directory:
@@ -74,8 +74,8 @@ And start the server:
 npm start
 ```
 
-This should also open the corresponding page in your browser. 
-If not, check with the tips above. 
+This should also open the corresponding page in your browser.
+If not, check with the tips above.
 The default port that is being served is port 3000.
 
 !!! tip "Possible errors"

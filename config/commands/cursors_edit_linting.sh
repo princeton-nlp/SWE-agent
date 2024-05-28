@@ -91,7 +91,7 @@ edit() {
         export CURRENT_LINE=$original_current_line
         export WINDOW=$original_window
         export END_CURSOR=$original_end_cursor
-        
+
         echo "Your changes have NOT been applied. Please fix your edit command and try again."
         echo "You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code."
         echo "DO NOT re-run the same failed edit command. Running it again will lead to the same error."

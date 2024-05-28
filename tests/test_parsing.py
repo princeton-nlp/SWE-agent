@@ -1,8 +1,17 @@
+from __future__ import annotations
+
 import pytest
+
 from sweagent.agent.commands import Command
 from sweagent.agent.parsing import (
-    FormatError, ParseFunction, ActionParser, ThoughtActionParser,
-    XMLThoughtActionParser, EditFormat, Identity, JsonParser
+    ActionParser,
+    EditFormat,
+    FormatError,
+    Identity,
+    JsonParser,
+    ParseFunction,
+    ThoughtActionParser,
+    XMLThoughtActionParser,
 )
 
 
@@ -19,7 +28,7 @@ def test_parse_function_registry():
 
 def test_action_parser():
     parser = ActionParser()
-    command = Command(code='ls', name='ls')
+    command = Command(code="ls", name="ls")
     thought, action = parser("ls -l", [command])
     assert thought == "ls -l"
     assert action == "ls -l"

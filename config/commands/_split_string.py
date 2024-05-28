@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 import sys
+
 
 def print_flake8_output(input_string, show_line_numbers=False):
     for value in input_string.split("\n"):
@@ -9,6 +12,7 @@ def print_flake8_output(input_string, show_line_numbers=False):
         else:
             line_nums = ":".join(parts[0].split(":")[1:])
             print(f"- {line_nums} {' '.join(parts[1:])}")
+
 
 if __name__ == "__main__":
     lint_output = sys.argv[1]

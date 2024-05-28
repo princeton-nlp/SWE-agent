@@ -24,7 +24,7 @@ body:
       Enclose code/commands/log output in [triple backticks](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#quoting-code).
     placeholder: |
       ```
-      Sample code/commands to reproduce the problem. 
+      Sample code/commands to reproduce the problem.
       Enclose code in triple backticks.
       ```
   validations:

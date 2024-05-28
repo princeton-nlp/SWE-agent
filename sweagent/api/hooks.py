@@ -1,11 +1,12 @@
-from typing import Optional
-import sys
+from __future__ import annotations
+
 import io
+import sys
+
+from flask_socketio import SocketIO
 
 from sweagent import PACKAGE_DIR
 from sweagent.agent.agents import AgentHook
-from flask_socketio import SocketIO
-
 from sweagent.api.utils import strip_ansi_sequences
 from sweagent.environment.swe_env import EnvHook
 
@@ -17,7 +18,7 @@ from run import MainHook
 class StreamToSocketIO(io.StringIO):
     def __init__(
         self,
-        wu: "WebUpdate",
+        wu: WebUpdate,
     ):
         super().__init__()
         self._wu = wu
@@ -44,7 +45,7 @@ class WebUpdate:
     def up_log(self, message: str):
         """Update the log"""
         self._emit("log_message", {"message": message})
-    
+
     def up_banner(self, message: str):
         """Update the banner"""
         self._emit("update_banner", {"message": message})
@@ -54,7 +55,7 @@ class WebUpdate:
         message: str,
         *,
         format: str = "markdown",
-        thought_idx: Optional[int] = None,
+        thought_idx: int | None = None,
         type_: str = "info",
     ):
         """Update the agent feed"""
@@ -75,7 +76,7 @@ class WebUpdate:
         *,
         type_: str,
         format: str = "markdown",
-        thought_idx: Optional[int] = None,
+        thought_idx: int | None = None,
     ):
         """Update the environment feed"""
         self._emit(
@@ -100,9 +101,7 @@ class MainUpdateHook(MainHook):
         self._wu = wu
 
     def on_start(self):
-        self._wu.up_env(
-            message="Environment container initialized", format="text", type_="info"
-        )
+        self._wu.up_env(message="Environment container initialized", format="text", type_="info")
 
     def on_end(self):
         self._wu.up_agent(message="The run has ended", format="text")
