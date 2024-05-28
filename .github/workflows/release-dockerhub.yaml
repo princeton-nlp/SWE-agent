@@ -1,4 +1,4 @@
-name: Pytest
+name: Release to dockerhub
 
 on:
   push:
