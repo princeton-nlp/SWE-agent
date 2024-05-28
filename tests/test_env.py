@@ -49,20 +49,20 @@ def swe_env_context(env_args):
         env.close()
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_init_swe_env(test_env_args):
     with swe_env_context(test_env_args) as env:
         env.reset()
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_init_swe_env_non_persistent(test_env_args):
     test_env_args = dataclasses.replace(test_env_args, container_name=None)
     with swe_env_context(test_env_args) as env:
         env.reset()
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_init_swe_env_cached_task_image(test_env_args):
     test_env_args = dataclasses.replace(test_env_args, cache_task_images=True)
     start = time.perf_counter()
@@ -89,7 +89,7 @@ def test_init_swe_env_cached_task_image(test_env_args):
         client.images.remove(image.id)
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_execute_setup_script(tmp_path, test_env_args):
     test_script = "echo 'hello world'"
     script_path = Path(tmp_path / "test_script.sh")
@@ -99,7 +99,7 @@ def test_execute_setup_script(tmp_path, test_env_args):
         env.reset()
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_execute_environment(tmp_path, test_env_args):
     test_env = {
         "python": "3.6",
@@ -114,7 +114,7 @@ def test_execute_environment(tmp_path, test_env_args):
         env.reset()
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_open_pr(test_env_args):
     test_env_args = dataclasses.replace(
         test_env_args,
@@ -126,14 +126,14 @@ def test_open_pr(test_env_args):
         env.open_pr(_dry_run=True, trajectory=[])
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_interrupt_close(test_env_args):
     with swe_env_context(test_env_args) as env:
         env.reset()
         env.interrupt()
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_communicate_old(test_env_args):
     del os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"]
     try:
@@ -145,7 +145,7 @@ def test_communicate_old(test_env_args):
         os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"] = "1"
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_env_with_hook(test_env_args):
     with swe_env_context(test_env_args) as env:
         env.add_hook(EnvHook())

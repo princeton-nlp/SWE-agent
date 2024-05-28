@@ -7,7 +7,7 @@ import pytest
 from sweagent.agent.models import ModelArguments, OpenAIModel, TogetherModel
 
 
-@pytest.fixture
+@pytest.fixture()
 def openai_mock_client():
     model = Mock()
     response = Mock()
@@ -21,7 +21,7 @@ def openai_mock_client():
     return model
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_together_response():
     return {
         "choices": [{"text": "<human>Hello</human>"}],
