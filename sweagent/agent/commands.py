@@ -81,7 +81,7 @@ class ParseCommandBash(ParseCommand):
         if contents.strip().startswith("#!"):
             commands = self.parse_script(path, contents)
         else:
-            if not path.endswith(".sh") and not Path(path).name.startswith("_"):
+            if Path(path).suffix != ".sh" and not Path(path).name.startswith("_"):
                 msg = (
                     f"Source file {path} does not have a .sh extension.\n"
                     "Only .sh files are supported for bash function parsing.\n"

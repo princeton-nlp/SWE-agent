@@ -12,7 +12,6 @@ from simple_parsing.helpers.flatten import FlattenedAccess
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 from tenacity import RetryError
 
-from sweagent import REPO_ROOT
 from sweagent.agent.commands import Command, ParseCommand
 from sweagent.agent.history_processors import HistoryProcessor
 from sweagent.agent.models import (
@@ -25,6 +24,7 @@ from sweagent.agent.models import (
 from sweagent.agent.parsing import FormatError, ParseFunction
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.environment.utils import LOGGER_NAME
+from sweagent.utils.config import convert_paths_to_abspath
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -53,11 +53,13 @@ class AgentConfig(FrozenSerializable):
     demonstration_template: str | None = None
     # Paths to demonstrations. If path is not absolute, it is assumed to be
     # relative the repository root.
-    demonstrations: list[str] = field(default_factory=list)
+    demonstrations: list[str | Path] = field(default_factory=list)
     put_demos_in_history: bool = False  # if True, add demonstration to history instead of as a single message
     # defaults to format_error_template in ParseFunction
     format_error_template: str = None  # type: ignore
-    command_files: list[str] = field(default_factory=list)
+    # Paths to command files. If path is not absolute, it is assumed to be
+    # relative the repository root.
+    command_files: list[str | Path] = field(default_factory=list)
     env_variables: dict[str, str] = field(default_factory=dict)
     util_functions: list[str] = field(default_factory=list)
     submit_command: str = "submit"
@@ -102,6 +104,9 @@ class AgentConfig(FrozenSerializable):
     subroutine_types: list[Subroutine] = field(default_factory=list)
 
     def __post_init__(self):
+        object.__setattr__(self, "command_files", convert_paths_to_abspath(self.command_files))
+        object.__setattr__(self, "demonstrations", convert_paths_to_abspath(self.demonstrations))
+
         if self.next_step_template is None:
             object.__setattr__(self, "next_step_template", self.instance_template)
         if self.next_step_no_output_template is None:
@@ -275,18 +280,13 @@ class Agent:
 
         if "history_to_messages" in dir(self.model):
             for demonstration_path in self.config.demonstrations:
-                if not Path(demonstration_path).is_absolute():
-                    demonstration_path = REPO_ROOT / demonstration_path
-                else:
-                    demonstration_path = Path(demonstration_path)
-
                 if self.config.demonstration_template is None and not self.config.put_demos_in_history:
                     msg = "Cannot use demonstrations without a demonstration template or put_demos_in_history=True"
                     raise ValueError(msg)
 
                 # Load history
                 logger.info(f"DEMONSTRATION: {demonstration_path}")
-                demo_history = json.loads(demonstration_path.read_text())["history"]
+                demo_history = json.loads(Path(demonstration_path).read_text())["history"]
                 demo_history = [
                     entry
                     for entry in demo_history
