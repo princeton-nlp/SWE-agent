@@ -1026,8 +1026,13 @@
 pre-commit<span class="w"> </span>install
 </code></pre></div>
 <p><code>pre-commit</code> will check for formatting and basic syntax errors before your commits.</p>
-<p>Some issues can be automatically fixed with <a href="https://github.com/charliermarsh/ruff"><code>ruff</code></a> (part of the checks):</p>
-<div class="highlight"><pre><span></span><code>pipx<span class="w"> </span>run<span class="w"> </span>ruff<span class="w"> </span>check<span class="w"> </span>--fix
+<div class="admonition tip">
+<p class="admonition-title">Autofixes</p>
+</div>
+<p>Most problems (including formatting) will be automatically fixed.
+  Therefore, if <code>pre-commit</code>/<code>git commit</code> fails on its first run, simply try running it a second time.</p>
+<p>Some more autofixes can be enabled with the <code>--unsafe-fixes</code> option from <a href="https://github.com/charliermarsh/ruff"><code>ruff</code></a>:</p>
+<div class="highlight"><pre><span></span><code>pipx<span class="w"> </span>run<span class="w"> </span>ruff<span class="w"> </span>check<span class="w"> </span>--fix<span class="w"> </span>--unsafe-fixes
 </code></pre></div>
 <h2 id="running-tests">Running tests</h2>
 <p>We provide a lot of tests that can be very helpful for rapid development.
