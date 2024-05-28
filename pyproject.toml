@@ -103,6 +103,7 @@ exclude = [
     "node_modules",
     "site-packages",
     "venv",
+    "tests/test_data",
 ]
 
 line-length = 120

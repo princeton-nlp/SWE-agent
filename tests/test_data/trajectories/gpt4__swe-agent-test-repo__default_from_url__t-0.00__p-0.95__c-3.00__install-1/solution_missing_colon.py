@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from __future__ import annotations
 
 
 def division(a: float, b: float) -> float:
@@ -13,3 +12,4 @@ if __name__ == "__main__":
         print(division(23, 0))
     except ValueError as e:
         print(e)
+
