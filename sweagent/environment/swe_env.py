@@ -59,16 +59,27 @@ class EnvironmentArguments(FrozenSerializable):
     # (`json`, `jsonl`) or directory. To run over single issue: github issue url or path to markdown file
     # with problem statement or problem statement as text prefixed with `text://`.
     data_path: str
-    image_name: str
+    # Name of the docker image to use for the environment. Defaults to sweagent/swe-agent:latest
+    image_name: str = "sweagent/swe-agent:latest"
+    # When running over SWE-bench issues: Specify the split to use.
     split: str = "dev"
     # Specify a branch name or a commit hash to checkout before running the task.
     # Only used when running over a single problem statement/issue.
     base_commit: str | None = None
+    # Use a persistent container with this name
     container_name: str | None = None
+    # Try to install the environment before running the task.
     install_environment: bool = True
-    timeout: int = 35
+    # No effect, kept for backwards compatibility.
+    timeout: int | None = None
+    # Enable environment logger.
     verbose: bool = False
+    # Do not use attempt to use a repository mirror from https://github.com/swe-bench.
     no_mirror: bool = False
+    # Cache task images to speed up task initialization. This means that the environment will be saved as a
+    # docker image for every repository and base commit combination. This uses quite a bit of disk space
+    # but speeds up task initialization significantly when running over multiple issues from the same repository
+    # (or using different models for the same issues).
     cache_task_images: bool = False
     # Custom environment setup. Currently only used when data_path points to a single issue.
     # This needs to be either a string pointing to a yaml file (with yaml, yml file extension)
@@ -77,6 +88,10 @@ class EnvironmentArguments(FrozenSerializable):
     environment_setup: str | None = None
     # Only used when running on single issue. Path to local repository or github repository.
     repo_path: str = ""
+
+    def __post_init__(self):
+        if self.timeout is not None:
+            logger.warning("The 'timeout' argument is deprecated and has no effect.")
 
 
 class EnvHook:
@@ -137,8 +152,6 @@ class SWEEnv(gym.Env):
         self.image_name = args.image_name
         self._reset_container()
 
-        # Set timeout
-        self.timeout = self.args.timeout
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
         self.hooks = []

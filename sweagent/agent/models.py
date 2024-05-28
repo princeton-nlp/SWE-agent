@@ -32,12 +32,19 @@ logger.propagate = False
 class ModelArguments(FrozenSerializable):
     """Arguments configuring the model and its behavior."""
 
+    # Name of the model to use
     model_name: str
+    # Cost limit for every instance (task)
     per_instance_cost_limit: float = 0.0
+    # Total cost limit
     total_cost_limit: float = 0.0
+    # Sampling temperature
     temperature: float = 1.0
+    # Sampling top-p
     top_p: float = 1.0
+    # Path to replay file when using the replay model
     replay_path: str = None
+    # Host URL when using Ollama model
     host_url: str = "localhost:11434"
 
 
