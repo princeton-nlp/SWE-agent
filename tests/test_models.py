@@ -35,7 +35,7 @@ TEST_HISTORY = [{"role": "system", "content": "Hello, how are you?"}]
 def test_openai_model(openai_mock_client):
     for model_name in list(OpenAIModel.MODELS) + list(OpenAIModel.SHORTCUTS):
         TEST_MODEL_ARGUMENTS = ModelArguments(model_name)
-        with patch("sweagent.agent.models.Config"), patch("sweagent.agent.models.OpenAI"):
+        with patch("sweagent.agent.models.keys_config"), patch("sweagent.agent.models.OpenAI"):
             model = OpenAIModel(TEST_MODEL_ARGUMENTS, [])
         model.client = openai_mock_client
         model.query(TEST_HISTORY)
@@ -43,7 +43,7 @@ def test_openai_model(openai_mock_client):
 
 @pytest.mark.parametrize("model_name", list(TogetherModel.MODELS) + list(TogetherModel.SHORTCUTS))
 def test_together_model(mock_together_response, model_name):
-    with patch("sweagent.agent.models.Config"), patch("sweagent.agent.models.together") as mock_together:
+    with patch("sweagent.agent.models.keys_config"), patch("sweagent.agent.models.together") as mock_together:
         mock_together.version = "1.1.0"
         mock_together.Complete.create.return_value = mock_together_response
 
