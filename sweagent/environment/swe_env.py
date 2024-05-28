@@ -912,7 +912,7 @@ class SWEEnv(gym.Env):
         # If `--repo_path` was specified with a different github URL, then the record will contain
         # the forking user
         assert self.record is not None
-        if not self.record["repo_type"] == "github":
+        if self.record["repo_type"] != "github":
             # We already validated that `--data_path` is a github issue URL
             # so this is the only case where we can reach here
             msg = "--repo_path must point to a github URL if --open_pr is set"

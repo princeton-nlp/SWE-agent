@@ -192,7 +192,7 @@ class SaveApplyPatchHook(MainHook):
             if not self._is_promising_patch(info):
                 return
             assert self._instance  # mypy
-            if not self._instance["repo_type"] == "local":
+            if self._instance["repo_type"] != "local":
                 return
             local_dir = Path(self._instance["repo"])
             self._apply_patch(patch_path, local_dir)
