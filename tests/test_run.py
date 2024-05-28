@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import json
 import os
 import subprocess
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -89,7 +91,7 @@ def test_should_open_pr_success_has_pr_override(open_pr_hook_init_for_sop, info_
 
 
 class RaisesExceptionHook(MainHook):
-    def on_instance_start(self, *, index: int, instance: Dict[str, Any]):
+    def on_instance_start(self, *, index: int, instance: dict[str, Any]):
         raise ValueError("test exception")
 
 
@@ -135,7 +137,7 @@ class CreateFakeLogFile(MainHook):
         self._traj_dir = traj_dir
         (traj_dir / "args.yaml").write_text("asdf")
 
-    def on_instance_start(self, *, index: int, instance: Dict[str, Any]):
+    def on_instance_start(self, *, index: int, instance: dict[str, Any]):
         instance_id = instance["instance_id"]
         dct = {
             "info": {"exit_status": "submitted"},

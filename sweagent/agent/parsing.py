@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import re
 import shlex
@@ -5,7 +7,6 @@ import string
 import textwrap
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import List
 
 from sweagent.agent.commands import Command
 
@@ -41,7 +42,7 @@ class ParseFunction(metaclass=ParseFunctionMeta):
     _error_message = None
 
     @abstractmethod
-    def __call__(self, model_response, commands: List[Command], strict=False):
+    def __call__(self, model_response, commands: list[Command], strict=False):
         raise NotImplementedError
 
     @property
@@ -74,7 +75,7 @@ class ActionParser(ParseFunction):
     {command_docs}
     """
 
-    def __call__(self, model_response, commands: List[Command], strict=False):
+    def __call__(self, model_response, commands: list[Command], strict=False):
         if model_response.split():
             action = model_response.strip().split()[0]
             if action in {command.name for command in commands}:
@@ -103,7 +104,7 @@ class ThoughtActionParser(ParseFunction):
     ```
     """
 
-    def __call__(self, model_response, commands: List[Command], strict=False):
+    def __call__(self, model_response, commands: list[Command], strict=False):
         """
         Parses the action from the output of the API call.
         We assume that the action is the last code block in the model_response.
@@ -152,7 +153,7 @@ class XMLThoughtActionParser(ParseFunction):
     Please make sure your output precisely matches the following format:
     """
 
-    def __call__(self, model_response, commands: List[Command], strict=False):
+    def __call__(self, model_response, commands: list[Command], strict=False):
         """
         Parses the action from the output of the API call.
         We assume that the action is the last code block in the model_response.
@@ -218,7 +219,7 @@ class Identity(ParseFunction):
     It seems like something went wrong with your output. Please try again.
     """
 
-    def __call__(self, model_response, commands: List[Command], strict=False):
+    def __call__(self, model_response, commands: list[Command], strict=False):
         """
         This doesn't do any parsing. It just returns the model response as the thought and action.
         """
@@ -236,7 +237,7 @@ class JsonParser(ParseFunction):
 
     """
 
-    def __call__(self, model_response, commands: List[Command], strict=False):
+    def __call__(self, model_response, commands: list[Command], strict=False):
         """
         Parses the action from the output of the API call.
         We assume that model output is a JSON object with the following fields:

@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import re
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import yaml
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
@@ -12,8 +13,8 @@ from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 class AssistantMetadata(FrozenSerializable):
     """Pass observations to the assistant, and get back a response."""
 
-    system_template: Optional[str] = None
-    instance_template: Optional[str] = None
+    system_template: str | None = None
+    instance_template: str | None = None
 
 
 # TODO: first can be used for two-stage actions
@@ -22,18 +23,18 @@ class AssistantMetadata(FrozenSerializable):
 class ControlMetadata(FrozenSerializable):
     """TODO: should be able to control high-level control flow after calling this command"""
 
-    next_step_template: Optional[str] = None
-    next_step_action_template: Optional[str] = None
+    next_step_template: str | None = None
+    next_step_action_template: str | None = None
 
 
 @dataclass(frozen=True)
 class Command(FrozenSerializable):
     code: str
     name: str
-    docstring: Optional[str] = None
-    end_name: Optional[str] = None  # if there is an end_name, then it is a multi-line command
-    arguments: Optional[Dict] = None
-    signature: Optional[str] = None
+    docstring: str | None = None
+    end_name: str | None = None  # if there is an end_name, then it is a multi-line command
+    arguments: dict | None = None
+    signature: str | None = None
 
 
 class ParseCommandMeta(type):
@@ -56,14 +57,14 @@ class ParseCommand(metaclass=ParseCommandMeta):
             raise ValueError(f"Command parser ({name}) not found.")
 
     @abstractmethod
-    def parse_command_file(self, path: str) -> List[Command]:
+    def parse_command_file(self, path: str) -> list[Command]:
         """
         Define how to parse a file into a list of commands.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def generate_command_docs(self, commands: List[Command], subroutine_types, **kwargs) -> str:
+    def generate_command_docs(self, commands: list[Command], subroutine_types, **kwargs) -> str:
         """
         Generate a string of documentation for the given commands and subroutine types.
         """
@@ -74,35 +75,31 @@ class ParseCommand(metaclass=ParseCommandMeta):
 
 
 class ParseCommandBash(ParseCommand):
-    def parse_command_file(self, path: str) -> List[Command]:
+    def parse_command_file(self, path: str) -> list[Command]:
         contents = open(path, "r").read()
         if contents.strip().startswith("#!"):
             commands = self.parse_script(path, contents)
         else:
             if not path.endswith(".sh") and not Path(path).name.startswith("_"):
                 raise ValueError(
-                    (
-                        f"Source file {path} does not have a .sh extension.\n"
-                        "Only .sh files are supported for bash function parsing.\n"
-                        "If you want to use a non-shell file as a command (script), "
-                        "it should use a shebang (e.g. #!/usr/bin/env python)."
-                    )
+                    f"Source file {path} does not have a .sh extension.\n"
+                    "Only .sh files are supported for bash function parsing.\n"
+                    "If you want to use a non-shell file as a command (script), "
+                    "it should use a shebang (e.g. #!/usr/bin/env python)."
                 )
             return self.parse_bash_functions(path, contents)
         if len(commands) == 0 and not Path(path).name.startswith("_"):
             raise ValueError(
-                (
-                    f"Non-shell file {path} does not contain any commands.\n"
-                    "If you want to use a non-shell file as a command (script), "
-                    "it should contain exactly one @yaml docstring. "
-                    "If you want to use a file as a utility script, "
-                    "it should start with an underscore (e.g. _utils.py)."
-                )
+                f"Non-shell file {path} does not contain any commands.\n"
+                "If you want to use a non-shell file as a command (script), "
+                "it should contain exactly one @yaml docstring. "
+                "If you want to use a file as a utility script, "
+                "it should start with an underscore (e.g. _utils.py)."
             )
         else:
             return commands
 
-    def parse_bash_functions(self, path, contents) -> List[Command]:
+    def parse_bash_functions(self, path, contents) -> list[Command]:
         """
         Simple logic for parsing a bash file and segmenting it into functions.
 
@@ -154,14 +151,14 @@ class ParseCommandBash(ParseCommand):
                 docs = []
         return commands
 
-    def parse_script(self, path, contents) -> List[Command]:
+    def parse_script(self, path, contents) -> list[Command]:
         pattern = re.compile(r"^#\s*@yaml\s*\n^#.*(?:\n#.*)*", re.MULTILINE)
         matches = pattern.findall(contents)
         if len(matches) == 0:
             return []
         elif len(matches) > 1:
             raise ValueError(
-                ("Non-shell file contains multiple @yaml tags.\n" "Only one @yaml tag is allowed per script.")
+                "Non-shell file contains multiple @yaml tags.\n" "Only one @yaml tag is allowed per script."
             )
         else:
             yaml_content = matches[0]
@@ -194,7 +191,7 @@ class ParseCommandBash(ParseCommand):
                 )
             ]
 
-    def generate_command_docs(self, commands: List[Command], subroutine_types, **kwargs) -> str:
+    def generate_command_docs(self, commands: list[Command], subroutine_types, **kwargs) -> str:
         docs = ""
         for cmd in commands:
             if cmd.docstring is not None:
@@ -236,7 +233,7 @@ class ParseCommandDetailed(ParseCommandBash):
 
     def generate_command_docs(
         self,
-        commands: List[Command],
+        commands: list[Command],
         subroutine_types,
         **kwargs,
     ) -> str:

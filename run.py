@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 try:
     import rich
 except ModuleNotFoundError as e:
@@ -11,7 +13,7 @@ import os
 import re
 import subprocess
 import traceback
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import rich.console
 import rich.markdown
@@ -133,7 +135,7 @@ class MainHook:
     """Hook structure for the web server or other addons to interface with"""
 
     @staticmethod
-    def _is_promising_patch(info: Dict[str, Any]) -> bool:
+    def _is_promising_patch(info: dict[str, Any]) -> bool:
         """Do we actually believe that the patch will solve the issue?
         Or are we just submitting the last patch we generated before hitting an error?
         """
@@ -152,7 +154,7 @@ class MainHook:
         """Called at the end of `Main.main`"""
         ...
 
-    def on_instance_start(self, *, index: int, instance: Dict[str, Any]):
+    def on_instance_start(self, *, index: int, instance: dict[str, Any]):
         """Called at the beginning of each instance loop in `Main.run`"""
         ...
 
@@ -175,7 +177,7 @@ class SaveApplyPatchHook(MainHook):
         self._apply_patch_locally = args.actions.apply_patch_locally
         self._instance = None
 
-    def on_instance_start(self, *, index: int, instance: Dict[str, Any]):
+    def on_instance_start(self, *, index: int, instance: dict[str, Any]):
         self._instance = instance
 
     def on_instance_completed(self, *, info, trajectory):
@@ -218,7 +220,7 @@ class SaveApplyPatchHook(MainHook):
         ]
         console.print(rich.markdown.Markdown("\n".join(content)))
 
-    def _save_patch(self, instance_id: str, info) -> Optional[Path]:
+    def _save_patch(self, instance_id: str, info) -> Path | None:
         """Create patch files that can be applied with `git am`.
 
         Returns:
@@ -268,7 +270,7 @@ class OpenPRHook(MainHook):
         if self._open_pr and self.should_open_pr(info):
             self._env.open_pr(trajectory=trajectory)
 
-    def should_open_pr(self, info: Dict[str, Any]) -> bool:
+    def should_open_pr(self, info: dict[str, Any]) -> bool:
         """Does opening a PR make sense?"""
         if not info.get("submission"):
             logger.info("Not opening PR because no submission was made.")
@@ -319,7 +321,7 @@ class Main:
             SaveApplyPatchHook(),
             OpenPRHook(),
         ]
-        self.hooks: List[MainHook] = []
+        self.hooks: list[MainHook] = []
         for hook in default_hooks:
             self.add_hook(hook)
 

@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import io
 import sys
-from typing import Optional
 
 from flask_socketio import SocketIO
 
@@ -17,7 +18,7 @@ from run import MainHook
 class StreamToSocketIO(io.StringIO):
     def __init__(
         self,
-        wu: "WebUpdate",
+        wu: WebUpdate,
     ):
         super().__init__()
         self._wu = wu
@@ -54,7 +55,7 @@ class WebUpdate:
         message: str,
         *,
         format: str = "markdown",
-        thought_idx: Optional[int] = None,
+        thought_idx: int | None = None,
         type_: str = "info",
     ):
         """Update the agent feed"""
@@ -75,7 +76,7 @@ class WebUpdate:
         *,
         type_: str,
         format: str = "markdown",
-        thought_idx: Optional[int] = None,
+        thought_idx: int | None = None,
     ):
         """Update the environment feed"""
         self._emit(

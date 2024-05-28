@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 import json
 import logging
@@ -13,7 +15,7 @@ import traceback
 from io import BytesIO
 from pathlib import Path
 from subprocess import PIPE, STDOUT
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 from datasets import load_dataset, load_from_disk
 from ghapi.all import GhApi
@@ -252,7 +254,7 @@ def get_background_pids(container_obj):
     return bash_pids, other_pids
 
 
-def _get_non_persistent_container(ctr_name: str, image_name: str) -> Tuple[subprocess.Popen, set]:
+def _get_non_persistent_container(ctr_name: str, image_name: str) -> tuple[subprocess.Popen, set]:
     startup_cmd = [
         "docker",
         "run",
@@ -283,7 +285,7 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> Tuple[subpr
     }  # bash PID is always 1 for non-persistent containers
 
 
-def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool = False) -> Tuple[subprocess.Popen, Set]:
+def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool = False) -> tuple[subprocess.Popen, set]:
     client = docker.from_env()
     containers = client.containers.list(all=True, filters={"name": ctr_name})
     if ctr_name in [c.name for c in containers]:
@@ -359,7 +361,7 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
     )
 
 
-def get_container(ctr_name: str, image_name: str, persistent: bool = False) -> Tuple[subprocess.Popen, Set]:
+def get_container(ctr_name: str, image_name: str, persistent: bool = False) -> tuple[subprocess.Popen, set]:
     """
     Get a container object for a given container name and image name
 
@@ -427,7 +429,7 @@ def image_exists(image_name):
     return True
 
 
-def get_commit(api: GhApi, owner: str, repo: str, ref: Optional[str] = None):
+def get_commit(api: GhApi, owner: str, repo: str, ref: str | None = None):
     """Get commit object from github api
 
     Args:
@@ -447,7 +449,7 @@ def get_commit(api: GhApi, owner: str, repo: str, ref: Optional[str] = None):
 class InvalidGithubURL(ValueError): ...
 
 
-def parse_gh_issue_url(issue_url: str) -> Tuple[str, str, str]:
+def parse_gh_issue_url(issue_url: str) -> tuple[str, str, str]:
     """Return owner, repo, issue number from issue url"""
     match = GITHUB_ISSUE_URL_PATTERN.search(issue_url)
     if not match:
@@ -457,7 +459,7 @@ def parse_gh_issue_url(issue_url: str) -> Tuple[str, str, str]:
     return tuple(res)  # type: ignore
 
 
-def parse_gh_repo_url(repo_url: str) -> Tuple[str, str]:
+def parse_gh_repo_url(repo_url: str) -> tuple[str, str]:
     """Return owner, repo from repo url"""
     match = GITHUB_REPO_URL_PATTERN.search(repo_url)
     if not match:
@@ -477,9 +479,7 @@ def get_gh_issue_data(issue_url: str, *, token: str = ""):
     return api.issues.get(owner, repo, issue_number)
 
 
-def get_problem_statement_from_github_issue(
-    owner: str, repo: str, issue_number: str, *, token: Optional[str] = ""
-) -> str:
+def get_problem_statement_from_github_issue(owner: str, repo: str, issue_number: str, *, token: str | None = "") -> str:
     """Return problem statement from github issue"""
     api = GhApi(token=token)
     issue = api.issues.get(owner, repo, issue_number)
@@ -489,7 +489,7 @@ def get_problem_statement_from_github_issue(
 
 
 class InstanceBuilder:
-    def __init__(self, token: Optional[str] = None):
+    def __init__(self, token: str | None = None):
         """This helper class is used to build the data for an instance object,
         retrieving problem statements from github issues or local files and setting
         repo paths from github urls or local paths.
@@ -528,7 +528,7 @@ class InstanceBuilder:
         msg = f"Not sure how to get problem statement from {data_path=}."
         raise ValueError(msg)
 
-    def set_repo_info_from_gh_url(self, url: str, base_commit: Optional[str] = None):
+    def set_repo_info_from_gh_url(self, url: str, base_commit: str | None = None):
         owner, repo = parse_gh_repo_url(url)
         self.args["repo"] = f"{owner}/{repo}"
         self.args["repo_type"] = "github"
@@ -539,7 +539,7 @@ class InstanceBuilder:
             logger.info(f"Base commit reference {base_commit} resolved to commit hash {self.args['base_commit']}")
         self.args["version"] = self.args["base_commit"][:7]
 
-    def set_repo_info_from_local_path(self, path: str, base_commit: Optional[str] = None):
+    def set_repo_info_from_local_path(self, path: str, base_commit: str | None = None):
         self.args["repo"] = str(Path(path).resolve())
         self.args["repo_type"] = "local"
         if base_commit:
@@ -556,7 +556,7 @@ class InstanceBuilder:
             self.args["base_commit"] = repo.head.object.hexsha
         self.args["version"] = self.args["base_commit"][:7]
 
-    def set_repo_info(self, repo: str, base_commit: Optional[str] = None):
+    def set_repo_info(self, repo: str, base_commit: str | None = None):
         if is_github_repo_url(repo):
             self.set_repo_info_from_gh_url(repo, base_commit=base_commit)
         elif Path(repo).is_dir():
@@ -564,7 +564,7 @@ class InstanceBuilder:
         else:
             raise ValueError(f"Could not determine repo path from {repo=}.")
 
-    def set_from_dict(self, instance_dict: Dict[str, Any]):
+    def set_from_dict(self, instance_dict: dict[str, Any]):
         self.args |= instance_dict
 
     def set_missing_fields(self):
@@ -595,7 +595,7 @@ class InstanceBuilder:
         if self.args["repo_type"] == "github" and self.args["repo"].count("/") != 1:
             raise ValueError(f"Invalid repo format for {self.args['repo_type']=}: {self.args['repo']=}")
 
-    def build(self) -> Dict[str, Any]:
+    def build(self) -> dict[str, Any]:
         self.set_missing_fields()
         self.validate()
         return self.args
@@ -603,12 +603,12 @@ class InstanceBuilder:
 
 def get_instances(
     file_path: str,
-    base_commit: Optional[str] = None,
-    split: Optional[str] = None,
-    token: Optional[str] = None,
+    base_commit: str | None = None,
+    split: str | None = None,
+    token: str | None = None,
     *,
     repo_path: str = "",
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """
     Getter function for handling json, jsonl files
 
@@ -733,7 +733,7 @@ _MARKDOWN_TRAJECTORY_EMOJI_MAPPING = {
 }
 
 
-def format_trajectory_markdown(trajectory: List[Dict[str, str]]):
+def format_trajectory_markdown(trajectory: list[dict[str, str]]):
     """Format a trajectory as a markdown string for use in gh PR description."""
     prefix = [
         "<details>",

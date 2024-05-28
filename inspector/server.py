@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import http.server
 import json
 import os
@@ -5,7 +7,7 @@ import socketserver
 from argparse import ArgumentParser
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -53,7 +55,7 @@ def append_patch(instance_id, content, patches, patch_type):
 
 
 def append_results(traj_path: Path, instance_id: str, content, results, results_file, scorecards, scorecards_file):
-    stats: List[str] = []
+    stats: list[str] = []
     model_stats = {}
     if traj_path.exists():
         data = json.loads(traj_path.read_text())
@@ -135,7 +137,7 @@ def append_results(traj_path: Path, instance_id: str, content, results, results_
     return content
 
 
-def load_content(file_name, gold_patches, test_patches) -> Dict[str, Any]:
+def load_content(file_name, gold_patches, test_patches) -> dict[str, Any]:
     with open(file_name) as infile:
         content = json.load(infile)
     results_file = Path(file_name).parent / "results.json"
@@ -162,7 +164,7 @@ def load_content(file_name, gold_patches, test_patches) -> Dict[str, Any]:
     return content
 
 
-def load_results(results_path: Path) -> Optional[Dict[str, Any]]:
+def load_results(results_path: Path) -> dict[str, Any] | None:
     """Load results from results.json.
 
     If file is not found, return None.
@@ -248,10 +250,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Content-type", "application/json")
         self.end_headers()
         files = sorted(
-            [
+            (
                 str(file.relative_to(Path(self.traj_dir))) + " " * 4 + get_status(file)
                 for file in Path(self.traj_dir).glob("**/*.traj")
-            ],
+            ),
             key=lambda x: str(Path(self.traj_dir) / x),
             reverse=True,
         )
