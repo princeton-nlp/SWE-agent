@@ -20,5 +20,7 @@ jobs:
           with:
             username: sweagent
             password: ${{ secrets.DOCKERHUB_TOKEN }}
+        - name: Checkout code
+          uses: actions/checkout@v2
         - name: Run release script
           run: ./release_dockerhub.sh sweagent latest
