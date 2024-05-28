@@ -20,8 +20,10 @@ on:
       - 'README.md'
       - 'mkdocs.yml'
 
+# Not possible to test windows capability:
+# https://github.com/orgs/community/discussions/25491
 jobs:
-  setup_job:
+  test:
     runs-on: ubuntu-latest
     defaults:
       run:
