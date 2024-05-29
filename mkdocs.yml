@@ -45,6 +45,10 @@ markdown_extensions:
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 nav:
   - Home: index.md
+  - Background:
+    - "background/index.md"
+    - "Overview": "background/overview.md"
+    - "ACI": "background/aci.md"
   - Installation:
     - "installation/index.md"
     - "Use in-browser": "installation/codespaces.md"
