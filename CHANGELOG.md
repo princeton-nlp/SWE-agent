@@ -10,10 +10,10 @@ Secondly, @ollmer added a new flag `--cache_task_images` that will significantly
 
 ### Breaking changes
 
-* Remove direct imports in __init__.py (you can no longer `from sweagent import Agent` by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/436
-* We have reformatted our codebase. If you create a PR based on a previous commit, make sure you install our `pre-commit` hook to avoid merge-conflicts because of formatting. See [our docs](https://princeton-nlp.github.io/SWE-agent/dev/contribute/) for more information.
+* We have reformatted our codebase. If you create a PR based on a previous commit, make sure you install our `pre-commit` hook to avoid merge-conflicts because of formatting. See [our docs](https://princeton-nlp.github.io/SWE-agent/dev/formatting_conflicts/) for more information.
+* Remove direct imports in `__init__.py` (you can no longer `from sweagent import Agent` by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/436
 
-### Features
+### Added
 
 * Running the web UI is now supported when running swe-agent completely in docker
 * Speed up evaluation by caching task environments as docker images by @ollmer in https://github.com/princeton-nlp/SWE-agent/pull/317
