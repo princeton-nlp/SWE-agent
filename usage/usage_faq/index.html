@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../inspector/">
-      
-      
-        <link rel="next" href="../benchmarking/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +16,7 @@
     
     
       
-        <title>FAQ - SWE-agent documentation</title>
+        <title>Usage FAQ - SWE-agent documentation</title>
       
     
     
@@ -81,7 +77,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#faq" class="md-skip">
+        <a href="#usage-faq" class="md-skip">
           Skip to content
         </a>
       
@@ -134,7 +130,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              FAQ
+              Usage FAQ
             
           </span>
         </div>
@@ -499,8 +495,6 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
       
   
   
-    
-  
   
   
     
@@ -525,11 +519,11 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
           
@@ -551,7 +545,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Usage
@@ -648,30 +642,10 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    FAQ
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../faq.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -680,59 +654,6 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#what-models-are-supported" class="md-nav__link">
-    <span class="md-ellipsis">
-      What models are supported?
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="What models are supported?">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#ollama-support" class="md-nav__link">
-    <span class="md-ellipsis">
-      Ollama support
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#models-for-testing" class="md-nav__link">
-    <span class="md-ellipsis">
-      Models for testing
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1089,7 +1010,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
                   
 
   
-    <a href="https://github.com/princeton-nlp/SWE-agent/edit/main/docs/usage/faq.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/princeton-nlp/SWE-agent/edit/main/docs/usage/usage_faq.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
     </a>
@@ -1097,7 +1018,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
   
 
 
-<h1 id="faq">FAQ</h1>
+<h1 id="usage-faq">Usage FAQ</h1>
 <h2 id="what-models-are-supported">What models are supported?</h2>
 <p>Models are configured in <a href="https://github.com/princeton-nlp/SWE-agent/blob/main/sweagent/agent/models.py"><code>models.py</code></a> (we're working on giving a complete list of model settings).</p>
 <p>Here are some few examples:</p>
@@ -1161,44 +1082,6 @@ claude-haiku
       
         <footer class="md-footer">
   
-    
-      
-      <nav class="md-footer__inner md-grid" aria-label="Footer" >
-        
-          
-          <a href="../inspector/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Trajectory inspector">
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
-            </div>
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Previous
-              </span>
-              <div class="md-ellipsis">
-                Trajectory inspector
-              </div>
-            </div>
-          </a>
-        
-        
-          
-          <a href="../benchmarking/" class="md-footer__link md-footer__link--next" aria-label="Next: Benchmarking">
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              <div class="md-ellipsis">
-                Benchmarking
-              </div>
-            </div>
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
-            </div>
-          </a>
-        
-      </nav>
     
   
   <div class="md-footer-meta md-typeset">
