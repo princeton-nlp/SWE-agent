@@ -2096,12 +2096,85 @@ path to a markdown or text file.</p>
     <div class="doc doc-contents ">
 
       <p>Copies a given string into a Docker container at a specified path.</p>
-<p>Args:
-- container: Docker SDK container object.
-- contents: The string to copy into the container.
-- container_path: The path inside the container where the string should be copied to.</p>
-<p>Returns:
-- None</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>container</code></td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Docker SDK container object.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>contents</code></td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The string to copy into the container.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>container_path</code></td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The path inside the container where the string should be copied to.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>None</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/utils.py</code></summary>
@@ -2147,17 +2220,17 @@ path to a markdown or text file.</p>
 <span class="normal">100</span>
 <span class="normal">101</span>
 <span class="normal">102</span>
-<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">copy_file_to_container</span><span class="p">(</span><span class="n">container</span><span class="p">,</span> <span class="n">contents</span><span class="p">,</span> <span class="n">container_path</span><span class="p">):</span>
+<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">copy_file_to_container</span><span class="p">(</span><span class="n">container</span><span class="p">,</span> <span class="n">contents</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">container_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Copies a given string into a Docker container at a specified path.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">    - container: Docker SDK container object.</span>
-<span class="sd">    - contents: The string to copy into the container.</span>
-<span class="sd">    - container_path: The path inside the container where the string should be copied to.</span>
+<span class="sd">        container: Docker SDK container object.</span>
+<span class="sd">        contents: The string to copy into the container.</span>
+<span class="sd">        container_path: The path inside the container where the string should be copied to.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">    - None</span>
+<span class="sd">        None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">temp_file_name</span> <span class="o">=</span> <span class="kc">None</span>
 

@@ -1183,6 +1183,15 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 </li>
         
           <li class="md-nav__item">
+  <a href="#sweagent.agent.agents.Agent.forward" class="md-nav__link">
+    <span class="md-ellipsis">
+      forward
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sweagent.agent.agents.Agent.forward_model" class="md-nav__link">
     <span class="md-ellipsis">
       forward_model
@@ -1438,6 +1447,15 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
   <a href="#sweagent.agent.agents.Agent.check_format_and_requery" class="md-nav__link">
     <span class="md-ellipsis">
       check_format_and_requery
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.agent.agents.Agent.forward" class="md-nav__link">
+    <span class="md-ellipsis">
+      forward
     </span>
   </a>
   
@@ -2190,7 +2208,43 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <span class="normal">814</span>
 <span class="normal">815</span>
 <span class="normal">816</span>
-<span class="normal">817</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Agent</span><span class="p">:</span>
+<span class="normal">817</span>
+<span class="normal">818</span>
+<span class="normal">819</span>
+<span class="normal">820</span>
+<span class="normal">821</span>
+<span class="normal">822</span>
+<span class="normal">823</span>
+<span class="normal">824</span>
+<span class="normal">825</span>
+<span class="normal">826</span>
+<span class="normal">827</span>
+<span class="normal">828</span>
+<span class="normal">829</span>
+<span class="normal">830</span>
+<span class="normal">831</span>
+<span class="normal">832</span>
+<span class="normal">833</span>
+<span class="normal">834</span>
+<span class="normal">835</span>
+<span class="normal">836</span>
+<span class="normal">837</span>
+<span class="normal">838</span>
+<span class="normal">839</span>
+<span class="normal">840</span>
+<span class="normal">841</span>
+<span class="normal">842</span>
+<span class="normal">843</span>
+<span class="normal">844</span>
+<span class="normal">845</span>
+<span class="normal">846</span>
+<span class="normal">847</span>
+<span class="normal">848</span>
+<span class="normal">849</span>
+<span class="normal">850</span>
+<span class="normal">851</span>
+<span class="normal">852</span>
+<span class="normal">853</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Agent</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Agent handles the behaviour of the model and how it interacts with the environment.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">AgentArguments</span><span class="p">):</span>
@@ -2382,7 +2436,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
                 <span class="n">rem_action</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
         <span class="k">return</span> <span class="n">parsed_action</span>
 
-    <span class="k">def</span> <span class="nf">_parse_command_patterns</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_parse_command_patterns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># mypy</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">command_patterns</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">command</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">_commands</span><span class="p">:</span>
@@ -2417,6 +2471,18 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
         <span class="bp">self</span><span class="o">.</span><span class="n">command_patterns</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">submit_command</span><span class="p">]</span> <span class="o">=</span> <span class="n">submit_pat</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">available_actions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">state</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Forwards the model</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            observation: Observation</span>
+<span class="sd">            available_actions: Currently not used</span>
+<span class="sd">            state:</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            thought: model reasoning</span>
+<span class="sd">            action: action that the model proposes</span>
+<span class="sd">            output: raw model output</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">thought</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_with_error_check</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_append_history</span><span class="p">(</span>
@@ -2437,7 +2503,9 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
     <span class="k">def</span> <span class="nf">forward_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Query the model with the current state and observation with the appropriate template.</span>
 
-<span class="sd">        Returns the model output.&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            output: raw model output</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># mypy</span>
 
         <span class="n">state_vars</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
@@ -2477,7 +2545,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
             <span class="n">hook</span><span class="o">.</span><span class="n">on_model_query</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">local_history</span><span class="p">,</span> <span class="n">agent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_history</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">retry_after_format_fail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">retry_after_format_fail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Ask the model to correct (without committing to persistent history) after a malformatted model output&quot;&quot;&quot;</span>
         <span class="n">format_error_template</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">format_error_template</span>
 
@@ -2490,7 +2558,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
         <span class="p">]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">temp_history</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">retry_after_blocklist_fail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">retry_after_blocklist_fail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Ask the model to correct (without committing to persistent history) after a disallowed command&quot;&quot;&quot;</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">blocklist_error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">blocklist_error_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
@@ -2504,7 +2572,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
         <span class="p">]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">temp_history</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">should_block_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">should_block_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if the command should be blocked.&quot;&quot;&quot;</span>
         <span class="n">names</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -2524,7 +2592,10 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 
 <span class="sd">        Try to parse the output into a thought and action. Retry if the output is malformatted or the action is blocked.</span>
 
-<span class="sd">        Returns the thought, action, and raw model output.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            thought: model reasoning</span>
+<span class="sd">            action: action that the model proposes</span>
+<span class="sd">            output: raw model output</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Condition for handling outputs with no thought (just action)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">model_name</span> <span class="o">==</span> <span class="s2">&quot;human&quot;</span><span class="p">:</span>
@@ -2563,6 +2634,11 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
     <span class="k">def</span> <span class="nf">forward_with_error_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrapper around `self.forward_model` that handles errors and retries</span>
 <span class="sd">        due to format errors or blocked actions.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            thought: model reasoning</span>
+<span class="sd">            action: action that the model proposes</span>
+<span class="sd">            output: raw model output</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_model</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
@@ -2593,7 +2669,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
     <span class="k">def</span> <span class="nf">init_environment_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_environment_vars</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">env_variables</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">set_environment_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">env_variables</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">set_environment_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="n">SWEEnv</span><span class="p">,</span> <span class="n">env_variables</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># mypy</span>
         <span class="n">commands_to_execute</span> <span class="o">=</span> <span class="p">(</span>
             <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">state_command</span><span class="o">.</span><span class="n">code</span><span class="p">]</span>
@@ -2642,14 +2718,14 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
             <span class="n">command_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datum</span><span class="p">)</span>
         <span class="n">env</span><span class="o">.</span><span class="n">add_commands</span><span class="p">(</span><span class="n">command_files</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">get_environment_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_environment_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="n">SWEEnv</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># mypy</span>
         <span class="n">env_vars</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">env_variables</span><span class="p">:</span>
             <span class="n">env_vars</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">communicate</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;echo $</span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">env_vars</span>
 
-    <span class="k">def</span> <span class="nf">call_subroutine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_name</span><span class="p">,</span> <span class="n">sub_action</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">call_subroutine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sub_action</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="n">SWEEnv</span><span class="p">):</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># mypy</span>
         <span class="n">env_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_environment_vars</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
         <span class="n">cwd</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">communicate</span><span class="p">(</span><span class="s2">&quot;pwd -P&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
@@ -2683,12 +2759,26 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
         <span class="n">env</span><span class="p">:</span> <span class="n">SWEEnv</span><span class="p">,</span>
         <span class="n">observation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">traj_dir</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">return_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;info&quot;</span><span class="p">,</span>
+        <span class="n">return_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;info_trajectory&quot;</span><span class="p">,</span>
         <span class="n">init_model_stats</span><span class="p">:</span> <span class="n">APIStats</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Run the agent on an environment.</span>
 <span class="sd">        Return the final value of the specified return type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            setup_args: Arguments to pass to the agent&#39;s setup method.</span>
+<span class="sd">            env: The environment to run the agent on.</span>
+<span class="sd">            observation: Output from environment setup</span>
+<span class="sd">            traj_dir: Directory to save the trajectory to</span>
+<span class="sd">            return_type: Controls what to return.</span>
+<span class="sd">                This should be left at `info_trajectory`, the</span>
+<span class="sd">                other values are for internal usage with subroutines.</span>
+<span class="sd">            init_model_stats: Initial model stats to use for the run.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            If return_type is &quot;info_trajectory&quot;, returns a tuple of</span>
+<span class="sd">            the info dictionary and the trajectory (list of dictionaries).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="c1"># mypy checks</span>
@@ -2836,25 +2926,53 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 
       <p>Query the model with the current state and observation with the appropriate template.</p>
 <p>Try to parse the output into a thought and action. Retry if the output is malformatted or the action is blocked.</p>
-<p>Returns the thought, action, and raw model output.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>thought</code></td>            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>model reasoning</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td><code>action</code></td>            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>action that the model proposes</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td><code>output</code></td>            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>raw model output</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/agents.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">568</span>
-<span class="normal">569</span>
-<span class="normal">570</span>
-<span class="normal">571</span>
-<span class="normal">572</span>
-<span class="normal">573</span>
-<span class="normal">574</span>
-<span class="normal">575</span>
-<span class="normal">576</span>
-<span class="normal">577</span>
-<span class="normal">578</span>
-<span class="normal">579</span>
-<span class="normal">580</span>
-<span class="normal">581</span>
-<span class="normal">582</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">582</span>
 <span class="normal">583</span>
 <span class="normal">584</span>
 <span class="normal">585</span>
@@ -2882,7 +3000,24 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <span class="normal">607</span>
 <span class="normal">608</span>
 <span class="normal">609</span>
-<span class="normal">610</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">check_format_and_requery</span><span class="p">(</span>
+<span class="normal">610</span>
+<span class="normal">611</span>
+<span class="normal">612</span>
+<span class="normal">613</span>
+<span class="normal">614</span>
+<span class="normal">615</span>
+<span class="normal">616</span>
+<span class="normal">617</span>
+<span class="normal">618</span>
+<span class="normal">619</span>
+<span class="normal">620</span>
+<span class="normal">621</span>
+<span class="normal">622</span>
+<span class="normal">623</span>
+<span class="normal">624</span>
+<span class="normal">625</span>
+<span class="normal">626</span>
+<span class="normal">627</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">check_format_and_requery</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
@@ -2890,7 +3025,10 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 
 <span class="sd">    Try to parse the output into a thought and action. Retry if the output is malformatted or the action is blocked.</span>
 
-<span class="sd">    Returns the thought, action, and raw model output.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        thought: model reasoning</span>
+<span class="sd">        action: action that the model proposes</span>
+<span class="sd">        output: raw model output</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Condition for handling outputs with no thought (just action)</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">model_name</span> <span class="o">==</span> <span class="s2">&quot;human&quot;</span><span class="p">:</span>
@@ -2934,20 +3072,137 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <div class="doc doc-object doc-function">
 
 
-<h3 id="sweagent.agent.agents.Agent.forward_model" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">forward_model</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span></code>
+<h3 id="sweagent.agent.agents.Agent.forward" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">forward</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">available_actions</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span></code>
 
 </h3>
 
 
     <div class="doc doc-contents ">
 
-      <p>Query the model with the current state and observation with the appropriate template.</p>
-<p>Returns the model output.</p>
+      <p>Forwards the model</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>observation</code></td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Observation</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>available_actions</code></td>
+            <td>
+                  <code>list[str]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Currently not used</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>state</code></td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>thought</code></td>            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>model reasoning</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td><code>action</code></td>            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>action that the model proposes</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td><code>output</code></td>            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>raw model output</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/agents.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">486</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
 <span class="normal">487</span>
 <span class="normal">488</span>
 <span class="normal">489</span>
@@ -2957,9 +3212,80 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <span class="normal">493</span>
 <span class="normal">494</span>
 <span class="normal">495</span>
-<span class="normal">496</span>
-<span class="normal">497</span>
-<span class="normal">498</span>
+<span class="normal">496</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">available_actions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">state</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Forwards the model</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        observation: Observation</span>
+<span class="sd">        available_actions: Currently not used</span>
+<span class="sd">        state:</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        thought: model reasoning</span>
+<span class="sd">        action: action that the model proposes</span>
+<span class="sd">        output: raw model output</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">thought</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_with_error_check</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">_append_history</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">output</span><span class="p">,</span>
+            <span class="s2">&quot;thought&quot;</span><span class="p">:</span> <span class="n">thought</span><span class="p">,</span>
+            <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="n">action</span><span class="p">,</span>
+            <span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;💭 THOUGHT (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="si">{</span><span class="n">thought</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🎬 ACTION (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="si">{</span><span class="n">action</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">thought</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">output</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="sweagent.agent.agents.Agent.forward_model" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">forward_model</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+      <p>Query the model with the current state and observation with the appropriate template.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>output</code></td>            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>raw model output</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>sweagent/agent/agents.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">498</span>
 <span class="normal">499</span>
 <span class="normal">500</span>
 <span class="normal">501</span>
@@ -2988,10 +3314,26 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <span class="normal">524</span>
 <span class="normal">525</span>
 <span class="normal">526</span>
-<span class="normal">527</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">forward_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span>
+<span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span>
+<span class="normal">534</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span>
+<span class="normal">540</span>
+<span class="normal">541</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">forward_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Query the model with the current state and observation with the appropriate template.</span>
 
-<span class="sd">    Returns the model output.&quot;&quot;&quot;</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        output: raw model output</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># mypy</span>
 
     <span class="n">state_vars</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
@@ -3050,26 +3392,52 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
       <p>Wrapper around <code>self.forward_model</code> that handles errors and retries
 due to format errors or blocked actions.</p>
 
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>thought</code></td>            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>model reasoning</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td><code>action</code></td>            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>action that the model proposes</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td><code>output</code></td>            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>raw model output</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/agents.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">612</span>
-<span class="normal">613</span>
-<span class="normal">614</span>
-<span class="normal">615</span>
-<span class="normal">616</span>
-<span class="normal">617</span>
-<span class="normal">618</span>
-<span class="normal">619</span>
-<span class="normal">620</span>
-<span class="normal">621</span>
-<span class="normal">622</span>
-<span class="normal">623</span>
-<span class="normal">624</span>
-<span class="normal">625</span>
-<span class="normal">626</span>
-<span class="normal">627</span>
-<span class="normal">628</span>
-<span class="normal">629</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">629</span>
 <span class="normal">630</span>
 <span class="normal">631</span>
 <span class="normal">632</span>
@@ -3080,9 +3448,36 @@ due to format errors or blocked actions.</p>
 <span class="normal">637</span>
 <span class="normal">638</span>
 <span class="normal">639</span>
-<span class="normal">640</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">forward_with_error_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="normal">640</span>
+<span class="normal">641</span>
+<span class="normal">642</span>
+<span class="normal">643</span>
+<span class="normal">644</span>
+<span class="normal">645</span>
+<span class="normal">646</span>
+<span class="normal">647</span>
+<span class="normal">648</span>
+<span class="normal">649</span>
+<span class="normal">650</span>
+<span class="normal">651</span>
+<span class="normal">652</span>
+<span class="normal">653</span>
+<span class="normal">654</span>
+<span class="normal">655</span>
+<span class="normal">656</span>
+<span class="normal">657</span>
+<span class="normal">658</span>
+<span class="normal">659</span>
+<span class="normal">660</span>
+<span class="normal">661</span>
+<span class="normal">662</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">forward_with_error_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper around `self.forward_model` that handles errors and retries</span>
 <span class="sd">    due to format errors or blocked actions.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        thought: model reasoning</span>
+<span class="sd">        action: action that the model proposes</span>
+<span class="sd">        output: raw model output</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_model</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
@@ -3130,19 +3525,19 @@ due to format errors or blocked actions.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/agents.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">542</span>
-<span class="normal">543</span>
-<span class="normal">544</span>
-<span class="normal">545</span>
-<span class="normal">546</span>
-<span class="normal">547</span>
-<span class="normal">548</span>
-<span class="normal">549</span>
-<span class="normal">550</span>
-<span class="normal">551</span>
-<span class="normal">552</span>
-<span class="normal">553</span>
-<span class="normal">554</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">retry_after_blocklist_fail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span>
+<span class="normal">566</span>
+<span class="normal">567</span>
+<span class="normal">568</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">retry_after_blocklist_fail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Ask the model to correct (without committing to persistent history) after a disallowed command&quot;&quot;&quot;</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">blocklist_error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">blocklist_error_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
@@ -3176,18 +3571,18 @@ due to format errors or blocked actions.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/agents.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">529</span>
-<span class="normal">530</span>
-<span class="normal">531</span>
-<span class="normal">532</span>
-<span class="normal">533</span>
-<span class="normal">534</span>
-<span class="normal">535</span>
-<span class="normal">536</span>
-<span class="normal">537</span>
-<span class="normal">538</span>
-<span class="normal">539</span>
-<span class="normal">540</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">retry_after_format_fail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">):</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">543</span>
+<span class="normal">544</span>
+<span class="normal">545</span>
+<span class="normal">546</span>
+<span class="normal">547</span>
+<span class="normal">548</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">retry_after_format_fail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Ask the model to correct (without committing to persistent history) after a malformatted model output&quot;&quot;&quot;</span>
     <span class="n">format_error_template</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">format_error_template</span>
 
@@ -3209,7 +3604,7 @@ due to format errors or blocked actions.</p>
 
 
 <h3 id="sweagent.agent.agents.Agent.run" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">run</span><span class="p">(</span><span class="n">setup_args</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">observation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">traj_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s1">&#39;info&#39;</span><span class="p">,</span> <span class="n">init_model_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">run</span><span class="p">(</span><span class="n">setup_args</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">observation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">traj_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s1">&#39;info_trajectory&#39;</span><span class="p">,</span> <span class="n">init_model_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 </h3>
 
@@ -3219,31 +3614,141 @@ due to format errors or blocked actions.</p>
       <p>Run the agent on an environment.
 Return the final value of the specified return type.</p>
 
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>setup_args</code></td>
+            <td>
+                  <code>dict[str, <span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Arguments to pass to the agent's setup method.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>env</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="sweagent.environment.swe_env.SWEEnv" href="../env/#sweagent.environment.swe_env.SWEEnv">SWEEnv</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The environment to run the agent on.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>observation</code></td>
+            <td>
+                  <code>str | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Output from environment setup</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>traj_dir</code></td>
+            <td>
+                  <code><span title="pathlib.Path">Path</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Directory to save the trajectory to</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>return_type</code></td>
+            <td>
+                  <code>str | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Controls what to return.
+This should be left at <code>info_trajectory</code>, the
+other values are for internal usage with subroutines.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;info_trajectory&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>init_model_stats</code></td>
+            <td>
+                  <code><span title="sweagent.agent.models.APIStats">APIStats</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Initial model stats to use for the run.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If return_type is "info_trajectory", returns a tuple of</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the info dictionary and the trajectory (list of dictionaries).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/agents.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">729</span>
-<span class="normal">730</span>
-<span class="normal">731</span>
-<span class="normal">732</span>
-<span class="normal">733</span>
-<span class="normal">734</span>
-<span class="normal">735</span>
-<span class="normal">736</span>
-<span class="normal">737</span>
-<span class="normal">738</span>
-<span class="normal">739</span>
-<span class="normal">740</span>
-<span class="normal">741</span>
-<span class="normal">742</span>
-<span class="normal">743</span>
-<span class="normal">744</span>
-<span class="normal">745</span>
-<span class="normal">746</span>
-<span class="normal">747</span>
-<span class="normal">748</span>
-<span class="normal">749</span>
-<span class="normal">750</span>
-<span class="normal">751</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">751</span>
 <span class="normal">752</span>
 <span class="normal">753</span>
 <span class="normal">754</span>
@@ -3309,18 +3814,68 @@ Return the final value of the specified return type.</p>
 <span class="normal">814</span>
 <span class="normal">815</span>
 <span class="normal">816</span>
-<span class="normal">817</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">run</span><span class="p">(</span>
+<span class="normal">817</span>
+<span class="normal">818</span>
+<span class="normal">819</span>
+<span class="normal">820</span>
+<span class="normal">821</span>
+<span class="normal">822</span>
+<span class="normal">823</span>
+<span class="normal">824</span>
+<span class="normal">825</span>
+<span class="normal">826</span>
+<span class="normal">827</span>
+<span class="normal">828</span>
+<span class="normal">829</span>
+<span class="normal">830</span>
+<span class="normal">831</span>
+<span class="normal">832</span>
+<span class="normal">833</span>
+<span class="normal">834</span>
+<span class="normal">835</span>
+<span class="normal">836</span>
+<span class="normal">837</span>
+<span class="normal">838</span>
+<span class="normal">839</span>
+<span class="normal">840</span>
+<span class="normal">841</span>
+<span class="normal">842</span>
+<span class="normal">843</span>
+<span class="normal">844</span>
+<span class="normal">845</span>
+<span class="normal">846</span>
+<span class="normal">847</span>
+<span class="normal">848</span>
+<span class="normal">849</span>
+<span class="normal">850</span>
+<span class="normal">851</span>
+<span class="normal">852</span>
+<span class="normal">853</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">run</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">setup_args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
     <span class="n">env</span><span class="p">:</span> <span class="n">SWEEnv</span><span class="p">,</span>
     <span class="n">observation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">traj_dir</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">return_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;info&quot;</span><span class="p">,</span>
+    <span class="n">return_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;info_trajectory&quot;</span><span class="p">,</span>
     <span class="n">init_model_stats</span><span class="p">:</span> <span class="n">APIStats</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Run the agent on an environment.</span>
 <span class="sd">    Return the final value of the specified return type.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        setup_args: Arguments to pass to the agent&#39;s setup method.</span>
+<span class="sd">        env: The environment to run the agent on.</span>
+<span class="sd">        observation: Output from environment setup</span>
+<span class="sd">        traj_dir: Directory to save the trajectory to</span>
+<span class="sd">        return_type: Controls what to return.</span>
+<span class="sd">            This should be left at `info_trajectory`, the</span>
+<span class="sd">            other values are for internal usage with subroutines.</span>
+<span class="sd">        init_model_stats: Initial model stats to use for the run.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        If return_type is &quot;info_trajectory&quot;, returns a tuple of</span>
+<span class="sd">        the info dictionary and the trajectory (list of dictionaries).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="c1"># mypy checks</span>
@@ -3539,17 +4094,17 @@ Return the final value of the specified return type.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/agents.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">556</span>
-<span class="normal">557</span>
-<span class="normal">558</span>
-<span class="normal">559</span>
-<span class="normal">560</span>
-<span class="normal">561</span>
-<span class="normal">562</span>
-<span class="normal">563</span>
-<span class="normal">564</span>
-<span class="normal">565</span>
-<span class="normal">566</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">should_block_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">570</span>
+<span class="normal">571</span>
+<span class="normal">572</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">should_block_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if the command should be blocked.&quot;&quot;&quot;</span>
     <span class="n">names</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
