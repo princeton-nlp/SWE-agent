@@ -2605,7 +2605,15 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <span class="normal">977</span>
 <span class="normal">978</span>
 <span class="normal">979</span>
-<span class="normal">980</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">SWEEnv</span><span class="p">(</span><span class="n">gym</span><span class="o">.</span><span class="n">Env</span><span class="p">):</span>
+<span class="normal">980</span>
+<span class="normal">981</span>
+<span class="normal">982</span>
+<span class="normal">983</span>
+<span class="normal">984</span>
+<span class="normal">985</span>
+<span class="normal">986</span>
+<span class="normal">987</span>
+<span class="normal">988</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">SWEEnv</span><span class="p">(</span><span class="n">gym</span><span class="o">.</span><span class="n">Env</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Gym environment for SWE-bench. This class should handle all communication with the docker container.&quot;&quot;&quot;</span>
 
     <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;swe_main&quot;</span>
@@ -2975,7 +2983,23 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
         <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">container</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">container_obj</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">persistent</span><span class="p">:</span>
+            <span class="c1"># This ensures that we get a new container name</span>
+            <span class="c1"># just in case removing doesn&#39;t work.</span>
+            <span class="c1"># Might be a fix for https://github.com/princeton-nlp/SWE-agent/issues/451</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">container_name</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_reset_container</span><span class="p">()</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_get_container_name</span><span class="p">(</span><span class="n">image_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return name of container&quot;&quot;&quot;</span>
+        <span class="n">process_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">())</span>
+        <span class="n">current_time</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
+        <span class="n">unique_string</span> <span class="o">=</span> <span class="n">current_time</span> <span class="o">+</span> <span class="n">process_id</span>
+        <span class="n">hash_object</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">unique_string</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+        <span class="n">image_name_sanitized</span> <span class="o">=</span> <span class="n">image_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
+        <span class="n">image_name_sanitized</span> <span class="o">=</span> <span class="n">image_name_sanitized</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">image_name_sanitized</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">hash_object</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()[:</span><span class="mi">10</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
 
     <span class="k">def</span> <span class="nf">_init_container</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cached_image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -2987,15 +3011,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
             <span class="n">image_name</span> <span class="o">=</span> <span class="n">cached_image</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using cached image: </span><span class="si">{</span><span class="n">image_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">process_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">())</span>
-            <span class="n">current_time</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
-            <span class="n">unique_string</span> <span class="o">=</span> <span class="n">current_time</span> <span class="o">+</span> <span class="n">process_id</span>
-            <span class="n">hash_object</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">unique_string</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
-            <span class="c1"># Cannot have colons/slashes in container name, but those are important in image names</span>
-            <span class="c1"># i.e., when we want swe-agent to pull the image from dockerhub</span>
-            <span class="n">image_name_sanitized</span> <span class="o">=</span> <span class="n">image_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
-            <span class="n">image_name_sanitized</span> <span class="o">=</span> <span class="n">image_name_sanitized</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">container_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">image_name_sanitized</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">hash_object</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()[:</span><span class="mi">10</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">container_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_container_name</span><span class="p">(</span><span class="n">image_name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent_pids</span> <span class="o">=</span> <span class="n">get_container</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">container_name</span><span class="p">,</span> <span class="n">image_name</span><span class="p">,</span> <span class="n">persistent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">persistent</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">client</span> <span class="o">=</span> <span class="n">docker</span><span class="o">.</span><span class="n">from_env</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">600</span><span class="p">)</span>
@@ -3508,15 +3524,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">839</span>
-<span class="normal">840</span>
-<span class="normal">841</span>
-<span class="normal">842</span>
-<span class="normal">843</span>
-<span class="normal">844</span>
-<span class="normal">845</span>
-<span class="normal">846</span>
-<span class="normal">847</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">847</span>
 <span class="normal">848</span>
 <span class="normal">849</span>
 <span class="normal">850</span>
@@ -3534,7 +3542,15 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <span class="normal">862</span>
 <span class="normal">863</span>
 <span class="normal">864</span>
-<span class="normal">865</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">add_commands</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">865</span>
+<span class="normal">866</span>
+<span class="normal">867</span>
+<span class="normal">868</span>
+<span class="normal">869</span>
+<span class="normal">870</span>
+<span class="normal">871</span>
+<span class="normal">872</span>
+<span class="normal">873</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">add_commands</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Adds custom commands to container</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3685,15 +3701,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">600</span>
-<span class="normal">601</span>
-<span class="normal">602</span>
-<span class="normal">603</span>
-<span class="normal">604</span>
-<span class="normal">605</span>
-<span class="normal">606</span>
-<span class="normal">607</span>
-<span class="normal">608</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">608</span>
 <span class="normal">609</span>
 <span class="normal">610</span>
 <span class="normal">611</span>
@@ -3713,7 +3721,15 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <span class="normal">625</span>
 <span class="normal">626</span>
 <span class="normal">627</span>
-<span class="normal">628</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">communicate</span><span class="p">(</span>
+<span class="normal">628</span>
+<span class="normal">629</span>
+<span class="normal">630</span>
+<span class="normal">631</span>
+<span class="normal">632</span>
+<span class="normal">633</span>
+<span class="normal">634</span>
+<span class="normal">635</span>
+<span class="normal">636</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">communicate</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="nb">input</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">timeout_duration</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
@@ -3763,17 +3779,17 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">630</span>
-<span class="normal">631</span>
-<span class="normal">632</span>
-<span class="normal">633</span>
-<span class="normal">634</span>
-<span class="normal">635</span>
-<span class="normal">636</span>
-<span class="normal">637</span>
-<span class="normal">638</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">638</span>
 <span class="normal">639</span>
-<span class="normal">640</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">communicate_with_handling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">error_msg</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">timeout_duration</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">640</span>
+<span class="normal">641</span>
+<span class="normal">642</span>
+<span class="normal">643</span>
+<span class="normal">644</span>
+<span class="normal">645</span>
+<span class="normal">646</span>
+<span class="normal">647</span>
+<span class="normal">648</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">communicate_with_handling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">error_msg</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">timeout_duration</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Wrapper for communicate function that raises error if return code is non-zero</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3805,11 +3821,11 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">642</span>
-<span class="normal">643</span>
-<span class="normal">644</span>
-<span class="normal">645</span>
-<span class="normal">646</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_available_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">650</span>
+<span class="normal">651</span>
+<span class="normal">652</span>
+<span class="normal">653</span>
+<span class="normal">654</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_available_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns list of available actions in current environment state</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3835,15 +3851,15 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">648</span>
-<span class="normal">649</span>
-<span class="normal">650</span>
-<span class="normal">651</span>
-<span class="normal">652</span>
-<span class="normal">653</span>
-<span class="normal">654</span>
-<span class="normal">655</span>
-<span class="normal">656</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_pids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">all_pids</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">656</span>
+<span class="normal">657</span>
+<span class="normal">658</span>
+<span class="normal">659</span>
+<span class="normal">660</span>
+<span class="normal">661</span>
+<span class="normal">662</span>
+<span class="normal">663</span>
+<span class="normal">664</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_pids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">all_pids</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Gets list of processes running inside docker container</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3875,20 +3891,20 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">658</span>
-<span class="normal">659</span>
-<span class="normal">660</span>
-<span class="normal">661</span>
-<span class="normal">662</span>
-<span class="normal">663</span>
-<span class="normal">664</span>
-<span class="normal">665</span>
-<span class="normal">666</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">666</span>
 <span class="normal">667</span>
 <span class="normal">668</span>
 <span class="normal">669</span>
 <span class="normal">670</span>
-<span class="normal">671</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_submission</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">671</span>
+<span class="normal">672</span>
+<span class="normal">673</span>
+<span class="normal">674</span>
+<span class="normal">675</span>
+<span class="normal">676</span>
+<span class="normal">677</span>
+<span class="normal">678</span>
+<span class="normal">679</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_submission</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Function for extracting diff patch submission at the end of an episode.</span>
 
@@ -3923,15 +3939,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">699</span>
-<span class="normal">700</span>
-<span class="normal">701</span>
-<span class="normal">702</span>
-<span class="normal">703</span>
-<span class="normal">704</span>
-<span class="normal">705</span>
-<span class="normal">706</span>
-<span class="normal">707</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">707</span>
 <span class="normal">708</span>
 <span class="normal">709</span>
 <span class="normal">710</span>
@@ -4061,7 +4069,15 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <span class="normal">834</span>
 <span class="normal">835</span>
 <span class="normal">836</span>
-<span class="normal">837</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">install_env</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">837</span>
+<span class="normal">838</span>
+<span class="normal">839</span>
+<span class="normal">840</span>
+<span class="normal">841</span>
+<span class="normal">842</span>
+<span class="normal">843</span>
+<span class="normal">844</span>
+<span class="normal">845</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">install_env</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates conda environment and installs third party dependencies to allow code execution</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -4221,15 +4237,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">867</span>
-<span class="normal">868</span>
-<span class="normal">869</span>
-<span class="normal">870</span>
-<span class="normal">871</span>
-<span class="normal">872</span>
-<span class="normal">873</span>
-<span class="normal">874</span>
-<span class="normal">875</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">875</span>
 <span class="normal">876</span>
 <span class="normal">877</span>
 <span class="normal">878</span>
@@ -4238,7 +4246,15 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <span class="normal">881</span>
 <span class="normal">882</span>
 <span class="normal">883</span>
-<span class="normal">884</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">interrupt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">884</span>
+<span class="normal">885</span>
+<span class="normal">886</span>
+<span class="normal">887</span>
+<span class="normal">888</span>
+<span class="normal">889</span>
+<span class="normal">890</span>
+<span class="normal">891</span>
+<span class="normal">892</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">interrupt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Send interrupt signal to container and exhaust stdout buffer with a communicate call</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -4319,15 +4335,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">886</span>
-<span class="normal">887</span>
-<span class="normal">888</span>
-<span class="normal">889</span>
-<span class="normal">890</span>
-<span class="normal">891</span>
-<span class="normal">892</span>
-<span class="normal">893</span>
-<span class="normal">894</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">894</span>
 <span class="normal">895</span>
 <span class="normal">896</span>
 <span class="normal">897</span>
@@ -4413,7 +4421,15 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <span class="normal">977</span>
 <span class="normal">978</span>
 <span class="normal">979</span>
-<span class="normal">980</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">open_pr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">trajectory</span><span class="p">,</span> <span class="n">_dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="normal">980</span>
+<span class="normal">981</span>
+<span class="normal">982</span>
+<span class="normal">983</span>
+<span class="normal">984</span>
+<span class="normal">985</span>
+<span class="normal">986</span>
+<span class="normal">987</span>
+<span class="normal">988</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">open_pr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">trajectory</span><span class="p">,</span> <span class="n">_dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create PR to repository</span>
 
 <span class="sd">    Args:</span>
@@ -4807,18 +4823,18 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">673</span>
-<span class="normal">674</span>
-<span class="normal">675</span>
-<span class="normal">676</span>
-<span class="normal">677</span>
-<span class="normal">678</span>
-<span class="normal">679</span>
-<span class="normal">680</span>
-<span class="normal">681</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">681</span>
 <span class="normal">682</span>
 <span class="normal">683</span>
-<span class="normal">684</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">run_shell_script</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">script_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">location</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">684</span>
+<span class="normal">685</span>
+<span class="normal">686</span>
+<span class="normal">687</span>
+<span class="normal">688</span>
+<span class="normal">689</span>
+<span class="normal">690</span>
+<span class="normal">691</span>
+<span class="normal">692</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">run_shell_script</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">script_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">location</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Run custom script supplied by user at `script_path`</span>
 
 <span class="sd">    Args:</span>
