@@ -82,3 +82,17 @@ mkdocs serve
 and point your browser to port 8000 or click one of the links in the output.
 
 {% include-markdown "../_footer.md" %}
+
+## Diving into the code
+
+<div class="grid cards" markdown>
+
+-   :material-cog:{ .lg .middle } __Code structure and reference__
+
+    ---
+
+    Read the reference for more information on our code.
+
+    [:octicons-arrow-right-24: Read more](codespaces.md)
+
+</div>
