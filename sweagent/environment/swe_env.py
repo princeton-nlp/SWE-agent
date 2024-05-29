@@ -475,7 +475,23 @@ class SWEEnv(gym.Env):
         self.close()
         self.container = None
         self.container_obj = None
+        if not self.persistent:
+            # This ensures that we get a new container name
+            # just in case removing doesn't work.
+            # Might be a fix for https://github.com/princeton-nlp/SWE-agent/issues/451
+            self.container_name = None
         self._reset_container()
+
+    @staticmethod
+    def _get_container_name(image_name: str) -> str:
+        """Return name of container"""
+        process_id = str(os.getpid())
+        current_time = str(datetime.datetime.now())
+        unique_string = current_time + process_id
+        hash_object = hashlib.sha256(unique_string.encode())
+        image_name_sanitized = image_name.replace("/", "-")
+        image_name_sanitized = image_name_sanitized.replace(":", "-")
+        return f"{image_name_sanitized}-{hash_object.hexdigest()[:10]}"
 
     def _init_container(self, cached_image: str | None = None) -> None:
         """
@@ -487,15 +503,7 @@ class SWEEnv(gym.Env):
             image_name = cached_image
             logger.info(f"Using cached image: {image_name}")
         if self.container_name is None:
-            process_id = str(os.getpid())
-            current_time = str(datetime.datetime.now())
-            unique_string = current_time + process_id
-            hash_object = hashlib.sha256(unique_string.encode())
-            # Cannot have colons/slashes in container name, but those are important in image names
-            # i.e., when we want swe-agent to pull the image from dockerhub
-            image_name_sanitized = image_name.replace("/", "-")
-            image_name_sanitized = image_name_sanitized.replace(":", "-")
-            self.container_name = f"{image_name_sanitized}-{hash_object.hexdigest()[:10]}"
+            self.container_name = self._get_container_name(image_name)
         self.container, self.parent_pids = get_container(self.container_name, image_name, persistent=self.persistent)
         try:
             client = docker.from_env(timeout=600)
