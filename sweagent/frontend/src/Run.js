@@ -169,7 +169,8 @@ function Run() {
     }
   };
 
-  const scrollDetected = () => checkScrollPosition(logsRef, isLogScrolled, 58);
+  const scrollDetectedLog = () =>
+    checkScrollPosition(logsRef, isLogScrolled, 58);
   const scrollLog = () => scrollToBottom(logsRef, isLogScrolled);
 
   const scrollDetectedEnv = () =>
@@ -182,15 +183,12 @@ function Run() {
 
   // Use effect to listen to socket updates
   React.useEffect(() => {
-    logsRef.current.removeEventListener("scroll", scrollDetected);
-    logsRef.current.addEventListener("scroll", scrollDetected, {
+    logsRef.current.addEventListener("scroll", scrollDetectedLog, {
       passive: true,
     });
-    envFeedRef.current.removeEventListener("scroll", scrollDetectedEnv);
     envFeedRef.current.addEventListener("scroll", scrollDetectedEnv, {
       passive: true,
     });
-    agentFeedRef.current.removeEventListener("scroll", scrollDetectedAgent);
     agentFeedRef.current.addEventListener("scroll", scrollDetectedAgent, {
       passive: true,
     });
@@ -229,7 +227,7 @@ function Run() {
         }
       }
       return () => {
-        logsRef.current.removeEventListener("scroll", scrollDetected);
+        logsRef.current.removeEventListener("scroll", scrollDetectedLog);
         envFeedRef.current.removeEventListener("scroll", scrollDetectedEnv);
         agentFeedRef.current.removeEventListener("scroll", scrollDetectedAgent);
       };
