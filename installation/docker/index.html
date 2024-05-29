@@ -422,6 +422,17 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Docker
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -431,6 +442,43 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-command-line-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running the command line interface
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-web-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running the web server
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -972,6 +1020,32 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-command-line-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running the command line interface
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-web-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running the web server
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1001,6 +1075,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <li>Add your API tokens to a file <code>keys.cfg</code> as explained <a href="../keys/">here</a> or pass them as
    environment variables.</li>
 </ol>
+<h2 id="running-the-command-line-interface">Running the command line interface</h2>
 <p>Assuming that you create <code>keys.cfg</code> in the current directory, run</p>
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>-v<span class="w"> </span>/var/run/docker.sock:/var/run/docker.sock<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/keys.cfg:/app/keys.cfg<span class="w"> </span><span class="se">\</span>
@@ -1026,13 +1101,23 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <p class="admonition-title">Getting updates</p>
 <p>Even though the image <code>sweagent/swe-agent:latest</code> has the tag <code>latest</code>,
 it is not automatically updated every time you run <code>docker run</code>. Instead,
-you need to manually run <code>docker pull sweagent/swe-agent:latest</code> periodically.</p>
+you need to manually run </p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>pull<span class="w"> </span>sweagent/swe-agent-run:latest
+docker<span class="w"> </span>pull<span class="w"> </span>sweagent/swe-agent:latest
+</code></pre></div>
+<p>periodically.</p>
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Retrieving generated files</p>
 <p>The optional <code>--rm</code> flag removes the docker container after the command has terminated.
 Therefore, to retrieve files (like generated patch files) from the container, please
 remove this flag.</p>
+</div>
+<h2 id="running-the-web-server">Running the web server</h2>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Please also read the previous section for tips on passing environment variables
+and staying up to date.</p>
 </div>
 <p>To run the web server, make sure to forward port 3000:</p>
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>run<span class="w"> </span>-p<span class="w"> </span><span class="m">3000</span>:3000<span class="w"> </span>-it<span class="w"> </span>-v<span class="w"> </span>/var/run/docker.sock:/var/run/docker.sock<span class="w"> </span><span class="se">\</span>
