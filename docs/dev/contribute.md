@@ -93,6 +93,6 @@ and point your browser to port 8000 or click one of the links in the output.
 
     Read the reference for more information on our code.
 
-    [:octicons-arrow-right-24: Read more](reference/index.md)
+    [:octicons-arrow-right-24: Read more](../reference/index.md)
 
 </div>
