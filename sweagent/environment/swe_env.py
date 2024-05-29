@@ -229,8 +229,8 @@ class SWEEnv(gym.Env):
         Arguments:
             index (`int`) - index of task instance to reset to
         Returns:
-            observation (`str`) - output from container
-            info (`dict`) - additional information (e.g. debugging information)
+            observation: output from container
+            info: additional information (e.g. debugging information)
         """
         info = {}
         info["commit_sha"] = self.commit_sha

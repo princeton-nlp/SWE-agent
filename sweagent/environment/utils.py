@@ -58,17 +58,17 @@ def is_github_repo_url(data_path: str) -> bool:
 
 
 # TODO: Why not just use copy_anything_to_container?
-def copy_file_to_container(container, contents, container_path):
+def copy_file_to_container(container, contents: str, container_path: str) -> None:
     """
     Copies a given string into a Docker container at a specified path.
 
     Args:
-    - container: Docker SDK container object.
-    - contents: The string to copy into the container.
-    - container_path: The path inside the container where the string should be copied to.
+        container: Docker SDK container object.
+        contents: The string to copy into the container.
+        container_path: The path inside the container where the string should be copied to.
 
     Returns:
-    - None
+        None
     """
     temp_file_name = None
 
