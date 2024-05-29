@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.5.0 (2024-05-28)
+## 0.5.0 (2024-05-28)
 
 [All new commits](https://github.com/princeton-nlp/SWE-agent/compare/v0.4.0...v0.5.0)
 
