@@ -258,6 +258,7 @@ class Agent:
         self.hooks = []
 
     def add_hook(self, hook: AgentHook):
+        """Add hook to agent"""
         hook.on_init()
         self.hooks.append(hook)
 
@@ -327,7 +328,10 @@ class Agent:
         """Return the history of the agent since the last reset."""
         return self.config.history_processor([entry for entry in self.history if entry["agent"] == self.name])
 
-    def save_trajectory(self, trajectory, log_path: Path, env_name: str, info: dict[str, Any]):
+    def save_trajectory(
+        self, trajectory: list[dict[str, Any]], log_path: Path, env_name: str, info: dict[str, Any]
+    ) -> None:
+        """Save the trajectory"""
         log_dict = {
             "environment": env_name,
             "trajectory": trajectory,
@@ -714,6 +718,7 @@ class Agent:
         env.add_commands(command_files)
 
     def get_environment_vars(self, env: SWEEnv) -> dict[str, Any]:
+        """Get environment variables"""
         assert self.config is not None  # mypy
         env_vars = dict()
         for var in self.config.env_variables:
@@ -721,6 +726,7 @@ class Agent:
         return env_vars
 
     def call_subroutine(self, agent_name: str, sub_action, env: SWEEnv):
+        """Call subroutine"""
         assert self.config is not None  # mypy
         env_vars = self.get_environment_vars(env)
         cwd = env.communicate("pwd -P").strip()
