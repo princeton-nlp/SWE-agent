@@ -8,7 +8,7 @@ Demo (yaml) files are stored in the `make_demos/demos` directory by default and 
 
 ## Converting an existing trajectory into a demonstration
 
-Here's how you can make a demo from an existing trajectory file: 
+Here's how you can make a demo from an existing trajectory file:
 
 1. Find a basic trajectory that you already like and want to use as the basis for your demo.
    For instance, consider the `.traj` files in the [`trajectories/demonstrations/` folder](https://github.com/princeton-nlp/SWE-agent/tree/main/trajectories/demonstrations).
