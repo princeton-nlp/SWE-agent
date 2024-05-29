@@ -50,7 +50,7 @@ nav:
     - "Use in-browser": "installation/codespaces.md"
     - "Install from source": "installation/source.md"
     - "Docker": "installation/docker.md"
-    - "Adding your keys": "installation/keys.md"
+    - "API keys": "installation/keys.md"
     - "Installation tips": "installation/tips.md"
     - "Changelog": "installation/changelog.md"
   - Usage:
