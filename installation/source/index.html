@@ -448,7 +448,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
         
   
   <span class="md-ellipsis">
-    Adding your keys
+    API keys
   </span>
   
 
@@ -998,15 +998,23 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <div class="admonition warning">
 <p class="admonition-title">Issues on Windows</p>
 <p>Expect some issues with Windows (we're working on them).
-In the meantime, use Docker (see below).</p>
+In the meantime, <a href="../docker/">use Docker</a>.</p>
 </div>
 <ol>
 <li><a href="https://docs.docker.com/engine/install/">Install Docker</a>, then start Docker locally.</li>
 <li>If you plan on using the web-based GUI: Install <a href="https://docs.npmjs.com/downloading-and-installing-node-js-and-npm"><code>nodejs</code></a>.</li>
-<li>Clone the repository (<code>git clone https://github.com/princeton-nlp/SWE-agent.git</code>)</li>
-<li>Run <code>pip install --editable .</code> at the repository root (as with any python setup, it's recommended to use <a href="https://docs.conda.io/en/latest/">conda</a> or <a href="https://realpython.com/python-virtual-environments-a-primer/">virtual environments</a> to manage dependencies). Error about editable install? Please update pip<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup>.</li>
-<li>Run <code>./setup.sh</code> to create the <code>swe-agent</code> docker image.</li>
-<li>Create a <code>keys.cfg</code> file at the root of this repository (<a href="../keys/">more information</a>).</li>
+<li>Clone the repository, for example with
+    <div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/princeton-nlp/SWE-agent.git
+</code></pre></div></li>
+<li>Run
+    <div class="highlight"><pre><span></span><code>pip install --editable .
+</code></pre></div>
+    at the repository root (as with any python setup, it's recommended to use <a href="https://docs.conda.io/en/latest/">conda</a> or <a href="https://realpython.com/python-virtual-environments-a-primer/">virtual environments</a> to manage dependencies). Error about editable install? Please update pip<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup>.</li>
+<li>Run
+    <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>pull<span class="w"> </span>sweagent/swe-agent:latest
+</code></pre></div>
+Alternatively, you can run <code>./setup.sh</code> to create your own <code>swe-agent</code> docker image.</li>
+<li>Set up your LM API keys as explained <a href="../keys/">here</a>.</li>
 </ol>
 <div class="admonition tip">
 <p class="admonition-title">Docker issues</p>
@@ -1016,7 +1024,14 @@ In the meantime, use Docker (see below).</p>
 <p class="admonition-title">Updating</p>
 <p>SWE-agent is still in active development. Features and enhancement are added often.
 To make sure you are on the latest version, periodically run <code>git pull</code>
-(there is no need to redo the <code>pip install</code>).</p>
+(there is no need to redo the <code>pip install</code>).
+You might also want to run <code>git pull sweagent/swe-agent:latest</code> periodically
+(though changes to the container are more rare).</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Development setup</p>
+<p>Want to modify SWE-agent? Great! There are a few extra steps and tips:
+Please check our <a href="../../dev/contribute/">contribution guide</a>.</p>
 </div>
 <!-- BEGIN INCLUDE ../_footer.md -->
 <div class="grid cards">
