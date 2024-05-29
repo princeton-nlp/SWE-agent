@@ -81,8 +81,6 @@ mkdocs serve
 
 and point your browser to port 8000 or click one of the links in the output.
 
-{% include-markdown "../_footer.md" %}
-
 ## Diving into the code
 
 <div class="grid cards" markdown>
@@ -96,3 +94,5 @@ and point your browser to port 8000 or click one of the links in the output.
     [:octicons-arrow-right-24: Read more](../reference/index.md)
 
 </div>
+
+{% include-markdown "../_footer.md" %}

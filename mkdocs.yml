@@ -73,7 +73,6 @@ nav:
   - Development:
     - "Contribution guide": "dev/contribute.md"
     - "Formatting conflicts": "dev/formatting_conflicts.md"
-    - "Code structure": "dev/code_structure.md"
   - Reference:
     - "reference/index.md"
     - "Agent": "reference/agent.md"
