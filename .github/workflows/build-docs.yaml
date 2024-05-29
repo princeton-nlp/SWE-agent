@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+      - "build-docs-*"
+  pull_request:
+    branches:
+      - main
 permissions:
   contents: write
 jobs:
@@ -30,6 +34,10 @@ jobs:
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
-      - run: uv pip install --python ${Python_ROOT_DIR} mkdocs-material mkdocs-glightbox mkdocs-include-markdown-plugin 'mkdocstrings[python]>=0.18'
-      - run: mkdocs gh-deploy --force
-
+      - run: uv pip install --python ${Python_ROOT_DIR} '.[dev]'
+      - name: Build Documentation
+        if: github.ref != 'refs/heads/main'
+        run: mkdocs gh-deploy --force
+      - name: Build + Deploy Documentation
+        if: github.ref == 'refs/heads/main'
+        run: mkdocs gh-deploy --force
