@@ -131,8 +131,8 @@ class SWEEnv(gym.Env):
             self.commit_sha = repo.head.object.hexsha
         except KeyboardInterrupt:
             raise
-        except:
-            logger.warning("Failed to get commit hash for this repo")
+        except Exception as e:
+            logger.exception("Failed to get commit hash for this repo: %s", str(e))
 
         self._github_token: str = keys_config.get("GITHUB_TOKEN", "")  # type: ignore
 
@@ -416,6 +416,7 @@ class SWEEnv(gym.Env):
             return observation, 0, True, info
         except Exception:
             observation += "\nEXECUTION FAILED OR COMMAND MALFORMED"
+            logger.exception("Unknown exception")
 
         # Record submission and end episode if `submit` keyword found
         submission = self.get_submission(observation)
@@ -509,7 +510,9 @@ class SWEEnv(gym.Env):
         except docker.errors.DockerException as e:
             if "Error while fetching server API version" in str(e):
                 msg = "Docker is not running. Please start Docker and try again."
-                raise RuntimeError(msg) from e
+            else:
+                msg = "Unknown docker exception occurred. Are you sure docker is running?"
+            raise RuntimeError(msg) from e
         try:
             self.container_obj = client.containers.get(self.container_name)
         except docker.errors.NotFound:

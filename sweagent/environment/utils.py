@@ -708,12 +708,12 @@ def get_instances(
     # Attempt load from HF datasets as a last resort
     try:
         return postproc_instance_list(load_dataset(file_path, split=split))
-    except:
+    except Exception as e:
         msg = (
             f"Could not load instances from {file_path}. "
             "Please ensure --data_path is a GitHub URL, a SWE-bench HuggingFace dataset, or a JSON/JSONL file."
         )
-        raise ValueError(msg)
+        raise ValueError(msg) from e
 
 
 def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token: str = "") -> list[str]:
