@@ -61,3 +61,5 @@ git rebase upstream/main "${FEATURE_BRANCH}_REBASED" \
     and then run `git rebase --continue`.
 
 You can now open a PR from `${FEATURE_BRANCH}_REBASED` or make it your new default branch.
+
+{% include-markdown "../_footer.md" %}

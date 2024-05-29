@@ -80,3 +80,5 @@ mkdocs serve
 ```
 
 and point your browser to port 8000 or click one of the links in the output.
+
+{% include-markdown "../_footer.md" %}
