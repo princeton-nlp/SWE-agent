@@ -74,10 +74,21 @@ nav:
     - "Contribution guide": "dev/contribute.md"
     - "Formatting conflicts": "dev/formatting_conflicts.md"
     - "Code structure": "dev/code_structure.md"
+  - Reference:
+    - "reference/index.md"
+    - "Agent": "reference/agent.md"
+    - "Models": "reference/models.md"
+    - "Environment": "reference/env.md"
+    - "Environment utils": "reference/env_utils.md"
 plugins:
    - glightbox
    - search
    - include-markdown
+   - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [sweagent]
 repo_url: https://github.com/princeton-nlp/SWE-agent
 repo_name: princeton-nlp/SWE-agent
 edit_uri: edit/main/docs/

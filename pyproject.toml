@@ -41,6 +41,7 @@ dev = [
     "mkdocs-material",
     "mkdocs-glightbox",
     "mkdocs-include-markdown-plugin",
+    "mkdocstrings[python]>=0.18",
     "pytest",
     "pytest-cov",
     "pipx",
