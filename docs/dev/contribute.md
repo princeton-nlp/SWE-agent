@@ -57,8 +57,7 @@ pytest -m "not slow"
 
 ## Tips for pull requests
 
-* If you see a lot of formatting-related merge conflicts, please make sure that you have `pre-commit` installed.
-  To run it over all files, please run `pre-commit run --all-files`.
+* If you see a lot of formatting-related merge conflicts, please see [below](#formatting-merge-conflicts).
 * Please open separate PRs for separate issues. This makes it easier to incorporate part of your changes.
 * It might be good to open an issue and discuss first before investing time on an experimental feature.
 * Don't know where to get started? Look for issues marked [👋 good first issue][gfi] or [🙏 help wanted][help_wanted]
@@ -70,6 +69,10 @@ pytest -m "not slow"
 
 [gfi]: https://github.com/princeton-nlp/SWE-agent/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3A%22%F0%9F%91%8B+good+first+issue%22+
 [help_wanted]: https://github.com/princeton-nlp/SWE-agent/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3A%22%F0%9F%99%8F+help+wanted%22
+
+## Merge conflicts due to formatting <a name="formatting-merge-conflicts"></a>
+
+Information will be added later today.
 
 ## Building the documentation
 
