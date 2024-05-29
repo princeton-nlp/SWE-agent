@@ -2941,12 +2941,12 @@ for return format</p>
     <span class="c1"># Attempt load from HF datasets as a last resort</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">postproc_instance_list</span><span class="p">(</span><span class="n">load_dataset</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="n">split</span><span class="p">))</span>
-    <span class="k">except</span><span class="p">:</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Could not load instances from </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">. &quot;</span>
             <span class="s2">&quot;Please ensure --data_path is a GitHub URL, a SWE-bench HuggingFace dataset, or a JSON/JSONL file.&quot;</span>
         <span class="p">)</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
