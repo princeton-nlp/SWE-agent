@@ -38,13 +38,13 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 !!! warning "Getting updates"
     Even though the image `sweagent/swe-agent:latest` has the tag `latest`,
     it is not automatically updated every time you run `docker run`. Instead,
-    you need to manually run 
-    
+    you need to manually run
+
     ```bash
     docker pull sweagent/swe-agent-run:latest
     docker pull sweagent/swe-agent:latest
     ```
-    
+
     periodically.
 
 !!! tip "Retrieving generated files"
