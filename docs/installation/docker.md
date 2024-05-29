@@ -7,6 +7,8 @@ Instead of installing SWE-agent from source, you can also run the software direc
 3. Add your API tokens to a file `keys.cfg` as explained [here](keys.md) or pass them as
    environment variables.
 
+## Running the command line interface
+
 Assuming that you create `keys.cfg` in the current directory, run
 
 ```bash
@@ -36,12 +38,25 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
 !!! warning "Getting updates"
     Even though the image `sweagent/swe-agent:latest` has the tag `latest`,
     it is not automatically updated every time you run `docker run`. Instead,
-    you need to manually run `docker pull sweagent/swe-agent:latest` periodically.
+    you need to manually run 
+    
+    ```bash
+    docker pull sweagent/swe-agent-run:latest
+    docker pull sweagent/swe-agent:latest
+    ```
+    
+    periodically.
 
 !!! tip "Retrieving generated files"
     The optional `--rm` flag removes the docker container after the command has terminated.
     Therefore, to retrieve files (like generated patch files) from the container, please
     remove this flag.
+
+## Running the web server
+
+!!! tip "Tip"
+    Please also read the previous section for tips on passing environment variables
+    and staying up to date.
 
 To run the web server, make sure to forward port 3000:
 
