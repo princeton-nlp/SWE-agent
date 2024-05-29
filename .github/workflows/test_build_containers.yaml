@@ -5,17 +5,19 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - 'docs/**'
-      - 'README.md'
-      - 'mkdocs.yml'
+    paths:
+      - Dockerfile
+      - setup.sh
+      - docker/**
+      - .github/workflows/**
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - 'docs/**'
-      - 'README.md'
-      - 'mkdocs.yml'
+    paths:
+      - Dockerfile
+      - setup.sh
+      - docker/**
+      - .github/workflows/**
 
 jobs:
   setup_job:
