@@ -502,7 +502,9 @@ class SWEEnv(gym.Env):
         except docker.errors.DockerException as e:
             if "Error while fetching server API version" in str(e):
                 msg = "Docker is not running. Please start Docker and try again."
-                raise RuntimeError(msg) from e
+            else:
+                msg = "Unknown docker exception occurred. Are you sure docker is running?"
+            raise RuntimeError(msg) from e
         try:
             self.container_obj = client.containers.get(self.container_name)
         except docker.errors.NotFound:
