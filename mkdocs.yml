@@ -63,7 +63,7 @@ nav:
     - "Using the web UI": "usage/web_ui.md"
     - "Trajectories": "usage/trajectories.md"
     - "Trajectory inspector": "usage/inspector.md"
-    - "FAQ": "usage/faq.md"
+    - "FAQ": "usage/usage_faq.md"
     - "Benchmarking": "usage/benchmarking.md"
   - Configuration:
     - "Config files": "config/config.md"
