@@ -475,11 +475,6 @@ class SWEEnv(gym.Env):
         self.close()
         self.container = None
         self.container_obj = None
-        if not self.persistent:
-            # This ensures that we get a new container name
-            # just in case removing doesn't work.
-            # Might be a fix for https://github.com/princeton-nlp/SWE-agent/issues/451
-            self.container_name = None
         self._reset_container()
 
     @staticmethod
@@ -502,7 +497,11 @@ class SWEEnv(gym.Env):
         if cached_image is not None:
             image_name = cached_image
             logger.info(f"Using cached image: {image_name}")
-        if self.container_name is None:
+        if self.persistent:
+            assert self.container_name is not None
+        else:
+            # Make sure that we get a new container name just in case removing didn't work.
+            # Might be a fix for https://github.com/princeton-nlp/SWE-agent/issues/451
             self.container_name = self._get_container_name(image_name)
         self.container, self.parent_pids = get_container(self.container_name, image_name, persistent=self.persistent)
         try:
