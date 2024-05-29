@@ -131,8 +131,8 @@ class SWEEnv(gym.Env):
             self.commit_sha = repo.head.object.hexsha
         except KeyboardInterrupt:
             raise
-        except:
-            logger.warning("Failed to get commit hash for this repo")
+        except Exception as e:
+            logger.exception("Failed to get commit hash for this repo: %s", str(e))
 
         self._github_token: str = keys_config.get("GITHUB_TOKEN", "")  # type: ignore
 
@@ -416,6 +416,7 @@ class SWEEnv(gym.Env):
             return observation, 0, True, info
         except Exception:
             observation += "\nEXECUTION FAILED OR COMMAND MALFORMED"
+            logger.exception("Unknown exception")
 
         # Record submission and end episode if `submit` keyword found
         submission = self.get_submission(observation)
