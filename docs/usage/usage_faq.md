@@ -1,4 +1,4 @@
-# FAQ
+# Usage FAQ
 
 ## What models are supported?
 
