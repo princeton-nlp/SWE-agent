@@ -123,7 +123,8 @@ def convert_experiments_to_rows(folder_name, runs_max):
             costs_success = []
             costs_failure = []
             for x in glob.glob(os.path.join(str(folder), "*.traj")):
-                traj_data = json.load(open(x))
+                with open(x) as file:
+                    traj_data = json.load(file)
                 if "model_stats" not in traj_data["info"]:
                     continue
                 run_cost = traj_data["info"]["model_stats"]["instance_cost"]
