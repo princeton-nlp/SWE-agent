@@ -96,19 +96,36 @@ class EnvironmentArguments(FrozenSerializable):
 
 
 class EnvHook:
-    def on_init(self): ...
+    """Hook to be used in `SWEEnv`.
 
-    def on_copy_repo_started(self, *, repo_type: str, repo_path: str): ...
+    Subclass this class, add functionality and add it with `SWEEEnv.add_hook(hook)`.
+    This allows to inject custom functionality at different stages of the environment
+    lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).
+    """
 
-    def on_install_env_started(self): ...
+    def on_init(self) -> None:
+        """Gets called when the hook is added"""
 
-    def on_close(self): ...
+    def on_copy_repo_started(self, *, repo_type: str, repo_path: str) -> None:
+        """Gets called when the repository is being cloned to the container
+
+        Args:
+            repo_type: Type of repository. Either 'local' or 'github'
+            repo_path: Path to the repository
+        """
+
+    def on_install_env_started(self) -> None:
+        """Called when we start installing the environment"""
+
+    def on_close(self):
+        """Called when the environment is closed"""
 
 
 class SWEEnv(gym.Env):
     """Gym environment for SWE-bench. This class should handle all communication with the docker container."""
 
     name = "swe_main"
+    # This prefix will be prepended to the image name when caching task images
     cached_image_prefix = "swe-agent-task-env-"
 
     def __init__(self, args: EnvironmentArguments):
@@ -168,6 +185,11 @@ class SWEEnv(gym.Env):
         return f"{self.cached_image_prefix}{tag}"
 
     def add_hook(self, hook: EnvHook):
+        """Add `EnvHook` to the environment.
+
+        This allows to inject custom functionality at different stages of the environment
+        lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).
+        """
         hook.on_init()
         self.hooks.append(hook)
 
@@ -221,13 +243,15 @@ class SWEEnv(gym.Env):
     def reset(self, index: int | None = None, apply_test_patch: bool = False) -> tuple[str | None, dict]:
         """
         Function to reset container between each task instance.
+
         * Clones instance's repository
         * Cleans repository of prior modifications
         * Resets environment variables
         * Check out base commit
 
-        Arguments:
-            index (`int`) - index of task instance to reset to
+        Args:
+            index: index of task instance to reset to
+
         Returns:
             observation: output from container
             info: additional information (e.g. debugging information)
@@ -354,13 +378,13 @@ class SWEEnv(gym.Env):
         Runs given action in environment and returns corresponding output
 
         Args:
-            action (`str`) - command to run in bash shell
+            action: command to run in bash shell
 
         Returns:
-            observation (`str`) - output from container
-            reward (`float`) - value between 0 and 1 quantifying correctness of output + environment state
-            done (`bool`) - whether task is over
-            info (`dict`) - additional information (e.g. debugging information)
+            observation:  output from container
+            reward: value between 0 and 1 quantifying correctness of output + environment state
+            done: whether task is over
+            info: additional information (e.g. debugging information)
         """
         info = {}
 
@@ -428,7 +452,7 @@ class SWEEnv(gym.Env):
             return observation, 0, True, info
         return observation, 0, False, info
 
-    def close(self):
+    def close(self) -> None:
         """
         Handle environment shutdown
         """
@@ -616,10 +640,10 @@ class SWEEnv(gym.Env):
         Sends input to container and returns output
 
         Args:
-            input (`str`) - input to send to container
+            input: input to send to container
 
         Returns:
-            output (`str`) - output from container
+            output: output from container
         """
         if input.strip() != "exit":
             output, valid = self._check_syntax(input)
@@ -640,6 +664,14 @@ class SWEEnv(gym.Env):
     def communicate_with_handling(self, input: str, error_msg: str, timeout_duration=25) -> str:
         """
         Wrapper for communicate function that raises error if return code is non-zero
+
+        Args:
+            input: input to send to container
+            error_msg: error message to raise if return code is non-zero
+            timeout_duration: duration to wait for output
+
+        Returns:
+            output: output from container
         """
         logs = self.communicate(input, timeout_duration=timeout_duration)
         if self.returncode != 0:
@@ -652,12 +684,21 @@ class SWEEnv(gym.Env):
     def get_available_actions(self) -> list[str]:
         """
         Returns list of available actions in current environment state
+
+        Currently not in use.
         """
         return []
 
     def get_pids(self, all_pids=False) -> list[str]:
         """
         Gets list of processes running inside docker container
+
+        Args:
+            all_pids: whether to return all pids, or whether to exclude ps
+                and parent PIDs
+
+        Returns:
+            list of PIDs
         """
         pids = self.container_obj.exec_run("ps -eo pid,comm --no-headers").output.decode().split("\n")
         pids = [x.split() for x in pids if x]
@@ -670,9 +711,10 @@ class SWEEnv(gym.Env):
         Function for extracting diff patch submission at the end of an episode.
 
         Args:
-            output (`str`) - `submit` observation
+            output: `submit` observation
+
         Returns:
-            submission (`str`) - diff patch submission
+            submission: diff patch submission
         """
         pattern = r"\<\<SUBMISSION\|\|(.*)\|\|SUBMISSION\>\>"
         match = re.search(pattern, output, re.DOTALL)
@@ -684,6 +726,7 @@ class SWEEnv(gym.Env):
         """Run custom script supplied by user at `script_path`
 
         Args:
+            script_path: path to script file
             location: location of script file 'host' or 'container'
         """
         if location == "host":
