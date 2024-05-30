@@ -701,9 +701,10 @@ def get_instances(
 
     # If file_path is a file, load the file
     if file_path.endswith(".json"):
-        return postproc_instance_list(json.load(open(file_path)))
+        with open(file_path) as file:
+            return postproc_instance_list(json.load(file))
     if file_path.endswith(".jsonl"):
-        return postproc_instance_list([json.loads(x) for x in open(file_path).readlines()])
+        return postproc_instance_list([json.loads(x) for x in Path(file_path).read_text().splitlines(keepends=True)])
 
     # Attempt load from HF datasets as a last resort
     try:
