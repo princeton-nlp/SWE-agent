@@ -258,6 +258,7 @@ class Agent:
         self.hooks = []
 
     def add_hook(self, hook: AgentHook):
+        """Add hook to agent"""
         hook.on_init()
         self.hooks.append(hook)
 
@@ -327,7 +328,10 @@ class Agent:
         """Return the history of the agent since the last reset."""
         return self.config.history_processor([entry for entry in self.history if entry["agent"] == self.name])
 
-    def save_trajectory(self, trajectory, log_path: Path, env_name: str, info: dict[str, Any]):
+    def save_trajectory(
+        self, trajectory: list[dict[str, Any]], log_path: Path, env_name: str, info: dict[str, Any]
+    ) -> None:
+        """Save the trajectory"""
         log_dict = {
             "environment": env_name,
             "trajectory": trajectory,
@@ -431,7 +435,7 @@ class Agent:
                 rem_action = ""
         return parsed_action
 
-    def _parse_command_patterns(self):
+    def _parse_command_patterns(self) -> None:
         assert self.config is not None  # mypy
         self.command_patterns = dict()
         for command in self.config._commands:
@@ -466,6 +470,18 @@ class Agent:
         self.command_patterns[self.config.submit_command] = submit_pat
 
     def forward(self, observation: str, available_actions: list[str], state: str) -> tuple[str, str, str]:
+        """Forwards the model
+
+        Args:
+            observation: Observation
+            available_actions: Currently not used
+            state:
+
+        Returns:
+            thought: model reasoning
+            action: action that the model proposes
+            output: raw model output
+        """
         thought, action, output = self.forward_with_error_check(observation, state)
 
         self._append_history(
@@ -486,7 +502,9 @@ class Agent:
     def forward_model(self, observation: str, state: str) -> str:
         """Query the model with the current state and observation with the appropriate template.
 
-        Returns the model output."""
+        Returns:
+            output: raw model output
+        """
         assert self.config is not None  # mypy
 
         state_vars = json.loads(state)
@@ -526,7 +544,7 @@ class Agent:
             hook.on_model_query(query=self.local_history, agent=self.name)
         return self.model.query(self.local_history)
 
-    def retry_after_format_fail(self, output):
+    def retry_after_format_fail(self, output: str) -> str:
         """Ask the model to correct (without committing to persistent history) after a malformatted model output"""
         format_error_template = self.config.format_error_template
 
@@ -539,7 +557,7 @@ class Agent:
         ]
         return self.model.query(temp_history)
 
-    def retry_after_blocklist_fail(self, output, action):
+    def retry_after_blocklist_fail(self, output: str, action: str) -> str:
         """Ask the model to correct (without committing to persistent history) after a disallowed command"""
         name = action.strip().split()[0]
         blocklist_error_message = self.config.blocklist_error_template.format(name=name)
@@ -553,7 +571,7 @@ class Agent:
         ]
         return self.model.query(temp_history)
 
-    def should_block_action(self, action):
+    def should_block_action(self, action: str) -> bool:
         """Check if the command should be blocked."""
         names = action.strip().split()
         if len(names) == 0:
@@ -573,7 +591,10 @@ class Agent:
 
         Try to parse the output into a thought and action. Retry if the output is malformatted or the action is blocked.
 
-        Returns the thought, action, and raw model output.
+        Returns:
+            thought: model reasoning
+            action: action that the model proposes
+            output: raw model output
         """
         # Condition for handling outputs with no thought (just action)
         if self.model.args.model_name == "human":
@@ -612,6 +633,11 @@ class Agent:
     def forward_with_error_check(self, observation: str, state: str) -> tuple[str, str, str]:
         """Wrapper around `self.forward_model` that handles errors and retries
         due to format errors or blocked actions.
+
+        Returns:
+            thought: model reasoning
+            action: action that the model proposes
+            output: raw model output
         """
         try:
             output = self.forward_model(observation, state)
@@ -642,7 +668,7 @@ class Agent:
     def init_environment_vars(self, env):
         self.set_environment_vars(env, self.config.env_variables)
 
-    def set_environment_vars(self, env, env_variables):
+    def set_environment_vars(self, env: SWEEnv, env_variables: dict[str, Any]) -> None:
         assert self.config is not None  # mypy
         commands_to_execute = (
             [self.config.state_command.code]
@@ -691,14 +717,16 @@ class Agent:
             command_files.append(datum)
         env.add_commands(command_files)
 
-    def get_environment_vars(self, env):
+    def get_environment_vars(self, env: SWEEnv) -> dict[str, Any]:
+        """Get environment variables"""
         assert self.config is not None  # mypy
         env_vars = dict()
         for var in self.config.env_variables:
             env_vars[var] = env.communicate(f"echo ${var}").strip()
         return env_vars
 
-    def call_subroutine(self, agent_name, sub_action, env):
+    def call_subroutine(self, agent_name: str, sub_action, env: SWEEnv):
+        """Call subroutine"""
         assert self.config is not None  # mypy
         env_vars = self.get_environment_vars(env)
         cwd = env.communicate("pwd -P").strip()
@@ -732,12 +760,26 @@ class Agent:
         env: SWEEnv,
         observation: str | None = None,
         traj_dir: Path | None = None,
-        return_type: str | None = "info",
+        return_type: str | None = "info_trajectory",
         init_model_stats: APIStats | None = None,
     ):
         """
         Run the agent on an environment.
         Return the final value of the specified return type.
+
+        Args:
+            setup_args: Arguments to pass to the agent's setup method.
+            env: The environment to run the agent on.
+            observation: Output from environment setup
+            traj_dir: Directory to save the trajectory to
+            return_type: Controls what to return.
+                This should be left at `info_trajectory`, the
+                other values are for internal usage with subroutines.
+            init_model_stats: Initial model stats to use for the run.
+
+        Returns:
+            If return_type is "info_trajectory", returns a tuple of
+            the info dictionary and the trajectory (list of dictionaries).
         """
         done = False
         # mypy checks
