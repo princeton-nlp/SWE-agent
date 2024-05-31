@@ -6,7 +6,7 @@
 
     ---
 
-    Run SWE-agent using GitHub codespaces. All necessary packages will be pre-installedn in an in-browser VSCode environment.
+    Run SWE-agent using GitHub codespaces. All necessary packages will be pre-installed in an in-browser VSCode environment.
 
     [:octicons-arrow-right-24: Get started](codespaces.md)
 
