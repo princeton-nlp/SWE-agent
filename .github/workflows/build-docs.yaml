@@ -37,7 +37,7 @@ jobs:
       - run: uv pip install --python ${Python_ROOT_DIR} '.[dev]'
       - name: Build Documentation
         if: github.ref != 'refs/heads/main'
-        run: mkdocs gh-deploy --force
+        run: mkdocs build
       - name: Build + Deploy Documentation
         if: github.ref == 'refs/heads/main'
         run: mkdocs gh-deploy --force
