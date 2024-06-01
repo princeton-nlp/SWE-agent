@@ -155,10 +155,10 @@ function LRunControl({
               defaultValue=""
             />
           </div>
-          <div class="input-group mb-3">
-            <div class="input-group-text">
+          <div className="input-group mb-3">
+            <div className="input-group-text">
               <input
-                class="form-check-input mt-0"
+                className="form-check-input mt-0"
                 type="checkbox"
                 aria-label="Run installation command"
                 defaultChecked={true}
@@ -173,7 +173,7 @@ function LRunControl({
             <span className="input-group-text">Installation command</span>
             <input
               type="text"
-              class="form-control"
+              className="form-control"
               aria-label="Text input with checkbox"
               placeholder={defaultInstallCommand}
               onChange={(e) =>
