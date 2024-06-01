@@ -4,9 +4,12 @@ set -euo pipefail
 
 this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-function stop_react {
+function cleanup {
     echo "Stopping react server"
     npx --prefix "${this_dir}/sweagent/frontend" pm2 delete swe-agent
+    echo "Stopping Flask server"
+    kill "$flask_pid" 2>/dev/null
+    echo "Cleanup complete"
 }
 
 function print_log {
@@ -18,7 +21,7 @@ function print_log {
 
 cd "${this_dir}/sweagent/frontend"
 npm install
-trap stop_react exit
+trap cleanup EXIT
 npx pm2 start --name swe-agent npm -- start
 
 echo "* If you are running on your own machine, then a browser window "
@@ -34,6 +37,7 @@ echo "  web_api.log for error messages!"
 cd ../../
 trap print_log ERR
 python sweagent/api/server.py > web_api.log 2>&1 &
+flask_pid=$!
 
 wait -n
 exit $?
