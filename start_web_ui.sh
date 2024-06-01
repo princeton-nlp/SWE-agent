@@ -40,5 +40,5 @@ echo "  web_api.log for error messages!"
 
 cd ../../
 
-wait -n
+wait
 exit $?
