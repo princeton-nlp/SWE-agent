@@ -19,6 +19,10 @@ function print_log {
     echo "----------"
 }
 
+trap print_log ERR
+python sweagent/api/server.py > web_api.log 2>&1 &
+flask_pid=$!
+
 cd "${this_dir}/sweagent/frontend"
 npm install
 trap cleanup EXIT
@@ -35,9 +39,6 @@ echo "* Something went wrong? Please check "
 echo "  web_api.log for error messages!"
 
 cd ../../
-trap print_log ERR
-python sweagent/api/server.py > web_api.log 2>&1 &
-flask_pid=$!
 
 wait -n
 exit $?
