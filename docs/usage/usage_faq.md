@@ -3,7 +3,7 @@
 ## What models are supported?
 
 !!! note "Model support"
-    Note that SWE-agent is unlikely to perform well with small/cheap models.
+    Note that SWE-agent is currently unlikely to perform well with small or local models.
 
 Models are configured in [`models.py`](https://github.com/princeton-nlp/SWE-agent/blob/main/sweagent/agent/models.py) (we're working on giving a complete list of model settings).
 
