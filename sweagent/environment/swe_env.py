@@ -201,6 +201,7 @@ class SWEEnv(gym.Env):
 
     def _copy_repo(self) -> str:
         """Clone/copy repository/codebase in container
+
         Returns:
             folder name of clone
         """
@@ -225,20 +226,34 @@ class SWEEnv(gym.Env):
         # fixme: This if statement is brittle and should probably be replaced with better logic
         if not self.args.no_mirror and self.record["problem_statement_source"] == "swe-bench":
             self.logger.info(f"{self._repo_name} not found in container, cloning...")
-            self.communicate_with_handling(
-                input=f"git clone https://{token_prefix}github.com/swe-bench/{self._repo_name}.git",
-                error_msg="Failed to clone repository from mirror",
-                timeout_duration=LONG_TIMEOUT,
-            )
-            return self._repo_name
+            clone_url = f"https://{token_prefix}github.com/swe-bench/{self._repo_name}.git"
         else:
             logger.info("Trying to clone from non-mirror...")
+            clone_url = f"https://{token_prefix}github.com/{self.record['repo']}.git"
+        if not os.environ.get("SWE_AGENT_EXPERIMENTAL_CLONE"):
             self.communicate_with_handling(
-                input=f"git clone https://{token_prefix}github.com/{self.record['repo']}.git {self._repo_name}",
-                error_msg="Failed to clone repository from non-mirror",
+                input=f"git clone {clone_url}",
+                error_msg="Failed to clone repository from conservative method",
                 timeout_duration=LONG_TIMEOUT,
             )
-            return self._repo_name
+        else:
+            base_commit = self.record["base_commit"]
+            self.communicate_with_handling(
+                input="&&".join(
+                    (
+                        f"mkdir {self._repo_name}",
+                        f"cd {self._repo_name}",
+                        "git init",
+                        f"git remote add origin {clone_url}",
+                        f"git fetch --depth 1 origin {base_commit}",
+                        "git checkout FETCH_HEAD",
+                        "cd ..",
+                    )
+                ),
+                error_msg="Failed to clone repository with fast method",
+                timeout_duration=LONG_TIMEOUT,
+            )
+        return self._repo_name
 
     def reset(self, index: int | None = None, apply_test_patch: bool = False) -> tuple[str | None, dict]:
         """

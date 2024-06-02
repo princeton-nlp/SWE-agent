@@ -117,6 +117,21 @@ The config file can have the following keys:
 * `install`: A custom command
 * `post_install`: A list of custom commands
 
+## Speeding up SWE-agent
+
+If you solve multiple issues from the same repository/in the same environment, you can specify the
+`--cache_task_images` flag. This will create a persistent docker image with the initialized environment
+required for the problem.
+
+We are also testing several changes that speed up SWE-agent. They can be enabled by [environment variables](../config/env.md):
+
+```bash
+# Faster communication with docker container
+export SWE_AGENT_EXPERIMENTAL_COMMUNICATE="1"
+# Sparse git clone
+export SWE_AGENT_EXPERIMENTAL_CLONE="1"
+```
+
 ## Taking actions
 
 * As mentioned [above](#specifying-the-repository), you can use `--apply_patch_locally` to have SWE-agent apply successful solution attempts to local files.
