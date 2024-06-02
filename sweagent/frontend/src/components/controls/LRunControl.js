@@ -92,6 +92,23 @@ function LRunControl({
   }
 
   function getEnvInput() {
+    // Get environment configuration input controls based on the
+    // "Environment type" dropdown menu.
+    // if (envInputType === "conda") {
+    //   return (
+    //     <div className="input-group mb-3">
+    //       <span className="input-group-text">Conda environment</span>
+    //       <input
+    //         type="text"
+    //         className="form-control"
+    //         onChange={(e) =>
+    //           setRunConfig(draft => {draft.environment.environment_setup.packages = e.target.value})
+    //         }
+    //         placeholder="/path/to/conda_env.yml"
+    //       />
+    //     </div>
+    //   );
+    // }
     const envInputType = runConfig.environment.environment_setup.input_type;
     if (envInputType === "script_path") {
       return (
