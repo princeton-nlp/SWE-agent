@@ -38,7 +38,7 @@ from sweagent.environment.swe_env import EnvironmentArguments
 sys.path.append(str(PACKAGE_DIR.parent))
 from run import ActionsArguments, Main, ScriptArguments
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=Path(__file__).parent)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 # Setting these variables outside of `if __name__ == "__main__"` because when run Flask server with
