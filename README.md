@@ -53,6 +53,7 @@ All information is provided in our [documentation][docs]:
 * [Command line usage](https://princeton-nlp.github.io/SWE-agent/usage/cl_tutorial/)
 * [Using the web UI](https://princeton-nlp.github.io/SWE-agent/usage/web_ui/)
 * [Benchmarking on SWE-bench](https://princeton-nlp.github.io/SWE-agent/usage/benchmarking/)
+* [Frequently Asked Questions](https://princeton-nlp.github.io/SWE-agent/faq/)
 
 and many more topics.
 
