@@ -5,14 +5,6 @@ import MacBar from "../MacBar";
 import terminalLogo from "../../assets/panel_icons/terminal.png";
 import "../../static/envFeed.css";
 
-function useScrollToBottom(feed, ref) {
-  useEffect(() => {
-    if (ref.current) {
-      ref.current.scrollTop = ref.current.scrollHeight;
-    }
-  }, [feed, ref]);
-}
-
 const EnvFeed = ({
   feed,
   highlightedStep,
@@ -20,8 +12,6 @@ const EnvFeed = ({
   handleMouseLeave,
   selfRef,
 }) => {
-  useScrollToBottom(feed, selfRef);
-
   return (
     <div id="envFeed" className="envFeed">
       <MacBar title="Terminal" logo={terminalLogo} dark={false} />

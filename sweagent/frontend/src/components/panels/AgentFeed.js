@@ -4,14 +4,6 @@ import MacBar from "../MacBar";
 import editorLogo from "../../assets/panel_icons/editor.png";
 import "../../static/agentFeed.css";
 
-function useScrollToBottom(feed, ref) {
-  useEffect(() => {
-    if (ref.current) {
-      ref.current.scrollTop = ref.current.scrollHeight;
-    }
-  }, [feed, ref]);
-}
-
 const AgentFeed = ({
   feed,
   highlightedStep,
@@ -19,8 +11,6 @@ const AgentFeed = ({
   handleMouseLeave,
   selfRef,
 }) => {
-  useScrollToBottom(feed, selfRef);
-
   return (
     <div id="agentFeed" className="agentFeed">
       <MacBar title="Thoughts" logo={editorLogo} />
