@@ -277,15 +277,18 @@ def main(data_path, directory, port):
     data = []
     if data_path is not None:
         if data_path.endswith(".jsonl"):
-            data = [json.loads(x) for x in open(data_path).readlines()]
+            data = [json.loads(x) for x in Path(data_path).read_text().splitlines(keepends=True)]
         elif data_path.endswith(".json"):
-            data = json.load(open(data_path))
+            with open(data_path) as f:
+                data = json.load(f)
     elif "args.yaml" in os.listdir(directory):
-        args = yaml.safe_load(open(os.path.join(directory, "args.yaml")))
+        with open(os.path.join(directory, "args.yaml")) as file:
+            args = yaml.safe_load(file)
         if "environment" in args and "data_path" in args["environment"]:
             data_path = os.path.join(Path(__file__).parent, "..", args["environment"]["data_path"])
             if os.path.exists(data_path):
-                data = json.load(open(data_path))
+                with open(data_path) as f:
+                    data = json.load(f)
 
     gold_patches = {d["instance_id"]: d["patch"] if "patch" in d else None for d in data}
     test_patches = {d["instance_id"]: d["test_patch"] if "test_patch" in d else None for d in data}

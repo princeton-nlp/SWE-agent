@@ -58,7 +58,9 @@ def save_demo(data, file, traj_path):
 
 
 def convert_traj_to_action_demo(traj_path: str, output_file: str = None, include_user: bool = False):
-    traj = json.load(open(traj_path))
+    with open(traj_path) as file:
+        traj = json.load(file)
+
     history = traj["history"]
     action_traj = list()
     admissible_roles = {"assistant", "user"} if include_user else {"assistant"}

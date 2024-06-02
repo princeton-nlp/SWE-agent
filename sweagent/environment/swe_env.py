@@ -741,7 +741,7 @@ class SWEEnv(gym.Env):
         if not script_path.is_file():
             msg = f"Script not found at {script_path}"
             raise FileNotFoundError(msg)
-        shell_commands = Path(script_path).read_text().splitlines()
+        shell_commands = Path(script_path).read_text().splitlines(keepends=True)
         for i, cmd in enumerate(shell_commands):
             self.communicate_with_handling(
                 cmd,

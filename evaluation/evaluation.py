@@ -5,6 +5,7 @@ import json
 import os
 import traceback
 from collections import Counter
+from pathlib import Path
 
 from rich import print
 from swebench import (
@@ -52,7 +53,7 @@ def main(
 
     pred_total, pred_will_eval = 0, 0
     with open(pred_path_temp, "w") as f:
-        for l in open(pred_path_orig).readlines():
+        for l in Path(pred_path_orig).read_text().splitlines(keepends=True):
             pred_total += 1
             p = json.loads(l)
             # Exclude predictions w/ empty strings
@@ -88,7 +89,7 @@ def main(
     os.remove(pred_path_temp)
 
     # Get predictions, define log_dir
-    predictions = [json.loads(l) for l in open(pred_path_orig).readlines()]
+    predictions = [json.loads(l) for l in Path(pred_path_orig).read_text().splitlines()]
     log_dir = os.path.join(log_dir, directory_name)
     print(f"Log directory for evaluation run: {log_dir}")
 
@@ -100,7 +101,8 @@ def main(
         # Add trajectory statistics if traj_path exists
         traj_path = os.path.join(directory, f"{p[KEY_INSTANCE_ID]}.traj")
         if os.path.exists(traj_path):
-            traj_data = json.load(open(traj_path))
+            with open(traj_path) as f:
+                traj_data = json.load(f)
             scorecard["stats"]["traj_num_steps"] = len(traj_data["trajectory"])
             scorecard["stats"]["traj_action_dist"] = dict(
                 Counter(

@@ -5,6 +5,7 @@ import logging
 import os
 from collections import defaultdict
 from dataclasses import dataclass, fields
+from pathlib import Path
 
 import together
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
@@ -807,7 +808,9 @@ class ReplayModel(BaseModel):
             msg = "--replay_path must point to a file that exists to run a replay policy"
             raise ValueError(msg)
 
-        self.replays = [list(json.loads(x).values())[0] for x in open(self.args.replay_path).readlines()]
+        self.replays = [
+            list(json.loads(x).values())[0] for x in Path(self.args.replay_path).read_text().splitlines(keepends=True)
+        ]
         self.replay_idx = 0
         self.action_idx = 0
 

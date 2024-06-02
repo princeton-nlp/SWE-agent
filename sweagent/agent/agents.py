@@ -691,7 +691,8 @@ class Agent:
         command_files = list()
         for file in self.config.command_files:
             datum = dict()
-            contents = open(file).read()
+            with open(file) as f:
+                contents = f.read()
             datum["contents"] = contents
             filename = Path(file).name
             if not contents.strip().startswith("#!"):

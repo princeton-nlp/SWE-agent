@@ -97,11 +97,12 @@ def save_static_viewer(file_path):
         file_path = Path(file_path)
     data = []
     if "args.yaml" in list(map(lambda x: x.name, file_path.parent.iterdir())):
-        args = yaml.safe_load(open(file_path.parent / "args.yaml"))
+        args = yaml.safe_load(Path(file_path.parent / "args.yaml").read_text())
         if "environment" in args and "data_path" in args["environment"]:
             data_path = Path(__file__).parent.parent / args["environment"]["data_path"]
             if data_path.exists():
-                data = json.load(open(data_path))
+                with open(data_path) as f:
+                    data = json.load(f)
             if not isinstance(data, list) or not data or "patch" not in data[0] or "test_patch" not in data[0]:
                 data = []
     gold_patches = {x["instance_id"]: x["patch"] for x in data}
