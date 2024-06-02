@@ -3,6 +3,7 @@ import React from "react";
 import "../static/message.css";
 import "../static/agentMessage.css";
 import { Gear } from "react-bootstrap-icons";
+import Markdown from "react-markdown";
 
 const AgentMessage = ({
   item,
@@ -21,7 +22,7 @@ const AgentMessage = ({
       onMouseLeave={handleMouseLeave}
     >
       {item.type !== "thought" && <Gear style={{ marginRight: 5 }} />}
-      <span>{item.message}</span>
+      <Markdown components={{ p: "span" }}>{item.message}</Markdown>
     </div>
   );
 };
