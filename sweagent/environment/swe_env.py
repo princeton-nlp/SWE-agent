@@ -801,12 +801,12 @@ class SWEEnv(gym.Env):
             return
         if "shell_script_path" in install_configs:
             assert len(install_configs) == 1
-            self.run_shell_script(Path(install_configs["shell_script_path"]), location="container")
+            self.run_shell_script(Path(install_configs["shell_script_path"]), location="host")
             return
         assert self.record is not None  # mypy
         # Create environment if does not exist yet
         env_name = f"{self._repo_name}__{self.record['version']}"
-        if self._conda_environment_exists(env_name):
+        if not self._conda_environment_exists(env_name):
             self.logger.info(f"{env_name} conda env not found, creating...")
             packages = install_configs.get("packages", "")
             if packages == "requirements.txt":
