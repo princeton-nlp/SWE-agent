@@ -1343,6 +1343,11 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <p>If you're using docker on Windows, use <code>-v //var/run/docker.sock:/var/run/docker.sock</code>
 (double slash) to escape it (<a href="https://stackoverflow.com/a/47229180/">more information</a>).</p>
 </div>
+<div class="admonition tip">
+<p class="admonition-title">More tips</p>
+<p>See the <a href="../tips/">installation issues section</a> for more help if you run into
+trouble.</p>
+</div>
 <p>If you instead want to pass the keys as environment variables, use</p>
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>-v<span class="w"> </span>/var/run/docker.sock:/var/run/docker.sock<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-e<span class="w"> </span><span class="nv">GITHUB_TOKEN</span><span class="o">=</span><span class="s2">&quot;yourgithubtoken&quot;</span><span class="w"> </span><span class="se">\</span>
@@ -1378,9 +1383,9 @@ and staying up to date.</p>
 <span class="w">  </span>sweagent/swe-agent-run:latest<span class="w"> </span>bash<span class="w"> </span>start_web_ui.sh
 </code></pre></div>
 <div class="admonition tip">
-<p class="admonition-title">More tips</p>
-<p>See the <a href="../tips/">installation issues section</a> for more help if you run into
-trouble.</p>
+<p class="admonition-title">More information</p>
+<p>See <a href="../../usage/web_ui/">running the web UI</a> for more information about the
+web UI and additional hints for how to solve problems with the starting it.</p>
 </div>
 <!-- BEGIN INCLUDE ../_footer.md -->
 <div class="grid cards">

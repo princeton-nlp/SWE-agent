@@ -749,6 +749,15 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 </li>
       
         <li class="md-nav__item">
+  <a href="#if-something-doesnt-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      If something doesn't work
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#manually-starting-frontend-and-backend" class="md-nav__link">
     <span class="md-ellipsis">
       Manually starting frontend and backend
@@ -1289,6 +1298,15 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 </li>
       
         <li class="md-nav__item">
+  <a href="#if-something-doesnt-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      If something doesn't work
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#manually-starting-frontend-and-backend" class="md-nav__link">
     <span class="md-ellipsis">
       Manually starting frontend and backend
@@ -1338,7 +1356,20 @@ Running from GitHub codespaces? More tips <a href="../../installation/codespaces
 <p>If you run SWE-agent from the <code>docker-run</code> Docker container, please see <a href="../../installation/docker/">here</a>
 for how to start the web server.</p>
 </div>
-<h2 id="manually-starting-frontend-and-backend">Manually starting frontend and backend</h2>
+<h2 id="if-something-doesnt-work">If something doesn't work <a name="web-ui-debug"></a></h2>
+<p>Please make sure that your port 8000 and 3000 are unoccupied before running the above script.</p>
+<p>Run</p>
+<div class="highlight"><pre><span></span><code>lsof<span class="w"> </span>-i<span class="w"> </span>:8000
+lsof<span class="w"> </span>-i<span class="w"> </span>:3000
+</code></pre></div>
+<p>to identify other programs serving to that port and kill them, then try again.</p>
+<p>If <code>./start_web_ui.sh</code> is running, but you see a warning message about the backend not being connected, either run</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># this should show some python processes</span>
+lsof<span class="w"> </span>-i<span class="w"> </span>:8000
+</code></pre></div>
+<p>or head to <code>localhost:8000</code> (you should see a small dummy page).</p>
+<p>It might also make sense to start the backend frontend manually as explained in the next section.</p>
+<h2 id="manually-starting-frontend-and-backend">Manually starting frontend and backend <a name="manual-web-ui"></a></h2>
 <p>The web UI consists of a frontend written in <a href="https://react.dev/">react</a> (showing the pretty control elements) and a backend written with <a href="https://flask.palletsprojects.com/">flask</a>.
 The <code>./start_web_ui.sh</code> starts both of them in the background.
 However, this might not be best for development and debugging.

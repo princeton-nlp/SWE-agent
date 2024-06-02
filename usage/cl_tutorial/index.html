@@ -1441,10 +1441,14 @@ URLs or paths to local repositories.</p>
 <span class="nt">install</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;pip</span><span class="nv"> </span><span class="s">install</span><span class="nv"> </span><span class="s">-e</span><span class="nv"> </span><span class="s">.&#39;</span>
 </code></pre></div>
 <p>Here, <code>install</code> is an arbitrary command that is run, while <code>python</code> will be the python version that is setup with conda.</p>
-<p>The config file also provides two more top level directives:</p>
+<p>The config file can have the following keys:</p>
 <ul>
-<li><code>packages</code>: Path to a <code>requirements.txt</code> or to a <code>env.yml</code> as readable by conda</li>
-<li><code>pip_packages</code>: A list of python packages that are installed with <code>pip install PACKAGE</code></li>
+<li><code>python</code>: Python version (will be set up via conda)</li>
+<li><code>packages</code>: Either <code>requirements.txt</code>, <code>environment.yml</code> (finds the corresponding file and installs from there) or a whitespace separated list of conda packages</li>
+<li><code>pip_packages</code>: A list of additional python packages that are installed with <code>pip install PACKAGE</code></li>
+<li><code>pre_install</code>: A list of custom commands</li>
+<li><code>install</code>: A custom command</li>
+<li><code>post_install</code>: A list of custom commands</li>
 </ul>
 <h2 id="taking-actions">Taking actions</h2>
 <ul>
