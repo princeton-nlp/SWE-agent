@@ -21,7 +21,31 @@ from the root of the repository.
     If you run SWE-agent from the `docker-run` Docker container, please see [here](../installation/docker.md)
     for how to start the web server.
 
-## Manually starting frontend and backend
+## If something doesn't work <a name="web-ui-debug"></a>
+
+Please make sure that your port 8000 and 3000 are unoccupied before running the above script.
+
+Run
+
+```bash
+lsof -i :8000
+lsof -i :3000
+```
+
+to identify other programs serving to that port and kill them, then try again.
+
+If `./start_web_ui.sh` is running, but you see a warning message about the backend not being connected, either run
+
+```bash
+# this should show some python processes
+lsof -i :8000
+```
+
+or head to `localhost:8000` (you should see a small dummy page).
+
+It might also make sense to start the backend frontend manually as explained in the next section.
+
+## Manually starting frontend and backend <a name="manual-web-ui"></a>
 
 The web UI consists of a frontend written in [react][] (showing the pretty control elements) and a backend written with [flask][].
 The `./start_web_ui.sh` starts both of them in the background.

@@ -25,6 +25,10 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
     If you're using docker on Windows, use `-v //var/run/docker.sock:/var/run/docker.sock`
     (double slash) to escape it ([more information](https://stackoverflow.com/a/47229180/)).
 
+!!! tip "More tips"
+    See the [installation issues section](tips.md) for more help if you run into
+    trouble.
+
 If you instead want to pass the keys as environment variables, use
 
 ```bash
@@ -66,8 +70,8 @@ docker run -p 3000:3000 -it -v /var/run/docker.sock:/var/run/docker.sock \
   sweagent/swe-agent-run:latest bash start_web_ui.sh
 ```
 
-!!! tip "More tips"
-    See the [installation issues section](tips.md) for more help if you run into
-    trouble.
+!!! tip "More information"
+    See [running the web UI](../usage/web_ui.md) for more information about the
+    web UI and additional hints for how to solve problems with the starting it.
 
 {% include-markdown "../_footer.md" %}

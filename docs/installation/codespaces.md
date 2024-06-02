@@ -29,4 +29,8 @@ Instead, click on the `Ports` tab, and click on the globe next to port `3000`:
 
 ![port 3000 forwarding manual](../assets/open_port_in_browser.png)
 
+!!! tip "More information"
+    See [running the web UI](../usage/web_ui.md) for more information about the
+    web UI and additional hints for how to solve problems with the starting it.
+
 {% include-markdown "../_footer.md" %}
