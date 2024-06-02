@@ -111,7 +111,7 @@ Here, `install` is an arbitrary command that is run, while `python` will be the 
 The config file can have the following keys:
 
 * `python`: Python version (will be set up via conda)
-* `packages`: Either `requirements.txt`, `environment.yml` (finds the corresponding file and installs from there) or a whitespace spearated list of conda packages
+* `packages`: Either `requirements.txt`, `environment.yml` (finds the corresponding file and installs from there) or a whitespace separated list of conda packages
 * `pip_packages`: A list of additional python packages that are installed with `pip install PACKAGE`
 * `pre_install`: A list of custom commands
 * `install`: A custom command
