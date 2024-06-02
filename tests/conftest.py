@@ -16,6 +16,7 @@ package_dir = root_dir / "sweagent"
 sys.path.insert(0, str(root_dir))
 sys.path.insert(1, str(package_dir))
 os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"] = "1"
+os.environ["SWE_AGENT_EXPERIMENTAL_CLONE"] = "1"
 env_utils.START_UP_DELAY = 1
 
 

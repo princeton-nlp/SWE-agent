@@ -237,8 +237,19 @@ class SWEEnv(gym.Env):
                 timeout_duration=LONG_TIMEOUT,
             )
         else:
+            base_commit = self.record["base_commit"]
             self.communicate_with_handling(
-                input=f"git clone {clone_url} {self._repo_name}",
+                input="&&".join(
+                    (
+                        f"mkdir {self._repo_name}",
+                        f"cd {self._repo_name}",
+                        "git init",
+                        f"git remote add origin {clone_url}",
+                        f"git fetch --depth 1 origin {base_commit}",
+                        "git checkout FETCH_HEAD",
+                        "cd ..",
+                    )
+                ),
                 error_msg="Failed to clone repository with fast method",
                 timeout_duration=LONG_TIMEOUT,
             )
