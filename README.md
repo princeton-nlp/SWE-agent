@@ -27,18 +27,6 @@ SWE-agent is built and maintained by researchers from Princeton University.
   <img src="assets/results+preview.png" style="width: 80%; height: auto;">
 </p>
 
-If you found this work helpful, please consider using the following citation:
-```
-@misc{yang2024sweagent,
-      title={SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering},
-      author={John Yang and Carlos E. Jimenez and Alexander Wettig and Kilian Lieret and Shunyu Yao and Karthik Narasimhan and Ofir Press},
-      year={2024},
-      eprint={2405.15793},
-      archivePrefix={arXiv},
-      primaryClass={cs.SE}
-}
-```
-
 ### ✨ Use SWE-agent as a dev tool
 
 We provide a command line tool and a graphical web interface:
@@ -71,6 +59,19 @@ and many more topics.
 - If you'd like to see a post or tutorial about some topic, please let us know via an [issue](https://github.com/princeton-nlp/SWE-agent/issues).
 
 Contact person: [John Yang](https://john-b-yang.github.io/) and [Carlos E. Jimenez](http://www.carlosejimenez.com/) (Email: {jy1682, carlosej}@princeton.edu).
+
+## 📝 Citation <a name="citation"></a>
+If you found this work helpful, please consider using the following citation:
+```
+@misc{yang2024sweagent,
+      title={SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering},
+      author={John Yang and Carlos E. Jimenez and Alexander Wettig and Kilian Lieret and Shunyu Yao and Karthik Narasimhan and Ofir Press},
+      year={2024},
+      eprint={2405.15793},
+      archivePrefix={arXiv},
+      primaryClass={cs.SE}
+}
+```
 
 ## 🪪 License <a name="license"></a>
 MIT. Check `LICENSE`.
