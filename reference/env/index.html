@@ -3022,7 +3022,22 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
 <span class="normal">1030</span>
 <span class="normal">1031</span>
 <span class="normal">1032</span>
-<span class="normal">1033</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">SWEEnv</span><span class="p">(</span><span class="n">gym</span><span class="o">.</span><span class="n">Env</span><span class="p">):</span>
+<span class="normal">1033</span>
+<span class="normal">1034</span>
+<span class="normal">1035</span>
+<span class="normal">1036</span>
+<span class="normal">1037</span>
+<span class="normal">1038</span>
+<span class="normal">1039</span>
+<span class="normal">1040</span>
+<span class="normal">1041</span>
+<span class="normal">1042</span>
+<span class="normal">1043</span>
+<span class="normal">1044</span>
+<span class="normal">1045</span>
+<span class="normal">1046</span>
+<span class="normal">1047</span>
+<span class="normal">1048</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">SWEEnv</span><span class="p">(</span><span class="n">gym</span><span class="o">.</span><span class="n">Env</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Gym environment for SWE-bench. This class should handle all communication with the docker container.&quot;&quot;&quot;</span>
 
     <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;swe_main&quot;</span>
@@ -3650,10 +3665,8 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
                 <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
             <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">install_env</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates conda environment and installs third party dependencies to allow code execution</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_get_install_configs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return config for environment setup&quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">record</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># mypy</span>
         <span class="k">if</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;problem_statement_source&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;swe-bench&quot;</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;repo_type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span>
@@ -3663,36 +3676,53 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
                 <span class="s2">&quot;without an environment config file (environment_config key/flag). &quot;</span>
                 <span class="s2">&quot;Skipping conda environment installation.&quot;</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="k">return</span>
-        <span class="k">for</span> <span class="n">hook</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hooks</span><span class="p">:</span>
-            <span class="n">hook</span><span class="o">.</span><span class="n">on_install_env_started</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">environment_setup</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">environment_setup</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">environment_setup</span><span class="p">)</span><span class="o">.</span><span class="n">suffix</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;.yml&quot;</span><span class="p">,</span> <span class="s2">&quot;.yaml&quot;</span><span class="p">]:</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="n">install_configs</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">environment_setup</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+                    <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">environment_setup</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                     <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Environment config file needs to be a yaml file&quot;</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
             <span class="k">elif</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">environment_setup</span><span class="p">)</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.sh&quot;</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">run_shell_script</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">environment_setup</span><span class="p">),</span> <span class="n">location</span><span class="o">=</span><span class="s2">&quot;host&quot;</span><span class="p">)</span>
-                <span class="k">return</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s2">&quot;shell_script_path&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">environment_setup</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Environment config file needs to be a yaml file or shell script&quot;</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">install_configs</span> <span class="o">=</span> <span class="n">MAP_VERSION_TO_INSTALL</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;repo&quot;</span><span class="p">]][</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">])]</span>
+                <span class="k">return</span> <span class="n">MAP_VERSION_TO_INSTALL</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;repo&quot;</span><span class="p">]][</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">])]</span>
             <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
                     <span class="s2">&quot;Tried to look up install configs in swe-bench, but failed. &quot;</span>
                     <span class="s2">&quot;You can set a custom environment config with the environment_config key/flag.&quot;</span>
                 <span class="p">)</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+    <span class="k">def</span> <span class="nf">_conda_environment_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">env_check</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">communicate</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;conda env list | grep </span><span class="si">{</span><span class="n">env_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">env_check</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">install_env</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates conda environment and installs third party dependencies to allow code execution</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">hook</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hooks</span><span class="p">:</span>
+            <span class="n">hook</span><span class="o">.</span><span class="n">on_install_env_started</span><span class="p">()</span>
+        <span class="n">install_configs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_install_configs</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">install_configs</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="s2">&quot;shell_script_path&quot;</span> <span class="ow">in</span> <span class="n">install_configs</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">install_configs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">run_shell_script</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">install_configs</span><span class="p">[</span><span class="s2">&quot;shell_script_path&quot;</span><span class="p">]),</span> <span class="n">location</span><span class="o">=</span><span class="s2">&quot;host&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">record</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># mypy</span>
         <span class="c1"># Create environment if does not exist yet</span>
         <span class="n">env_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repo_name</span><span class="si">}</span><span class="s2">__</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="n">env_check</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">communicate</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;conda env list | grep </span><span class="si">{</span><span class="n">env_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">env_check</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conda_environment_exists</span><span class="p">(</span><span class="n">env_name</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">env_name</span><span class="si">}</span><span class="s2"> conda env not found, creating...&quot;</span><span class="p">)</span>
             <span class="n">packages</span> <span class="o">=</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;packages&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">packages</span> <span class="o">==</span> <span class="s2">&quot;requirements.txt&quot;</span><span class="p">:</span>
@@ -3718,7 +3748,7 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
                 <span class="bp">self</span><span class="o">.</span><span class="n">communicate</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rm </span><span class="si">{</span><span class="n">PATH_TO_REQS</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">packages</span> <span class="o">==</span> <span class="s2">&quot;environment.yml&quot;</span><span class="p">:</span>
                 <span class="c1"># Write environment.yml to file</span>
-                <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;no_use_env&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;no_use_env&quot;</span><span class="p">):</span>
                     <span class="n">content_env_yml</span> <span class="o">=</span> <span class="n">get_environment_yml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">,</span> <span class="n">env_name</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">content_env_yml</span> <span class="o">=</span> <span class="n">get_environment_yml</span><span class="p">(</span>
@@ -3727,7 +3757,7 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
                         <span class="n">python_version</span><span class="o">=</span><span class="n">install_configs</span><span class="p">[</span><span class="s2">&quot;python&quot;</span><span class="p">],</span>
                     <span class="p">)</span>
                 <span class="n">copy_file_to_container</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">container_obj</span><span class="p">,</span> <span class="n">content_env_yml</span><span class="p">,</span> <span class="n">PATH_TO_ENV_YML</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;no_use_env&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;no_use_env&quot;</span><span class="p">):</span>
                     <span class="c1"># Create conda environment</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;conda create -c conda-forge -n </span><span class="si">{</span><span class="n">env_name</span><span class="si">}</span><span class="s2"> python=</span><span class="si">{</span><span class="n">install_configs</span><span class="p">[</span><span class="s1">&#39;python&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> -y&quot;</span><span class="p">,</span>
@@ -3756,7 +3786,7 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
                     <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="c1"># Install extra pip packages if specified</span>
-            <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pip_packages&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pip_packages&quot;</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;source activate </span><span class="si">{</span><span class="n">env_name</span><span class="si">}</span><span class="s2"> &amp;&amp; pip install </span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_configs</span><span class="p">[</span><span class="s1">&#39;pip_packages&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                     <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to install pip packages&quot;</span><span class="p">,</span>
@@ -3767,7 +3797,7 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
         <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;conda activate </span><span class="si">{</span><span class="n">env_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to activate conda environment&quot;</span><span class="p">)</span>
 
         <span class="c1"># Install repo at base commit</span>
-        <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pre_install&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pre_install&quot;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running pre-install commands...&quot;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">pre_install_cmd</span> <span class="ow">in</span> <span class="n">install_configs</span><span class="p">[</span><span class="s2">&quot;pre_install&quot;</span><span class="p">]:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span>
@@ -3775,14 +3805,14 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
                     <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Pre-install commands failed to execute successfully&quot;</span><span class="p">,</span>
                 <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Installing </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repo_name</span><span class="si">}</span><span class="s2"> at base commit...&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;install&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;install&quot;</span><span class="p">):</span>
             <span class="n">install_cmd</span> <span class="o">=</span> <span class="n">install_configs</span><span class="p">[</span><span class="s2">&quot;install&quot;</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span>
                 <span class="n">install_cmd</span><span class="p">,</span>
                 <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Install command failed to execute successfully&quot;</span><span class="p">,</span>
                 <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
             <span class="p">)</span>
-        <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;post_install&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;post_install&quot;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running post-install commands...&quot;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">post_install_cmd</span> <span class="ow">in</span> <span class="n">install_configs</span><span class="p">[</span><span class="s2">&quot;post_install&quot;</span><span class="p">]:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span>
@@ -3962,22 +3992,7 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">892</span>
-<span class="normal">893</span>
-<span class="normal">894</span>
-<span class="normal">895</span>
-<span class="normal">896</span>
-<span class="normal">897</span>
-<span class="normal">898</span>
-<span class="normal">899</span>
-<span class="normal">900</span>
-<span class="normal">901</span>
-<span class="normal">902</span>
-<span class="normal">903</span>
-<span class="normal">904</span>
-<span class="normal">905</span>
-<span class="normal">906</span>
-<span class="normal">907</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">907</span>
 <span class="normal">908</span>
 <span class="normal">909</span>
 <span class="normal">910</span>
@@ -3988,7 +4003,22 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
 <span class="normal">915</span>
 <span class="normal">916</span>
 <span class="normal">917</span>
-<span class="normal">918</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">add_commands</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">918</span>
+<span class="normal">919</span>
+<span class="normal">920</span>
+<span class="normal">921</span>
+<span class="normal">922</span>
+<span class="normal">923</span>
+<span class="normal">924</span>
+<span class="normal">925</span>
+<span class="normal">926</span>
+<span class="normal">927</span>
+<span class="normal">928</span>
+<span class="normal">929</span>
+<span class="normal">930</span>
+<span class="normal">931</span>
+<span class="normal">932</span>
+<span class="normal">933</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">add_commands</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Adds custom commands to container</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -4662,48 +4692,7 @@ and parent PIDs</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">752</span>
-<span class="normal">753</span>
-<span class="normal">754</span>
-<span class="normal">755</span>
-<span class="normal">756</span>
-<span class="normal">757</span>
-<span class="normal">758</span>
-<span class="normal">759</span>
-<span class="normal">760</span>
-<span class="normal">761</span>
-<span class="normal">762</span>
-<span class="normal">763</span>
-<span class="normal">764</span>
-<span class="normal">765</span>
-<span class="normal">766</span>
-<span class="normal">767</span>
-<span class="normal">768</span>
-<span class="normal">769</span>
-<span class="normal">770</span>
-<span class="normal">771</span>
-<span class="normal">772</span>
-<span class="normal">773</span>
-<span class="normal">774</span>
-<span class="normal">775</span>
-<span class="normal">776</span>
-<span class="normal">777</span>
-<span class="normal">778</span>
-<span class="normal">779</span>
-<span class="normal">780</span>
-<span class="normal">781</span>
-<span class="normal">782</span>
-<span class="normal">783</span>
-<span class="normal">784</span>
-<span class="normal">785</span>
-<span class="normal">786</span>
-<span class="normal">787</span>
-<span class="normal">788</span>
-<span class="normal">789</span>
-<span class="normal">790</span>
-<span class="normal">791</span>
-<span class="normal">792</span>
-<span class="normal">793</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">793</span>
 <span class="normal">794</span>
 <span class="normal">795</span>
 <span class="normal">796</span>
@@ -4800,49 +4789,38 @@ and parent PIDs</p>
 <span class="normal">887</span>
 <span class="normal">888</span>
 <span class="normal">889</span>
-<span class="normal">890</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">install_env</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">890</span>
+<span class="normal">891</span>
+<span class="normal">892</span>
+<span class="normal">893</span>
+<span class="normal">894</span>
+<span class="normal">895</span>
+<span class="normal">896</span>
+<span class="normal">897</span>
+<span class="normal">898</span>
+<span class="normal">899</span>
+<span class="normal">900</span>
+<span class="normal">901</span>
+<span class="normal">902</span>
+<span class="normal">903</span>
+<span class="normal">904</span>
+<span class="normal">905</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">install_env</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates conda environment and installs third party dependencies to allow code execution</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">record</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># mypy</span>
-    <span class="k">if</span> <span class="p">(</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;problem_statement_source&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;swe-bench&quot;</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;repo_type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span>
-    <span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">environment_setup</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;install_environment is set to True, but the data path is a GitHub URL &quot;</span>
-            <span class="s2">&quot;without an environment config file (environment_config key/flag). &quot;</span>
-            <span class="s2">&quot;Skipping conda environment installation.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">return</span>
     <span class="k">for</span> <span class="n">hook</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hooks</span><span class="p">:</span>
         <span class="n">hook</span><span class="o">.</span><span class="n">on_install_env_started</span><span class="p">()</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">environment_setup</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">environment_setup</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">))</span>
-        <span class="k">if</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">environment_setup</span><span class="p">)</span><span class="o">.</span><span class="n">suffix</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;.yml&quot;</span><span class="p">,</span> <span class="s2">&quot;.yaml&quot;</span><span class="p">]:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">install_configs</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">environment_setup</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Environment config file needs to be a yaml file&quot;</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
-        <span class="k">elif</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">environment_setup</span><span class="p">)</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.sh&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">run_shell_script</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">environment_setup</span><span class="p">),</span> <span class="n">location</span><span class="o">=</span><span class="s2">&quot;host&quot;</span><span class="p">)</span>
-            <span class="k">return</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Environment config file needs to be a yaml file or shell script&quot;</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">install_configs</span> <span class="o">=</span> <span class="n">MAP_VERSION_TO_INSTALL</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;repo&quot;</span><span class="p">]][</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">])]</span>
-        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="s2">&quot;Tried to look up install configs in swe-bench, but failed. &quot;</span>
-                <span class="s2">&quot;You can set a custom environment config with the environment_config key/flag.&quot;</span>
-            <span class="p">)</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+    <span class="n">install_configs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_install_configs</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">install_configs</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="s2">&quot;shell_script_path&quot;</span> <span class="ow">in</span> <span class="n">install_configs</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">install_configs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_shell_script</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">install_configs</span><span class="p">[</span><span class="s2">&quot;shell_script_path&quot;</span><span class="p">]),</span> <span class="n">location</span><span class="o">=</span><span class="s2">&quot;host&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">record</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># mypy</span>
     <span class="c1"># Create environment if does not exist yet</span>
     <span class="n">env_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repo_name</span><span class="si">}</span><span class="s2">__</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="n">env_check</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">communicate</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;conda env list | grep </span><span class="si">{</span><span class="n">env_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">env_check</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conda_environment_exists</span><span class="p">(</span><span class="n">env_name</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">env_name</span><span class="si">}</span><span class="s2"> conda env not found, creating...&quot;</span><span class="p">)</span>
         <span class="n">packages</span> <span class="o">=</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;packages&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">packages</span> <span class="o">==</span> <span class="s2">&quot;requirements.txt&quot;</span><span class="p">:</span>
@@ -4868,7 +4846,7 @@ and parent PIDs</p>
             <span class="bp">self</span><span class="o">.</span><span class="n">communicate</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rm </span><span class="si">{</span><span class="n">PATH_TO_REQS</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">packages</span> <span class="o">==</span> <span class="s2">&quot;environment.yml&quot;</span><span class="p">:</span>
             <span class="c1"># Write environment.yml to file</span>
-            <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;no_use_env&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;no_use_env&quot;</span><span class="p">):</span>
                 <span class="n">content_env_yml</span> <span class="o">=</span> <span class="n">get_environment_yml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">,</span> <span class="n">env_name</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">content_env_yml</span> <span class="o">=</span> <span class="n">get_environment_yml</span><span class="p">(</span>
@@ -4877,7 +4855,7 @@ and parent PIDs</p>
                     <span class="n">python_version</span><span class="o">=</span><span class="n">install_configs</span><span class="p">[</span><span class="s2">&quot;python&quot;</span><span class="p">],</span>
                 <span class="p">)</span>
             <span class="n">copy_file_to_container</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">container_obj</span><span class="p">,</span> <span class="n">content_env_yml</span><span class="p">,</span> <span class="n">PATH_TO_ENV_YML</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;no_use_env&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;no_use_env&quot;</span><span class="p">):</span>
                 <span class="c1"># Create conda environment</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;conda create -c conda-forge -n </span><span class="si">{</span><span class="n">env_name</span><span class="si">}</span><span class="s2"> python=</span><span class="si">{</span><span class="n">install_configs</span><span class="p">[</span><span class="s1">&#39;python&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> -y&quot;</span><span class="p">,</span>
@@ -4906,7 +4884,7 @@ and parent PIDs</p>
                 <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="c1"># Install extra pip packages if specified</span>
-        <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pip_packages&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pip_packages&quot;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;source activate </span><span class="si">{</span><span class="n">env_name</span><span class="si">}</span><span class="s2"> &amp;&amp; pip install </span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">install_configs</span><span class="p">[</span><span class="s1">&#39;pip_packages&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                 <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to install pip packages&quot;</span><span class="p">,</span>
@@ -4917,7 +4895,7 @@ and parent PIDs</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;conda activate </span><span class="si">{</span><span class="n">env_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to activate conda environment&quot;</span><span class="p">)</span>
 
     <span class="c1"># Install repo at base commit</span>
-    <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pre_install&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pre_install&quot;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running pre-install commands...&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">pre_install_cmd</span> <span class="ow">in</span> <span class="n">install_configs</span><span class="p">[</span><span class="s2">&quot;pre_install&quot;</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span>
@@ -4925,14 +4903,14 @@ and parent PIDs</p>
                 <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Pre-install commands failed to execute successfully&quot;</span><span class="p">,</span>
             <span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Installing </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repo_name</span><span class="si">}</span><span class="s2"> at base commit...&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;install&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;install&quot;</span><span class="p">):</span>
         <span class="n">install_cmd</span> <span class="o">=</span> <span class="n">install_configs</span><span class="p">[</span><span class="s2">&quot;install&quot;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span>
             <span class="n">install_cmd</span><span class="p">,</span>
             <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Install command failed to execute successfully&quot;</span><span class="p">,</span>
             <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
         <span class="p">)</span>
-    <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;post_install&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;post_install&quot;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running post-install commands...&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">post_install_cmd</span> <span class="ow">in</span> <span class="n">install_configs</span><span class="p">[</span><span class="s2">&quot;post_install&quot;</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span>
@@ -4960,24 +4938,24 @@ and parent PIDs</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">920</span>
-<span class="normal">921</span>
-<span class="normal">922</span>
-<span class="normal">923</span>
-<span class="normal">924</span>
-<span class="normal">925</span>
-<span class="normal">926</span>
-<span class="normal">927</span>
-<span class="normal">928</span>
-<span class="normal">929</span>
-<span class="normal">930</span>
-<span class="normal">931</span>
-<span class="normal">932</span>
-<span class="normal">933</span>
-<span class="normal">934</span>
-<span class="normal">935</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">935</span>
 <span class="normal">936</span>
-<span class="normal">937</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">interrupt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">937</span>
+<span class="normal">938</span>
+<span class="normal">939</span>
+<span class="normal">940</span>
+<span class="normal">941</span>
+<span class="normal">942</span>
+<span class="normal">943</span>
+<span class="normal">944</span>
+<span class="normal">945</span>
+<span class="normal">946</span>
+<span class="normal">947</span>
+<span class="normal">948</span>
+<span class="normal">949</span>
+<span class="normal">950</span>
+<span class="normal">951</span>
+<span class="normal">952</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">interrupt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Send interrupt signal to container and exhaust stdout buffer with a communicate call</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -5058,22 +5036,7 @@ and parent PIDs</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 939</span>
-<span class="normal"> 940</span>
-<span class="normal"> 941</span>
-<span class="normal"> 942</span>
-<span class="normal"> 943</span>
-<span class="normal"> 944</span>
-<span class="normal"> 945</span>
-<span class="normal"> 946</span>
-<span class="normal"> 947</span>
-<span class="normal"> 948</span>
-<span class="normal"> 949</span>
-<span class="normal"> 950</span>
-<span class="normal"> 951</span>
-<span class="normal"> 952</span>
-<span class="normal"> 953</span>
-<span class="normal"> 954</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 954</span>
 <span class="normal"> 955</span>
 <span class="normal"> 956</span>
 <span class="normal"> 957</span>
@@ -5152,7 +5115,22 @@ and parent PIDs</p>
 <span class="normal">1030</span>
 <span class="normal">1031</span>
 <span class="normal">1032</span>
-<span class="normal">1033</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">open_pr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">trajectory</span><span class="p">,</span> <span class="n">_dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="normal">1033</span>
+<span class="normal">1034</span>
+<span class="normal">1035</span>
+<span class="normal">1036</span>
+<span class="normal">1037</span>
+<span class="normal">1038</span>
+<span class="normal">1039</span>
+<span class="normal">1040</span>
+<span class="normal">1041</span>
+<span class="normal">1042</span>
+<span class="normal">1043</span>
+<span class="normal">1044</span>
+<span class="normal">1045</span>
+<span class="normal">1046</span>
+<span class="normal">1047</span>
+<span class="normal">1048</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">open_pr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">trajectory</span><span class="p">,</span> <span class="n">_dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create PR to repository</span>
 
 <span class="sd">    Args:</span>
