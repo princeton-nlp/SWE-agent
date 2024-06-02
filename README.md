@@ -47,6 +47,8 @@ We provide a command line tool and a graphical web interface:
 
 ## 🚀 Get started!
 
+👉 Try SWE-agent in your browser: [![Open in GitHub Codespaces](https://img.shields.io/badge/Open_in_GitHub_Codespaces-gray?logo=github)](https://codespaces.new/princeton-nlp/SWE-agent) ([more information](https://princeton-nlp.github.io/SWE-agent/installation/codespaces/))
+
 All information is provided in our [documentation][docs]:
 
 * [Installation](https://princeton-nlp.github.io/SWE-agent/installation/)
