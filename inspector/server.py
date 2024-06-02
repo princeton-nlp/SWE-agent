@@ -277,7 +277,7 @@ def main(data_path, directory, port):
     data = []
     if data_path is not None:
         if data_path.endswith(".jsonl"):
-            data = [json.loads(x) for x in Path(data_path).read_text().splitlines(keepend=True)]
+            data = [json.loads(x) for x in Path(data_path).read_text().splitlines(keepends=True)]
         elif data_path.endswith(".json"):
             with open(data_path) as f:
                 data = json.load(f)
