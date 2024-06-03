@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import hashlib
+import json
 import logging
 import os
 import random
@@ -21,6 +22,7 @@ from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 from swebench import MAP_VERSION_TO_INSTALL, get_environment_yml, get_requirements
 
 import docker
+import docker.errors
 import docker.models.containers
 from sweagent import REPO_ROOT
 from sweagent.environment.utils import (
@@ -570,12 +572,23 @@ class SWEEnv(gym.Env):
             else:
                 msg = "Unknown docker exception occurred. Are you sure docker is running?"
             raise RuntimeError(msg) from e
-        try:
-            self.container_obj = client.containers.get(self.container_name)
-        except docker.errors.NotFound:
-            logger.debug("Couldn't find container. Let's wait and retry.")
-            time.sleep(3)
-            self.container_obj = client.containers.get(self.container_name)
+        t0 = time.time()
+        self.container_obj = None
+        while time.time() - t0 < 60:
+            try:
+                self.container_obj = client.containers.get(self.container_name)
+            except docker.errors.NotFound:
+                logger.debug("Couldn't find container. Let's wait and retry.")
+                time.sleep(1)
+            else:
+                break
+        else:
+            print(f"{self.persistent=}")
+            available_containers = client.containers.list(all=True)
+            available_containers_info = json.dumps([str(c.attrs) for c in available_containers], indent=2)
+            print(available_containers_info)
+            msg = "Failed to get container object."
+            raise RuntimeError(msg)
         self.logger.info("🌱 Environment Initialized")
 
     def _init_scripts(self):
