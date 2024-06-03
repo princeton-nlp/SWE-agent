@@ -1472,12 +1472,15 @@ URLs or paths to local repositories.</p>
 <p>If you solve multiple issues from the same repository/in the same environment, you can specify the
 <code>--cache_task_images</code> flag. This will create a persistent docker image with the initialized environment
 required for the problem.</p>
-<p>We are also testing several changes that speed up SWE-agent. They can be enabled by <a href="../../config/env/">environment variables</a>:</p>
+<p>We are also testing several changes that speed up SWE-agent. They can be enabled as <a href="../../config/env/">environment variables</a> or added to <code>keys.cfg</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Faster communication with docker container</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">SWE_AGENT_EXPERIMENTAL_COMMUNICATE</span><span class="o">=</span><span class="s2">&quot;1&quot;</span>
 <span class="c1"># Sparse git clone</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">SWE_AGENT_EXPERIMENTAL_CLONE</span><span class="o">=</span><span class="s2">&quot;1&quot;</span>
+<span class="c1"># Reduce time for docker startup</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">SWE_AGENT_DOCKER_START_UP_DELAY</span><span class="o">=</span><span class="s2">&quot;1&quot;</span>
 </code></pre></div>
+<p>See <a href="../../config/env/">environment variables</a> for more details.</p>
 <h2 id="taking-actions">Taking actions</h2>
 <ul>
 <li>As mentioned <a href="#specifying-the-repository">above</a>, you can use <code>--apply_patch_locally</code> to have SWE-agent apply successful solution attempts to local files.</li>
