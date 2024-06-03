@@ -234,7 +234,7 @@ class SWEEnv(gym.Env):
             clone_url = f"https://{token_prefix}github.com/{self.record['repo']}.git"
         if not keys_config.get("SWE_AGENT_EXPERIMENTAL_CLONE"):
             self.communicate_with_handling(
-                input=f"git clone {clone_url}",
+                input=f"git clone {clone_url} {self._repo_name}",
                 error_msg="Failed to clone repository from conservative method",
                 timeout_duration=LONG_TIMEOUT,
             )
