@@ -23,10 +23,6 @@ Read more about it in our [paper](https://arxiv.org/abs/2405.15793)!
 
 SWE-agent is built and maintained by researchers from Princeton University.
 
-<p align="center">
-  <img src="assets/results+preview.png" style="width: 80%; height: auto;">
-</p>
-
 ### ✨ Use SWE-agent as a dev tool
 
 We provide a command line tool and a graphical web interface:
