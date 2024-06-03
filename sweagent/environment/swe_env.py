@@ -21,6 +21,7 @@ from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 from swebench import MAP_VERSION_TO_INSTALL, get_environment_yml, get_requirements
 
 import docker
+import docker.models.containers
 from sweagent import REPO_ROOT
 from sweagent.environment.utils import (
     LOGGER_NAME,
@@ -169,11 +170,14 @@ class SWEEnv(gym.Env):
 
         # Establish connection with execution container
         self.image_name = args.image_name
+        self.container_obj: docker.models.containers.Container | None = None
+        self.container: subprocess.Popen | None = None
         self._reset_container()
 
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
         self.hooks = []
+
         logger.debug("Environment initialization took %.2f seconds", time.perf_counter() - t0)
 
     def _get_cached_task_image_name(self) -> str:
@@ -479,14 +483,23 @@ class SWEEnv(gym.Env):
         except KeyboardInterrupt:
             raise
         except:
-            pass
-        assert self.container is not None
-        assert self.container_obj is not None
+            logger.warning("Errors when exiting container", exc_info=True)
+        assert self.container is not None  # mypy
         self.container.terminate()
-        if self.persistent:
-            if self.container_obj.status not in {"paused", "exited"}:
-                self.container_obj.pause()
-                self.logger.info("Agent container paused")
+        if self.container_obj is None:
+            pass
+        elif self.persistent:
+            # stopping is Podman specific, but doesn't hurt to include
+            # https://stackoverflow.com/a/32428199/
+            if self.container_obj.status not in {"paused", "exited", "dead", "stopping"}:
+                try:
+                    self.container_obj.pause()
+                except Exception:
+                    self.logger.warning("Failed to pause container.", exc_info=True)
+                except KeyboardInterrupt:
+                    raise
+                else:
+                    self.logger.info("Agent container paused")
             else:
                 self.logger.info(f"Agent container status: {self.container_obj.status}")
         else:
@@ -494,22 +507,25 @@ class SWEEnv(gym.Env):
                 self.container_obj.remove(force=True)
             except KeyboardInterrupt:
                 raise
-            except:
-                pass
-            self.logger.info("Agent container stopped")
+            except Exception:
+                self.logger.warning("Failed to remove container", exc_info=True)
+            else:
+                self.logger.info("Agent container stopped")
         for hook in self.hooks:
             hook.on_close()
 
     # MARK: Helper functions #
 
     def _reset_container(self) -> None:
-        if hasattr(self, "container"):
+        if self.container is not None:
             try:
                 self.container.terminate()
             except KeyboardInterrupt:
                 raise
             except:
-                pass
+                self.logger.warning("Failed to terminate container", exc_info=True)
+            else:
+                self.logger.debug("Terminated container")
         self._init_container()
         self._init_scripts()
 
