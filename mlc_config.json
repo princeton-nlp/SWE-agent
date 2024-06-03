@@ -4,6 +4,9 @@
       "pattern": "https://github.com/issues?.*"
     },
     {
+      "pattern": "https://github.com/?.*/pull/?.*"
+    },
+    {
       "pattern": ".*localhost.*"
     },
     {
