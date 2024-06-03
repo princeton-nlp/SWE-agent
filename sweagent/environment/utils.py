@@ -15,13 +15,14 @@ import traceback
 from io import BytesIO
 from pathlib import Path
 from subprocess import PIPE, STDOUT
-from typing import Any
+from typing import Any, Callable
 
 from datasets import load_dataset, load_from_disk
 from ghapi.all import GhApi
 from git import InvalidGitRepositoryError, Repo
 
 import docker
+from docker.models.containers import Container
 from sweagent.utils.config import keys_config
 
 LOGGER_NAME = "intercode"
@@ -58,7 +59,7 @@ def is_github_repo_url(data_path: str) -> bool:
 
 
 # TODO: Why not just use copy_anything_to_container?
-def copy_file_to_container(container, contents: str, container_path: str) -> None:
+def copy_file_to_container(container: Container, contents: str, container_path: str) -> None:
     """
     Copies a given string into a Docker container at a specified path.
 
@@ -103,7 +104,7 @@ def copy_file_to_container(container, contents: str, container_path: str) -> Non
             os.remove(temp_file_name)
 
 
-def copy_anything_to_container(container, host_path: str, container_path: str) -> None:
+def copy_anything_to_container(container: Container, host_path: str, container_path: str) -> None:
     """Copy files or directories from host to container
 
     Note: Will need to set ownership on the copied files in the container.
@@ -120,18 +121,18 @@ def copy_anything_to_container(container, host_path: str, container_path: str) -
         raise RuntimeError(msg) from e
 
 
-def read_with_timeout(container, pid_func, timeout_duration):
+def read_with_timeout(container: subprocess.Popen, pid_func: Callable, timeout_duration: int) -> str:
     """
     Read data from a subprocess with a timeout.
     This function uses a file descriptor to read data from the subprocess in a non-blocking way.
 
     Args:
-        container (subprocess.Popen): The subprocess container.
-        pid_func (function): A function that returns a list of process IDs (except the PID of the main process).
-        timeout_duration (int): The timeout duration in seconds.
+        container: The subprocess container.
+        pid_func: A function that returns a list of process IDs (except the PID of the main process).
+        timeout_duration: The timeout duration in seconds.
 
     Returns:
-        str: The data read from the subprocess, stripped of trailing newline characters.
+        output: The data read from the subprocess, stripped of trailing newline characters.
 
     Raises:
         TimeoutError: If the timeout duration is reached while reading from the subprocess.
@@ -182,7 +183,7 @@ PROCESS_DONE_MARKER_END = ":PROCESS-DONE///"
 PROCESS_DONE_REGEX = re.compile(rf"{PROCESS_DONE_MARKER_START}(.+?){PROCESS_DONE_MARKER_END}")
 
 
-def read_with_timeout_experimental(container, timeout_duration):
+def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration: int) -> tuple[str, str]:
     """
     Read data from a subprocess with a timeout.
     This function uses a file descriptor to read data from the subprocess in a non-blocking way.
@@ -191,14 +192,14 @@ def read_with_timeout_experimental(container, timeout_duration):
     has not been thoroughly tested.
 
     Args:
-        container (subprocess.Popen): The subprocess container.
-        timeout_duration (int): The timeout duration in seconds.
+        container: The subprocess container.
+        timeout_duration: The timeout duration in seconds.
 
     Returns:
-        str: The data read from the subprocess, stripped of trailing newline characters.
+        Output and exit code, both as strings (!)
 
     Raises:
-        TimeoutError: If the timeout duration is reached while reading from the subprocess.
+        `TimeoutError`: If the timeout duration is reached while reading from the subprocess.
     """
     buffer = b""
     fd = container.stdout.fileno()
@@ -246,7 +247,7 @@ def read_with_timeout_experimental(container, timeout_duration):
     return body, exit_code
 
 
-def get_background_pids(container_obj):
+def get_background_pids(container_obj: Container):
     pids = container_obj.exec_run("ps -eo pid,comm --no-headers").output.decode().split("\n")
     pids = [x.split() for x in pids if x]
     pids = [x for x in pids if x[1] not in {"ps"} and x[0] != "1"]
@@ -387,12 +388,12 @@ def get_container(ctr_name: str, image_name: str, persistent: bool = False) -> t
         return _get_non_persistent_container(ctr_name, image_name)
 
 
-def image_exists(image_name):
+def image_exists(image_name: str) -> bool:
     """
     Check that the image exists and give some better error messages.
 
     Arguments:
-        image_name (str): Name of image
+        image_name: Name of image
     Returns:
         bool: True if image exists
     """
