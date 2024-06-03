@@ -50,7 +50,7 @@ app.config["SESSION_TYPE"] = "memcache"
 THREADS: dict[str, MainThread] = {}
 
 os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"] = "1"
-env_utils.START_UP_DELAY = 1
+env_utils.DOCKER_START_UP_DELAY = 1
 
 
 def ensure_session_id_set():

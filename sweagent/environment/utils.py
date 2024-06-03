@@ -22,10 +22,10 @@ from ghapi.all import GhApi
 from git import InvalidGitRepositoryError, Repo
 
 import docker
+from sweagent.utils.config import keys_config
 
 LOGGER_NAME = "intercode"
-START_UP_DELAY = 5
-TIMEOUT_DURATION = 25
+DOCKER_START_UP_DELAY = int(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 5))
 GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
 GITHUB_REPO_URL_PATTERN = re.compile(r".*[/@]?github\.com\/([^/]+)\/([^/]+)")
 
@@ -255,7 +255,7 @@ def get_background_pids(container_obj):
     return bash_pids, other_pids
 
 
-def _get_non_persistent_container(ctr_name: str, image_name: str) -> tuple[subprocess.Popen, set]:
+def _get_non_persistent_container(ctr_name: str, image_name: str) -> tuple[subprocess.Popen, set[str]]:
     startup_cmd = [
         "docker",
         "run",
@@ -276,17 +276,20 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> tuple[subpr
         text=True,
         bufsize=1,  # line buffered
     )
-    time.sleep(START_UP_DELAY)
+    time.sleep(DOCKER_START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
     output = read_with_timeout(container, lambda: list(), timeout_duration=2)
     if output:
         logger.error(f"Unexpected container setup output: {output}")
+    # bash PID is always 1 for non-persistent containers
     return container, {
         "1",
-    }  # bash PID is always 1 for non-persistent containers
+    }
 
 
-def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool = False) -> tuple[subprocess.Popen, set]:
+def _get_persistent_container(
+    ctr_name: str, image_name: str, persistent: bool = False
+) -> tuple[subprocess.Popen, set[str]]:
     client = docker.from_env()
     containers = client.containers.list(all=True, filters={"name": ctr_name})
     if ctr_name in [c.name for c in containers]:
@@ -330,7 +333,7 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
         text=True,
         bufsize=1,  # line buffered
     )
-    time.sleep(START_UP_DELAY)
+    time.sleep(DOCKER_START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
     output = read_with_timeout(container, lambda: list(), timeout_duration=2)
     if output:
@@ -338,28 +341,25 @@ def _get_persistent_container(ctr_name: str, image_name: str, persistent: bool =
     # Get the process IDs of the container
     # There should be at least a head process and possibly one child bash process
     bash_pids, other_pids = get_background_pids(container_obj)
-    total_time_slept = START_UP_DELAY
+    total_time_slept = DOCKER_START_UP_DELAY
+    # Let's wait for a maximum of 5 x DOCKER_START_UP_DELAY seconds
+    # and then check again.
     while len(bash_pids) > 1 or len(other_pids) > 0:
         time.sleep(1)
         total_time_slept += 1
         bash_pids, other_pids = get_background_pids(container_obj)
-        if total_time_slept > 5 * START_UP_DELAY:
+        if total_time_slept > 5 * DOCKER_START_UP_DELAY:
             break
     bash_pid = 1
     if len(bash_pids) == 1:
         bash_pid = bash_pids[0][0]
     elif len(bash_pids) > 1 or len(other_pids) > 0:
-        msg = f"Detected alien processes attached or running. Please ensure that no other agents are running on this container. PIDs: {bash_pids}, {other_pids}"
+        msg = (
+            "Detected alien processes attached or running. Please ensure that no other agents "
+            f"are running on this container. PIDs: {bash_pids}, {other_pids}"
+        )
         raise RuntimeError(msg)
-    return container, set(
-        map(
-            str,
-            [
-                bash_pid,
-                1,
-            ],
-        ),
-    )
+    return container, {str(bash_pid), "1"}
 
 
 def get_container(ctr_name: str, image_name: str, persistent: bool = False) -> tuple[subprocess.Popen, set]:
