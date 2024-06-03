@@ -123,14 +123,18 @@ If you solve multiple issues from the same repository/in the same environment, y
 `--cache_task_images` flag. This will create a persistent docker image with the initialized environment
 required for the problem.
 
-We are also testing several changes that speed up SWE-agent. They can be enabled by [environment variables](../config/env.md):
+We are also testing several changes that speed up SWE-agent. They can be enabled as [environment variables](../config/env.md) or added to `keys.cfg`:
 
 ```bash
 # Faster communication with docker container
 export SWE_AGENT_EXPERIMENTAL_COMMUNICATE="1"
 # Sparse git clone
 export SWE_AGENT_EXPERIMENTAL_CLONE="1"
+# Reduce time for docker startup
+export SWE_AGENT_DOCKER_START_UP_DELAY="1"
 ```
+
+See [environment variables](../config/env.md) for more details.
 
 ## Taking actions
 

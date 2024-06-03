@@ -17,7 +17,7 @@ def convert_path_to_abspath(path: Path | str) -> Path:
     REPO_ROOT as base.
     """
     path = Path(path)
-    root = Path(os.environ.get("SWE_AGENT_CONFIG_ROOT", REPO_ROOT))
+    root = Path(keys_config.get("SWE_AGENT_CONFIG_ROOT", REPO_ROOT))
     assert root.is_dir()
     if not path.is_absolute():
         path = root / path

@@ -232,7 +232,7 @@ class SWEEnv(gym.Env):
         else:
             logger.info("Trying to clone from non-mirror...")
             clone_url = f"https://{token_prefix}github.com/{self.record['repo']}.git"
-        if not os.environ.get("SWE_AGENT_EXPERIMENTAL_CLONE"):
+        if not keys_config.get("SWE_AGENT_EXPERIMENTAL_CLONE"):
             self.communicate_with_handling(
                 input=f"git clone {clone_url}",
                 error_msg="Failed to clone repository from conservative method",
