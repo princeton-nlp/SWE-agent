@@ -130,6 +130,7 @@ class SWEEnv(gym.Env):
 
     def __init__(self, args: EnvironmentArguments):
         super().__init__()
+        t0 = time.perf_counter()
         self.args = args
         self.base_commit = None
         self.communicate_output = None
@@ -173,6 +174,7 @@ class SWEEnv(gym.Env):
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
         self.hooks = []
+        logger.debug("Environment initialization took %.2f seconds", time.perf_counter() - t0)
 
     def _get_cached_task_image_name(self) -> str:
         assert self.record is not None
@@ -809,6 +811,7 @@ class SWEEnv(gym.Env):
         """
         Creates conda environment and installs third party dependencies to allow code execution
         """
+        t0 = time.perf_counter()
         for hook in self.hooks:
             hook.on_install_env_started()
         install_configs = self._get_install_configs()
@@ -918,6 +921,8 @@ class SWEEnv(gym.Env):
                     post_install_cmd,
                     error_msg="Post-install commands failed to execute successfully",
                 )
+
+        logger.info("Installation step took %.2f seconds", time.perf_counter() - t0)
 
     def add_commands(self, commands: list[dict]) -> None:
         """
