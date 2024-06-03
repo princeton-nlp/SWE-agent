@@ -480,12 +480,15 @@ class SWEEnv(gym.Env):
             raise
         except:
             pass
-        assert self.container is not None
+        assert self.container is not None  # mypy
         assert self.container_obj is not None
         self.container.terminate()
         if self.persistent:
             if self.container_obj.status not in {"paused", "exited"}:
-                self.container_obj.pause()
+                try:
+                    self.container_obj.pause()
+                except Exception as e:
+                    logger.exception(f"Failed to pause container: {e}")
                 self.logger.info("Agent container paused")
             else:
                 self.logger.info(f"Agent container status: {self.container_obj.status}")
