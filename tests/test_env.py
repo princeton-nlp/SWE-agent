@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import dataclasses
-import os
 import subprocess
 import time
 from contextlib import contextmanager
 from pathlib import Path
+from unittest import mock
 
 import pytest
 import yaml
@@ -53,6 +53,13 @@ def swe_env_context(env_args):
 def test_init_swe_env(test_env_args):
     with swe_env_context(test_env_args) as env:
         env.reset()
+
+
+@pytest.mark.slow()
+def test_init_swe_env_conservative_clone(test_env_args):
+    with mock.patch.dict("os.environ", {"SWE_AGENT_EXPERIMENTAL_CLONE": ""}):
+        with swe_env_context(test_env_args) as env:
+            env.reset()
 
 
 @pytest.mark.slow()
@@ -135,14 +142,9 @@ def test_interrupt_close(test_env_args):
 
 @pytest.mark.slow()
 def test_communicate_old(test_env_args):
-    del os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"]
-    try:
+    with mock.patch.dict("os.environ", {"SWE_AGENT_EXPERIMENTAL_COMMUNICATE": ""}):
         with swe_env_context(test_env_args) as env:
             env.reset()
-    except:
-        raise
-    finally:
-        os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"] = "1"
 
 
 @pytest.mark.slow()
