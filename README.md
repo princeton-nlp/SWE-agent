@@ -23,7 +23,7 @@ SWE-agent is built and maintained by researchers from Princeton University.
 
 ![My Movie 3](https://github.com/princeton-nlp/SWE-agent/assets/13602468/fa201621-ec31-4644-b658-c1d0feb92253)
 
-You can use SWE-agent either through a web interface (shown above) or through the command line. 
+You can use SWE-agent either through a web interface (shown above) or through the command line.
 
 ## 🚀 Get started!
 
