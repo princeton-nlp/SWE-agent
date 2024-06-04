@@ -195,4 +195,6 @@ def test_agent_persistent_container(test_script_args: ScriptArguments, capsys):
     captured = capsys.readouterr()
     print(captured.out)
     print(captured.err)
-    assert "Falling back to full cloning method" in (captured.out + captured.err)
+    text = captured.out + captured.err
+    assert "Trying to clone from non-mirror..." in text
+    assert "Falling back to full cloning method" in text
