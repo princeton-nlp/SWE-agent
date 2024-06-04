@@ -35,6 +35,26 @@ def test_retrieve_from_env(tmp_path):
         assert config["MY_KEY"] == "VALUE"
 
 
+def test_retrieve_choices():
+    """Check that a valueerror is raised if the value is not in the choices."""
+    match = "Value.*not in.*"
+    config = Config()
+    with pytest.raises(ValueError, match=match):
+        config.get("DOESNTEXIST", default="x", choices=["a", "b", "c"])
+    with pytest.raises(ValueError, match=match):
+        with mock.patch.dict("os.environ", {"MY_KEY": "VALUE"}):
+            config.get("DOESNTEXIST", choices=["a", "b", "c"])
+
+
+def test_retrieve_choices_config_file(tmp_path):
+    match = "Value.*not in.*"
+    tmp_keys_cfg = tmp_path / "keys.cfg"
+    tmp_keys_cfg.write_text("MY_KEY: 'VALUE'\n")
+    config = Config(keys_cfg_path=tmp_keys_cfg)
+    with pytest.raises(ValueError, match=match):
+        config.get("MY_KEY", choices=["a", "b", "c"])
+
+
 def test_convert_path_to_abspath():
     assert convert_path_to_abspath("sadf") == REPO_ROOT / "sadf"
     assert convert_path_to_abspath("/sadf") == Path("/sadf")

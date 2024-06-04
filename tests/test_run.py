@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import dataclasses
 import json
+import logging
 import os
 import subprocess
 from pathlib import Path
@@ -8,6 +10,7 @@ from typing import Any
 
 import pytest
 
+import docker
 from run import ActionsArguments, Main, MainHook, OpenPRHook, ScriptArguments
 from sweagent.agent.agents import Agent, AgentArguments, AgentHook
 from sweagent.agent.models import ModelArguments
@@ -108,7 +111,7 @@ def test_script_args():
             verbose=True,
             install_environment=True,
         ),
-        skip_existing=True,
+        skip_existing=False,
         agent=AgentArguments(
             model=ModelArguments(
                 model_name="instant_empty_submit",
@@ -126,7 +129,7 @@ def test_script_args():
 
 
 @pytest.mark.slow()
-def test_exception_raised(test_script_args):
+def test_exception_raised(test_script_args: ScriptArguments):
     assert test_script_args.raise_exceptions
     main = Main(test_script_args)
     main.add_hook(RaisesExceptionHook())
@@ -151,21 +154,54 @@ class CreateFakeLogFile(MainHook):
 
 
 @pytest.mark.slow()
-def test_existing_corrupted_args(test_script_args):
+def test_existing_corrupted_args(test_script_args: ScriptArguments):
     main = Main(test_script_args)
     main.add_hook(CreateFakeLogFile())
     main.main()
 
 
 @pytest.mark.slow()
-def test_main_hook(test_script_args):
+def test_main_hook(test_script_args: ScriptArguments):
     main = Main(test_script_args)
     main.add_hook(MainHook())
     main.main()
 
 
 @pytest.mark.slow()
-def test_agent_with_hook(test_script_args):
+def test_agent_with_hook(test_script_args: ScriptArguments):
     main = Main(test_script_args)
     main.agent.add_hook(AgentHook())
     main.main()
+
+
+PERSISTENT_CONTAINER_NAME = "sweagent-test-persistent-container"
+
+
+@pytest.fixture()
+def _cleanup_persistent_container():
+    yield
+    client = docker.from_env()
+    container = client.containers.get(PERSISTENT_CONTAINER_NAME)
+    container.remove(force=True)
+
+
+@pytest.mark.slow()
+@pytest.mark.usefixtures("_cleanup_persistent_container")
+def test_agent_persistent_container(test_script_args: ScriptArguments, capsys):
+    test_script_args = dataclasses.replace(
+        test_script_args,
+        environment=dataclasses.replace(test_script_args.environment, container_name=PERSISTENT_CONTAINER_NAME),
+    )
+    assert test_script_args.environment.verbose
+    main = Main(test_script_args)
+    assert main.env.logger.isEnabledFor(logging.DEBUG)
+    main.main()
+    captured = capsys.readouterr()
+    print("---")
+    print(captured.out)
+    print("---")
+    print(captured.err)
+    print("---")
+    text = captured.out + captured.err
+    assert "Trying to clone from non-mirror..." in text
+    assert "Falling back to full cloning method" in text

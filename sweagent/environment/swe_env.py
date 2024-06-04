@@ -238,7 +238,11 @@ class SWEEnv(gym.Env):
         else:
             logger.info("Trying to clone from non-mirror...")
             clone_url = f"https://{token_prefix}github.com/{self.record['repo']}.git"
-        if not keys_config.get("SWE_AGENT_EXPERIMENTAL_CLONE"):
+        clone_method = keys_config.get("SWE_AGENT_CLONE_METHOD", default="sparse", choices=["sparse", "full"])
+        if len(self.data) > 1 or self.persistent:
+            msg = "Falling back to full cloning method due to multiple instances or persistent container"
+            logger.debug(msg)
+        if clone_method == "full":
             self.communicate_with_handling(
                 input=f"git clone {clone_url} {self._repo_name}",
                 error_msg="Failed to clone repository from conservative method",
@@ -642,7 +646,10 @@ class SWEEnv(gym.Env):
         input: str,
         timeout_duration=25,
     ) -> str:
-        if "SWE_AGENT_EXPERIMENTAL_COMMUNICATE" in keys_config:
+        communicate_method = keys_config.get(
+            "SWE_AGENT_COMMUNICATE_METHOD", default="end-marker", choices=["end-marker", "processes"]
+        )
+        if communicate_method == "end-marker":
             return self._communicate_experimental(input, timeout_duration)
         try:
             self.returncode = None
