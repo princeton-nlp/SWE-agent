@@ -193,4 +193,6 @@ def test_agent_persistent_container(test_script_args: ScriptArguments, capsys):
     main = Main(test_script_args)
     main.main()
     captured = capsys.readouterr()
+    print(captured.out)
+    print(captured.err)
     assert "Falling back to full cloning method" in (captured.out + captured.err)
