@@ -33,7 +33,7 @@ Alternatively, you can run `./setup.sh` to create your own `swe-agent` docker im
     SWE-agent is still in active development. Features and enhancement are added often.
     To make sure you are on the latest version, periodically run `git pull`
     (there is no need to redo the `pip install`).
-    You might also want to run `git pull sweagent/swe-agent:latest` periodically
+    You might also want to run `docker pull sweagent/swe-agent:latest` periodically
     (though changes to the container are more rare).
 
 !!! note "Development setup"
