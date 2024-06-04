@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import logging
 import os
 import subprocess
 from pathlib import Path
@@ -190,11 +191,16 @@ def test_agent_persistent_container(test_script_args: ScriptArguments, capsys):
         test_script_args,
         environment=dataclasses.replace(test_script_args.environment, container_name=PERSISTENT_CONTAINER_NAME),
     )
+    assert test_script_args.environment.verbose
     main = Main(test_script_args)
+    assert main.env.logger.isEnabledFor(logging.DEBUG)
     main.main()
     captured = capsys.readouterr()
+    print("---")
     print(captured.out)
+    print("---")
     print(captured.err)
+    print("---")
     text = captured.out + captured.err
     assert "Trying to clone from non-mirror..." in text
     assert "Falling back to full cloning method" in text
