@@ -80,7 +80,7 @@ SWE-agent will then start from this commit when trying to solve the problem.
 !!! warning "Uncommitted changes"
     When running with a local `--repo_path`, SWE-agent will use the last commit, i.e., all local, uncommitted changes will not be seen by SWE-agent.
 
-## Installing dependencies and setting up the environment
+## Installing dependencies and setting up the environment <a name="environment-setup"></a>
 
 Now let's move on to a slightly more complicated issue ([`swe-agent/test-repo #22`](https://github.com/SWE-agent/test-repo/issues/22)).
 
@@ -120,11 +120,32 @@ The config file can have the following keys:
 ## Speeding up SWE-agent
 
 !!! tip "Speed up in v0.6"
-    SWE-agent v0.6 saw major speedups. Please upgrade to the latest version.
+    SWE-agent v0.6 (June 4th, 2024) introduced major speedups. Please upgrade to the latest version.
 
-If you solve multiple issues from the same repository/in the same environment, you can specify the
-`--cache_task_images` flag. This will create a persistent docker image with the initialized environment
-required for the problem.
+After the Docker container has been started, the target repository cloned/copied, and the dependencies installed,
+almost all of the remaining runtime can be attributed to waiting for your LM provider to answer your API calls.
+
+Therefore, speeding SWE-agent is mostly about speeding up the setup stages.
+We currently offer two ways to cache the setup stages:
+
+* By specifying `--container_name`, you run SWE-agent with a _persistent_ Docker container: Rather than being deleted
+  after every task, the Docker container will only be paused and can be resumed. Cloned repositories from previous
+  runs with the same container name, as well as any installed conda environments (versioned by the version of the package
+  you are installing) will be already available.
+* Alternatively, you can specify `--cache_task_images`. For every repository/base commit/environment setup, we
+  [commit][docker commit] the changes from the installation stage to the Docker image. The corresponding containers are temporary as usual.
+  Unlike the persistent containers, there will be a new image _for almost every base commit_ (that is, probabyl for every task
+  when evaluating on a benchmark), which makes this only relevant when running over the same tasks more than once
+  (for example when testing different agent configurations or LMs).
+
+!!! tip "Confused about the two options?"
+    Probably `--container_name my_container_name` will do what you want.
+
+!!! note "What's the difference between Docker images and containers?"
+    Docker containers are running instances of Docker images (that you can think of as snapshots of what
+    happens after you build the `Dockerfile`). [More information](https://stackoverflow.com/a/26960888/).
+
+[docker commit]: https://docs.docker.com/reference/cli/docker/container/commit/
 
 ## Taking actions
 

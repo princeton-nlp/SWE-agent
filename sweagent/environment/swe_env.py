@@ -71,7 +71,9 @@ class EnvironmentArguments(FrozenSerializable):
     # Specify a branch name or a commit hash to checkout before running the task.
     # Only used when running over a single problem statement/issue.
     base_commit: str | None = None
-    # Use a persistent container with this name
+    # Use a persistent container with this name. After every task, the container will be paused, but not removed.
+    # This is useful for speedup when running multiple tasks from the same repositories in a row, as the repositories
+    # will have already been cloned and the conda environments will have been installed.
     container_name: str | None = None
     # Try to install the environment before running the task.
     install_environment: bool = True
@@ -82,14 +84,14 @@ class EnvironmentArguments(FrozenSerializable):
     # Do not use attempt to use a repository mirror from https://github.com/swe-bench.
     no_mirror: bool = False
     # Cache task images to speed up task initialization. This means that the environment will be saved as a
-    # docker image for every repository and base commit combination. This uses quite a bit of disk space
+    # docker image for every repository, base commit, and setup combination. This uses quite a bit of disk space
     # but speeds up task initialization significantly when running over multiple issues from the same repository
     # (or using different models for the same issues).
     cache_task_images: bool = False
     # Custom environment setup. Currently only used when data_path points to a single issue.
     # This needs to be either a string pointing to a yaml file (with yaml, yml file extension)
     # or a shell script (with sh extension).
-    # See https://github.com/princeton-nlp/SWE-agent/pull/153 for more information
+    # See https://princeton-nlp.github.io/SWE-agent/usage/cl_tutorial#environment-setup
     environment_setup: str | None = None
     # Only used when running on single issue. Path to local repository or github repository.
     repo_path: str = ""
