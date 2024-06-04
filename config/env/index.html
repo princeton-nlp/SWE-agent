@@ -1255,12 +1255,16 @@ See <a href="../../installation/keys/">here</a> for more information.</p>
 <p>This page details all environment variables that are currently in use by SWE-agent.</p>
 <ul>
 <li>All API keys (for LMs and GitHub) can be set as an environment variable. See <a href="../../installation/keys/">here</a> for more information.</li>
-<li>[Experimental] <code>SWE_AGENT_EXPERIMENTAL_COMMUNICATE</code> switches to a faster way of communicating with running docker
-  shell sessions. This has not been tested on SWE-bench, so it might sometimes break.
-  However, it can be very useful when running on single issues.</li>
-<li>[Experimental] <code>SWE_AGENT_EXPERIMENTAL_CLONE</code>: Uses sparse clones</li>
-<li><code>SWE_AGENT_DOCKER_START_UP_DELAY</code>: Number of seconds to wait after starting a docker container</li>
 <li><code>SWE_AGENT_CONFIG_ROOT</code>: Used to resolve relative paths in the <a href="../config/">config</a></li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Unstable</p>
+<p>The following variables might still be subject to change</p>
+</div>
+<ul>
+<li><code>SWE_AGENT_COMMUNICATE_METHOD</code>: Determines how SWE-agent communicates with the running process in the docker container: <code>end-marker</code> (default, fast) or <code>processes</code> (legacy, slow, more tested)</li>
+<li><code>SWE_AGENT_CLONE_METHOD</code>: <code>sparse</code> (default) or <code>full</code>. When using persistent containers or running over multiple problem statements, we fall back to <code>full</code>.</li>
+<li><code>SWE_AGENT_DOCKER_START_UP_DELAY</code>: Number of seconds to wait after starting a docker container</li>
 </ul>
 
 
