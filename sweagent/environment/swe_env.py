@@ -99,6 +99,12 @@ class EnvironmentArguments(FrozenSerializable):
     def __post_init__(self):
         if self.timeout is not None:
             logger.warning("The 'timeout' argument is deprecated and has no effect.")
+        if self.cache_task_images and self.container_name:
+            msg = (
+                "Not allowed to use persistent container with caching task images "
+                "(probably doesn't make sense and takes excessive space)."
+            )
+            raise ValueError(msg)
 
 
 class EnvHook:

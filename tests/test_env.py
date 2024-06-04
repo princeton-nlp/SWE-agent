@@ -153,3 +153,12 @@ def test_env_with_hook(test_env_args):
     with swe_env_context(test_env_args) as env:
         env.add_hook(EnvHook())
         env.reset()
+
+
+def test_invalid_config():
+    with pytest.raises(ValueError, match=".*Not allowed.*"):
+        EnvironmentArguments(
+            data_path=".",
+            container_name="test",
+            cache_task_images=True,
+        )
