@@ -830,6 +830,15 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#debugging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Debugging
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1322,6 +1331,15 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#debugging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Debugging
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1379,6 +1397,14 @@ claude-haiku
 <li><code>HumanModel</code> and <code>HumandThoughtModel</code> will prompt for input from the user that stands in for the output of the LM. This can be used to create new <a href="../../config/demonstrations/#manual">demonstrations</a>.</li>
 <li><code>ReplayModel</code> takes a trajectory as input and "replays it"</li>
 <li><code>InstantEmptySubmitTestModel</code> will create an empty <code>reproduce.py</code> and then submit</li>
+</ul>
+<h3 id="debugging">Debugging</h3>
+<ul>
+<li>If you get <code>Error code: 404</code>, please check your configured keys, in particular
+  whether you set <code>OPENAI_API_BASE_URL</code> correctly (if you're not using it, the
+  line should be deleted or commented out).
+  Also see <a href="https://github.com/princeton-nlp/SWE-agent/issues/467">this issue</a>
+  for reference.</li>
 </ul>
 <!-- BEGIN INCLUDE ../_footer.md -->
 <div class="grid cards">
