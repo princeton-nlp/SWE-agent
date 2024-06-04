@@ -339,7 +339,6 @@ class Agent:
             "info": info,
         }
         log_path.write_text(json.dumps(log_dict, indent=2))
-        logger.info(f"Saved trajectory to {log_path}")
 
     def _get_first_match(self, action: str, pattern_type: str) -> re.Match | None:
         """Return the first match of a command pattern in the action string."""
