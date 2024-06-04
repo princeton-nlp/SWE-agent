@@ -121,6 +121,7 @@ def test_script_args():
         ),
         actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
         raise_exceptions=True,
+        print_config=False,
     )
 
 
