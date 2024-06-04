@@ -108,6 +108,8 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
     suffix: str = ""
     # Raise unhandled exceptions during the run (useful for debugging)
     raise_exceptions: bool = False
+    # Dump the entire config to the log
+    print_config: bool = True
 
     @property
     def run_name(self):
@@ -307,7 +309,8 @@ class OpenPRHook(MainHook):
 
 class Main:
     def __init__(self, args: ScriptArguments):
-        logger.info(f"📙 Arguments: {args.dumps_yaml()}")
+        if args.print_config:
+            logger.info(f"📙 Arguments: {args.dumps_yaml()}")
         self.args = args
         self.agent = Agent("primary", args.agent)
         self.env = SWEEnv(args.environment)
