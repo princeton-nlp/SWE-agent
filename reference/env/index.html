@@ -3083,7 +3083,17 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
 <span class="normal">1094</span>
 <span class="normal">1095</span>
 <span class="normal">1096</span>
-<span class="normal">1097</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">SWEEnv</span><span class="p">(</span><span class="n">gym</span><span class="o">.</span><span class="n">Env</span><span class="p">):</span>
+<span class="normal">1097</span>
+<span class="normal">1098</span>
+<span class="normal">1099</span>
+<span class="normal">1100</span>
+<span class="normal">1101</span>
+<span class="normal">1102</span>
+<span class="normal">1103</span>
+<span class="normal">1104</span>
+<span class="normal">1105</span>
+<span class="normal">1106</span>
+<span class="normal">1107</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">SWEEnv</span><span class="p">(</span><span class="n">gym</span><span class="o">.</span><span class="n">Env</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Gym environment for SWE-bench. This class should handle all communication with the docker container.&quot;&quot;&quot;</span>
 
     <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;swe_main&quot;</span>
@@ -3822,6 +3832,7 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
                     <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to create conda environment&quot;</span><span class="p">,</span>
                     <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
                 <span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Created conda environment&quot;</span><span class="p">)</span>
                 <span class="c1"># Write reqs to requirements.txt in docker container</span>
                 <span class="n">content_reqs</span> <span class="o">=</span> <span class="n">get_requirements</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">)</span>
                 <span class="n">copy_file_to_container</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">container_obj</span><span class="p">,</span> <span class="n">content_reqs</span><span class="p">,</span> <span class="n">PATH_TO_REQS</span><span class="p">)</span>
@@ -3835,6 +3846,7 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
                     <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to install requirements.txt&quot;</span><span class="p">,</span>
                     <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
                 <span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Installed requirements from requirements.txt&quot;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">communicate</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rm </span><span class="si">{</span><span class="n">PATH_TO_REQS</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">packages</span> <span class="o">==</span> <span class="s2">&quot;environment.yml&quot;</span><span class="p">:</span>
                 <span class="c1"># Write environment.yml to file</span>
@@ -3854,12 +3866,14 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
                         <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to create conda environment&quot;</span><span class="p">,</span>
                         <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
                     <span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Created conda environment&quot;</span><span class="p">)</span>
                     <span class="c1"># Install packages</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;conda env update -f </span><span class="si">{</span><span class="n">PATH_TO_ENV_YML</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                         <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to install environment.yml&quot;</span><span class="p">,</span>
                         <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
                     <span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Installed packages from environment.yml&quot;</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># Create environment + install packages</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span>
@@ -3867,6 +3881,7 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
                         <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to create conda environment with environment.yml&quot;</span><span class="p">,</span>
                         <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
                     <span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Created conda environment with environment.yml&quot;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">communicate</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rm </span><span class="si">{</span><span class="n">PATH_TO_ENV_YML</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Create environment + install packages</span>
@@ -3875,6 +3890,7 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
                     <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to create conda environment&quot;</span><span class="p">,</span>
                     <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
                 <span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Created conda environment and installed packages&quot;</span><span class="p">)</span>
             <span class="c1"># Install extra pip packages if specified</span>
             <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pip_packages&quot;</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span>
@@ -3882,6 +3898,7 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
                     <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to install pip packages&quot;</span><span class="p">,</span>
                     <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
                 <span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Installed extra pip dependencies&quot;</span><span class="p">)</span>
 
         <span class="c1"># Activate environment</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;conda activate </span><span class="si">{</span><span class="n">env_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to activate conda environment&quot;</span><span class="p">)</span>
@@ -3894,6 +3911,7 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
                     <span class="n">pre_install_cmd</span><span class="p">,</span>
                     <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Pre-install commands failed to execute successfully&quot;</span><span class="p">,</span>
                 <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Ran pre-install commands&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Installing </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repo_name</span><span class="si">}</span><span class="s2"> at base commit...&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;install&quot;</span><span class="p">):</span>
             <span class="n">install_cmd</span> <span class="o">=</span> <span class="n">install_configs</span><span class="p">[</span><span class="s2">&quot;install&quot;</span><span class="p">]</span>
@@ -3902,6 +3920,7 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
                 <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Install command failed to execute successfully&quot;</span><span class="p">,</span>
                 <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
             <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Ran install command&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;post_install&quot;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running post-install commands...&quot;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">post_install_cmd</span> <span class="ow">in</span> <span class="n">install_configs</span><span class="p">[</span><span class="s2">&quot;post_install&quot;</span><span class="p">]:</span>
@@ -3909,6 +3928,7 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
                     <span class="n">post_install_cmd</span><span class="p">,</span>
                     <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Post-install commands failed to execute successfully&quot;</span><span class="p">,</span>
                 <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Ran post-install commands&quot;</span><span class="p">)</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Installation step took </span><span class="si">%.2f</span><span class="s2"> seconds&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span>
 
@@ -4084,17 +4104,7 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">956</span>
-<span class="normal">957</span>
-<span class="normal">958</span>
-<span class="normal">959</span>
-<span class="normal">960</span>
-<span class="normal">961</span>
-<span class="normal">962</span>
-<span class="normal">963</span>
-<span class="normal">964</span>
-<span class="normal">965</span>
-<span class="normal">966</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">966</span>
 <span class="normal">967</span>
 <span class="normal">968</span>
 <span class="normal">969</span>
@@ -4110,7 +4120,17 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
 <span class="normal">979</span>
 <span class="normal">980</span>
 <span class="normal">981</span>
-<span class="normal">982</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">add_commands</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">982</span>
+<span class="normal">983</span>
+<span class="normal">984</span>
+<span class="normal">985</span>
+<span class="normal">986</span>
+<span class="normal">987</span>
+<span class="normal">988</span>
+<span class="normal">989</span>
+<span class="normal">990</span>
+<span class="normal">991</span>
+<span class="normal">992</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">add_commands</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Adds custom commands to container</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -4919,7 +4939,17 @@ and parent PIDs</p>
 <span class="normal">951</span>
 <span class="normal">952</span>
 <span class="normal">953</span>
-<span class="normal">954</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">install_env</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">954</span>
+<span class="normal">955</span>
+<span class="normal">956</span>
+<span class="normal">957</span>
+<span class="normal">958</span>
+<span class="normal">959</span>
+<span class="normal">960</span>
+<span class="normal">961</span>
+<span class="normal">962</span>
+<span class="normal">963</span>
+<span class="normal">964</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">install_env</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates conda environment and installs third party dependencies to allow code execution</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -4946,6 +4976,7 @@ and parent PIDs</p>
                 <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to create conda environment&quot;</span><span class="p">,</span>
                 <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
             <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Created conda environment&quot;</span><span class="p">)</span>
             <span class="c1"># Write reqs to requirements.txt in docker container</span>
             <span class="n">content_reqs</span> <span class="o">=</span> <span class="n">get_requirements</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">record</span><span class="p">)</span>
             <span class="n">copy_file_to_container</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">container_obj</span><span class="p">,</span> <span class="n">content_reqs</span><span class="p">,</span> <span class="n">PATH_TO_REQS</span><span class="p">)</span>
@@ -4959,6 +4990,7 @@ and parent PIDs</p>
                 <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to install requirements.txt&quot;</span><span class="p">,</span>
                 <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
             <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Installed requirements from requirements.txt&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">communicate</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rm </span><span class="si">{</span><span class="n">PATH_TO_REQS</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">packages</span> <span class="o">==</span> <span class="s2">&quot;environment.yml&quot;</span><span class="p">:</span>
             <span class="c1"># Write environment.yml to file</span>
@@ -4978,12 +5010,14 @@ and parent PIDs</p>
                     <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to create conda environment&quot;</span><span class="p">,</span>
                     <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
                 <span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Created conda environment&quot;</span><span class="p">)</span>
                 <span class="c1"># Install packages</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;conda env update -f </span><span class="si">{</span><span class="n">PATH_TO_ENV_YML</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                     <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to install environment.yml&quot;</span><span class="p">,</span>
                     <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
                 <span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Installed packages from environment.yml&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Create environment + install packages</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span>
@@ -4991,6 +5025,7 @@ and parent PIDs</p>
                     <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to create conda environment with environment.yml&quot;</span><span class="p">,</span>
                     <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
                 <span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Created conda environment with environment.yml&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">communicate</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rm </span><span class="si">{</span><span class="n">PATH_TO_ENV_YML</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Create environment + install packages</span>
@@ -4999,6 +5034,7 @@ and parent PIDs</p>
                 <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to create conda environment&quot;</span><span class="p">,</span>
                 <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
             <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Created conda environment and installed packages&quot;</span><span class="p">)</span>
         <span class="c1"># Install extra pip packages if specified</span>
         <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pip_packages&quot;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span>
@@ -5006,6 +5042,7 @@ and parent PIDs</p>
                 <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to install pip packages&quot;</span><span class="p">,</span>
                 <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
             <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Installed extra pip dependencies&quot;</span><span class="p">)</span>
 
     <span class="c1"># Activate environment</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">communicate_with_handling</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;conda activate </span><span class="si">{</span><span class="n">env_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Failed to activate conda environment&quot;</span><span class="p">)</span>
@@ -5018,6 +5055,7 @@ and parent PIDs</p>
                 <span class="n">pre_install_cmd</span><span class="p">,</span>
                 <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Pre-install commands failed to execute successfully&quot;</span><span class="p">,</span>
             <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Ran pre-install commands&quot;</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Installing </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repo_name</span><span class="si">}</span><span class="s2"> at base commit...&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;install&quot;</span><span class="p">):</span>
         <span class="n">install_cmd</span> <span class="o">=</span> <span class="n">install_configs</span><span class="p">[</span><span class="s2">&quot;install&quot;</span><span class="p">]</span>
@@ -5026,6 +5064,7 @@ and parent PIDs</p>
             <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Install command failed to execute successfully&quot;</span><span class="p">,</span>
             <span class="n">timeout_duration</span><span class="o">=</span><span class="n">LONG_TIMEOUT</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Ran install command&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">install_configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;post_install&quot;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running post-install commands...&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">post_install_cmd</span> <span class="ow">in</span> <span class="n">install_configs</span><span class="p">[</span><span class="s2">&quot;post_install&quot;</span><span class="p">]:</span>
@@ -5033,6 +5072,7 @@ and parent PIDs</p>
                 <span class="n">post_install_cmd</span><span class="p">,</span>
                 <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Post-install commands failed to execute successfully&quot;</span><span class="p">,</span>
             <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Ran post-install commands&quot;</span><span class="p">)</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Installation step took </span><span class="si">%.2f</span><span class="s2"> seconds&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -5056,24 +5096,24 @@ and parent PIDs</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 984</span>
-<span class="normal"> 985</span>
-<span class="normal"> 986</span>
-<span class="normal"> 987</span>
-<span class="normal"> 988</span>
-<span class="normal"> 989</span>
-<span class="normal"> 990</span>
-<span class="normal"> 991</span>
-<span class="normal"> 992</span>
-<span class="normal"> 993</span>
-<span class="normal"> 994</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 994</span>
 <span class="normal"> 995</span>
 <span class="normal"> 996</span>
 <span class="normal"> 997</span>
 <span class="normal"> 998</span>
 <span class="normal"> 999</span>
 <span class="normal">1000</span>
-<span class="normal">1001</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">interrupt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">1001</span>
+<span class="normal">1002</span>
+<span class="normal">1003</span>
+<span class="normal">1004</span>
+<span class="normal">1005</span>
+<span class="normal">1006</span>
+<span class="normal">1007</span>
+<span class="normal">1008</span>
+<span class="normal">1009</span>
+<span class="normal">1010</span>
+<span class="normal">1011</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">interrupt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Send interrupt signal to container and exhaust stdout buffer with a communicate call</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -5154,17 +5194,7 @@ and parent PIDs</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1003</span>
-<span class="normal">1004</span>
-<span class="normal">1005</span>
-<span class="normal">1006</span>
-<span class="normal">1007</span>
-<span class="normal">1008</span>
-<span class="normal">1009</span>
-<span class="normal">1010</span>
-<span class="normal">1011</span>
-<span class="normal">1012</span>
-<span class="normal">1013</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1013</span>
 <span class="normal">1014</span>
 <span class="normal">1015</span>
 <span class="normal">1016</span>
@@ -5248,7 +5278,17 @@ and parent PIDs</p>
 <span class="normal">1094</span>
 <span class="normal">1095</span>
 <span class="normal">1096</span>
-<span class="normal">1097</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">open_pr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">trajectory</span><span class="p">,</span> <span class="n">_dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="normal">1097</span>
+<span class="normal">1098</span>
+<span class="normal">1099</span>
+<span class="normal">1100</span>
+<span class="normal">1101</span>
+<span class="normal">1102</span>
+<span class="normal">1103</span>
+<span class="normal">1104</span>
+<span class="normal">1105</span>
+<span class="normal">1106</span>
+<span class="normal">1107</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">open_pr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">trajectory</span><span class="p">,</span> <span class="n">_dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create PR to repository</span>
 
 <span class="sd">    Args:</span>
