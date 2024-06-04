@@ -239,6 +239,9 @@ class SWEEnv(gym.Env):
             logger.info("Trying to clone from non-mirror...")
             clone_url = f"https://{token_prefix}github.com/{self.record['repo']}.git"
         clone_method = keys_config.get("SWE_AGENT_CLONE_METHOD", default="sparse", choices=["sparse", "full"])
+        if len(self.data) > 1 or self.persistent:
+            msg = "Falling back to full cloning method due to multiple instances or persistent container"
+            logger.debug(msg)
         if clone_method == "full":
             self.communicate_with_handling(
                 input=f"git clone {clone_url} {self._repo_name}",
