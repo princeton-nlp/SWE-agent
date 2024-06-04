@@ -28,6 +28,7 @@ def test_env_args(
         repo_path=str(local_repo_path),
         image_name="sweagent/swe-agent:latest",
         container_name="test-container-this-is-a-random-string",
+        verbose=True,
     )
     yield test_env_args
     # Cleanup (after session ends)
