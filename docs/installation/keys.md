@@ -23,3 +23,6 @@ The following `keys.cfg` example shows you how the keys are named:
 ```
 
 See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) tokens.
+
+!!! tip "Models"
+    Some more information about the available models in our [usage FAQ](../usage/usage_faq.md).
