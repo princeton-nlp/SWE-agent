@@ -37,6 +37,7 @@ echo "  Missed it? Find more information at "
 echo "  https://princeton-nlp.github.io/SWE-agent/installation/codespaces#running-the-web-ui"
 echo "* Something went wrong? Please check "
 echo "  web_api.log for error messages!"
+echo "* See here for more information: https://princeton-nlp.github.io/SWE-agent/usage/web_ui/"
 
 cd ../../
 
