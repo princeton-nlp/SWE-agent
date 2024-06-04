@@ -1,11 +1,15 @@
-name: Release to dockerhub
+name: Release to dockerhub (nightly)
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 0 * * *'
+  push:
+    tags:
+      - 'v*.*.*'
 
 jobs:
-    login:
+    release:
       runs-on: ubuntu-latest
       steps:
         - name: Login to Docker Hub
