@@ -38,4 +38,12 @@ We also provide models for testing SWE-agent without spending any credits
 * `ReplayModel` takes a trajectory as input and "replays it"
 * `InstantEmptySubmitTestModel` will create an empty `reproduce.py` and then submit
 
+### Debugging
+
+* If you get `Error code: 404`, please check your configured keys, in particular
+  whether you set `OPENAI_API_BASE_URL` correctly (if you're not using it, the
+  line should be deleted or commented out).
+  Also see [this issue](https://github.com/princeton-nlp/SWE-agent/issues/467)
+  for reference.
+
 {% include-markdown "../_footer.md" %}
