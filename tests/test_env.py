@@ -11,6 +11,7 @@ import pytest
 import yaml
 
 import docker
+from sweagent import CONFIG_DIR
 from sweagent.environment.swe_env import EnvHook, EnvironmentArguments, SWEEnv
 
 
@@ -120,6 +121,16 @@ def test_execute_environment(tmp_path, test_env_args):
     test_env_args = dataclasses.replace(test_env_args, environment_setup=env_config_path)
     with swe_env_context(test_env_args) as env:
         env.reset()
+
+
+@pytest.mark.slow()
+def test_execute_environment_default(test_env_args):
+    env_config_paths = (CONFIG_DIR / "environment_setup").iterdir()
+    assert env_config_paths
+    for env_config_path in env_config_paths:
+        test_env_args = dataclasses.replace(test_env_args, environment_setup=env_config_path)
+        with swe_env_context(test_env_args) as env:
+            env.reset()
 
 
 @pytest.mark.slow()
