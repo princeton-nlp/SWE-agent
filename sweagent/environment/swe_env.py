@@ -863,6 +863,7 @@ class SWEEnv(gym.Env):
                     error_msg="Failed to create conda environment",
                     timeout_duration=LONG_TIMEOUT,
                 )
+                logger.debug("Created conda environment")
                 # Write reqs to requirements.txt in docker container
                 content_reqs = get_requirements(self.record)
                 copy_file_to_container(self.container_obj, content_reqs, PATH_TO_REQS)
@@ -876,6 +877,7 @@ class SWEEnv(gym.Env):
                     error_msg="Failed to install requirements.txt",
                     timeout_duration=LONG_TIMEOUT,
                 )
+                logger.debug("Installed requirements from requirements.txt")
                 self.communicate(f"rm {PATH_TO_REQS}")
             elif packages == "environment.yml":
                 # Write environment.yml to file
@@ -895,12 +897,14 @@ class SWEEnv(gym.Env):
                         error_msg="Failed to create conda environment",
                         timeout_duration=LONG_TIMEOUT,
                     )
+                    logger.debug("Created conda environment")
                     # Install packages
                     self.communicate_with_handling(
                         f"conda env update -f {PATH_TO_ENV_YML}",
                         error_msg="Failed to install environment.yml",
                         timeout_duration=LONG_TIMEOUT,
                     )
+                    logger.debug("Installed packages from environment.yml")
                 else:
                     # Create environment + install packages
                     self.communicate_with_handling(
@@ -908,6 +912,7 @@ class SWEEnv(gym.Env):
                         error_msg="Failed to create conda environment with environment.yml",
                         timeout_duration=LONG_TIMEOUT,
                     )
+                    logger.debug("Created conda environment with environment.yml")
                 self.communicate(f"rm {PATH_TO_ENV_YML}")
             else:
                 # Create environment + install packages
@@ -916,6 +921,7 @@ class SWEEnv(gym.Env):
                     error_msg="Failed to create conda environment",
                     timeout_duration=LONG_TIMEOUT,
                 )
+                logger.debug("Created conda environment and installed packages")
             # Install extra pip packages if specified
             if install_configs.get("pip_packages"):
                 self.communicate_with_handling(
@@ -923,6 +929,7 @@ class SWEEnv(gym.Env):
                     error_msg="Failed to install pip packages",
                     timeout_duration=LONG_TIMEOUT,
                 )
+                logger.debug("Installed extra pip dependencies")
 
         # Activate environment
         self.communicate_with_handling(f"conda activate {env_name}", error_msg="Failed to activate conda environment")
@@ -935,6 +942,7 @@ class SWEEnv(gym.Env):
                     pre_install_cmd,
                     error_msg="Pre-install commands failed to execute successfully",
                 )
+            logger.debug("Ran pre-install commands")
         self.logger.info(f"Installing {self._repo_name} at base commit...")
         if install_configs.get("install"):
             install_cmd = install_configs["install"]
@@ -943,6 +951,7 @@ class SWEEnv(gym.Env):
                 error_msg="Install command failed to execute successfully",
                 timeout_duration=LONG_TIMEOUT,
             )
+            logger.debug("Ran install command")
         if install_configs.get("post_install"):
             self.logger.info("Running post-install commands...")
             for post_install_cmd in install_configs["post_install"]:
@@ -950,6 +959,7 @@ class SWEEnv(gym.Env):
                     post_install_cmd,
                     error_msg="Post-install commands failed to execute successfully",
                 )
+            logger.debug("Ran post-install commands")
 
         logger.info("Installation step took %.2f seconds", time.perf_counter() - t0)
 
