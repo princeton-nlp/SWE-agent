@@ -57,7 +57,7 @@ def test_init_swe_env(test_env_args):
 
 @pytest.mark.slow()
 def test_init_swe_env_conservative_clone(test_env_args):
-    with mock.patch.dict("os.environ", {"SWE_AGENT_EXPERIMENTAL_CLONE": ""}):
+    with mock.patch.dict("os.environ", {"SWE_AGENT_CLONE_METHOD": "full"}):
         with swe_env_context(test_env_args) as env:
             env.reset()
 
@@ -142,7 +142,7 @@ def test_interrupt_close(test_env_args):
 
 @pytest.mark.slow()
 def test_communicate_old(test_env_args):
-    with mock.patch.dict("os.environ", {"SWE_AGENT_EXPERIMENTAL_COMMUNICATE": ""}):
+    with mock.patch.dict("os.environ", {"SWE_AGENT_COMMUNICATE_METHOD": "processes"}):
         with swe_env_context(test_env_args) as env:
             env.reset()
 
