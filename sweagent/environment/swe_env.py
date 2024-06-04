@@ -12,6 +12,7 @@ import time
 import traceback
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import gymnasium as gym
 import yaml
@@ -135,13 +136,13 @@ class SWEEnv(gym.Env):
         super().__init__()
         t0 = time.perf_counter()
         self.args = args
-        self.base_commit = None
-        self.communicate_output = None
-        self.container_name = args.container_name
+        self.base_commit: str | None = None
+        self.communicate_output: str | None = None
+        self.container_name: str | None = args.container_name
         self.install_environment = args.install_environment
         self.logger = logger
         self.persistent = args.container_name is not None
-        self.returncode = None
+        self.returncode: None | int = None
         if not self.args.verbose:
             self.logger.disabled = True
 
@@ -167,7 +168,7 @@ class SWEEnv(gym.Env):
             repo_path=self.args.repo_path,
         )
         #: Instance we're currently processing. Gets set in self.reset.
-        self.record = None
+        self.record: dict[str, Any] | None = None
         self.logger.info(f"💽 Loaded dataset from {self.data_path}")
 
         # Establish connection with execution container
@@ -178,7 +179,7 @@ class SWEEnv(gym.Env):
 
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
-        self.hooks = []
+        self.hooks: list[EnvHook] = []
 
         logger.debug("Environment initialization took %.2f seconds", time.perf_counter() - t0)
 
@@ -213,6 +214,7 @@ class SWEEnv(gym.Env):
         Returns:
             folder name of clone
         """
+        assert self.container_obj is not None
         assert self.record is not None  # mypy
         for hook in self.hooks:
             hook.on_copy_repo_started(repo_type=self.record["repo_type"], repo_path=self.record["repo"])
@@ -622,7 +624,7 @@ class SWEEnv(gym.Env):
         timeout_duration=25,
     ) -> str:
         """Experimental version of `_communicate`"""
-
+        assert self.container is not None
         command_suffix = f"echo {PROCESS_DONE_MARKER_START}$?{PROCESS_DONE_MARKER_END}\n"
         try:
             self.returncode = None
@@ -646,6 +648,7 @@ class SWEEnv(gym.Env):
         input: str,
         timeout_duration=25,
     ) -> str:
+        assert self.container is not None
         communicate_method = keys_config.get(
             "SWE_AGENT_COMMUNICATE_METHOD", default="end-marker", choices=["end-marker", "processes"]
         )
@@ -1002,6 +1005,8 @@ class SWEEnv(gym.Env):
         """
         Send interrupt signal to container and exhaust stdout buffer with a communicate call
         """
+        assert self.container is not None
+        assert self.container_obj is not None
         pids = self.get_pids()
         for pid, cmd in pids:
             if pid not in self.parent_pids and cmd != "ps":
