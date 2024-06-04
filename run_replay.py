@@ -117,7 +117,7 @@ def main(
 
 def get_args(args=None):
     parser = ArgumentParser(description=__doc__)
-    parser.add_argument("--traj_path", help="Path to trajectory to replay", default=None)
+    parser.add_argument("--traj_path", help="Path to trajectory to replay", required=True)
     parser.add_argument("--config_file", help="Path to template", required=True)
     parser.add_argument(
         "--data_path",
