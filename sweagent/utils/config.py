@@ -49,12 +49,26 @@ class Config:
         else:
             logger.error(f"keys.cfg not found in {PACKAGE_DIR}")
 
-    def get(self, key: str, default=None) -> Any:
+    def get(self, key: str, default=None, choices: list[Any] | None = None) -> Any:
+        """Get a key from environment variables or keys.cfg.
+
+        Args:
+            key: The key to retrieve.
+            default: The default value to return if the key is not found.
+            choices: If provided, the value must be one of the choices.
+        """
+
+        def check_choices(value):
+            if choices is not None and value not in choices:
+                msg = f"Value {value} for key {key} not in {choices}"
+                raise ValueError(msg)
+            return value
+
         if key in os.environ:
-            return os.environ[key]
+            return check_choices(os.environ[key])
         if self._keys_cfg is not None and key in self._keys_cfg:
-            return self._keys_cfg[key]
-        return default
+            return check_choices(self._keys_cfg[key])
+        return check_choices(default)
 
     def __getitem__(self, key: str) -> Any:
         if key in os.environ:

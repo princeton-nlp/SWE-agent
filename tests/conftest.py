@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 import json
-import os
 import sys
 from pathlib import Path
 
 import pytest
-
-import sweagent.environment.utils as env_utils
 
 # this is a hack and should be removed when we have a better solution
 _this_dir = Path(__file__).resolve().parent
@@ -15,9 +12,6 @@ root_dir = _this_dir.parent
 package_dir = root_dir / "sweagent"
 sys.path.insert(0, str(root_dir))
 sys.path.insert(1, str(package_dir))
-os.environ["SWE_AGENT_EXPERIMENTAL_COMMUNICATE"] = "1"
-os.environ["SWE_AGENT_EXPERIMENTAL_CLONE"] = "1"
-env_utils.DOCKER_START_UP_DELAY = 1
 
 
 @pytest.fixture()
