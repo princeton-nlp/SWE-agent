@@ -109,18 +109,21 @@ def test_execute_setup_script(tmp_path, test_env_args):
 
 
 @pytest.mark.slow()
-def test_execute_environment(tmp_path, test_env_args):
+def test_execute_environment(tmp_path, test_env_args, capsys):
     test_env = {
         "python": "3.6",
         "packages": "pytest",
         "pip_packages": ["tox"],
-        "install": "echo 'installing'",
+        "install": "python -m pip install --upgrade pip && python -m pip install -e .",
     }
     env_config_path = Path(tmp_path / "env_config.yml")
     env_config_path.write_text(yaml.dump(test_env))
     test_env_args = dataclasses.replace(test_env_args, environment_setup=env_config_path)
     with swe_env_context(test_env_args) as env:
         env.reset()
+    out = capsys.readouterr().out
+    print(out)
+    assert "Cloned python conda environment" not in out
 
 
 @pytest.mark.slow()
@@ -135,18 +138,22 @@ def test_execute_environment_default(test_env_args):
 
 
 @pytest.mark.slow()
-def test_execute_environment_clone_python(tmp_path, test_env_args):
+def test_execute_environment_clone_python(tmp_path, test_env_args, capsys):
     """This should clone the existing python 3.10 conda environment for speedup"""
     test_env = {
         "python": "3.10",
         "packages": "pytest",
         "pip_packages": ["tox"],
+        "install": "python -m pip install --upgrade pip && python -m pip install -e .",
     }
     env_config_path = Path(tmp_path / "env_config.yml")
     env_config_path.write_text(yaml.dump(test_env))
     test_env_args = dataclasses.replace(test_env_args, environment_setup=env_config_path)
     with swe_env_context(test_env_args) as env:
         env.reset()
+    out = capsys.readouterr().out
+    print(out)
+    assert "Cloned python conda environment" in out
 
 
 @pytest.mark.slow()

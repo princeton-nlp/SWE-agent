@@ -944,6 +944,7 @@ class SWEEnv(gym.Env):
                     )
                     logger.debug("Cloned python conda environment")
                 else:
+                    logger.debug(f"Could not find {python_env}, creating new environment")
                     self.communicate_with_handling(
                         f"conda create -n {env_name} python={install_configs['python']} -y",
                         error_msg="Failed to create conda environment",
