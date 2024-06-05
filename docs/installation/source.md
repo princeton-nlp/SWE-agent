@@ -14,9 +14,9 @@ Installation from source is the preferred way to set up SWE-agent on your machin
     ```
 4. Run
     ```
-    pip install --editable .
+    pip install --upgrade pip && pip install --editable .
     ```
-    at the repository root (as with any python setup, it's recommended to use [conda][] or [virtual environments][] to manage dependencies). Error about editable install? Please update pip[^1].
+    at the repository root (as with any python setup, it's recommended to use [conda][] or [virtual environments][] to manage dependencies).
 5. Run
     ```bash
     docker pull sweagent/swe-agent:latest
@@ -42,7 +42,5 @@ Alternatively, you can run `./setup.sh` to create your own `swe-agent` docker im
 
 [conda]: https://docs.conda.io/en/latest/
 [virtual environments]: https://realpython.com/python-virtual-environments-a-primer/
-
-[^1]: You can update `pip` with `pip install --upgrade pip`.
 
 {% include-markdown "../_footer.md" %}
