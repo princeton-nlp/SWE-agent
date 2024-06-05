@@ -507,6 +507,8 @@ class SWEEnv(gym.Env):
         elif self.persistent:
             # stopping is Podman specific, but doesn't hurt to include
             # https://stackoverflow.com/a/32428199/
+            # Sleeping to avoid https://github.com/princeton-nlp/SWE-agent/issues/496 ??
+            time.sleep(0.1)
             if self.container_obj.status not in {"paused", "exited", "dead", "stopping"}:
                 try:
                     self.container_obj.pause()
