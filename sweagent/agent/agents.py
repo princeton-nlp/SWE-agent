@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -23,10 +22,8 @@ from sweagent.agent.models import (
 )
 from sweagent.agent.parsing import FormatError, ParseFunction
 from sweagent.environment.swe_env import SWEEnv
-from sweagent.environment.utils import LOGGER_NAME
 from sweagent.utils.config import convert_paths_to_abspath
-
-logger = logging.getLogger(LOGGER_NAME)
+from sweagent.utils.log import get_logger
 
 
 @dataclass(frozen=True)
@@ -256,6 +253,7 @@ class Agent:
         self.history = []
         self.last_container_id = None
         self.hooks = []
+        self.logger = get_logger("agent")
 
     def add_hook(self, hook: AgentHook):
         """Add hook to agent"""
@@ -274,7 +272,7 @@ class Agent:
         self.instance_args = instance_args
 
         system_msg = self.config.system_template.format(**self.system_args)
-        logger.info(f"SYSTEM ({self.name})\n{system_msg}")
+        self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
 
         self.history: list[dict[str, Any]] = []
         self._append_history({"role": "system", "content": system_msg, "agent": self.name})
@@ -286,7 +284,7 @@ class Agent:
                     raise ValueError(msg)
 
                 # Load history
-                logger.info(f"DEMONSTRATION: {demonstration_path}")
+                self.logger.info(f"DEMONSTRATION: {demonstration_path}")
                 demo_history = json.loads(Path(demonstration_path).read_text())["history"]
                 demo_history = [
                     entry
@@ -296,7 +294,7 @@ class Agent:
 
                 if self.config.put_demos_in_history:
                     if self.config.demonstration_template is not None:
-                        logger.warning("Demonstration template is ignored for put_demos_in_history=True")
+                        self.logger.warning("Demonstration template is ignored for put_demos_in_history=True")
                     # Add demonstration to history directly as separate messages
                     for entry in demo_history:
                         if entry["role"] != "system":
@@ -493,8 +491,8 @@ class Agent:
             },
         )
 
-        logger.info(f"💭 THOUGHT ({self.name})\n{thought}")
-        logger.info(f"🎬 ACTION ({self.name})\n{action}")
+        self.logger.info(f"💭 THOUGHT ({self.name})\n{thought}")
+        self.logger.info(f"🎬 ACTION ({self.name})\n{action}")
 
         return thought, action, output
 
@@ -536,7 +534,7 @@ class Agent:
 
         message = "\n".join(messages)
 
-        logger.info(f"🤖 MODEL INPUT\n{message}")
+        self.logger.info(f"🤖 MODEL INPUT\n{message}")
         self._append_history({"role": "user", "content": message, "agent": self.name})
 
         for hook in self.hooks:
@@ -547,8 +545,8 @@ class Agent:
         """Ask the model to correct (without committing to persistent history) after a malformatted model output"""
         format_error_template = self.config.format_error_template
 
-        logger.warning(f"MALFORMED OUTPUT\n{output}")
-        logger.warning(f"FORMAT ERROR\n{format_error_template}")
+        self.logger.warning(f"MALFORMED OUTPUT\n{output}")
+        self.logger.warning(f"FORMAT ERROR\n{format_error_template}")
 
         temp_history = self.local_history + [
             {"role": "assistant", "content": output, "agent": self.name},
@@ -561,8 +559,8 @@ class Agent:
         name = action.strip().split()[0]
         blocklist_error_message = self.config.blocklist_error_template.format(name=name)
 
-        logger.warning(f"BLOCKLISTED OUTPUT\n{output}")
-        logger.warning(f"BLOCKLIST ERROR\n{blocklist_error_message}")
+        self.logger.warning(f"BLOCKLISTED OUTPUT\n{output}")
+        self.logger.warning(f"BLOCKLIST ERROR\n{blocklist_error_message}")
 
         temp_history = self.local_history + [
             {"role": "assistant", "content": output, "agent": self.name},
@@ -626,7 +624,7 @@ class Agent:
                 output = self.retry_after_blocklist_fail(output, action)
             else:
                 return thought, action, output
-        logger.warning(f"Malformat limit reached: \n{output}")
+        self.logger.warning(f"Malformat limit reached: \n{output}")
         return "Exit due to format error", "exit_format", output
 
     def forward_with_error_check(self, observation: str, state: str) -> tuple[str, str, str]:
@@ -643,20 +641,20 @@ class Agent:
         except KeyboardInterrupt:
             raise
         except RuntimeError as e:
-            logger.warning(f"Runtime error: {e}")
+            self.logger.warning(f"Runtime error: {e}")
             return (
                 f"Exit due to runtime error: {e}",
                 "exit_error",
                 f"exit due to runtime error: {e}",
             )
         except ContextWindowExceededError:
-            logger.warning("Context window exceeded")
+            self.logger.warning("Context window exceeded")
             return "Exit due to context window", "exit_context", "Exit due to context window"
         except CostLimitExceededError:
-            logger.warning("Cost limit exceeded")
+            self.logger.warning("Cost limit exceeded")
             return "Exit due to cost limit", "exit_cost", "Exit due to cost limit"
         except RetryError as e:
-            logger.warning(f"Retry error: {e}")
+            self.logger.warning(f"Retry error: {e}")
             return (
                 f"Exit due to retry error: {e}",
                 "exit_api",
@@ -685,7 +683,7 @@ class Agent:
         except KeyboardInterrupt:
             raise
         except Exception as e:
-            logger.warning("Failed to set environment variables")
+            self.logger.warning("Failed to set environment variables")
             raise e
         command_files = list()
         for file in self.config.command_files:
@@ -788,7 +786,7 @@ class Agent:
         assert self.config is not None
 
         if env.container_obj.id != self.last_container_id:
-            logger.info(f"Initializing agent settings for container {env.container_obj.id}")
+            self.logger.info(f"Initializing agent settings for container {env.container_obj.id}")
             self.init_environment_vars(env)
             self.last_container_id = env.container_obj.id
         # Re-initialize primary
@@ -801,7 +799,7 @@ class Agent:
         trajectory = []
         info = {}
         traj_log_path = traj_dir / (env.record["instance_id"] + ".traj")
-        logger.info("Trajectory will be saved to %s", traj_log_path)
+        self.logger.info("Trajectory will be saved to %s", traj_log_path)
         while not done:
             for hook in self.hooks:
                 hook.on_step_start()
@@ -850,7 +848,7 @@ class Agent:
         for hook in self.hooks:
             hook.on_run_done()
 
-        logger.info("Trajectory saved to %s", traj_log_path)
+        self.logger.info("Trajectory saved to %s", traj_log_path)
 
         if return_type == "info":
             return info
