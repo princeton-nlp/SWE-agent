@@ -133,7 +133,7 @@ def test_execute_environment_default(test_env_args):
         with swe_env_context(test_env_args) as env:
             env.reset()
 
-            
+
 @pytest.mark.slow()
 def test_execute_environment_clone_python(tmp_path, test_env_args):
     """This should clone the existing python 3.10 conda environment for speedup"""
