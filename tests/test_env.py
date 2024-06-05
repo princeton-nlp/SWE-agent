@@ -11,6 +11,7 @@ import pytest
 import yaml
 
 import docker
+import docker.errors
 from sweagent import CONFIG_DIR
 from sweagent.environment.swe_env import EnvHook, EnvironmentArguments, SWEEnv
 
@@ -34,8 +35,14 @@ def test_env_args(
     yield test_env_args
     # Cleanup (after session ends)
     client = docker.from_env()
-    container = client.containers.get(test_env_args.container_name)
-    container.remove(force=True)
+    # fixme (?): What happens if user changed container_name?
+    try:
+        container = client.containers.get(test_env_args.container_name)
+        container.remove(force=True)
+    except docker.errors.NotFound:
+        # Can happen if this fixture never runs because we only do a partial
+        # test run
+        pass
 
 
 @contextmanager
@@ -134,6 +141,8 @@ def test_execute_environment_default(test_env_args):
     # Make sure we don't use persistent container, else we might have already installed the conda environment
     test_env_args = dataclasses.replace(test_env_args, container_name=None)
     for env_config_path in env_config_paths:
+        if env_config_path.suffix not in [".yaml", ".yml", ".sh"]:
+            continue
         print(env_config_path)
         test_env_args = dataclasses.replace(test_env_args, environment_setup=env_config_path)
         with swe_env_context(test_env_args) as env:
