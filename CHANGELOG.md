@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.6.0 (2024-06-05)
+
+[All new commits](https://github.com/princeton-nlp/SWE-agent/compare/v0.5.0...v0.6.0)
+
+**We sped up SWE-agent by 2x** (timed with GPT4o). This is mostly due to faster communication with the running processes inside of the Docker container and other container setup & installation related improvements. Here are a few relevant PRs:
+
+* Switch to fast communicate and sparse clone by default by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/530
+* Change: Only wait 1s for docker to start by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/541
+* Feat: experimental sparse cloning by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/498
+* Enh: Start from clone of python conda environment for speedup by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/548 * Enh: Use uv for editable install by default by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/547
+
+### Improved
+
+* Improve scrolling behavior in web UI by @anishfish2 in https://github.com/princeton-nlp/SWE-agent/pull/420
+* Web UI: Render Markdown in agent feed messages. by @kwight in https://github.com/princeton-nlp/SWE-agent/pull/486
+* Enh: Remove redundant 'saved traj to X' messages by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/528
+* Allow to disable config dump to log by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/537
+* Resolve relative paths to demonstrations and commands by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/444
+
+### Fixed
+
+* Web UI: Remove -n option to wait by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/487
+* Web UI: Kill the Flask server on exit. by @kwight in https://github.com/princeton-nlp/SWE-agent/pull/479
+* Web UI: Avoid proxy errors on MacOS by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/506
+* Ensure container_name is reset for non-persistent containers by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/463
+* Fix: Do not allow persistent container with cache task imgs by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/551
+
+
 ## 0.5.0 (2024-05-28)
 
 [All new commits](https://github.com/princeton-nlp/SWE-agent/compare/v0.4.0...v0.5.0)
@@ -28,7 +56,7 @@ Secondly, @ollmer added a new flag `--cache_task_images` that will significantly
 * Do not use select if running on Windows by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/429
 * Use custom Config class to support env and keys.cfg (this allows passing keys as environment variables) by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/430
 
-### Fixes
+### Fixed
 
 * Web: Fix script_path input by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/334
 * Fix: Don't print patch msg for exit_cost patch by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/343
