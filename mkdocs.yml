@@ -70,6 +70,7 @@ nav:
     - "Command definitions": "config/commands.md"
     - "Demonstrations": "config/demonstrations.md"
     - "Environment variables": "config/env.md"
+    - "Docker images": "config/docker.md"
   - Development:
     - "Contribution guide": "dev/contribute.md"
     - "Formatting conflicts": "dev/formatting_conflicts.md"
