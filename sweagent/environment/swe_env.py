@@ -96,6 +96,9 @@ class EnvironmentArguments(FrozenSerializable):
                 "(probably doesn't make sense and takes excessive space)."
             )
             raise ValueError(msg)
+        if self.container_name is not None and self.container_name.strip() == "":
+            msg = "Set container_name to None if you don't want to use a persistent container."
+            raise ValueError(msg)
 
 
 class EnvHook:
@@ -936,6 +939,7 @@ class SWEEnv(gym.Env):
                     )
                     self.logger.debug("Cloned python conda environment")
                 else:
+                    self.logger.debug(f"Could not find {python_env}, creating new environment")
                     self.communicate_with_handling(
                         f"conda create -n {env_name} python={install_configs['python']} -y",
                         error_msg="Failed to create conda environment",

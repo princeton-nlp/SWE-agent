@@ -662,7 +662,7 @@ class Agent:
             )
         return self.check_format_and_requery(output)
 
-    def init_environment_vars(self, env):
+    def init_environment_vars(self, env: SWEEnv):
         self.set_environment_vars(env, self.config.env_variables)
 
     def set_environment_vars(self, env: SWEEnv, env_variables: dict[str, Any]) -> None:
