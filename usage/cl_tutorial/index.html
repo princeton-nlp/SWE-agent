@@ -901,6 +901,8 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
       
         
       
+        
+      
     
     
     
@@ -1004,6 +1006,27 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
   
   <span class="md-ellipsis">
     Environment variables
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config/docker/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Docker images
   </span>
   
 
@@ -1475,7 +1498,8 @@ changes to the package code take effect without having to reinstall the package.
 <li><code>install</code>: A custom command</li>
 <li><code>post_install</code>: A list of custom commands</li>
 </ul>
-<h2 id="speeding-up-swe-agent">Speeding up SWE-agent</h2>
+<p>If you have very specific requirements, that can <em>not</em> be installed via conda, you can <a href="../../config/docker/">create a custom Docker image</a>.</p>
+<h2 id="speeding-up-swe-agent">Speeding up SWE-agent <a name="speedup"></a></h2>
 <div class="admonition tip">
 <p class="admonition-title">Speed up in v0.6</p>
 <p>SWE-agent v0.6 (June 4th, 2024) introduced major speedups. Please upgrade to the latest version.
@@ -1484,7 +1508,7 @@ To make use of <a href="https://pypi.org/project/uv/"><code>uv pip</code></a>, m
 <p>After the Docker container has been started, the target repository cloned/copied, and the dependencies installed,
 almost all of the remaining runtime can be attributed to waiting for your LM provider to answer your API calls.</p>
 <p>Therefore, speeding SWE-agent is mostly about speeding up the setup stages.
-We currently offer two ways to cache the setup stages:</p>
+We currently offer three ways to cache the setup stages:</p>
 <ul>
 <li>By specifying <code>--container_name</code>, you run SWE-agent with a <em>persistent</em> Docker container: Rather than being deleted
   after every task, the Docker container will only be paused and can be resumed. Cloned repositories from previous
@@ -1495,6 +1519,8 @@ We currently offer two ways to cache the setup stages:</p>
   Unlike the persistent containers, there will be a new image <em>for almost every base commit</em> (that is, probabyl for every task
   when evaluating on a benchmark), which makes this only relevant when running over the same tasks more than once
   (for example when testing different agent configurations or LMs).</li>
+<li>You can also <a href="../../config/docker/">build your own Docker image</a> and ensure that all relevant conda environments and repositories
+  are available (check the logs from the previous runs to get the names for repositories and environments).</li>
 </ul>
 <div class="admonition tip">
 <p class="admonition-title">Confused about the two options?</p>
