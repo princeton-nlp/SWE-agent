@@ -72,7 +72,7 @@ def test_init_swe_env_non_persistent(test_env_args):
 
 @pytest.mark.slow()
 def test_init_swe_env_cached_task_image(test_env_args):
-    test_env_args = dataclasses.replace(test_env_args, cache_task_images=True)
+    test_env_args = dataclasses.replace(test_env_args, cache_task_images=True, container_name=None)
     start = time.perf_counter()
     with swe_env_context(test_env_args) as env:
         env.reset()
@@ -153,3 +153,12 @@ def test_env_with_hook(test_env_args):
     with swe_env_context(test_env_args) as env:
         env.add_hook(EnvHook())
         env.reset()
+
+
+def test_invalid_config():
+    with pytest.raises(ValueError, match=".*Not allowed.*"):
+        EnvironmentArguments(
+            data_path=".",
+            container_name="test",
+            cache_task_images=True,
+        )
