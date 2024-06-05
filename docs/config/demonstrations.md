@@ -27,5 +27,6 @@ Here's how you can make a demo from an existing trajectory file (like the one cr
 3. Edit the demo by hand to make it work for your particular use case and configuration.
 4. (Optional) Run `python run_replay.py --traj_path <path to demo> --config_file <path to config file>` to execute the actions of the demo, have the system generate the execution output, and ensure that it works as expected.
 5. Inspect the resulting trajectory to ensure it was executed correctly.
+6. Specify the path to your demonstration in your [config file](config.md)
 
 {% include-markdown "../_footer.md" %}

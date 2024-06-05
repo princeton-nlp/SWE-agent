@@ -21,6 +21,14 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
   --config_file config/default_from_url.yaml  --skip_existing=False
 ```
 
+<details>
+<summary>Output</summary>
+
+```json
+--8<-- "docs/usage/cl_tutorial_cmd_1_output.log"
+```
+</details>
+
 !!! tip "Windows"
     If you're using docker on Windows, use `-v //var/run/docker.sock:/var/run/docker.sock`
     (double slash) to escape it ([more information](https://stackoverflow.com/a/47229180/)).
