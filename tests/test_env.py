@@ -11,6 +11,7 @@ import pytest
 import yaml
 
 import docker
+from sweagent import CONFIG_DIR
 from sweagent.environment.swe_env import EnvHook, EnvironmentArguments, SWEEnv
 
 
@@ -123,7 +124,18 @@ def test_execute_environment(tmp_path, test_env_args):
 
 
 @pytest.mark.slow()
-def test_execute_environment_clone_python_uv(tmp_path, test_env_args):
+def test_execute_environment_default(test_env_args):
+    env_config_paths = (CONFIG_DIR / "environment_setup").iterdir()
+    assert env_config_paths
+    for env_config_path in env_config_paths:
+        print(env_config_path)
+        test_env_args = dataclasses.replace(test_env_args, environment_setup=env_config_path)
+        with swe_env_context(test_env_args) as env:
+            env.reset()
+
+
+@pytest.mark.slow()
+def test_execute_environment_clone_python(tmp_path, test_env_args):
     """This should clone the existing python 3.10 conda environment for speedup"""
     test_env = {
         "python": "3.10",

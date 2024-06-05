@@ -103,10 +103,20 @@ Let's take a look at the config file
 
 ```yaml
 python: '3.10'
-install: 'pip install -e .'
+install: 'uv pip install -e . || (python -m pip install --upgrade pip && python -m pip install -e .)'
 ```
 
-Here, `install` is an arbitrary command that is run, while `python` will be the python version that is setup with conda.
+Here, `install` is an arbitrary command that is run, while `python` will be the required python version.
+The default install command will create an [editable install][] of the python package.
+We first try to use [`uv pip`][uv] (a much faster implementation of `pip` in [rust][]), but fall back to "normal" pip if it fails.
+
+!!! tip "Editable installs"
+    Using [editable installs][editable install] is crucial for SWE-agent so that
+    changes to the package code take effect without having to reinstall the package.
+
+[editable install]: https://setuptools.pypa.io/en/latest/userguide/development_mode.html
+[uv]: https://pypi.org/project/uv/
+[rust]: https://www.rust-lang.org/
 
 The config file can have the following keys:
 
@@ -121,6 +131,7 @@ The config file can have the following keys:
 
 !!! tip "Speed up in v0.6"
     SWE-agent v0.6 (June 4th, 2024) introduced major speedups. Please upgrade to the latest version.
+    To make use of [`uv pip`][uv], make sure that you have the latest `sweagent/swe-agent:latest` image.
 
 After the Docker container has been started, the target repository cloned/copied, and the dependencies installed,
 almost all of the remaining runtime can be attributed to waiting for your LM provider to answer your API calls.
