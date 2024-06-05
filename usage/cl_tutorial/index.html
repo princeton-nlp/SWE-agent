@@ -1456,9 +1456,16 @@ URLs or paths to local repositories.</p>
 <p>This time, <code>pip install -e .</code> is called before SWE-agent gets to work, installing the package defined in the repository.</p>
 <p>Let's take a look at the config file</p>
 <div class="highlight"><pre><span></span><code><span class="nt">python</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;3.10&#39;</span>
-<span class="nt">install</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;pip</span><span class="nv"> </span><span class="s">install</span><span class="nv"> </span><span class="s">-e</span><span class="nv"> </span><span class="s">.&#39;</span>
+<span class="nt">install</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;uv</span><span class="nv"> </span><span class="s">pip</span><span class="nv"> </span><span class="s">install</span><span class="nv"> </span><span class="s">-e</span><span class="nv"> </span><span class="s">.</span><span class="nv"> </span><span class="s">||</span><span class="nv"> </span><span class="s">(python</span><span class="nv"> </span><span class="s">-m</span><span class="nv"> </span><span class="s">pip</span><span class="nv"> </span><span class="s">install</span><span class="nv"> </span><span class="s">--upgrade</span><span class="nv"> </span><span class="s">pip</span><span class="nv"> </span><span class="s">&amp;&amp;</span><span class="nv"> </span><span class="s">python</span><span class="nv"> </span><span class="s">-m</span><span class="nv"> </span><span class="s">pip</span><span class="nv"> </span><span class="s">install</span><span class="nv"> </span><span class="s">-e</span><span class="nv"> </span><span class="s">.)&#39;</span>
 </code></pre></div>
-<p>Here, <code>install</code> is an arbitrary command that is run, while <code>python</code> will be the python version that is setup with conda.</p>
+<p>Here, <code>install</code> is an arbitrary command that is run, while <code>python</code> will be the required python version.
+The default install command will create an <a href="https://setuptools.pypa.io/en/latest/userguide/development_mode.html">editable install</a> of the python package.
+We first try to use <a href="https://pypi.org/project/uv/"><code>uv pip</code></a> (a much faster implementation of <code>pip</code> in <a href="https://www.rust-lang.org/">rust</a>), but fall back to "normal" pip if it fails.</p>
+<div class="admonition tip">
+<p class="admonition-title">Editable installs</p>
+<p>Using <a href="https://setuptools.pypa.io/en/latest/userguide/development_mode.html">editable installs</a> is crucial for SWE-agent so that
+changes to the package code take effect without having to reinstall the package.</p>
+</div>
 <p>The config file can have the following keys:</p>
 <ul>
 <li><code>python</code>: Python version (will be set up via conda)</li>
@@ -1471,7 +1478,8 @@ URLs or paths to local repositories.</p>
 <h2 id="speeding-up-swe-agent">Speeding up SWE-agent</h2>
 <div class="admonition tip">
 <p class="admonition-title">Speed up in v0.6</p>
-<p>SWE-agent v0.6 (June 4th, 2024) introduced major speedups. Please upgrade to the latest version.</p>
+<p>SWE-agent v0.6 (June 4th, 2024) introduced major speedups. Please upgrade to the latest version.
+To make use of <a href="https://pypi.org/project/uv/"><code>uv pip</code></a>, make sure that you have the latest <code>sweagent/swe-agent:latest</code> image.</p>
 </div>
 <p>After the Docker container has been started, the target repository cloned/copied, and the dependencies installed,
 almost all of the remaining runtime can be attributed to waiting for your LM provider to answer your API calls.</p>
