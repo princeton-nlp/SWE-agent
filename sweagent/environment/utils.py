@@ -199,7 +199,7 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
         Output and exit code, both as strings (!)
 
     Raises:
-        `TimeoutError`: If the timeout duration is reached while reading from the subprocess.
+        TimeoutError: If the timeout duration is reached while reading from the subprocess.
     """
     buffer = b""
     fd = container.stdout.fileno()
@@ -452,7 +452,15 @@ class InvalidGithubURL(ValueError): ...
 
 
 def parse_gh_issue_url(issue_url: str) -> tuple[str, str, str]:
-    """Return owner, repo, issue number from issue url"""
+    """
+    Returns:
+        owner: Repo owner
+        repo: Repo name
+        issue number: Issue number as str
+
+    Raises:
+        InvalidGithubURL: If the URL is not a valid github issue URL
+    """
     match = GITHUB_ISSUE_URL_PATTERN.search(issue_url)
     if not match:
         msg = f"Invalid GitHub issue URL: {issue_url}"
@@ -463,7 +471,14 @@ def parse_gh_issue_url(issue_url: str) -> tuple[str, str, str]:
 
 
 def parse_gh_repo_url(repo_url: str) -> tuple[str, str]:
-    """Return owner, repo from repo url"""
+    """
+    Returns:
+        owner: Repo owner/org
+        repo: Repo name
+
+    Raises:
+        InvalidGithubURL: If the URL is not a valid github repo URL
+    """
     match = GITHUB_REPO_URL_PATTERN.search(repo_url)
     if not match:
         msg = f"Invalid GitHub issue URL: {repo_url}"

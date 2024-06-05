@@ -99,6 +99,12 @@ class EnvironmentArguments(FrozenSerializable):
     def __post_init__(self):
         if self.timeout is not None:
             logger.warning("The 'timeout' argument is deprecated and has no effect.")
+        if self.cache_task_images and self.container_name:
+            msg = (
+                "Not allowed to use persistent container with caching task images "
+                "(probably doesn't make sense and takes excessive space)."
+            )
+            raise ValueError(msg)
 
 
 class EnvHook:
@@ -501,6 +507,8 @@ class SWEEnv(gym.Env):
         elif self.persistent:
             # stopping is Podman specific, but doesn't hurt to include
             # https://stackoverflow.com/a/32428199/
+            # Sleeping to avoid https://github.com/princeton-nlp/SWE-agent/issues/496 ??
+            time.sleep(0.1)
             if self.container_obj.status not in {"paused", "exited", "dead", "stopping"}:
                 try:
                     self.container_obj.pause()
@@ -927,13 +935,31 @@ class SWEEnv(gym.Env):
                     logger.debug("Created conda environment with environment.yml")
                 self.communicate(f"rm {PATH_TO_ENV_YML}")
             else:
-                # Create environment + install packages
+                python_env = f"python{install_configs['python']}"
+                if self._conda_environment_exists(python_env):
+                    self.communicate_with_handling(
+                        f"conda create --name {env_name} --clone {python_env}",
+                        error_msg="Failed to clone conda environment",
+                        timeout_duration=LONG_TIMEOUT,
+                    )
+                    logger.debug("Cloned python conda environment")
+                else:
+                    self.communicate_with_handling(
+                        f"conda create -n {env_name} python={install_configs['python']} -y",
+                        error_msg="Failed to create conda environment",
+                        timeout_duration=LONG_TIMEOUT,
+                    )
                 self.communicate_with_handling(
-                    f"conda create -n {env_name} python={install_configs['python']} {packages} -y",
-                    error_msg="Failed to create conda environment",
-                    timeout_duration=LONG_TIMEOUT,
+                    f"conda activate {env_name}",
+                    error_msg="Failed to activate conda environment",
                 )
-                logger.debug("Created conda environment and installed packages")
+                if packages.strip():
+                    self.communicate_with_handling(
+                        f"conda install {packages} -y",
+                        error_msg="Failed to install packages",
+                        timeout_duration=LONG_TIMEOUT,
+                    )
+                    logger.debug("Installed conda packages")
             # Install extra pip packages if specified
             if install_configs.get("pip_packages"):
                 self.communicate_with_handling(

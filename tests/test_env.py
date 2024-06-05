@@ -73,7 +73,7 @@ def test_init_swe_env_non_persistent(test_env_args):
 
 @pytest.mark.slow()
 def test_init_swe_env_cached_task_image(test_env_args):
-    test_env_args = dataclasses.replace(test_env_args, cache_task_images=True)
+    test_env_args = dataclasses.replace(test_env_args, cache_task_images=True, container_name=None)
     start = time.perf_counter()
     with swe_env_context(test_env_args) as env:
         env.reset()
@@ -133,6 +133,21 @@ def test_execute_environment_default(test_env_args):
         with swe_env_context(test_env_args) as env:
             env.reset()
 
+            
+@pytest.mark.slow()
+def test_execute_environment_clone_python(tmp_path, test_env_args):
+    """This should clone the existing python 3.10 conda environment for speedup"""
+    test_env = {
+        "python": "3.10",
+        "packages": "pytest",
+        "pip_packages": ["tox"],
+    }
+    env_config_path = Path(tmp_path / "env_config.yml")
+    env_config_path.write_text(yaml.dump(test_env))
+    test_env_args = dataclasses.replace(test_env_args, environment_setup=env_config_path)
+    with swe_env_context(test_env_args) as env:
+        env.reset()
+
 
 @pytest.mark.slow()
 def test_open_pr(test_env_args):
@@ -165,3 +180,12 @@ def test_env_with_hook(test_env_args):
     with swe_env_context(test_env_args) as env:
         env.add_hook(EnvHook())
         env.reset()
+
+
+def test_invalid_config():
+    with pytest.raises(ValueError, match=".*Not allowed.*"):
+        EnvironmentArguments(
+            data_path=".",
+            container_name="test",
+            cache_task_images=True,
+        )
