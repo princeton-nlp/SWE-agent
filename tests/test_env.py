@@ -118,7 +118,8 @@ def test_execute_environment(tmp_path, test_env_args, capsys):
     }
     env_config_path = Path(tmp_path / "env_config.yml")
     env_config_path.write_text(yaml.dump(test_env))
-    test_env_args = dataclasses.replace(test_env_args, environment_setup=env_config_path)
+    # Make sure we don't use persistent container, else we might have already installed the conda environment
+    test_env_args = dataclasses.replace(test_env_args, environment_setup=env_config_path, container_name="")
     with swe_env_context(test_env_args) as env:
         env.reset()
     out = capsys.readouterr().out
@@ -130,6 +131,8 @@ def test_execute_environment(tmp_path, test_env_args, capsys):
 def test_execute_environment_default(test_env_args):
     env_config_paths = (CONFIG_DIR / "environment_setup").iterdir()
     assert env_config_paths
+    # Make sure we don't use persistent container, else we might have already installed the conda environment
+    test_env_args = dataclasses.replace(test_env_args, container_name="")
     for env_config_path in env_config_paths:
         print(env_config_path)
         test_env_args = dataclasses.replace(test_env_args, environment_setup=env_config_path)
@@ -148,7 +151,8 @@ def test_execute_environment_clone_python(tmp_path, test_env_args, capsys):
     }
     env_config_path = Path(tmp_path / "env_config.yml")
     env_config_path.write_text(yaml.dump(test_env))
-    test_env_args = dataclasses.replace(test_env_args, environment_setup=env_config_path)
+    # Make sure we don't use persistent container, else we might have already installed the conda environment
+    test_env_args = dataclasses.replace(test_env_args, environment_setup=env_config_path, container_name="")
     with swe_env_context(test_env_args) as env:
         env.reset()
     out = capsys.readouterr().out
