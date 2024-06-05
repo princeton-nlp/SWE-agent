@@ -127,7 +127,9 @@ The config file can have the following keys:
 * `install`: A custom command
 * `post_install`: A list of custom commands
 
-## Speeding up SWE-agent
+If you have very specific requirements, that can _not_ be installed via conda, you can [create a custom Docker image](../config/docker.md).
+
+## Speeding up SWE-agent <a name="speedup"></a>
 
 !!! tip "Speed up in v0.6"
     SWE-agent v0.6 (June 4th, 2024) introduced major speedups. Please upgrade to the latest version.
@@ -137,7 +139,7 @@ After the Docker container has been started, the target repository cloned/copied
 almost all of the remaining runtime can be attributed to waiting for your LM provider to answer your API calls.
 
 Therefore, speeding SWE-agent is mostly about speeding up the setup stages.
-We currently offer two ways to cache the setup stages:
+We currently offer three ways to cache the setup stages:
 
 * By specifying `--container_name`, you run SWE-agent with a _persistent_ Docker container: Rather than being deleted
   after every task, the Docker container will only be paused and can be resumed. Cloned repositories from previous
@@ -148,6 +150,8 @@ We currently offer two ways to cache the setup stages:
   Unlike the persistent containers, there will be a new image _for almost every base commit_ (that is, probabyl for every task
   when evaluating on a benchmark), which makes this only relevant when running over the same tasks more than once
   (for example when testing different agent configurations or LMs).
+* You can also [build your own Docker image](../config/docker.md) and ensure that all relevant conda environments and repositories
+  are available (check the logs from the previous runs to get the names for repositories and environments).
 
 !!! tip "Confused about the two options?"
     Probably `--container_name my_container_name` will do what you want.
