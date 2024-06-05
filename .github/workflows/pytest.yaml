@@ -47,8 +47,9 @@ jobs:
         run: |
             uv pip install --python ${Python_ROOT_DIR} '.[dev]'
       - name: Run pytest
-        run: |
-            pytest --cov
+        uses: sjvrijn/pytest-last-failed@v2
+        with:
+          pytest-args: '--exitfirst --cov'
       - name: Explicitly convert coverage to xml
         run: coverage xml
       - name: Upload coverage reports to Codecov
