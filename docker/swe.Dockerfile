@@ -37,7 +37,8 @@ RUN conda --version \
     && conda init bash \
     && conda config --append channels conda-forge
 
-# Cache py3.10
+# Cache python versions
+RUN conda create -y -n python3.9 python=3.9
 RUN conda create -y -n python3.10 python=3.10
 
 # Install python packages
