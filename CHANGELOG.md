@@ -9,7 +9,8 @@
 * Switch to fast communicate and sparse clone by default by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/530
 * Change: Only wait 1s for docker to start by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/541
 * Feat: experimental sparse cloning by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/498
-* Enh: Start from clone of python conda environment for speedup by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/548 * Enh: Use uv for editable install by default by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/547
+* Enh: Start from clone of python conda environment for speedup by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/548
+* Enh: Use uv for editable install by default by @klieret in https://github.com/princeton-nlp/SWE-agent/pull/547
 
 ### Improved
 
