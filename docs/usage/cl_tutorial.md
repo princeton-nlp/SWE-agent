@@ -103,12 +103,16 @@ Let's take a look at the config file
 
 ```yaml
 python: '3.10'
-install: 'uv pip install -e . || pip install -e .'
+install: 'uv pip install -e . || (python -m pip install --upgrade && python -m pip install -e .)'
 ```
 
 Here, `install` is an arbitrary command that is run, while `python` will be the required python version.
 The default install command will create an [editable install][] of the python package.
 We first try to use [`uv pip`][uv] (a much faster implementation of `pip` in [rust][]), but fall back to "normal" pip if it fails.
+
+!!! tip "Editable installs"
+    Using [editable installs][editable install] is crucial for SWE-agent so that
+    changes to the package code take effect without having to reinstall the package.
 
 [editable install]: https://setuptools.pypa.io/en/latest/userguide/development_mode.html
 [uv]: https://pypi.org/project/uv/
