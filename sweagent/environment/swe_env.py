@@ -105,6 +105,9 @@ class EnvironmentArguments(FrozenSerializable):
                 "(probably doesn't make sense and takes excessive space)."
             )
             raise ValueError(msg)
+        if self.container_name is not None and self.container_name.strip() == "":
+            msg = "Set container_name to None if you don't want to use a persistent container."
+            raise ValueError(msg)
 
 
 class EnvHook:
