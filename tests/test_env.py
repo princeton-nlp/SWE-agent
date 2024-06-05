@@ -129,7 +129,6 @@ def test_execute_environment_clone_python_uv(tmp_path, test_env_args):
         "python": "3.10",
         "packages": "pytest",
         "pip_packages": ["tox"],
-        "install": "pip install -e .",
     }
     env_config_path = Path(tmp_path / "env_config.yml")
     env_config_path.write_text(yaml.dump(test_env))
