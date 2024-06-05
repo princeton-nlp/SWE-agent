@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from sweagent import CONFIG_DIR
 from sweagent.utils.log import get_logger
 
@@ -64,6 +66,7 @@ python run.py --model_name "gpt4" --data_path "/path/to/my_issue.md" --repo_path
 
 
 logger = get_logger("swe-agent-run")
+logging.getLogger("simple_parsing").setLevel(logging.WARNING)
 
 
 @dataclass(frozen=True)

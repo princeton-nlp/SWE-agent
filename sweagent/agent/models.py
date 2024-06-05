@@ -22,7 +22,7 @@ from sweagent.agent.commands import Command
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
-logger = get_logger("models")
+logger = get_logger("api_models")
 
 
 @dataclass(frozen=True)
