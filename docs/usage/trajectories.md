@@ -2,6 +2,14 @@
 
 The [`trajectories/`](https://github.com/princeton-nlp/SWE-agent/tree/main/trajectories) folder is the default location that experiment results (invocations of [`run.py`](cl_tutorial.md)) will be written to.
 
+<details>
+<summary>Example trajectory</summary>
+
+```json
+--8<-- "trajectories/demonstrations/replay__marshmallow-code__marshmallow-1867__default__t-0.20__p-0.95__c-2.00__install-1___install_from_source/marshmallow-code__marshmallow-1867.traj"
+```
+</details>
+
 At a high level, the experiments folder is organized in the following manner:
 ```
 trajectories

@@ -75,6 +75,14 @@ In the [`config/`](https://github.com/princeton-nlp/SWE-agent/tree/main/config) 
     Relative paths in config files are resolved to the `SWE_AGENT_CONFIG_ROOT` environment variable (if set)
     or the SWE-agent repository root.
 
+<details>
+<summary><code>default_from_url.yaml</code></summary>
+
+```yaml
+--8<-- "config/default_from_url.yaml"
+```
+</details>
+
 ## How a Configuration File is Processed
 Some notes on processing that occurs on config fields when SWE-agent is run:
 

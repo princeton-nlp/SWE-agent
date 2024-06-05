@@ -18,6 +18,14 @@ python run.py \
   --per_instance_cost_limit 2.00
 ```
 
+<details>
+<summary>Output</summary>
+
+```json
+--8<-- "docs/usage/cl_tutorial_cmd_1_output.log"
+```
+</details>
+
 Here,
 
 * `--model_name` sets the language model that is used by SWE-agent (with `gpt4` being the default). More information on the available models in our [FAQ](usage_faq.md)
@@ -99,11 +107,10 @@ python run.py \
 
 This time, `pip install -e .` is called before SWE-agent gets to work, installing the package defined in the repository.
 
-Let's take a look at the config file
+Let's take a look at the `py310_default.yaml` config file
 
 ```yaml
-python: '3.10'
-install: 'uv pip install -e . || (python -m pip install --upgrade pip && python -m pip install -e .)'
+--8<-- "config/environment_setup/py310_default.yaml"
 ```
 
 Here, `install` is an arbitrary command that is run, while `python` will be the required python version.
