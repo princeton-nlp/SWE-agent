@@ -103,7 +103,7 @@ Let's take a look at the config file
 
 ```yaml
 python: '3.10'
-install: 'uv pip install -e . || (python -m pip install --upgrade && python -m pip install -e .)'
+install: 'uv pip install -e . || (python -m pip install --upgrade pip && python -m pip install -e .)'
 ```
 
 Here, `install` is an arbitrary command that is run, while `python` will be the required python version.
