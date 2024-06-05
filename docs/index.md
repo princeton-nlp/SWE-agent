@@ -54,5 +54,5 @@ SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix b
 
     Dig into SWE-agent's code and build your own agent!
 
-    [:octicons-arrow-right-24: Development information](usage/index.md)
+    [:octicons-arrow-right-24: Development information](reference/index.md)
 </div>
