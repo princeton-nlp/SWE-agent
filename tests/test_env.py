@@ -128,6 +128,7 @@ def test_execute_environment_default(test_env_args):
     env_config_paths = (CONFIG_DIR / "environment_setup").iterdir()
     assert env_config_paths
     for env_config_path in env_config_paths:
+        print(env_config_path)
         test_env_args = dataclasses.replace(test_env_args, environment_setup=env_config_path)
         with swe_env_context(test_env_args) as env:
             env.reset()
