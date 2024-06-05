@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import logging
 import os
 import platform
 import re
@@ -24,13 +23,13 @@ from git import InvalidGitRepositoryError, Repo
 import docker
 from docker.models.containers import Container
 from sweagent.utils.config import keys_config
+from sweagent.utils.log import get_logger
 
-LOGGER_NAME = "intercode"
 DOCKER_START_UP_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 1))
 GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
 GITHUB_REPO_URL_PATTERN = re.compile(r".*[/@]?github\.com\/([^/]+)\/([^/]+)")
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = get_logger("env_utils")
 
 
 def get_data_path_name(data_path: str) -> str:

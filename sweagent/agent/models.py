@@ -10,7 +10,6 @@ from pathlib import Path
 import together
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
 from openai import AzureOpenAI, BadRequestError, OpenAI
-from rich.logging import RichHandler
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
 from tenacity import (
     retry,
@@ -21,12 +20,9 @@ from tenacity import (
 
 from sweagent.agent.commands import Command
 from sweagent.utils.config import keys_config
+from sweagent.utils.log import get_logger
 
-logger = logging.getLogger("api_models")
-handler = RichHandler(show_time=False, show_path=False)
-handler.setLevel(logging.DEBUG)
-logger.addHandler(handler)
-logger.propagate = False
+logger = get_logger("api_models")
 
 
 @dataclass(frozen=True)
@@ -44,7 +40,7 @@ class ModelArguments(FrozenSerializable):
     # Sampling top-p
     top_p: float = 1.0
     # Path to replay file when using the replay model
-    replay_path: str = None
+    replay_path: str | None = None
     # Host URL when using Ollama model
     host_url: str = "localhost:11434"
 

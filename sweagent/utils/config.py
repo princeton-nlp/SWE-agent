@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import logging
 import os
 from pathlib import Path
 from typing import Any
 
 import config as config_file
 from sweagent import REPO_ROOT
+from sweagent.utils.log import get_logger
 
-logger = logging.getLogger("config")
+logger = get_logger("config")
 
 
 def convert_path_to_abspath(path: Path | str) -> Path:

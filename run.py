@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import logging
+
 from sweagent import CONFIG_DIR
+from sweagent.utils.log import get_logger
 
 try:
     import rich
@@ -11,7 +14,6 @@ except ModuleNotFoundError as e:
     )
     raise RuntimeError(msg) from e
 import json
-import logging
 import os
 import re
 import subprocess
@@ -32,7 +34,6 @@ from getpass import getuser
 from pathlib import Path
 
 import yaml
-from rich.logging import RichHandler
 from rich.markdown import Markdown
 from simple_parsing import parse
 from simple_parsing.helpers.flatten import FlattenedAccess
@@ -63,12 +64,8 @@ python run.py --model_name "gpt4" --data_path "/path/to/my_issue.md" --repo_path
 **For more information**: https://princeton-nlp.github.io/SWE-agent/usage/cl_tutorial/
 """
 
-handler = RichHandler(show_time=False, show_path=False)
-handler.setLevel(logging.DEBUG)
-logger = logging.getLogger("run_dev")
-logger.setLevel(logging.DEBUG)
-logger.addHandler(handler)
-logger.propagate = False
+
+logger = get_logger("swe-agent-run")
 logging.getLogger("simple_parsing").setLevel(logging.WARNING)
 
 
