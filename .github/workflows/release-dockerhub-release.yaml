@@ -17,6 +17,6 @@ jobs:
         - name: Checkout code
           uses: actions/checkout@v2
         - name: Get release name
-          run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+          run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/v}" >> $GITHUB_ENV
         - name: Run release script
           run: ./release_dockerhub.sh sweagent ${{ env.RELEASE_VERSION }}
