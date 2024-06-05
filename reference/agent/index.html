@@ -2792,7 +2792,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
             <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_format_and_requery</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">init_environment_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">init_environment_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="n">SWEEnv</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_environment_vars</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">env_variables</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">set_environment_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="n">SWEEnv</span><span class="p">,</span> <span class="n">env_variables</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
