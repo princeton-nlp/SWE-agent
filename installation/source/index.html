@@ -1260,9 +1260,9 @@ In the meantime, <a href="../docker/">use Docker</a>.</p>
     <div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/princeton-nlp/SWE-agent.git
 </code></pre></div></li>
 <li>Run
-    <div class="highlight"><pre><span></span><code>pip install --editable .
+    <div class="highlight"><pre><span></span><code>pip install --upgrade pip &amp;&amp; pip install --editable .
 </code></pre></div>
-    at the repository root (as with any python setup, it's recommended to use <a href="https://docs.conda.io/en/latest/">conda</a> or <a href="https://realpython.com/python-virtual-environments-a-primer/">virtual environments</a> to manage dependencies). Error about editable install? Please update pip<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup>.</li>
+    at the repository root (as with any python setup, it's recommended to use <a href="https://docs.conda.io/en/latest/">conda</a> or <a href="https://realpython.com/python-virtual-environments-a-primer/">virtual environments</a> to manage dependencies).</li>
 <li>Run
     <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>pull<span class="w"> </span>sweagent/swe-agent:latest
 </code></pre></div>
@@ -1300,15 +1300,6 @@ Please check our <a href="../../dev/contribute/">contribution guide</a>.</p>
 </ul>
 </div>
 <!-- END INCLUDE -->
-
-<div class="footnote">
-<hr />
-<ol>
-<li id="fn:1">
-<p>You can update <code>pip</code> with <code>pip install --upgrade pip</code>.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
-</li>
-</ol>
-</div>
 
 
 
