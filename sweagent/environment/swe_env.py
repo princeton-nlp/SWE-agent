@@ -162,7 +162,7 @@ class SWEEnv(gym.Env):
         except KeyboardInterrupt:
             raise
         except Exception as e:
-            logger.exception("Failed to get commit hash for this repo: %s", str(e))
+            self.logger.exception("Failed to get commit hash for this repo: %s", str(e))
 
         self._github_token: str = keys_config.get("GITHUB_TOKEN", "")  # type: ignore
 
@@ -246,12 +246,12 @@ class SWEEnv(gym.Env):
             self.logger.info(f"{self._repo_name} not found in container, cloning...")
             clone_url = f"https://{token_prefix}github.com/swe-bench/{self._repo_name}.git"
         else:
-            logger.info("Trying to clone from non-mirror...")
+            self.logger.info("Trying to clone from non-mirror...")
             clone_url = f"https://{token_prefix}github.com/{self.record['repo']}.git"
         clone_method = keys_config.get("SWE_AGENT_CLONE_METHOD", default="sparse", choices=["sparse", "full"])
         if len(self.data) > 1 or self.persistent:
             msg = "Falling back to full cloning method due to multiple instances or persistent container"
-            logger.debug(msg)
+            self.logger.debug(msg)
         if clone_method == "full":
             self.communicate_with_handling(
                 input=f"git clone {clone_url} {self._repo_name}",
@@ -311,17 +311,17 @@ class SWEEnv(gym.Env):
         if self.args.cache_task_images:
             cached_image = self._get_cached_task_image_name()
             if image_exists(cached_image):
-                logger.info(f"Restore environment from cached image {cached_image}")
+                self.logger.info(f"Restore environment from cached image {cached_image}")
                 self.close()  # stop current container
                 self._init_container(cached_image=cached_image)
                 self.communicate("export $(xargs </.env)")
                 envs = self.communicate("env")
-                logger.debug(f"Environment variables restored from the image:\n{envs}\n")
+                self.logger.debug(f"Environment variables restored from the image:\n{envs}\n")
                 if apply_test_patch:
                     self._apply_test_patch()
                 return None, info
             else:
-                logger.info(f"Cached image {cached_image} not found, rebuilding task environment...")
+                self.logger.info(f"Cached image {cached_image} not found, rebuilding task environment...")
 
         # Clone repository if not already cloned
         self.communicate(input="cd /")
@@ -380,11 +380,11 @@ class SWEEnv(gym.Env):
 
         if self.args.cache_task_images:
             envs = self.communicate("env")
-            logger.debug(f"Environment variables to save:\n{envs}\n")
+            self.logger.debug(f"Environment variables to save:\n{envs}\n")
             self.communicate("env >> /.env")
             assert self.container_obj is not None  # mypy
             self.container_obj.commit(cached_image)
-            logger.info(f"Container with environment {self.container_obj.id} cached as image {cached_image}")
+            self.logger.info(f"Container with environment {self.container_obj.id} cached as image {cached_image}")
 
         if apply_test_patch:
             self._apply_test_patch()
@@ -440,7 +440,7 @@ class SWEEnv(gym.Env):
                 info["exit_status"] = f"submitted ({action})"
                 info["submission"] = submission
                 observation = "Exited (autosubmitted)"
-                logger.info("Exiting with autosubmission")
+                self.logger.info("Exiting with autosubmission")
                 return observation, 0, True, info
             except KeyboardInterrupt:
                 raise
@@ -460,24 +460,24 @@ class SWEEnv(gym.Env):
             except RuntimeError as e:
                 observation += "\nEXECUTION TIMED OUT AND INTERRUPT FAILED. RESTARTING PROCESS."
                 info["exit_status"] = "early_exit"
-                logger.warning(f"Failed to interrupt container: {e}\nRESTARTING PROCESS.")
+                self.logger.warning(f"Failed to interrupt container: {e}\nRESTARTING PROCESS.")
                 self.reset_container()
                 return observation, 0, True, info
         except RuntimeError as e:
             observation += "\nCOMMAND FAILED TO EXECUTE. RESTARTING PROCESS."
             info["exit_status"] = "early_exit"
-            logger.warning(f"Failed to execute command: {e}\nRESTARTING PROCESS.")
+            self.logger.warning(f"Failed to execute command: {e}\nRESTARTING PROCESS.")
             self.reset_container()
             return observation, 0, True, info
         except BrokenPipeError as e:
             observation += "\nBROKEN PIPE ERROR. RESTARTING PROCESS."
             info["exit_status"] = "early_exit"
-            logger.error(f"Broken pipe error: {e}\nRESTARTING PROCESS.")
+            self.logger.error(f"Broken pipe error: {e}\nRESTARTING PROCESS.")
             self.reset_container()
             return observation, 0, True, info
         except Exception:
             observation += "\nEXECUTION FAILED OR COMMAND MALFORMED"
-            logger.exception("Unknown exception")
+            self.logger.exception("Unknown exception")
 
         # Record submission and end episode if `submit` keyword found
         submission = self.get_submission(observation)
@@ -499,7 +499,7 @@ class SWEEnv(gym.Env):
         except KeyboardInterrupt:
             raise
         except:
-            logger.warning("Errors when exiting container", exc_info=True)
+            self.logger.warning("Errors when exiting container", exc_info=True)
         assert self.container is not None  # mypy
         self.container.terminate()
         if self.container_obj is None:
