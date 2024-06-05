@@ -1278,7 +1278,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 </ol>
 <p>There are three steps involved:</p>
 <ol>
-<li>Modify the <a href="https://github.com/princeton-nlp/SWE-agent/blob/main/docker/swe.Dockerfile"><code>swe.Dockerfile</code> Dockerfile</a>.
+<li>Modify the <a href="https://github.com/princeton-nlp/SWE-agent/blob/main/docker/swe.Dockerfile"><code>swe.Dockerfile</code> Dockerfile</a> (also shown below).
    We provide some extended explanation of the Dockerfile <a href="https://github.com/princeton-nlp/SWE-agent/blob/main/docker/README.md">here</a>.</li>
 <li>Build the image. One way is to simply run <code>./setup.sh</code>. Alternatively, especially if you want to change the default tag (<code>sweagent/swe-agent:latest</code>), run
    <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span><span class="s2">&quot;YOUR TAG HERE&quot;</span><span class="w"> </span>-f<span class="w"> </span>docker/swe.Dockerfile<span class="w"> </span><span class="se">\</span>
@@ -1286,6 +1286,58 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 </code></pre></div></li>
 <li>Make sure you use the new image by passing the <code>--image_name</code> flag to <code>run.py</code>.</li>
 </ol>
+<p>Default Dockerfile:</p>
+<div class="highlight"><pre><span></span><code><span class="k">FROM</span><span class="w"> </span><span class="s">ubuntu:jammy</span>
+
+<span class="k">ARG</span><span class="w"> </span>TARGETARCH
+
+<span class="c"># Install third party tools</span>
+<span class="k">RUN</span><span class="w"> </span>apt-get<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>bash<span class="w"> </span>gcc<span class="w"> </span>git<span class="w"> </span>jq<span class="w"> </span>wget<span class="w"> </span>g++<span class="w"> </span>make<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>apt-get<span class="w"> </span>clean<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>rm<span class="w"> </span>-rf<span class="w"> </span>/var/lib/apt/lists/*
+
+<span class="c"># Initialize git</span>
+<span class="k">RUN</span><span class="w"> </span>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.email<span class="w"> </span><span class="s2">&quot;sweagent@pnlp.org&quot;</span>
+<span class="k">RUN</span><span class="w"> </span>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.name<span class="w"> </span><span class="s2">&quot;sweagent&quot;</span>
+
+<span class="c"># Environment variables</span>
+<span class="k">ENV</span><span class="w"> </span><span class="nv">ROOT</span><span class="o">=</span><span class="s1">&#39;/dev/&#39;</span>
+<span class="k">RUN</span><span class="w"> </span>prompt<span class="o">()</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot; &gt; &quot;</span><span class="p">;</span><span class="w"> </span><span class="o">}</span><span class="p">;</span>
+<span class="k">ENV</span><span class="w"> </span><span class="nv">PS1</span><span class="o">=</span><span class="s2">&quot;&gt; &quot;</span>
+
+<span class="c"># Create file for tracking edits, test patch</span>
+<span class="k">RUN</span><span class="w"> </span>touch<span class="w"> </span>/root/files_to_edit.txt
+<span class="k">RUN</span><span class="w"> </span>touch<span class="w"> </span>/root/test.patch
+
+<span class="c"># add ls file indicator</span>
+<span class="k">RUN</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;alias ls=&#39;ls -F&#39;&quot;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/root/.bashrc
+
+<span class="c"># Install miniconda</span>
+<span class="k">ENV</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;/root/miniconda3/bin:</span><span class="si">${</span><span class="nv">PATH</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="k">ARG</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;/root/miniconda3/bin:</span><span class="si">${</span><span class="nv">PATH</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="k">COPY</span><span class="w"> </span>docker/getconda.sh<span class="w"> </span>.
+<span class="k">RUN</span><span class="w"> </span>bash<span class="w"> </span>getconda.sh<span class="w"> </span><span class="si">${</span><span class="nv">TARGETARCH</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="o">&amp;&amp;</span><span class="w"> </span>rm<span class="w"> </span>getconda.sh<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="o">&amp;&amp;</span><span class="w"> </span>mkdir<span class="w"> </span>/root/.conda<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="o">&amp;&amp;</span><span class="w"> </span>bash<span class="w"> </span>miniconda.sh<span class="w"> </span>-b<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="o">&amp;&amp;</span><span class="w"> </span>rm<span class="w"> </span>-f<span class="w"> </span>miniconda.sh
+<span class="k">RUN</span><span class="w"> </span>conda<span class="w"> </span>--version<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="o">&amp;&amp;</span><span class="w"> </span>conda<span class="w"> </span>init<span class="w"> </span>bash<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="o">&amp;&amp;</span><span class="w"> </span>conda<span class="w"> </span>config<span class="w"> </span>--append<span class="w"> </span>channels<span class="w"> </span>conda-forge
+
+<span class="c"># Cache python versions</span>
+<span class="k">RUN</span><span class="w"> </span>conda<span class="w"> </span>create<span class="w"> </span>-y<span class="w"> </span>-n<span class="w"> </span>python3.9<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.9
+<span class="k">RUN</span><span class="w"> </span>conda<span class="w"> </span>create<span class="w"> </span>-y<span class="w"> </span>-n<span class="w"> </span>python3.10<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.10
+
+<span class="c"># Install python packages</span>
+<span class="k">COPY</span><span class="w"> </span>docker/requirements.txt<span class="w"> </span>/root/requirements.txt
+<span class="k">RUN</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>/root/requirements.txt
+
+<span class="k">WORKDIR</span><span class="w"> </span><span class="s">/</span>
+
+<span class="k">CMD</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;/bin/bash&quot;</span><span class="p">]</span>
+</code></pre></div>
 
 
 

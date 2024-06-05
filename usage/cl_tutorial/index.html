@@ -1411,6 +1411,13 @@ Let's start with an absolutely trivial example and solve an issue about a simple
 <span class="w">  </span>--config_file<span class="w"> </span>config/default_from_url.yaml<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--per_instance_cost_limit<span class="w"> </span><span class="m">2</span>.00
 </code></pre></div>
+<details>
+<summary>Output</summary>
+
+<div class="highlight"><pre><span></span><code>
+</code></pre></div>
+</details>
+
 <p>Here,</p>
 <ul>
 <li><code>--model_name</code> sets the language model that is used by SWE-agent (with <code>gpt4</code> being the default). More information on the available models in our <a href="../usage_faq/">FAQ</a></li>
@@ -1477,8 +1484,10 @@ URLs or paths to local repositories.</p>
 <span class="hll"><span class="w">  </span>--environment_setup<span class="w"> </span>config/environment_setup/py310_default.yaml
 </span></code></pre></div>
 <p>This time, <code>pip install -e .</code> is called before SWE-agent gets to work, installing the package defined in the repository.</p>
-<p>Let's take a look at the config file</p>
+<p>Let's take a look at the <code>py310_default.yaml</code> config file</p>
 <div class="highlight"><pre><span></span><code><span class="nt">python</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;3.10&#39;</span>
+<span class="c1"># Use uv pip for speedup, but fallback to classic pip if we fail</span>
+<span class="c1"># Upgrade pip to avoid https://stackoverflow.com/a/73779542/</span>
 <span class="nt">install</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;uv</span><span class="nv"> </span><span class="s">pip</span><span class="nv"> </span><span class="s">install</span><span class="nv"> </span><span class="s">-e</span><span class="nv"> </span><span class="s">.</span><span class="nv"> </span><span class="s">||</span><span class="nv"> </span><span class="s">(python</span><span class="nv"> </span><span class="s">-m</span><span class="nv"> </span><span class="s">pip</span><span class="nv"> </span><span class="s">install</span><span class="nv"> </span><span class="s">--upgrade</span><span class="nv"> </span><span class="s">pip</span><span class="nv"> </span><span class="s">&amp;&amp;</span><span class="nv"> </span><span class="s">python</span><span class="nv"> </span><span class="s">-m</span><span class="nv"> </span><span class="s">pip</span><span class="nv"> </span><span class="s">install</span><span class="nv"> </span><span class="s">-e</span><span class="nv"> </span><span class="s">.)&#39;</span>
 </code></pre></div>
 <p>Here, <code>install</code> is an arbitrary command that is run, while <code>python</code> will be the required python version.
