@@ -123,6 +123,21 @@ def test_execute_environment(tmp_path, test_env_args):
 
 
 @pytest.mark.slow()
+def test_execute_environment_clone_python_uv(tmp_path, test_env_args):
+    """This should clone the existing python 3.10 conda environment for speedup"""
+    test_env = {
+        "python": "3.10",
+        "packages": "pytest",
+        "pip_packages": ["tox"],
+    }
+    env_config_path = Path(tmp_path / "env_config.yml")
+    env_config_path.write_text(yaml.dump(test_env))
+    test_env_args = dataclasses.replace(test_env_args, environment_setup=env_config_path)
+    with swe_env_context(test_env_args) as env:
+        env.reset()
+
+
+@pytest.mark.slow()
 def test_open_pr(test_env_args):
     test_env_args = dataclasses.replace(
         test_env_args,

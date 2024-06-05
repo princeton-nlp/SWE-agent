@@ -935,13 +935,31 @@ class SWEEnv(gym.Env):
                     logger.debug("Created conda environment with environment.yml")
                 self.communicate(f"rm {PATH_TO_ENV_YML}")
             else:
-                # Create environment + install packages
+                python_env = f"python{install_configs['python']}"
+                if self._conda_environment_exists(python_env):
+                    self.communicate_with_handling(
+                        f"conda create --name {env_name} --clone {python_env}",
+                        error_msg="Failed to clone conda environment",
+                        timeout_duration=LONG_TIMEOUT,
+                    )
+                    logger.debug("Cloned python conda environment")
+                else:
+                    self.communicate_with_handling(
+                        f"conda create -n {env_name} python={install_configs['python']} -y",
+                        error_msg="Failed to create conda environment",
+                        timeout_duration=LONG_TIMEOUT,
+                    )
                 self.communicate_with_handling(
-                    f"conda create -n {env_name} python={install_configs['python']} {packages} -y",
-                    error_msg="Failed to create conda environment",
-                    timeout_duration=LONG_TIMEOUT,
+                    f"conda activate {env_name}",
+                    error_msg="Failed to activate conda environment",
                 )
-                logger.debug("Created conda environment and installed packages")
+                if packages.strip():
+                    self.communicate_with_handling(
+                        f"conda install {packages} -y",
+                        error_msg="Failed to install packages",
+                        timeout_duration=LONG_TIMEOUT,
+                    )
+                    logger.debug("Installed conda packages")
             # Install extra pip packages if specified
             if install_configs.get("pip_packages"):
                 self.communicate_with_handling(
