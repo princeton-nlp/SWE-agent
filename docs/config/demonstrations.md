@@ -8,12 +8,18 @@ Demo (yaml) files are stored in the `make_demos/demos` directory by default and 
 
 ## Manually creating a custom trajectory <a name="manual"></a>
 
-You can manually generate a trajectory by running the agent with `--model_name human` (which allows you to enter the commands that would usually be suggested by the LM) and then convert that trajectory into a demonstration as above.
-To edit text in `human` mode:
+You can manually generate a trajectory by running the agent with `--model_name human_thought`. 
+This lets you input, at each turn, the thought (ending with END_THOUGHT) and then the action (a single command).
+
+You should then convert that trajectory into a demonstration as shown below. 
+
+To edit text in `human_thought` mode:
 
 1. Run the command `edit edit_start_line:edit_end_line`
 2. Write the text you want to insert. Feel free to write the text across multiple lines.
 3. Press `return` then write `end_of_edit` and then press `return` again to submit the edit.
+
+If you would like to run `human_thought` mode without having to type in a thought at each turn (for debugging for example), use  `--model_name human`.
 
 ## Converting an existing trajectory into a demonstration
 
