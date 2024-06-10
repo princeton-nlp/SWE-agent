@@ -1374,6 +1374,13 @@ To see examples of command implementations, open the <code>.sh</code> and <code>
 </ul>
 </li>
 <li>To show effects of the command, print to standard output (i.e. <code>echo</code>). SWE-agent is implemented such that it does not look for a return value from these commands.</li>
+<li>The following environment variables are used to persist information between commands:<ul>
+<li><code>CURRENT_FILE</code>: File that is currently open</li>
+<li><code>CURRENT_LINE</code>: First line of the window that is currently being shown/edited</li>
+<li><code>WINDOW</code> (start line to end line): Part of the file that is currently shown/edited</li>
+<li><code>START_CURSOR</code>, <code>END_CURSOR</code>: Only used for the <code>cursors_*</code> commands. </li>
+</ul>
+</li>
 </ul>
 <h2 id="displaying-the-command-to-swe-agent">Displaying the Command to SWE-agent</h2>
 <p>After you define a command, there are a small set of additional steps to making it available for the agent to use.</p>
