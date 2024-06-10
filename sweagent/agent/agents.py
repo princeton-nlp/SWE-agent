@@ -266,7 +266,12 @@ class Agent:
         self.history.append(item)
 
     def setup(self, instance_args, init_model_stats=None) -> None:
-        """Setup the agent for a new instance."""
+        """Setup the agent for a new instance. This includes
+        formatting the system message and adding demonstrations to the history.
+
+        Args:
+            instance_args: Arguments for the instance
+        """
         assert self.config is not None  # mypy
         self.model.reset_stats(init_model_stats)
         self.instance_args = instance_args

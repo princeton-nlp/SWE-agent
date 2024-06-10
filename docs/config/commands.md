@@ -35,7 +35,7 @@ Every command subscribes to the following skeleton code.
     * `CURRENT_FILE`: File that is currently open
     * `CURRENT_LINE`: First line of the window that is currently being shown/edited
     * `WINDOW` (start line to end line): Part of the file that is currently shown/edited
-    * `START_CURSOR`, `END_CURSOR`: Only used for the `cursors_*` commands. 
+    * `START_CURSOR`, `END_CURSOR`: Only used for the `cursors_*` commands.
 
 ## Displaying the Command to SWE-agent
 After you define a command, there are a small set of additional steps to making it available for the agent to use.
