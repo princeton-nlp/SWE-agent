@@ -3,10 +3,12 @@
 # bash strict mode
 set -euo pipefail
 
-echo "Setting up docker image for swe-agent..."
+export DOCKER_BUILDKIT=1
+
 # TARGETARCH should be set automatically on most (but not all) systems, see
 # https://github.com/princeton-nlp/SWE-agent/issues/245
-docker build -t sweagent/swe-agent:local -f docker/swe.Dockerfile --build-arg TARGETARCH=$(uname -m) .
+# echo "Setting up docker image for swe-agent..."
+# docker build -t sweagent/swe-agent:local -f docker/swe.Dockerfile --build-arg TARGETARCH=$(uname -m) .
 
 echo "Setting up docker image for evaluation..."
 docker build -t sweagent/swe-eval:local -f docker/eval.Dockerfile .

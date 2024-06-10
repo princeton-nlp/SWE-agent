@@ -12,10 +12,10 @@ COPY evaluation/pyproject.toml evaluation/poetry.lock /evaluation/
 WORKDIR /evaluation
 
 # Export dependencies to requirements.txt
-RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
+RUN poetry export -f requirements.txt --output requirements.txt --without-hashes --dev
 COPY SWE-bench /SWE-bench
 
 # Install dependencies using pip into the conda environment
 RUN pip install -r requirements.txt
 
-COPY evaluation/evaluation.py /evaluation.py
+COPY evaluation/evaluation.py evaluation/evaluate_all.py evaluation/schema.py /

@@ -187,6 +187,7 @@ def main(
     with open(path_results, "w") as f:
         json.dump(report, f, indent=2)
     print(f"- Wrote summary of run to {path_results}")
+    return report
 
 
 if __name__ == "__main__":
