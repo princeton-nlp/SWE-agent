@@ -1,0 +1,20 @@
+name: swe-bench
+dependencies:
+  - python=3.9
+  - pip
+  - pip:
+    - datasets
+    - tenacity
+    - anthropic
+    - openai
+    - tiktoken
+    - beautifulsoup4
+    - chardet
+    - ghapi
+    - GitPython
+    - python-dotenv
+    - requests
+    - rich
+    - transformers>=4.34.0
+    - tqdm
+  - conda-forge::gh
