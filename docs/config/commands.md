@@ -31,6 +31,11 @@ Every command subscribes to the following skeleton code.
     * For instance, in `config/commands/default.sh`, you'll see we define the `CURRENT_LINE` variable for the file viewer. This variable is modified across multiple commands, including `open`, `goto`, `scroll_up`, `scroll_down`, and `edit`.
     * You can also leverage third party libraries (check out how we do linting enabled `edit` in `config/commands/edit_linting.sh`).
 * To show effects of the command, print to standard output (i.e. `echo`). SWE-agent is implemented such that it does not look for a return value from these commands.
+* The following environment variables are used to persist information between commands:
+    * `CURRENT_FILE`: File that is currently open
+    * `CURRENT_LINE`: First line of the window that is currently being shown/edited
+    * `WINDOW` (start line to end line): Part of the file that is currently shown/edited
+    * `START_CURSOR`, `END_CURSOR`: Only used for the `cursors_*` commands. 
 
 ## Displaying the Command to SWE-agent
 After you define a command, there are a small set of additional steps to making it available for the agent to use.
