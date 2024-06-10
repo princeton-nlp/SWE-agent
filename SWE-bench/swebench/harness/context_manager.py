@@ -344,7 +344,7 @@ class TestbedContextManager:
                         f"{exec_cmd} create -n {env_name} python={install['python']} -y"
                     )
                     self.log.write(f"Creating environment {env_name}")
-                    self.exec(cmd.split(" "))
+                    self.exec(cmd.split())
 
                     # Install dependencies
                     path_to_reqs = get_requirements(setup_ref_instance, self.testbed)
@@ -363,12 +363,12 @@ class TestbedContextManager:
                         # `conda create` based installation
                         cmd = f"{exec_cmd} create -c conda-forge -n {env_name} python={install['python']} -y"
                         self.log.write(f"Creating environment {env_name}")
-                        self.exec(cmd.split(" "))
+                        self.exec(cmd.split())
 
                         # Install dependencies
                         cmd = f"{exec_cmd} env update -f {path_to_reqs}"
                         self.log.write(f"Installing dependencies for {env_name}; Command: {cmd}")
-                        self.exec(cmd.split(" "))
+                        self.exec(cmd.split())
                     else:
                         # Create environment from yml
                         path_to_reqs = get_environment_yml(
@@ -380,7 +380,7 @@ class TestbedContextManager:
                         # `conda env create` based installation
                         cmd = f"{exec_cmd} env create --file {path_to_reqs}"
                         self.log.write(f"Creating environment {env_name}")
-                        self.exec(cmd.split(" "))
+                        self.exec(cmd.split())
 
                     # Remove environment.yml
                     os.remove(path_to_reqs)
@@ -388,7 +388,7 @@ class TestbedContextManager:
                     # Create environment + install dependencies
                     cmd = f"{exec_cmd} create -n {env_name} python={install['python']} {pkgs} -y"
                     self.log.write(f"Creating environment {env_name}")
-                    self.exec(cmd.split(" "))
+                    self.exec(cmd.split())
                 
                 arch = platform.machine()
                 arch_specific_packages = install.get("arch_specific_packages", {}).get(arch, "")
