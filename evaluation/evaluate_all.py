@@ -4,11 +4,12 @@ import pathlib
 import evaluation
 import schema
 import pandas as pd
-import rich
-from rich import console
 import uuid
 
 import tqdm
+
+import rich
+from rich import console
 
 _LOG_DIR = pathlib.Path("/log_dir/")
 _TESTBED = pathlib.Path("/testbed/")
@@ -74,17 +75,21 @@ index 0000000..e69de29
         null_patch_report = run_evaluation(patch=no_op_patch)
         if not null_patch_report.resolved:
             _CONSOLE.print(
-                f"[bold]👍 Null patch did not resolve instance.[/bold]")
+                f"[bold green]👍 Null patch did not resolve instance.[/bold green]"
+            )
             failing_null_patches += 1
 
         gold_patch_report = run_evaluation(patch=data_point.patch)
         if gold_patch_report.resolved:
-            _CONSOLE.print(f"[bold]👍 Gold patch did resolve instance.[/bold]")
+            _CONSOLE.print(
+                f"[bold green]👍 Gold patch did resolve instance.[/bold green]")
             succeeding_gold_patches += 1
+
         _CONSOLE.print(
-            f"[bold]{failing_null_patches}/{i+1} null patches failed[/bold]")
+            f"[bold yellow]{failing_null_patches}/{i+1} null patches failed[/bold yellow]"
+        )
         _CONSOLE.print(
-            f"[bold]{succeeding_gold_patches}/{i+1} gold patches succeeded[/bold]"
+            f"[bold yellow]{succeeding_gold_patches}/{i+1} gold patches succeeded[/bold yellow]"
         )
 
 
@@ -97,4 +102,4 @@ if __name__ == "__main__":
         required=True,
     )
     args = parser.parse_args()
-    main(dataset_path=pathlib.Path(args.dataset_path), )
+    main(dataset_path=pathlib.Path(args.dataset_path))
