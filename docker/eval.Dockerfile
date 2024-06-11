@@ -18,4 +18,8 @@ COPY SWE-bench /SWE-bench
 # Install dependencies using pip into the conda environment
 RUN pip install -r requirements.txt
 
+<<<<<<< Updated upstream
 COPY evaluation/evaluation.py evaluation/evaluate_all.py evaluation/schema.py /
+=======
+COPY evaluation/evaluation.py evaluation/evaluate_one.py evaluation/schema.py /
+>>>>>>> Stashed changes

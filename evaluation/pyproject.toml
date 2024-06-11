@@ -14,6 +14,7 @@ eval-type-backport = "^0.2.0"
 pandas = "^2.2.2"
 pyyaml = "^6.0.1"
 tqdm = "^4.66.4"
+datasets = "^2.19.2"
 
 
 [tool.poetry.group.dev.dependencies]

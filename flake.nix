@@ -20,6 +20,8 @@
           alejandra
           poetry
           python3Full
+          kubernetes
+          argo
         ];
         PYTHONBREAKPOINT = "ipdb.set_trace";
         shellHook = ''

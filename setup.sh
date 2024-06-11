@@ -11,6 +11,7 @@ export DOCKER_BUILDKIT=1
 # docker build -t sweagent/swe-agent:local -f docker/swe.Dockerfile --build-arg TARGETARCH=$(uname -m) .
 
 echo "Setting up docker image for evaluation..."
-docker build -t sweagent/swe-eval:local -f docker/eval.Dockerfile .
+docker build -t gcr.io/reflectionai/swe-eval:latest -f docker/eval.Dockerfile .
+docker push gcr.io/reflectionai/swe-eval:latest
 
 echo "Done with setup!"
