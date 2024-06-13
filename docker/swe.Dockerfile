@@ -1,45 +1,40 @@
-FROM ubuntu:jammy
+FROM debian:bookworm-slim
 
 ARG TARGETARCH
 
 # Install third party tools
 RUN apt-get update && \
-    apt-get install -y bash gcc git jq wget g++ make && \
+    apt-get install -y bash gcc git jq wget g++ make libffi-dev build-essential python3.11 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Initialize git
-RUN git config --global user.email "sweagent@pnlp.org"
-RUN git config --global user.name "sweagent"
+# Create new user
+RUN useradd -ms /bin/bash swe-bench
+WORKDIR /home/swe-bench
+RUN chown -R swe-bench:swe-bench /home/swe-bench
+RUN mkdir -p /tmp && chown -R swe-bench:swe-bench /tmp
+USER swe-bench
 
-# Environment variables
-ENV ROOT='/dev/'
-RUN prompt() { echo " > "; };
-ENV PS1="> "
+# Setup Conda
+ENV PATH="/home/swe-bench/miniconda3/bin:${PATH}"
 
-# Create file for tracking edits, test patch
-RUN touch /root/files_to_edit.txt
-RUN touch /root/test.patch
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py311_24.3.0-0-Linux-x86_64.sh -O ~/miniconda.sh; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py311_24.3.0-0-Linux-aarch64.sh -O ~/miniconda.sh; \
+    fi && \
+    mkdir ~/.conda && \
+    bash miniconda.sh -b && \
+    rm ~/miniconda.sh
 
-# add ls file indicator
-RUN echo "alias ls='ls -F'" >> /root/.bashrc
-
-# Install miniconda
-ENV PATH="/root/miniconda3/bin:${PATH}"
-ARG PATH="/root/miniconda3/bin:${PATH}"
-COPY docker/getconda.sh .
-RUN bash getconda.sh ${TARGETARCH} \
-    && rm getconda.sh \
-    && mkdir /root/.conda \
-    && bash miniconda.sh -b \
-    && rm -f miniconda.sh
+# Initialize Conda
 RUN conda --version \
     && conda init bash \
     && conda config --append channels conda-forge
 
 # Install python packages
-COPY docker/requirements.txt /root/requirements.txt
-RUN pip install -r /root/requirements.txt
+# COPY docker/requirements.txt /root/requirements.txt
+# RUN pip install -r /root/requirements.txt
 
 WORKDIR /
 
