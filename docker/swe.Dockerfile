@@ -18,7 +18,10 @@ USER swe-bench
 # Setup Conda
 ENV PATH="/home/swe-bench/miniconda3/bin:${PATH}"
 
+RUN echo "$TARGETARCH"
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py311_24.3.0-0-Linux-x86_64.sh -O ~/miniconda.sh; \
+    elif [ "$TARGETARCH" = "x86_64" ]; then \
         wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py311_24.3.0-0-Linux-x86_64.sh -O ~/miniconda.sh; \
     elif [ "$TARGETARCH" = "arm64" ]; then \
         wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py311_24.3.0-0-Linux-aarch64.sh -O ~/miniconda.sh; \
