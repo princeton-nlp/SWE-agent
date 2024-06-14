@@ -2,7 +2,7 @@
 
 Instead of installing SWE-agent from source, you can also run the software directly using Docker.
 
-1. Install Docker ([follow the docs](https://github.com/docker/docker-install) or use the [get-docker.sh script for linux](https://github.com/docker/docker-install)), then start Docker locally.
+1. Install Docker ([follow the docs](https://github.com/docker/docker-install) or use the [get-docker.sh script for linux](https://github.com/docker/docker-install)), then start Docker locally. Problems? See [docker issues](tips.md#docker).
 2. Run `docker pull sweagent/swe-agent:latest`
 3. Add your API tokens to a file `keys.cfg` as explained [here](keys.md) or pass them as
    environment variables.
@@ -34,7 +34,7 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
     (double slash) to escape it ([more information](https://stackoverflow.com/a/47229180/)).
 
 !!! tip "More tips"
-    See the [installation issues section](tips.md) for more help if you run into
+    See the [docker issues section](tips.md#docker) for more help if you run into
     trouble.
 
 If you instead want to pass the keys as environment variables, use

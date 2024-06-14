@@ -6,7 +6,7 @@ Installation from source is the preferred way to set up SWE-agent on your machin
     Expect some issues with Windows (we're working on them).
     In the meantime, [use Docker](docker.md).
 
-1. Install Docker ([follow the docs](https://github.com/docker/docker-install) or use the [get-docker.sh script for linux](https://github.com/docker/docker-install)), then start Docker locally.
+1. Install Docker ([follow the docs](https://github.com/docker/docker-install) or use the [get-docker.sh script for linux](https://github.com/docker/docker-install)), then start Docker locally. Problems? See [docker issues](tips.md#docker).
 2. If you plan on using the web-based GUI: Install [`nodejs`][nodejs-install].
 3. Clone the repository, for example with
     ```bash
@@ -21,7 +21,7 @@ Installation from source is the preferred way to set up SWE-agent on your machin
     ```bash
     docker pull sweagent/swe-agent:latest
     ```
-    Alternatively, you can run `./setup.sh` to create your own `swe-agent` docker image.
+    Errors? See [docker issues](tips.md#docker). Alternatively, you can run `./setup.sh` to create your own `swe-agent` docker image.
 6. Set up your LM API keys as explained [here](keys.md).
 
 [nodejs-install]: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
