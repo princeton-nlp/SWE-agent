@@ -1346,7 +1346,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <h1 id="fallback-usage-with-docker">Fallback: Usage with docker</h1>
 <p>Instead of installing SWE-agent from source, you can also run the software directly using Docker.</p>
 <ol>
-<li>Install Docker (<a href="https://github.com/docker/docker-install">follow the docs</a> or use the <a href="https://github.com/docker/docker-install">get-docker.sh script for linux</a>), then start Docker locally.</li>
+<li>Install Docker (<a href="https://github.com/docker/docker-install">follow the docs</a> or use the <a href="https://github.com/docker/docker-install">get-docker.sh script for linux</a>), then start Docker locally. Problems? See <a href="../tips/#docker">docker issues</a>.</li>
 <li>Run <code>docker pull sweagent/swe-agent:latest</code></li>
 <li>Add your API tokens to a file <code>keys.cfg</code> as explained <a href="../keys/">here</a> or pass them as
    environment variables.</li>
@@ -2212,7 +2212,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 </div>
 <div class="admonition tip">
 <p class="admonition-title">More tips</p>
-<p>See the <a href="../tips/">installation issues section</a> for more help if you run into
+<p>See the <a href="../tips/#docker">docker issues section</a> for more help if you run into
 trouble.</p>
 </div>
 <p>If you instead want to pass the keys as environment variables, use</p>

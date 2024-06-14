@@ -570,6 +570,17 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Installation tips
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -579,6 +590,34 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#docker-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docker issues
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1248,6 +1287,23 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#docker-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docker issues
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1270,14 +1326,21 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 
 
 <h1 id="more-installation-tips">More installation tips</h1>
-<p>If you seem to be having issues with running docker</p>
+<h2 id="docker-issues">Docker issues <a name="docker"></a></h2>
+<p>First, test if you can use docker in general, for example by running</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>run<span class="w"> </span>hello-world
+</code></pre></div>
+<p>If you get an error like</p>
+<div class="highlight"><pre><span></span><code>docker: permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Head &quot;http://%2Fvar%2Frun%2Fdocker.sock/_ping&quot;: dial unix /var/run/docker.sock: connect: permission denied.
+</code></pre></div>
 <ul>
-<li>Make sure that you allow the use of the Docker socket. In Docker desktop, click <em>Settings</em> &gt; <em>Advanced</em> &gt; <em>Allow the default Docker socket to be used (requires password)</em></li>
+<li>Make sure that you allow the use of the Docker socket. In Docker desktop, click <em>Settings</em> &gt; <em>Advanced</em> &gt; <em>Allow the default Docker socket to be used (requires password)</em>.</li>
+<li>On the command line, you can try <code>sudo chmod 666 /var/run/docker.sock</code> or add your user to the <code>docker</code> linux user group</li>
 <li>If your docker installation uses a different socket, you might have to symlink them, see <a href="https://github.com/princeton-nlp/SWE-agent/issues/20#issuecomment-2047506005">this command for example</a></li>
-<li>If you are using any containers from dockerhub (i.e., you ran <code>docker pull ...</code> or you are running <code>docker run ...</code>), please make sure that you are using the latest
-  versions. Just because an image has the <code>latest</code> tag (e.g., <code>sweagent/swe-agent-run:latest</code>) does not mean that it will auto-update. Please run
-  <code>docker pull sweagent/swe-agent-run:latest</code> to make sure you actually have the most recent version!</li>
 </ul>
+<p>If you are using any containers from dockerhub (i.e., you ran <code>docker pull ...</code> or you are running <code>docker run ...</code>), please make sure that you are using the latest
+versions. Just because an image has the <code>latest</code> tag (e.g., <code>sweagent/swe-agent-run:latest</code>) does not mean that it will auto-update. Please run
+<code>docker pull sweagent/swe-agent-run:latest</code> to make sure you actually have the most recent version!</p>
 <p>Any remaining issues? Please <a href="https://github.com/princeton-nlp/SWE-agent/issues/new/choose">open a GitHub issue</a>!</p>
 
 
