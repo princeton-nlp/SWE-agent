@@ -46,6 +46,11 @@ Here,
 
 ## Specifying the repository
 
+!!! note "Operating in batch mode: Running on SWE-bench and other benchmark sets"
+    If you want to run SWE-agent in batch mode on SWE-bench or another whole evaluation set, see
+    [benchmarking](benchmarking.md). This tutorial focuses on using SWE-agent on
+    individual issues.
+
 In the above example, the repository/codebase is inferred from the `--data_path`.
 This options is currently only available for GitHub issues.
 For all other use cases, you can specify `--repo_path`, which accepts either GitHub

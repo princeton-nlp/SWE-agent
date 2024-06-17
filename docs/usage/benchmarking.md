@@ -21,6 +21,11 @@ python run.py --model_name gpt4 \
   --instance_filter marshmallow-code__marshmallow-1359
 ```
 
+The above examples use the default value of `--data_path` (`princeton-nlp/SWE-bench_Lite`, which will be looked up from huggingface).
+You can specify any other huggingface datasets as well, or supply the path to a pre-downloaded dataset.
+By default, SWE-agent evaluates on the `dev` split of that dataset.
+You can change that by supplying the `--split` argument to the above commands (obviously you shouldn't tune your model on the `test` dataset).
+
 ## 🧪 Evaluation <a name="evaluation"></a>
 
 The `evaluation/` folder provides SWE-agent compatible scripts for running [SWE-bench style evaluation](https://github.com/princeton-nlp/SWE-bench/blob/main/tutorials/evaluation.md) on model patch predictions. In addition, we also include additional scripts to quantify model performance on "subtasks" within the SWE-bench task, such as identifying the right file(s) to edit.
