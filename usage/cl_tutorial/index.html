@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.26">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.27">
     
     
       
@@ -2277,6 +2277,12 @@ Let's start with an absolutely trivial example and solve an issue about a simple
 </ul>
 </div>
 <h2 id="specifying-the-repository">Specifying the repository</h2>
+<div class="admonition note">
+<p class="admonition-title">Operating in batch mode: Running on SWE-bench and other benchmark sets</p>
+<p>If you want to run SWE-agent in batch mode on SWE-bench or another whole evaluation set, see
+<a href="../benchmarking/">benchmarking</a>. This tutorial focuses on using SWE-agent on
+individual issues.</p>
+</div>
 <p>In the above example, the repository/codebase is inferred from the <code>--data_path</code>.
 This options is currently only available for GitHub issues.
 For all other use cases, you can specify <code>--repo_path</code>, which accepts either GitHub

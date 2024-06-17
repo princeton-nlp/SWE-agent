@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.26">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.27">
     
     
       
@@ -1425,6 +1425,10 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <div class="highlight"><pre><span></span><code>python<span class="w"> </span>run.py<span class="w"> </span>--model_name<span class="w"> </span>gpt4<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--instance_filter<span class="w"> </span>marshmallow-code__marshmallow-1359
 </code></pre></div></p>
+<p>The above examples use the default value of <code>--data_path</code> (<code>princeton-nlp/SWE-bench_Lite</code>, which will be looked up from huggingface).
+You can specify any other huggingface datasets as well, or supply the path to a pre-downloaded dataset.
+By default, SWE-agent evaluates on the <code>dev</code> split of that dataset.
+You can change that by supplying the <code>--split</code> argument to the above commands (obviously you shouldn't tune your model on the <code>test</code> dataset).</p>
 <h2 id="evaluation">🧪 Evaluation <a name="evaluation"></a></h2>
 <p>The <code>evaluation/</code> folder provides SWE-agent compatible scripts for running <a href="https://github.com/princeton-nlp/SWE-bench/blob/main/tutorials/evaluation.md">SWE-bench style evaluation</a> on model patch predictions. In addition, we also include additional scripts to quantify model performance on "subtasks" within the SWE-bench task, such as identifying the right file(s) to edit.</p>
 <h3 id="quick-start">🐇 Quick Start <a name="quick"></a></h3>
