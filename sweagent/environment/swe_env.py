@@ -503,8 +503,14 @@ class SWEEnv(gym.Env):
         elif self.persistent:
             # stopping is Podman specific, but doesn't hurt to include
             # https://stackoverflow.com/a/32428199/
-            # Sleeping to avoid https://github.com/princeton-nlp/SWE-agent/issues/496 ??
-            time.sleep(0.1)
+            # Want to avoid https://github.com/princeton-nlp/SWE-agent/issues/496
+            # Note that container_obj.status might not be updated throughout the container
+            # lifecycle, so let's get the container_obj again
+            assert self.container_name
+            try:
+                self.container_obj = docker.from_env().containers.get(self.container_name)
+            except Exception as e:
+                self.logger.warning(f"Failed to get fresh container object: {e}", exc_info=True)
             if self.container_obj.status not in {"paused", "exited", "dead", "stopping"}:
                 try:
                     self.container_obj.pause()
