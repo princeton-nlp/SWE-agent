@@ -15,5 +15,5 @@ This page details all environment variables that are currently in use by SWE-age
     The following variables might still be subject to change
 
 * `SWE_AGENT_COMMUNICATE_METHOD`: Determines how SWE-agent communicates with the running process in the docker container: `end-marker` (default, fast) or `processes` (legacy, slow, more tested)
-* `SWE_AGENT_CLONE_METHOD`: `sparse` (default) or `full`. When using persistent containers or running over multiple problem statements, we fall back to `full`.
+* `SWE_AGENT_CLONE_METHOD`: `shallow` (default, only retrieves relevant commit) or `full` (clones repository including full history). When using persistent containers or running over multiple problem statements, we fall back to `full`.
 * `SWE_AGENT_DOCKER_START_UP_DELAY`: Number of seconds to wait after starting a docker container

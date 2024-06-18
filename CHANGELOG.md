@@ -6,9 +6,9 @@
 
 **We sped up SWE-agent by 2x** (timed with GPT4o). This is mostly due to faster communication with the running processes inside of the Docker container and other container setup & installation related improvements. Here are a few relevant PRs:
 
-* Switch to fast communicate and sparse clone by default by [@klieret](https://github.com/klieret) in [#530](https://github.com/princeton-nlp/SWE-agent/pull/530)
+* Switch to fast communicate and shallow clone by default by [@klieret](https://github.com/klieret) in [#530](https://github.com/princeton-nlp/SWE-agent/pull/530)
 * Change: Only wait 1s for docker to start by [@klieret](https://github.com/klieret) in [#541](https://github.com/princeton-nlp/SWE-agent/pull/541)
-* Feat: experimental sparse cloning by [@klieret](https://github.com/klieret) in [#498](https://github.com/princeton-nlp/SWE-agent/pull/498)
+* Feat: experimental shallow cloning by [@klieret](https://github.com/klieret) in [#498](https://github.com/princeton-nlp/SWE-agent/pull/498)
 * Enh: Start from clone of python conda environment for speedup by [@klieret](https://github.com/klieret) in [#548](https://github.com/princeton-nlp/SWE-agent/pull/548)
 * Enh: Use uv for editable install by default by [@klieret](https://github.com/klieret) in [#547](https://github.com/princeton-nlp/SWE-agent/pull/547)
 
