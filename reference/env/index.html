@@ -3181,7 +3181,13 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
 <span class="normal">1150</span>
 <span class="normal">1151</span>
 <span class="normal">1152</span>
-<span class="normal">1153</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">SWEEnv</span><span class="p">(</span><span class="n">gym</span><span class="o">.</span><span class="n">Env</span><span class="p">):</span>
+<span class="normal">1153</span>
+<span class="normal">1154</span>
+<span class="normal">1155</span>
+<span class="normal">1156</span>
+<span class="normal">1157</span>
+<span class="normal">1158</span>
+<span class="normal">1159</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">SWEEnv</span><span class="p">(</span><span class="n">gym</span><span class="o">.</span><span class="n">Env</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Gym environment for SWE-bench. This class should handle all communication with the docker container.&quot;&quot;&quot;</span>
 
     <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;swe_main&quot;</span>
@@ -3557,8 +3563,14 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">persistent</span><span class="p">:</span>
             <span class="c1"># stopping is Podman specific, but doesn&#39;t hurt to include</span>
             <span class="c1"># https://stackoverflow.com/a/32428199/</span>
-            <span class="c1"># Sleeping to avoid https://github.com/princeton-nlp/SWE-agent/issues/496 ??</span>
-            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+            <span class="c1"># Want to avoid https://github.com/princeton-nlp/SWE-agent/issues/496</span>
+            <span class="c1"># Note that container_obj.status might not be updated throughout the container</span>
+            <span class="c1"># lifecycle, so let&#39;s get the container_obj again</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_name</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">container_obj</span> <span class="o">=</span> <span class="n">docker</span><span class="o">.</span><span class="n">from_env</span><span class="p">()</span><span class="o">.</span><span class="n">containers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">container_name</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to get fresh container object: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_obj</span><span class="o">.</span><span class="n">status</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;paused&quot;</span><span class="p">,</span> <span class="s2">&quot;exited&quot;</span><span class="p">,</span> <span class="s2">&quot;dead&quot;</span><span class="p">,</span> <span class="s2">&quot;stopping&quot;</span><span class="p">}:</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">container_obj</span><span class="o">.</span><span class="n">pause</span><span class="p">()</span>
@@ -4235,13 +4247,7 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1010</span>
-<span class="normal">1011</span>
-<span class="normal">1012</span>
-<span class="normal">1013</span>
-<span class="normal">1014</span>
-<span class="normal">1015</span>
-<span class="normal">1016</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1016</span>
 <span class="normal">1017</span>
 <span class="normal">1018</span>
 <span class="normal">1019</span>
@@ -4261,7 +4267,13 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
 <span class="normal">1033</span>
 <span class="normal">1034</span>
 <span class="normal">1035</span>
-<span class="normal">1036</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">add_commands</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">1036</span>
+<span class="normal">1037</span>
+<span class="normal">1038</span>
+<span class="normal">1039</span>
+<span class="normal">1040</span>
+<span class="normal">1041</span>
+<span class="normal">1042</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">add_commands</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Adds custom commands to container</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -4392,7 +4404,13 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
 <span class="normal">530</span>
 <span class="normal">531</span>
 <span class="normal">532</span>
-<span class="normal">533</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">533</span>
+<span class="normal">534</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Handle environment shutdown</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -4410,8 +4428,14 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
     <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">persistent</span><span class="p">:</span>
         <span class="c1"># stopping is Podman specific, but doesn&#39;t hurt to include</span>
         <span class="c1"># https://stackoverflow.com/a/32428199/</span>
-        <span class="c1"># Sleeping to avoid https://github.com/princeton-nlp/SWE-agent/issues/496 ??</span>
-        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="c1"># Want to avoid https://github.com/princeton-nlp/SWE-agent/issues/496</span>
+        <span class="c1"># Note that container_obj.status might not be updated throughout the container</span>
+        <span class="c1"># lifecycle, so let&#39;s get the container_obj again</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_name</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">container_obj</span> <span class="o">=</span> <span class="n">docker</span><span class="o">.</span><span class="n">from_env</span><span class="p">()</span><span class="o">.</span><span class="n">containers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">container_name</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to get fresh container object: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">container_obj</span><span class="o">.</span><span class="n">status</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;paused&quot;</span><span class="p">,</span> <span class="s2">&quot;exited&quot;</span><span class="p">,</span> <span class="s2">&quot;dead&quot;</span><span class="p">,</span> <span class="s2">&quot;stopping&quot;</span><span class="p">}:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">container_obj</span><span class="o">.</span><span class="n">pause</span><span class="p">()</span>
@@ -4511,13 +4535,7 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">705</span>
-<span class="normal">706</span>
-<span class="normal">707</span>
-<span class="normal">708</span>
-<span class="normal">709</span>
-<span class="normal">710</span>
-<span class="normal">711</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">711</span>
 <span class="normal">712</span>
 <span class="normal">713</span>
 <span class="normal">714</span>
@@ -4539,7 +4557,13 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
 <span class="normal">730</span>
 <span class="normal">731</span>
 <span class="normal">732</span>
-<span class="normal">733</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">communicate</span><span class="p">(</span>
+<span class="normal">733</span>
+<span class="normal">734</span>
+<span class="normal">735</span>
+<span class="normal">736</span>
+<span class="normal">737</span>
+<span class="normal">738</span>
+<span class="normal">739</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">communicate</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="nb">input</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">timeout_duration</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
@@ -4668,13 +4692,7 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">735</span>
-<span class="normal">736</span>
-<span class="normal">737</span>
-<span class="normal">738</span>
-<span class="normal">739</span>
-<span class="normal">740</span>
-<span class="normal">741</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">741</span>
 <span class="normal">742</span>
 <span class="normal">743</span>
 <span class="normal">744</span>
@@ -4686,7 +4704,13 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
 <span class="normal">750</span>
 <span class="normal">751</span>
 <span class="normal">752</span>
-<span class="normal">753</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">communicate_with_handling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">error_msg</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">timeout_duration</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">753</span>
+<span class="normal">754</span>
+<span class="normal">755</span>
+<span class="normal">756</span>
+<span class="normal">757</span>
+<span class="normal">758</span>
+<span class="normal">759</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">communicate_with_handling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">error_msg</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">timeout_duration</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Wrapper for communicate function that raises error if return code is non-zero</span>
 
@@ -4727,13 +4751,13 @@ lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).</
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">755</span>
-<span class="normal">756</span>
-<span class="normal">757</span>
-<span class="normal">758</span>
-<span class="normal">759</span>
-<span class="normal">760</span>
-<span class="normal">761</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_available_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">761</span>
+<span class="normal">762</span>
+<span class="normal">763</span>
+<span class="normal">764</span>
+<span class="normal">765</span>
+<span class="normal">766</span>
+<span class="normal">767</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_available_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns list of available actions in current environment state</span>
 
@@ -4813,13 +4837,7 @@ and parent PIDs</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">763</span>
-<span class="normal">764</span>
-<span class="normal">765</span>
-<span class="normal">766</span>
-<span class="normal">767</span>
-<span class="normal">768</span>
-<span class="normal">769</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">769</span>
 <span class="normal">770</span>
 <span class="normal">771</span>
 <span class="normal">772</span>
@@ -4828,7 +4846,13 @@ and parent PIDs</p>
 <span class="normal">775</span>
 <span class="normal">776</span>
 <span class="normal">777</span>
-<span class="normal">778</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_pids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">all_pids</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="normal">778</span>
+<span class="normal">779</span>
+<span class="normal">780</span>
+<span class="normal">781</span>
+<span class="normal">782</span>
+<span class="normal">783</span>
+<span class="normal">784</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_pids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">all_pids</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Gets list of processes running inside docker container</span>
 
@@ -4917,13 +4941,7 @@ and parent PIDs</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">780</span>
-<span class="normal">781</span>
-<span class="normal">782</span>
-<span class="normal">783</span>
-<span class="normal">784</span>
-<span class="normal">785</span>
-<span class="normal">786</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">786</span>
 <span class="normal">787</span>
 <span class="normal">788</span>
 <span class="normal">789</span>
@@ -4931,7 +4949,13 @@ and parent PIDs</p>
 <span class="normal">791</span>
 <span class="normal">792</span>
 <span class="normal">793</span>
-<span class="normal">794</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_submission</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">794</span>
+<span class="normal">795</span>
+<span class="normal">796</span>
+<span class="normal">797</span>
+<span class="normal">798</span>
+<span class="normal">799</span>
+<span class="normal">800</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_submission</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Function for extracting diff patch submission at the end of an episode.</span>
 
@@ -4967,13 +4991,7 @@ and parent PIDs</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 864</span>
-<span class="normal"> 865</span>
-<span class="normal"> 866</span>
-<span class="normal"> 867</span>
-<span class="normal"> 868</span>
-<span class="normal"> 869</span>
-<span class="normal"> 870</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 870</span>
 <span class="normal"> 871</span>
 <span class="normal"> 872</span>
 <span class="normal"> 873</span>
@@ -5111,7 +5129,13 @@ and parent PIDs</p>
 <span class="normal">1005</span>
 <span class="normal">1006</span>
 <span class="normal">1007</span>
-<span class="normal">1008</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">install_env</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">1008</span>
+<span class="normal">1009</span>
+<span class="normal">1010</span>
+<span class="normal">1011</span>
+<span class="normal">1012</span>
+<span class="normal">1013</span>
+<span class="normal">1014</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">install_env</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates conda environment and installs third party dependencies to allow code execution</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -5277,13 +5301,7 @@ and parent PIDs</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1038</span>
-<span class="normal">1039</span>
-<span class="normal">1040</span>
-<span class="normal">1041</span>
-<span class="normal">1042</span>
-<span class="normal">1043</span>
-<span class="normal">1044</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1044</span>
 <span class="normal">1045</span>
 <span class="normal">1046</span>
 <span class="normal">1047</span>
@@ -5296,7 +5314,13 @@ and parent PIDs</p>
 <span class="normal">1054</span>
 <span class="normal">1055</span>
 <span class="normal">1056</span>
-<span class="normal">1057</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">interrupt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">1057</span>
+<span class="normal">1058</span>
+<span class="normal">1059</span>
+<span class="normal">1060</span>
+<span class="normal">1061</span>
+<span class="normal">1062</span>
+<span class="normal">1063</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">interrupt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Send interrupt signal to container and exhaust stdout buffer with a communicate call</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -5379,13 +5403,7 @@ and parent PIDs</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1059</span>
-<span class="normal">1060</span>
-<span class="normal">1061</span>
-<span class="normal">1062</span>
-<span class="normal">1063</span>
-<span class="normal">1064</span>
-<span class="normal">1065</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1065</span>
 <span class="normal">1066</span>
 <span class="normal">1067</span>
 <span class="normal">1068</span>
@@ -5473,7 +5491,13 @@ and parent PIDs</p>
 <span class="normal">1150</span>
 <span class="normal">1151</span>
 <span class="normal">1152</span>
-<span class="normal">1153</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">open_pr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">trajectory</span><span class="p">,</span> <span class="n">_dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="normal">1153</span>
+<span class="normal">1154</span>
+<span class="normal">1155</span>
+<span class="normal">1156</span>
+<span class="normal">1157</span>
+<span class="normal">1158</span>
+<span class="normal">1159</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">open_pr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">trajectory</span><span class="p">,</span> <span class="n">_dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create PR to repository</span>
 
 <span class="sd">    Args:</span>
@@ -5946,19 +5970,19 @@ and parent PIDs</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/swe_env.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">796</span>
-<span class="normal">797</span>
-<span class="normal">798</span>
-<span class="normal">799</span>
-<span class="normal">800</span>
-<span class="normal">801</span>
-<span class="normal">802</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">802</span>
 <span class="normal">803</span>
 <span class="normal">804</span>
 <span class="normal">805</span>
 <span class="normal">806</span>
 <span class="normal">807</span>
-<span class="normal">808</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">run_shell_script</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">script_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">location</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">808</span>
+<span class="normal">809</span>
+<span class="normal">810</span>
+<span class="normal">811</span>
+<span class="normal">812</span>
+<span class="normal">813</span>
+<span class="normal">814</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">run_shell_script</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">script_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">location</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Run custom script supplied by user at `script_path`</span>
 
 <span class="sd">    Args:</span>
