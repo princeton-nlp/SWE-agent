@@ -222,6 +222,7 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
             try:
                 data = os.read(fd, 4096)
             except BlockingIOError:
+                logger.error("BlockingIOError while reading from subprocess.", exc_info=True)
                 break
             if data:
                 buffer += data
