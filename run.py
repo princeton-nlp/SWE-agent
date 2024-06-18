@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 
 from sweagent import CONFIG_DIR
-from sweagent.utils.log import get_logger
+from sweagent.utils.log import add_file_handler, get_logger
 
 try:
     import rich
@@ -29,6 +29,7 @@ try:
 except ImportError:
     msg = "Please install the rich_argparse package with `pip install rich_argparse`."
     raise ImportError(msg)
+import datetime
 from dataclasses import dataclass
 from getpass import getuser
 from pathlib import Path
@@ -109,7 +110,7 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
     print_config: bool = True
 
     @property
-    def run_name(self):
+    def run_name(self) -> str:
         """Generate a unique name for this run based on the arguments."""
         model_name = self.agent.model.model_name.replace(":", "-")
         data_stem = get_data_path_name(self.environment.data_path)
@@ -306,13 +307,17 @@ class OpenPRHook(MainHook):
 
 class Main:
     def __init__(self, args: ScriptArguments):
+        self.traj_dir = Path("trajectories") / Path(getuser()) / args.run_name
+        self.traj_dir.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.datetime.now().strftime("%y%m%d%H%M%S")
+        log_path = self.traj_dir / f"run-{timestamp}.log"
+        logger.info("Logging to %s", log_path)
+        add_file_handler(log_path)
         if args.print_config:
             logger.info(f"📙 Arguments: {args.dumps_yaml()}")
         self.args = args
         self.agent = Agent("primary", args.agent)
         self.env = SWEEnv(args.environment)
-        self.traj_dir = Path("trajectories") / Path(getuser()) / args.run_name
-        self.traj_dir.mkdir(parents=True, exist_ok=True)
         self._save_arguments()
         default_hooks = [
             SaveApplyPatchHook(),
