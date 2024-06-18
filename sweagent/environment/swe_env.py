@@ -246,6 +246,7 @@ class SWEEnv(gym.Env):
         clone_method = keys_config.get("SWE_AGENT_CLONE_METHOD", default="sparse", choices=["sparse", "full"])
         if len(self.data) > 1 or self.persistent:
             msg = "Falling back to full cloning method due to multiple instances or persistent container"
+            clone_method = "full"
             self.logger.debug(msg)
         if clone_method == "full":
             self.communicate_with_handling(
