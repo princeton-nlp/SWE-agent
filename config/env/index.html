@@ -1288,7 +1288,7 @@ See <a href="../../installation/keys/">here</a> for more information.</p>
 </div>
 <ul>
 <li><code>SWE_AGENT_COMMUNICATE_METHOD</code>: Determines how SWE-agent communicates with the running process in the docker container: <code>end-marker</code> (default, fast) or <code>processes</code> (legacy, slow, more tested)</li>
-<li><code>SWE_AGENT_CLONE_METHOD</code>: <code>sparse</code> (default) or <code>full</code>. When using persistent containers or running over multiple problem statements, we fall back to <code>full</code>.</li>
+<li><code>SWE_AGENT_CLONE_METHOD</code>: <code>shallow</code> (default, only retrieves relevant commit) or <code>full</code> (clones repository including full history). When using persistent containers or running over multiple problem statements, we fall back to <code>full</code>.</li>
 <li><code>SWE_AGENT_DOCKER_START_UP_DELAY</code>: Number of seconds to wait after starting a docker container</li>
 </ul>
 
