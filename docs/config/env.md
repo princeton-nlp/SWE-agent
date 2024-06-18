@@ -8,6 +8,7 @@ This page details all environment variables that are currently in use by SWE-age
 
 * All API keys (for LMs and GitHub) can be set as an environment variable. See [here](../installation/keys.md) for more information.
 * `SWE_AGENT_CONFIG_ROOT`: Used to resolve relative paths in the [config](config.md)
+* `SWE_AGENT_LOG_TIME`: Add timestamps to log (**can only be set as an environment variable**)
 
 !!! warning "Unstable"
     The following variables might still be subject to change
