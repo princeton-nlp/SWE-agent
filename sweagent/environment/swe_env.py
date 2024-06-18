@@ -42,7 +42,7 @@ from sweagent.environment.utils import (
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import default_logger, get_logger
 
-LONG_TIMEOUT = 500
+LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500))
 PATH_TO_REQS = "/root/requirements.txt"
 PATH_TO_ENV_YML = "/root/environment.yml"
 
