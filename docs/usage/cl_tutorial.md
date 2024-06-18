@@ -159,7 +159,7 @@ We currently offer three ways to cache the setup stages:
   you are installing) will be already available.
 * Alternatively, you can specify `--cache_task_images`. For every repository/base commit/environment setup, we
   [commit][docker commit] the changes from the installation stage to the Docker image. The corresponding containers are temporary as usual.
-  Unlike the persistent containers, there will be a new image _for almost every base commit_ (that is, probabyl for every task
+  Unlike the persistent containers, there will be a new image _for almost every base commit_ (that is, probably for every task
   when evaluating on a benchmark), which makes this only relevant when running over the same tasks more than once
   (for example when testing different agent configurations or LMs).
 * You can also [build your own Docker image](../config/docker.md) and ensure that all relevant conda environments and repositories
