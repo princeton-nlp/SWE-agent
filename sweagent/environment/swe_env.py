@@ -520,6 +520,10 @@ class SWEEnv(gym.Env):
                 self.container_obj.remove(force=True)
             except KeyboardInterrupt:
                 raise
+            except docker.errors.NotFound:
+                # We already tried to exit the container, so it's actually good if
+                # it's not found
+                pass
             except Exception:
                 self.logger.warning("Failed to remove container", exc_info=True)
             else:
