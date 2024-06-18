@@ -644,7 +644,12 @@ class SWEEnv(gym.Env):
             msg = "Failed to communicate with container"
             raise RuntimeError(msg)
 
-        buffer, exit_code = read_with_timeout_experimental(self.container, timeout_duration)
+        try:
+            buffer, exit_code = read_with_timeout_experimental(self.container, timeout_duration)
+        except Exception:
+            msg = f"Read with timeout failed on input:\n---\n{input}\n---"
+            self.logger.error(msg)
+            raise
         self.returncode = int(exit_code)
         return buffer
 
