@@ -61,3 +61,16 @@ def test_flake8_format_error_1():
         )
         == "- e"
     )
+
+
+def test_flake8_format_error_1_linenumbers():
+    assert (
+        format_flake8_output(
+            "a:12:41: e",
+            previous_errors_string="a:13:41: e",
+            replacement_window=(12, 13),
+            replacement_n_lines=10,
+            show_line_numbers=True,
+        )
+        == "- 12:41 e"
+    )
