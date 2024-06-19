@@ -641,7 +641,9 @@ class SWEEnv(gym.Env):
     ) -> str:
         """Experimental version of `_communicate`"""
         assert self.container is not None
-        command_suffix = f"echo {PROCESS_DONE_MARKER_START}$?{PROCESS_DONE_MARKER_END}\n"
+        # Sleep to ensure that the exit code is in the last line
+        # See https://github.com/princeton-nlp/SWE-agent/issues/595
+        command_suffix = f"sleep 0.01; echo {PROCESS_DONE_MARKER_START}$?{PROCESS_DONE_MARKER_END}\n"
         try:
             self.returncode = None
             cmd = input if input.endswith("\n") else input + "\n"
