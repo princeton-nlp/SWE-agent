@@ -73,7 +73,7 @@ edit() {
     # Run linter
     if [[ $CURRENT_FILE == *.py ]]; then
         _lint_output=$($linter_cmd "$CURRENT_FILE" 2>&1)
-        lint_output=$(_split_string "$lint_output" "$linter_before_edit" "$start_line" "$end_line" "$line_count")
+        lint_output=$(_split_string "$_lint_output" "$linter_before_edit" "$start_line" "$end_line" "$line_count")
     else
         # do nothing
         lint_output=""

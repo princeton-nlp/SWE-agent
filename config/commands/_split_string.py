@@ -62,7 +62,7 @@ def _update_previous_errors(
             continue
         if replacement_window[0] <= error.line_number <= replacement_window[1]:
             # The error is within the edit window, so let's not ignore it
-            # either way
+            # either way (we wouldn't know how to adjust the line number anyway)
             continue
         # We're out of the edit window, so we need to adjust the line number
         updated.append(Flake8Error(error.filename, error.line_number - lines_added, error.col_number, error.problem))
