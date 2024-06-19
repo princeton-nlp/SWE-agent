@@ -696,7 +696,7 @@ class SWEEnv(gym.Env):
             self.logger.error(f"Read with timeout failed on input:\n---\n{input}\n---")
             raise e
         if not exit_code.isdigit():
-            msg = f"Container crashed. Failed to get exit code. Output:\n---\n{buffer}\n---"
+            msg = f"Failed to get exit code. Failed to get exit code. Output:\n---\n{buffer}\n---"
             raise RuntimeError(msg)
         self.returncode = int(exit_code)
         return buffer
