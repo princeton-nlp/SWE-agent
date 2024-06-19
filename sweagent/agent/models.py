@@ -244,7 +244,7 @@ class OpenAIModel(BaseModel):
 
         # Set OpenAI key
         if self.args.model_name.startswith("azure"):
-            if 'model' in self.args and self.args.model:
+            if "model" in self.args and self.args.model:
                 logger.warning(
                     "The --model CLI argument is ignored when using the Azure GPT endpoint. "
                     "The model is determined by AzureOpenAI.",
