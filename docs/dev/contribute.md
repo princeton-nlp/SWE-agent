@@ -70,7 +70,7 @@ pytest -m "not slow"
 [gfi]: https://github.com/princeton-nlp/SWE-agent/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3A%22%F0%9F%91%8B+good+first+issue%22+
 [help_wanted]: https://github.com/princeton-nlp/SWE-agent/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3A%22%F0%9F%99%8F+help+wanted%22
 
-## Building the documentation
+## Building the documentation <a name="mkdocs"></a>
 
 Simply run
 
