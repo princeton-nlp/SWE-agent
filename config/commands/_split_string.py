@@ -54,7 +54,7 @@ def _update_previous_errors(
         list of errors with updated line numbers
     """
     updated = []
-    lines_added = replacement_window[1] - replacement_window[0] + 1 - replacement_n_lines
+    lines_added = replacement_n_lines - (replacement_window[1] - replacement_window[0] + 1)
     for error in previous_errors:
         if error.line_number < replacement_window[0]:
             # no need to adjust the line number
@@ -65,7 +65,7 @@ def _update_previous_errors(
             # either way (we wouldn't know how to adjust the line number anyway)
             continue
         # We're out of the edit window, so we need to adjust the line number
-        updated.append(Flake8Error(error.filename, error.line_number - lines_added, error.col_number, error.problem))
+        updated.append(Flake8Error(error.filename, error.line_number + lines_added, error.col_number, error.problem))
     return updated
 
 
