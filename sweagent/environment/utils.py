@@ -226,8 +226,8 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
                 break
             if data:
                 buffer += data
-        if PROCESS_DONE_MARKER_START in buffer.decode():
-            break
+                if PROCESS_DONE_MARKER_START in buffer.decode():
+                    break
         time.sleep(0.01)  # Prevents CPU hogging
 
     if container.poll() is not None:
