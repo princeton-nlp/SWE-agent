@@ -245,7 +245,7 @@ class ReviewLoop(AbstractReviewLoop):
 
     @property
     def _n_accepted(self) -> int:
-        return sum(self._reviews)
+        return sum([r.accept for r in self._reviews])
 
     def on_submit(self, submission: SUBMISSION_TYPE) -> None:
         self._submissions.append(submission)
