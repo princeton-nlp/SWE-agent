@@ -52,10 +52,10 @@ def test_reviewer(dummy_reviewer_config):
     reviewer = Reviewer(dummy_reviewer_config, model)
     instance = {}
     submission = {}
-    assert reviewer.accept(instance, submission)
-    assert not reviewer.accept(instance, submission)
-    assert not reviewer.accept(instance, submission)
-    assert not reviewer.accept(instance, submission)
+    assert reviewer.review(instance, submission).accept
+    assert not reviewer.review(instance, submission).accept
+    assert not reviewer.review(instance, submission).accept
+    assert not reviewer.review(instance, submission).accept
 
 
 def _get_fake_trajectory():
@@ -70,10 +70,10 @@ def test_binary_reviewer(dummy_binary_reviewer_config):
     instance = {}
     sub1 = _get_fake_trajectory()
     osub2 = _get_fake_trajectory()
-    assert br.compare_submissions(instance, sub1, osub2) == 1
-    assert br.compare_submissions(instance, sub1, osub2) == 2
-    assert br.compare_submissions(instance, sub1, osub2) == 1
-    assert br.compare_submissions(instance, sub1, osub2) == 1
+    assert br.compare_submissions(instance, sub1, osub2).choice == 0
+    assert br.compare_submissions(instance, sub1, osub2).choice == 1
+    assert br.compare_submissions(instance, sub1, osub2).choice == 0
+    assert br.compare_submissions(instance, sub1, osub2).choice == 0
 
 
 def test_loop_comparison(dummy_reviewer_config, dummy_binary_reviewer_config):

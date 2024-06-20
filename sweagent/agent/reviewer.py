@@ -16,7 +16,13 @@ SUBMISSION_TYPE = dict[str, Any]
 
 logger = get_logger("reviewer")
 
+
 # --- INTERFACES ---
+@dataclass
+class ReviewerResult:
+    accept: bool
+    output: str
+    messages: list[dict[str, str]]
 
 
 class AbstractReviewer(ABC):
@@ -25,8 +31,15 @@ class AbstractReviewer(ABC):
     """
 
     @abstractmethod
-    def accept(self, instance: INSTANCE_TYPE, submission) -> bool:
+    def review(self, instance: INSTANCE_TYPE, submission) -> ReviewerResult:
         """Returns True if the submission is believed to be correct"""
+
+
+@dataclass
+class BinaryReviewerResult:
+    choice: Literal[0, 1]
+    output: str
+    messages: list[dict[str, str]]
 
 
 class AbstractBinaryReviewer(ABC):
@@ -35,7 +48,9 @@ class AbstractBinaryReviewer(ABC):
     """
 
     @abstractmethod
-    def compare_submissions(self, instance: INSTANCE_TYPE, sub1: SUBMISSION_TYPE, sub2: SUBMISSION_TYPE) -> int:
+    def compare_submissions(
+        self, instance: INSTANCE_TYPE, sub1: SUBMISSION_TYPE, sub2: SUBMISSION_TYPE
+    ) -> BinaryReviewerResult:
         """Returns 0 if sub1 is better, 1 if sub2 is better"""
 
 
@@ -120,10 +135,10 @@ class Reviewer(AbstractReviewer):
         logger.warning("Could not interpret response: %s, will reject submission.", response)
         return False
 
-    def accept(self, instance: dict[str, Any], submission: SUBMISSION_TYPE) -> bool:
+    def review(self, instance: dict[str, Any], submission: SUBMISSION_TYPE) -> ReviewerResult:
         messages = self.format_messages(instance, submission)
         answer = self._model.query(messages)
-        return self.interpret(answer)
+        return ReviewerResult(self.interpret(answer), answer, messages=messages)
 
 
 # todo: Couldn't I just replace the whole thing with Jinja templates?
@@ -186,22 +201,22 @@ class BinaryReviewer(AbstractBinaryReviewer):
             {"role": "user", "content": user_message},
         ]
 
-    def interpret(self, response: str) -> Literal[1, 2]:
+    def interpret(self, response: str) -> Literal[0, 1]:
         """Interpret response from LM. Note: 1-based indexing"""
         last_line = response.strip().split("\n")[-1].strip()
         if "first" in last_line.lower():
-            return 1
+            return 0
         elif "second" in last_line.lower():
-            return 2
+            return 1
         logger.warning("Could not interpret response: %s, will choose first submission.", response)
-        return 1
+        return 0
 
     def compare_submissions(
         self, instance: INSTANCE_TYPE, sub1: SUBMISSION_TYPE, sub2: SUBMISSION_TYPE
-    ) -> Literal[1, 2]:
+    ) -> BinaryReviewerResult:
         messages = self.format_messages(instance, sub1, sub2)
         answer = self._model.query(messages)
-        return self.interpret(answer)
+        return BinaryReviewerResult(self.interpret(answer), output=answer, messages=messages)
 
 
 class ReviewLoop(AbstractReviewLoop):
@@ -218,7 +233,7 @@ class ReviewLoop(AbstractReviewLoop):
         )
         self._loop_config = loop_config
         self._submissions: list[SUBMISSION_TYPE] = []
-        self._reviews: list[bool] = []
+        self._reviews: list[ReviewerResult] = []
         # Once we have k submissions, there will always be one voted at the
         # top through k calls to the binary reviewer. Here, we store the
         # corresponding index
@@ -238,7 +253,7 @@ class ReviewLoop(AbstractReviewLoop):
         self._compare()
 
     def _review(self) -> bool:
-        accept = self._reviewer.accept(self._instance, self._submissions[-1])
+        accept = self._reviewer.review(self._instance, self._submissions[-1]).accept
         self._reviews.append(accept)
         return accept
 
@@ -251,10 +266,9 @@ class ReviewLoop(AbstractReviewLoop):
             return
         sub1 = self._submissions[-2]
         sub2 = self._submissions[-1]
-        choice = self._breviewer.compare_submissions(self._instance, sub1, sub2)
-        # choice is 1-based indexing (1 or 2)
+        choice = self._breviewer.compare_submissions(self._instance, sub1, sub2).choice
         # this was a comparison between the current best and the last one
-        self._best_idx = [self._best_idx, self._n_samples - 1][choice - 1]
+        self._best_idx = [self._best_idx, self._n_samples - 1][choice]
 
     def retry(self) -> bool:
         if self._n_samples >= self._loop_config.max_samples:
