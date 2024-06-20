@@ -1,4 +1,4 @@
-from __future__ import annotations
+dfrom __future__ import annotations
 
 import json
 import logging
@@ -247,7 +247,7 @@ class OpenAIModel(BaseModel):
             if "model" in self.args and self.args.model:
                 logger.warning(
                     "The --model CLI argument is ignored when using the Azure GPT endpoint. "
-                    "The model is determined by AzureOpenAI.",
+                    "The model is determined by the OPENAI_API_VERSION argument.",
                 )
             self.api_model = keys_config["AZURE_OPENAI_DEPLOYMENT"]
             self.client = AzureOpenAI(
