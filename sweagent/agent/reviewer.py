@@ -234,10 +234,19 @@ class ReviewLoop(AbstractReviewLoop):
         self._loop_config = loop_config
         self._submissions: list[SUBMISSION_TYPE] = []
         self._reviews: list[ReviewerResult] = []
+        self._comparisons: list[tuple[int, int, BinaryReviewerResult]] = []
         # Once we have k submissions, there will always be one voted at the
         # top through k calls to the binary reviewer. Here, we store the
         # corresponding index
         self._best_idx: int = 0
+
+    @property
+    def reviews(self) -> list[ReviewerResult]:
+        return self._reviews
+
+    @property
+    def comparisons(self) -> list[tuple[int, int, BinaryReviewerResult]]:
+        return self._comparisons
 
     @property
     def _n_samples(self) -> int:
@@ -253,29 +262,31 @@ class ReviewLoop(AbstractReviewLoop):
         self._compare()
 
     def _review(self) -> bool:
-        accept = self._reviewer.review(self._instance, self._submissions[-1]).accept
-        self._reviews.append(accept)
-        return accept
+        review = self._reviewer.review(self._instance, self._submissions[-1])
+        self._reviews.append(review)
+        return review.accept
 
     def _compare(self) -> None:
         if self._n_samples < 2:
             return
-        if self._reviews[self._best_idx] and not self._reviews[-1]:
+        if self._reviews[self._best_idx].accept and not self._reviews[-1].accept:
             # Require that the best submission is accepted, so don't
             # even need to compare here
             return
         sub1 = self._submissions[-2]
         sub2 = self._submissions[-1]
-        choice = self._breviewer.compare_submissions(self._instance, sub1, sub2).choice
+        cresult = self._breviewer.compare_submissions(self._instance, sub1, sub2)
+        self._comparisons.append((self._n_samples - 2, self._n_samples - 1, cresult))
+        assert cresult.choice in [0, 1]
         # this was a comparison between the current best and the last one
-        self._best_idx = [self._best_idx, self._n_samples - 1][choice]
+        self._best_idx = [self._best_idx, self._n_samples - 1][cresult.choice]
 
     def retry(self) -> bool:
         if self._n_samples >= self._loop_config.max_samples:
             logger.debug("Exiting retry loop: max_samples reached")
             return False
 
-        if self._reviews[-1] and self._n_samples >= self._loop_config.min_draws > 0:
+        if self._reviews[-1].accept and self._n_samples >= self._loop_config.min_draws > 0:
             logger.debug("Exiting retry loop: min_draws reached and last submission was accepted")
             return False
 

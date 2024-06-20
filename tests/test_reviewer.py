@@ -87,6 +87,8 @@ def test_loop_comparison(dummy_reviewer_config, dummy_binary_reviewer_config):
     loop._breviewer._model = bmodel
     for i in range(3):
         loop.on_submit(_get_fake_trajectory())
+        print(loop.reviews)
+        print(loop.comparisons)
         if i < 2:
             assert loop.retry()
         else:
