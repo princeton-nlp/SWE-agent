@@ -97,6 +97,7 @@ class ReviewLoopConfig:
 # --- IMPLEMENTATIONS ---
 
 
+# fixme: Reviewer should insta-reject on exit_cost
 class Reviewer(AbstractReviewer):
     def __init__(self, config: ReviewerConfig, model: BaseModel):
         self._config = config
@@ -217,33 +218,62 @@ class ReviewLoop(AbstractReviewLoop):
         )
         self._loop_config = loop_config
         self._submissions: list[SUBMISSION_TYPE] = []
-        #: Number of samples taken so far
-        self._n_samples: int = 0
-        #: Number of samples accepted by the reviewer so far
-        self._n_accepted: int = 0
+        self._reviews: list[bool] = []
+        # Once we have k submissions, there will always be one voted at the
+        # top through k calls to the binary reviewer. Here, we store the
+        # corresponding index
+        self._best_idx: int = 0
+
+    @property
+    def _n_samples(self) -> int:
+        return len(self._submissions)
+
+    @property
+    def _n_accepted(self) -> int:
+        return sum(self._reviews)
 
     def on_submit(self, submission: SUBMISSION_TYPE) -> None:
         self._submissions.append(submission)
-        self._n_samples += 1
+        self._review()
+        self._compare()
+
+    def _review(self) -> bool:
+        accept = self._reviewer.accept(self._instance, self._submissions[-1])
+        self._reviews.append(accept)
+        return accept
+
+    def _compare(self) -> None:
+        if self._n_samples < 2:
+            return
+        if self._reviews[self._best_idx] and not self._reviews[-1]:
+            # Require that the best submission is accepted, so don't
+            # even need to compare here
+            return
+        sub1 = self._submissions[-2]
+        sub2 = self._submissions[-1]
+        choice = self._breviewer.compare_submissions(self._instance, sub1, sub2)
+        # choice is 1-based indexing (1 or 2)
+        # this was a comparison between the current best and the last one
+        self._best_idx = [self._best_idx, self._n_samples - 1][choice - 1]
 
     def retry(self) -> bool:
         if self._n_samples >= self._loop_config.max_samples:
+            logger.debug("Exiting retry loop: max_samples reached")
             return False
 
-        accept = self._reviewer.accept(self._instance, self._submissions[-1])
-        if accept:
-            self._n_accepted += 1
-
-        if accept and self._n_samples >= self._loop_config.min_draws:
+        if self._reviews[-1] and self._n_samples >= self._loop_config.min_draws > 0:
+            logger.debug("Exiting retry loop: min_draws reached and last submission was accepted")
             return False
 
-        if self._n_accepted >= self._loop_config.max_accepted_draws:
+        if self._n_accepted >= self._loop_config.max_accepted_draws > 0:
+            logger.debug("Exiting retry loop: max_accepted_draws reached")
             return False
 
         return True
 
-    def get_best(self) -> SUBMISSION_TYPE:
-        return None
+    def get_best(self) -> int:
+        assert len(self._reviews) == len(self._submissions)
+        return self._best_idx
 
 
 def get_review_loop_from_config(config, instance: INSTANCE_TYPE, model: BaseModel) -> AbstractReviewLoop:

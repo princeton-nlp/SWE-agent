@@ -8,6 +8,7 @@ from sweagent.agent.reviewer import (
     BinaryReviewerConfig,
     Reviewer,
     ReviewerConfig,
+    ReviewLoop,
     ReviewLoopConfig,
     get_review_loop_from_config,
 )
@@ -25,7 +26,10 @@ def dummy_binary_reviewer_config() -> BinaryReviewerConfig:
 
 @pytest.fixture()
 def dummy_review_loop_config(dummy_reviewer_config, dummy_binary_reviewer_config) -> ReviewLoopConfig:
-    return ReviewLoopConfig(dummy_reviewer_config, dummy_binary_reviewer_config)
+    return ReviewLoopConfig(
+        dummy_reviewer_config,
+        dummy_binary_reviewer_config,
+    )
 
 
 class DeterminedModel(BaseModel):
@@ -70,3 +74,42 @@ def test_binary_reviewer(dummy_binary_reviewer_config):
     assert br.compare_submissions(instance, sub1, osub2) == 2
     assert br.compare_submissions(instance, sub1, osub2) == 1
     assert br.compare_submissions(instance, sub1, osub2) == 1
+
+
+def test_loop_comparison(dummy_reviewer_config, dummy_binary_reviewer_config):
+    rmodel = DeterminedModel(["success", "fail", "success", "fail"])
+    # Only have one comparison: The two successes
+    bmodel = DeterminedModel(["second"])
+    lconfig = ReviewLoopConfig(
+        dummy_reviewer_config, dummy_binary_reviewer_config, max_samples=100, min_draws=100, max_accepted_draws=2
+    )
+    loop = ReviewLoop(lconfig, instance={}, model=rmodel)
+    loop._breviewer._model = bmodel
+    for i in range(3):
+        loop.on_submit(_get_fake_trajectory())
+        if i < 2:
+            assert loop.retry()
+        else:
+            assert not loop.retry()
+        if i < 2:
+            assert loop.get_best() == 0
+        else:
+            assert loop.get_best() == 2
+
+
+def test_loop_stop_max_fail(dummy_reviewer_config, dummy_binary_reviewer_config):
+    rmodel = DeterminedModel(["fail"] * 5)
+    # Only have one comparison: The two successes
+    bmodel = DeterminedModel(["second"] * 5)
+    lconfig = ReviewLoopConfig(dummy_reviewer_config, dummy_binary_reviewer_config, max_samples=5)
+    loop = ReviewLoop(lconfig, instance={}, model=rmodel)
+    loop._breviewer._model = bmodel
+    for i in range(5):
+        print(i)
+        loop.on_submit(_get_fake_trajectory())
+        print(loop._reviews)
+        if i < 4:
+            assert loop.retry()
+        else:
+            assert not loop.retry()
+        assert loop.get_best() == i
