@@ -634,9 +634,10 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
+    <nav class="md-nav" aria-label="0.6.1 (2024-06-20)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#breaking-changes" class="md-nav__link">
     <span class="md-ellipsis">
       Breaking changes
@@ -644,8 +645,8 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#improved" class="md-nav__link">
     <span class="md-ellipsis">
       Improved
@@ -653,13 +654,18 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#fixed" class="md-nav__link">
     <span class="md-ellipsis">
       Fixed
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1510,9 +1516,10 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
+    <nav class="md-nav" aria-label="0.6.1 (2024-06-20)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#breaking-changes" class="md-nav__link">
     <span class="md-ellipsis">
       Breaking changes
@@ -1520,8 +1527,8 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#improved" class="md-nav__link">
     <span class="md-ellipsis">
       Improved
@@ -1529,13 +1536,18 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#fixed" class="md-nav__link">
     <span class="md-ellipsis">
       Fixed
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1747,20 +1759,21 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 
 <h1 id="changelog">Changelog</h1>
 <h2 id="061-2024-06-20">0.6.1 (2024-06-20)</h2>
+<p><a href="https://github.com/princeton-nlp/SWE-agent/compare/v0.6.0...v0.6.1">All new commits</a></p>
 <p>This is (mostly) a patch release, in particular fixing several issues that had been introduced by the speed improvements of v0.7.0.
 We also solve a bug where existing linter errors in a file left SWE-agent unable to edit (because of our lint-retry-loop).</p>
-<h2 id="breaking-changes">Breaking changes</h2>
+<h3 id="breaking-changes">Breaking changes</h3>
 <ul>
 <li>Change: sparse clone method is now correctly called "shallow" by <a href="https://github.com/klieret">@klieret</a> in <a href="https://github.com/princeton-nlp/SWE-agent/pull/591">#591</a></li>
 </ul>
-<h2 id="improved">Improved</h2>
+<h3 id="improved">Improved</h3>
 <ul>
 <li>Enh: Show commands when encountering timeout error by <a href="https://github.com/klieret">@klieret</a> in <a href="https://github.com/princeton-nlp/SWE-agent/pull/582">#582</a></li>
 <li>Enh: Configuration option to show time in log by <a href="https://github.com/klieret">@klieret</a> in <a href="https://github.com/princeton-nlp/SWE-agent/pull/583">#583</a></li>
 <li>Enh: Allow to configure LONG_TIMEOUT for SWEEnv by <a href="https://github.com/klieret">@klieret</a> in <a href="https://github.com/princeton-nlp/SWE-agent/pull/584">#584</a></li>
 <li>Enh: Always write log to traj directory by <a href="https://github.com/klieret">@klieret</a> in <a href="https://github.com/princeton-nlp/SWE-agent/pull/588">#588</a></li>
 </ul>
-<h2 id="fixed">Fixed</h2>
+<h3 id="fixed">Fixed</h3>
 <ul>
 <li>fix <code>docker.errors.NotFound</code> by <a href="https://github.com/klieret">@klieret</a> in <a href="https://github.com/princeton-nlp/SWE-agent/pull/587">#587</a></li>
 <li>Fix: Revert to full clone method when needed by <a href="https://github.com/klieret">@klieret</a> in <a href="https://github.com/princeton-nlp/SWE-agent/pull/589">#589</a></li>
