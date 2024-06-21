@@ -39,6 +39,7 @@ from sweagent.environment.utils import (
     read_with_timeout,
     read_with_timeout_experimental,
 )
+from sweagent.types import AgentInfo
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import default_logger, get_logger
 
@@ -405,7 +406,7 @@ class SWEEnv(gym.Env):
         )
         os.remove(path_to_patch)
 
-    def step(self, action: str) -> tuple[str | None, int, bool, dict]:
+    def step(self, action: str) -> tuple[str | None, int, bool, AgentInfo]:
         """
         Runs given action in environment and returns corresponding output
 
@@ -418,7 +419,7 @@ class SWEEnv(gym.Env):
             done: whether task is over
             info: additional information (e.g. debugging information)
         """
-        info = {}
+        info: AgentInfo = {}
 
         observation = ""
         # Handle special actions

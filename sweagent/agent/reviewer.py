@@ -9,10 +9,10 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from sweagent.agent.models import BaseModel
+from sweagent.types import ReviewSubmission
 from sweagent.utils.log import get_logger
 
 INSTANCE_TYPE = dict[str, Any]
-SUBMISSION_TYPE = dict[str, Any]
 
 logger = get_logger("reviewer")
 
@@ -49,7 +49,7 @@ class AbstractBinaryReviewer(ABC):
 
     @abstractmethod
     def compare_submissions(
-        self, instance: INSTANCE_TYPE, sub1: SUBMISSION_TYPE, sub2: SUBMISSION_TYPE
+        self, instance: INSTANCE_TYPE, sub1: ReviewSubmission, sub2: ReviewSubmission
     ) -> BinaryReviewerResult:
         """Returns 0 if sub1 is better, 1 if sub2 is better"""
 
@@ -64,7 +64,7 @@ class AbstractReviewLoop(ABC):
         """Returns True if the agent should retry solving the issue"""
 
     @abstractmethod
-    def on_submit(self, submission: SUBMISSION_TYPE) -> None:
+    def on_submit(self, submission: ReviewSubmission) -> None:
         """Called when the agent submits a solution"""
 
     @abstractmethod
@@ -118,7 +118,7 @@ class Reviewer(AbstractReviewer):
         self._config = config
         self._model = model
 
-    def format_messages(self, instance: INSTANCE_TYPE, submission: SUBMISSION_TYPE):
+    def format_messages(self, instance: INSTANCE_TYPE, submission: ReviewSubmission):
         system_message = self._config.system_template
         user_message = self._config.instance_template.format(**instance, **submission)
         return [
@@ -135,7 +135,7 @@ class Reviewer(AbstractReviewer):
         logger.warning("Could not interpret response: %s, will reject submission.", response)
         return False
 
-    def review(self, instance: dict[str, Any], submission: SUBMISSION_TYPE) -> ReviewerResult:
+    def review(self, instance: dict[str, Any], submission: ReviewSubmission) -> ReviewerResult:
         messages = self.format_messages(instance, submission)
         answer = self._model.query(messages)
         return ReviewerResult(self.interpret(answer), answer, messages=messages)
@@ -187,7 +187,7 @@ class BinaryReviewer(AbstractBinaryReviewer):
             traj_item_template=config.traj_item_template,
         )
 
-    def format_messages(self, instance: INSTANCE_TYPE, sub1: SUBMISSION_TYPE, sub2: SUBMISSION_TYPE):
+    def format_messages(self, instance: INSTANCE_TYPE, sub1: ReviewSubmission, sub2: ReviewSubmission):
         system_message = self._config.system_template
         user_message = self._config.instance_template.format(
             **instance,
@@ -212,7 +212,7 @@ class BinaryReviewer(AbstractBinaryReviewer):
         return 0
 
     def compare_submissions(
-        self, instance: INSTANCE_TYPE, sub1: SUBMISSION_TYPE, sub2: SUBMISSION_TYPE
+        self, instance: INSTANCE_TYPE, sub1: ReviewSubmission, sub2: ReviewSubmission
     ) -> BinaryReviewerResult:
         messages = self.format_messages(instance, sub1, sub2)
         answer = self._model.query(messages)
@@ -232,7 +232,7 @@ class ReviewLoop(AbstractReviewLoop):
             loop_config.binary_reviewer_config, model
         )
         self._loop_config = loop_config
-        self._submissions: list[SUBMISSION_TYPE] = []
+        self._submissions: list[ReviewSubmission] = []
         self._reviews: list[ReviewerResult] = []
         self._comparisons: list[tuple[int, int, BinaryReviewerResult]] = []
         # Once we have k submissions, there will always be one voted at the
@@ -256,7 +256,7 @@ class ReviewLoop(AbstractReviewLoop):
     def _n_accepted(self) -> int:
         return sum([r.accept for r in self._reviews])
 
-    def on_submit(self, submission: SUBMISSION_TYPE) -> None:
+    def on_submit(self, submission: ReviewSubmission) -> None:
         self._submissions.append(submission)
         self._review()
         self._compare()
@@ -301,5 +301,8 @@ class ReviewLoop(AbstractReviewLoop):
         return self._best_idx
 
 
-def get_review_loop_from_config(config, instance: INSTANCE_TYPE, model: BaseModel) -> AbstractReviewLoop:
+def get_review_loop_from_config(config, instance: INSTANCE_TYPE, model: BaseModel) -> AbstractReviewLoop | None:
+    if not config.review_loop_classname:
+        logger.debug("Running without review loop")
+        return None
     return globals()[config.review_loop_classname](config, instance, model)

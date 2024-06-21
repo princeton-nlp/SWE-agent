@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from sweagent.agent.models import BaseModel
+from run import ActionsArguments, Main, ScriptArguments
+from sweagent import CONFIG_DIR
+from sweagent.agent.agents import Agent, AgentArguments, AgentHook
+from sweagent.agent.models import BaseModel, ModelArguments
 from sweagent.agent.reviewer import (
     BinaryReviewer,
     BinaryReviewerConfig,
@@ -97,6 +100,7 @@ def test_loop_comparison(dummy_reviewer_config, dummy_binary_reviewer_config):
             assert loop.get_best() == 0
         else:
             assert loop.get_best() == 2
+    assert loop._n_samples == 3
 
 
 def test_loop_stop_max_fail(dummy_reviewer_config, dummy_binary_reviewer_config):
@@ -115,3 +119,57 @@ def test_loop_stop_max_fail(dummy_reviewer_config, dummy_binary_reviewer_config)
         else:
             assert not loop.retry()
         assert loop.get_best() == i
+
+
+@pytest.fixture()
+def agent_arguments(dummy_review_loop_config) -> AgentArguments:
+    args = AgentArguments(
+        model=ModelArguments(model_name="instant_empty_submit"),
+        config_file=CONFIG_DIR / "default_from_url.yaml",
+        config=None,
+    )
+    config = args.config
+    object.__setattr__(config, "review_loop_config", dummy_review_loop_config)
+    object.__setattr__(args, "config", config)
+    return args
+
+
+@pytest.mark.slow()
+def test_agent_with_reviewer(agent_arguments, test_env_args):
+    assert agent_arguments.config.review_loop_config is not None
+    sa = ScriptArguments(
+        environment=test_env_args,
+        agent=agent_arguments,
+        actions=ActionsArguments(),
+        print_config=False,
+        skip_existing=False,
+    )
+
+    class InjectRModelsTests(AgentHook):
+        """We need to intercept the initialization of the reviewer as well
+        as the run loop of main to inject our models for testing
+        as well as the actual tests
+        """
+
+        def on_init(self, agent: Agent):
+            self._agent = agent
+
+        def on_setup_done(self):
+            # Same setup as in test_loop_comparison
+            rmodel = DeterminedModel(["success", "fail", "success", "fail"])
+            bmodel = DeterminedModel(["second"])
+            rloop: ReviewLoop = self._agent._rloop  # type: ignore
+            rloop._reviewer._model = rmodel  # type: ignore
+            rloop._reviewer._model = bmodel  # type: ignore
+
+        def on_run_done(self, trajectory, info):
+            rloop: ReviewLoop = self._agent._rloop  # type: ignore
+            assert rloop is not None
+            assert rloop._n_samples == 3
+            assert rloop.get_best() == 2
+            assert info["exit_status"] == "submitted"
+            assert info["api_calls"] == 3 * 2
+
+    main = Main(sa)
+    main.agent.add_hook(InjectRModelsTests())
+    main.main()

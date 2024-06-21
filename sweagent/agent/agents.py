@@ -4,7 +4,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any
 
 from simple_parsing.helpers.fields import field
 from simple_parsing.helpers.flatten import FlattenedAccess
@@ -21,7 +21,9 @@ from sweagent.agent.models import (
     get_model,
 )
 from sweagent.agent.parsing import FormatError, ParseFunction
+from sweagent.agent.reviewer import AbstractReviewLoop, ReviewLoopConfig, get_review_loop_from_config
 from sweagent.environment.swe_env import SWEEnv
+from sweagent.types import TRAJECTORY_TYPE, AgentInfo, ReviewSubmission, TrajectoryStep
 from sweagent.utils.config import convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 
@@ -99,6 +101,7 @@ class AgentConfig(FrozenSerializable):
     _commands: list[Command] = field(default_factory=list)
     _subroutines: dict[str, Subroutine] = field(default_factory=dict)
     subroutine_types: list[Subroutine] = field(default_factory=list)
+    review_loop_config: ReviewLoopConfig | None = None
 
     def __post_init__(self):
         object.__setattr__(self, "command_files", convert_paths_to_abspath(self.command_files))
@@ -194,16 +197,11 @@ class AgentArguments(FlattenedAccess, FrozenSerializable):
             object.__setattr__(model_args, "total_cost_limit", self.model.total_cost_limit)
 
 
-class TrajectoryStep(TypedDict):
-    action: str
-    observation: str
-    response: str
-    state: str | None
-    thought: str
-
-
 class AgentHook:
-    def on_init(self): ...
+    def on_init(self, *, agent: Agent):
+        """Note: Depending on the internals of `Agent` should be done with care,
+        it's best to use this as little as possible.
+        """
 
     def on_run_start(
         self,
@@ -219,7 +217,7 @@ class AgentHook:
 
     def on_step_done(self, *, trajectory_step: TrajectoryStep, model_stats: APIStats): ...
 
-    def on_run_done(self): ...
+    def on_run_done(self, *, trajectory: TRAJECTORY_TYPE, info: AgentInfo): ...
 
     def on_model_query(self, *, query: str, agent: str):
         """Actually query the model with the complete history."""
@@ -234,6 +232,8 @@ class AgentHook:
         thought: str = "",
         action: str = "",
     ): ...
+
+    def on_setup_done(self): ...
 
 
 class Agent:
@@ -254,10 +254,12 @@ class Agent:
         self.last_container_id = None
         self.hooks = []
         self.logger = get_logger("agent")
+        # Requires instance, so is set in `setup` methods
+        self._rloop: AbstractReviewLoop | None = None
 
     def add_hook(self, hook: AgentHook):
         """Add hook to agent"""
-        hook.on_init()
+        hook.on_init(self)
         self.hooks.append(hook)
 
     def _append_history(self, item: dict):
@@ -265,7 +267,7 @@ class Agent:
             hook.on_query_message_added(**item)
         self.history.append(item)
 
-    def setup(self, instance_args, init_model_stats=None) -> None:
+    def setup(self, instance_args: dict[str, Any], init_model_stats: APIStats | None = None) -> None:
         """Setup the agent for a new instance. This includes
         formatting the system message and adding demonstrations to the history.
 
@@ -275,6 +277,7 @@ class Agent:
         assert self.config is not None  # mypy
         self.model.reset_stats(init_model_stats)
         self.instance_args = instance_args
+        self._rloop = get_review_loop_from_config(self.config.review_loop_config, instance_args, self.model)
 
         system_msg = self.config.system_template.format(**self.system_args)
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
@@ -320,6 +323,8 @@ class Agent:
                             "role": "user",
                         },
                     )
+        for hook in self.hooks:
+            hook.on_setup_done()
 
     @property
     def state_command(self) -> str:
@@ -471,7 +476,7 @@ class Agent:
         self.subroutine_patterns[self.config.submit_command] = submit_pat
         self.command_patterns[self.config.submit_command] = submit_pat
 
-    def forward(self, observation: str, available_actions: list[str], state: str) -> tuple[str, str, str]:
+    def forward(self, observation: str | None, available_actions: list[str], state: str) -> tuple[str, str, str]:
         """Forwards the model
 
         Args:
@@ -501,7 +506,7 @@ class Agent:
 
         return thought, action, output
 
-    def forward_model(self, observation: str, state: str) -> str:
+    def forward_model(self, observation: str | None, state: str) -> str:
         """Query the model with the current state and observation with the appropriate template.
 
         Returns:
@@ -632,7 +637,7 @@ class Agent:
         self.logger.warning(f"Malformat limit reached: \n{output}")
         return "Exit due to format error", "exit_format", output
 
-    def forward_with_error_check(self, observation: str, state: str) -> tuple[str, str, str]:
+    def forward_with_error_check(self, observation: str | None, state: str) -> tuple[str, str, str]:
         """Wrapper around `self.forward_model` that handles errors and retries
         due to format errors or blocked actions.
 
@@ -668,6 +673,7 @@ class Agent:
         return self.check_format_and_requery(output)
 
     def init_environment_vars(self, env: SWEEnv):
+        assert self.config is not None
         self.set_environment_vars(env, self.config.env_variables)
 
     def set_environment_vars(self, env: SWEEnv, env_variables: dict[str, Any]) -> None:
@@ -801,10 +807,11 @@ class Agent:
             hook.on_run_start()
 
         # Run action/observation loop
-        trajectory = []
-        info = {}
-        traj_log_path = traj_dir / (env.record["instance_id"] + ".traj")
-        self.logger.info("Trajectory will be saved to %s", traj_log_path)
+        trajectory: list[TrajectoryStep] = []
+        info: AgentInfo = {}
+        if traj_dir:
+            traj_log_path = traj_dir / (env.record["instance_id"] + ".traj")
+            self.logger.info("Trajectory will be saved to %s", traj_log_path)
         while not done:
             for hook in self.hooks:
                 hook.on_step_start()
@@ -823,7 +830,11 @@ class Agent:
                         hook.on_sub_action_executed(obs=obs, done=done)
                     observations.append(obs)
                     if sub_action["cmd_name"] == self.config.submit_command:
-                        done = True
+                        if self._rloop is not None:
+                            self._rloop.on_submit(ReviewSubmission(trajectory=trajectory, info=info))
+                            done = self._rloop.retry()
+                        else:
+                            done = True
                     if done:
                         break
                 else:
@@ -851,7 +862,7 @@ class Agent:
                 hook.on_step_done(trajectory_step=trajectory_step, model_stats=model_stats)
 
         for hook in self.hooks:
-            hook.on_run_done()
+            hook.on_run_done(trajectory, info)
 
         self.logger.info("Trajectory saved to %s", traj_log_path)
 

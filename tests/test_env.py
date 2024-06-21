@@ -1,61 +1,18 @@
 from __future__ import annotations
 
 import dataclasses
-import subprocess
 import time
-from contextlib import contextmanager
 from pathlib import Path
 from unittest import mock
 
 import pytest
 import yaml
+from conftest import swe_env_context
 
 import docker
 import docker.errors
 from sweagent import CONFIG_DIR
-from sweagent.environment.swe_env import EnvHook, EnvironmentArguments, SWEEnv
-
-
-@pytest.fixture(scope="module")
-def test_env_args(
-    tmpdir_factory,
-):
-    """This will use a persistent container"""
-    local_repo_path = tmpdir_factory.getbasetemp() / "swe-agent-test-repo"
-    clone_cmd = ["git", "clone", "https://github.com/klieret/swe-agent-test-repo", local_repo_path]
-    subprocess.run(clone_cmd, check=True)
-    data_path = local_repo_path / "problem_statements" / "1.md"
-    test_env_args = EnvironmentArguments(
-        data_path=str(data_path),
-        repo_path=str(local_repo_path),
-        image_name="sweagent/swe-agent:latest",
-        container_name="test-container-this-is-a-random-string",
-        verbose=True,
-    )
-    yield test_env_args
-    # Cleanup (after session ends)
-    client = docker.from_env()
-    # fixme (?): What happens if user changed container_name?
-    try:
-        container = client.containers.get(test_env_args.container_name)
-        container.remove(force=True)
-    except docker.errors.NotFound:
-        # Can happen if this fixture never runs because we only do a partial
-        # test run
-        pass
-
-
-@contextmanager
-def swe_env_context(env_args):
-    """Context manager to make sure we close the shell on the container
-    so that we can reuse it.
-    """
-
-    env = SWEEnv(env_args)
-    try:
-        yield env
-    finally:
-        env.close()
+from sweagent.environment.swe_env import EnvHook, EnvironmentArguments
 
 
 @pytest.mark.slow()
