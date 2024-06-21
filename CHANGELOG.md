@@ -2,21 +2,23 @@
 
 ## 0.6.1 (2024-06-20)
 
+[All new commits](https://github.com/princeton-nlp/SWE-agent/compare/v0.6.0...v0.6.1)
+
 This is (mostly) a patch release, in particular fixing several issues that had been introduced by the speed improvements of v0.7.0.
 We also solve a bug where existing linter errors in a file left SWE-agent unable to edit (because of our lint-retry-loop).
 
-## Breaking changes
+### Breaking changes
 
 * Change: sparse clone method is now correctly called "shallow" by [@klieret](https://github.com/klieret) in [#591](https://github.com/princeton-nlp/SWE-agent/pull/591)
 
-## Improved
+### Improved
 
 * Enh: Show commands when encountering timeout error by [@klieret](https://github.com/klieret) in [#582](https://github.com/princeton-nlp/SWE-agent/pull/582)
 * Enh: Configuration option to show time in log by [@klieret](https://github.com/klieret) in [#583](https://github.com/princeton-nlp/SWE-agent/pull/583)
 * Enh: Allow to configure LONG_TIMEOUT for SWEEnv by [@klieret](https://github.com/klieret) in [#584](https://github.com/princeton-nlp/SWE-agent/pull/584)
 * Enh: Always write log to traj directory by [@klieret](https://github.com/klieret) in [#588](https://github.com/princeton-nlp/SWE-agent/pull/588)
 
-## Fixed
+### Fixed
 
 * fix `docker.errors.NotFound` by [@klieret](https://github.com/klieret) in [#587](https://github.com/princeton-nlp/SWE-agent/pull/587)
 * Fix: Revert to full clone method when needed by [@klieret](https://github.com/klieret) in [#589](https://github.com/princeton-nlp/SWE-agent/pull/589)
