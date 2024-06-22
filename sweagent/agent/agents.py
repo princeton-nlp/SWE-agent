@@ -258,7 +258,7 @@ class Agent:
         }
         self.instance_args = None
         self._parse_command_patterns()
-        self.history = []
+        self._history = []
         self.last_container_id = None
         self.hooks = []
         self.logger = get_logger("agent")
@@ -269,11 +269,24 @@ class Agent:
         self._env: SWEEnv | None = None
         self.traj_dir: None | Path = None
 
+        #: Trajectory of the agent for the current instance. In contrast to `history`,
+        #: this is mostly for the informational value of how the agent interacted with
+        #: the environment and is also what is being used when replaying the trajectory.
         self._trajectory: Trajectory = []
         self._info: AgentInfo = {}
 
     @property
-    def traj_log_path(self) -> Path | None:
+    def history(self) -> History:
+        """History that is passed on to the model.
+        Use `_append_history` to modify.
+        """
+        return self._history
+
+    @property
+    def traj_path(self) -> Path | None:
+        """Returns path to the trajectory.
+        The path is reset for every new instance.
+        """
         if self.traj_dir and self._env is not None:
             assert self._env.record
             return self.traj_dir / (self._env.record["instance_id"] + ".traj")
@@ -285,9 +298,10 @@ class Agent:
         self.hooks.append(hook)
 
     def _append_history(self, item: HistoryItem) -> None:
+        """Adds an item to the history."""
         for hook in self.hooks:
             hook.on_query_message_added(**item)
-        self.history.append(item)
+        self._history.append(item)
 
     def setup(self, instance_args: dict[str, Any], init_model_stats: APIStats | None = None) -> None:
         """Setup the agent for a new instance. This includes
@@ -308,7 +322,7 @@ class Agent:
         system_msg = self.config.system_template.format(**self.system_args)
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
 
-        self.history: History = []
+        self._history: History = []
         self._trajectory = []
         self._info = {}
         self._append_history(HistoryItem({"role": "system", "content": system_msg, "agent": self.name}))
@@ -373,8 +387,8 @@ class Agent:
             "history": self.history,
             "info": self._info,
         }
-        assert self.traj_log_path is not None
-        self.traj_log_path.write_text(json.dumps(log_dict, indent=2))
+        assert self.traj_path is not None
+        self.traj_path.write_text(json.dumps(log_dict, indent=2))
 
     def _get_first_match(self, action: str, pattern_type: str) -> re.Match | None:
         """Return the first match of a command pattern in the action string."""
@@ -762,7 +776,7 @@ class Agent:
         env.add_commands(command_files)
 
     def get_environment_vars(self, env: SWEEnv) -> dict[str, Any]:
-        """Get environment variables"""
+        """Get environment variables inside of the container"""
         assert self.config is not None  # mypy
         env_vars = dict()
         for var in self.config.env_variables:
@@ -792,7 +806,7 @@ class Agent:
             return_type=return_type,
             init_model_stats=self.model.stats,
         )
-        self.history += sub_agent.history
+        self._history += sub_agent.history
         self.set_environment_vars(env, env_vars)
         env.communicate(f"cd {cwd}")
         self.model.stats.replace(sub_agent.model.stats)
@@ -916,7 +930,7 @@ class Agent:
         self._info = AgentInfo()
         self.traj_dir = traj_dir
 
-        self.logger.info("Trajectory will be saved to %s", self.traj_log_path)
+        self.logger.info("Trajectory will be saved to %s", self.traj_path)
 
         # Run action/observation loop
         for hook in self.hooks:
@@ -930,16 +944,24 @@ class Agent:
                     # Note: The trajectory/info will not include the last `submit` command
                     self._rloop.on_submit(ReviewSubmission(trajectory=self._trajectory, info=self._info))
                     retry = self._rloop.retry()
+                    if retry:
+                        self.reset_agent_for_retry()
                     done = not retry
                 else:
                     done = True
         for hook in self.hooks:
             hook.on_run_done(trajectory=self._trajectory, info=self._info)
 
-        self.logger.info("Trajectory saved to %s", self.traj_log_path)
+        self.logger.info("Trajectory saved to %s", self.traj_path)
 
         if return_type == "info":
             return self._info
         if return_type == "info_trajectory":
             return self._info, self._trajectory
         return self._trajectory[-1][return_type]
+
+    def reset_agent_for_retry(self):
+        """When using a retry loop, this method is called to reset the history,
+        info, environment, etc. in order to prepare for a new attempt to solve the issue.
+        """
+        ...
