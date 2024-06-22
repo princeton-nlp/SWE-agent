@@ -4,7 +4,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 from simple_parsing.helpers.fields import field
 from simple_parsing.helpers.flatten import FlattenedAccess
@@ -236,6 +236,13 @@ class AgentHook:
     def on_setup_done(self): ...
 
 
+class SubAction(TypedDict):
+    agent: str
+    action: str
+    cmd_name: str | None
+    args: str
+
+
 class Agent:
     """Agent handles the behaviour of the model and how it interacts with the environment."""
 
@@ -271,12 +278,12 @@ class Agent:
             return self.traj_dir / (self._env.record["instance_id"] + ".traj")
         return None
 
-    def add_hook(self, hook: AgentHook):
+    def add_hook(self, hook: AgentHook) -> None:
         """Add hook to agent"""
         hook.on_init(agent=self)
         self.hooks.append(hook)
 
-    def _append_history(self, item: HistoryItem):
+    def _append_history(self, item: HistoryItem) -> None:
         for hook in self.hooks:
             hook.on_query_message_added(**item)
         self.history.append(item)
@@ -423,9 +430,9 @@ class Agent:
                 rem_action = ""
         return "\n".join(parsed_action)
 
-    def split_actions(self, action: str, pattern_type="subroutine") -> list[dict[str, Any]]:
+    def split_actions(self, action: str, pattern_type="subroutine") -> list[SubAction]:
         """Split an action into a list of actions in a greedy manner, each of which is a subroutine call or a single command."""
-        parsed_action = list()
+        parsed_action: list[SubAction] = list()
         rem_action = action
         while rem_action.strip():
             first_match = self._get_first_match(rem_action, pattern_type)
@@ -434,27 +441,34 @@ class Agent:
                 match_action = rem_action[first_match.start() : first_match.end()]
                 rem_action = rem_action[first_match.end() :]
                 if pre_action.strip():
-                    parsed_action.append({"agent": self.name, "action": pre_action, "cmd_name": None})
+                    parsed_action.append({"agent": self.name, "action": pre_action, "cmd_name": None, "args": ""})
                 if match_action.strip():
                     if match_action.split()[0] == self.config.submit_command:
                         parsed_action.append(
-                            {
-                                "agent": self.name,
-                                "action": match_action,
-                                "cmd_name": first_match.group(1),
-                            },
+                            SubAction(
+                                {
+                                    "agent": self.name,
+                                    "action": match_action,
+                                    "cmd_name": first_match.group(1),
+                                    "args": "",
+                                },
+                            )
                         )  # submit command is not a subroutine
                     else:
                         parsed_action.append(
-                            {
-                                "agent": first_match.group(1),
-                                "args": first_match.group(2),
-                                "action": match_action,
-                                "cmd_name": first_match.group(1),
-                            },
+                            SubAction(
+                                {
+                                    "agent": first_match.group(1),
+                                    "args": first_match.group(2),
+                                    "action": match_action,
+                                    "cmd_name": first_match.group(1),
+                                },
+                            )
                         )
             else:
-                parsed_action.append({"agent": self.name, "action": rem_action, "cmd_name": None})
+                parsed_action.append(
+                    SubAction({"agent": self.name, "action": rem_action, "cmd_name": None, "args": ""})
+                )
                 rem_action = ""
         return parsed_action
 
@@ -750,7 +764,7 @@ class Agent:
             env_vars[var] = env.communicate(f"echo ${var}").strip()
         return env_vars
 
-    def call_subroutine(self, agent_name: str, sub_action, env: SWEEnv):
+    def call_subroutine(self, agent_name: str, sub_action: SubAction, env: SWEEnv):
         """Call subroutine"""
         assert self.config is not None  # mypy
         env_vars = self.get_environment_vars(env)
@@ -779,44 +793,70 @@ class Agent:
         self.model.stats.replace(sub_agent.model.stats)
         return sub_agent_output
 
-    def _run_step(self, observation: str | None) -> tuple[str | None, bool]:
-        # mypy checks
+    def _run_sub_action(self, sub_action: SubAction) -> tuple[str | None, bool]:
+        """Execute a sub-action. If the sub-action is a command, execute it.
+        If it is a subroutine, call the subroutine.
+
+        Returns:
+            observation: Observation
+            done: Whether `submit` or another exit reason was called
+        """
+        assert self._env is not None
         assert self.config is not None
+        if sub_action["agent"] == self.name or sub_action["cmd_name"] == self.config.submit_command:
+            # Normal command, not a subroutine
+            for hook in self.hooks:
+                hook.on_sub_action_started(sub_action=sub_action)
+            observation, _, done, _info = self._env.step(sub_action["action"])
+            self._info.update(_info)
+            for hook in self.hooks:
+                hook.on_sub_action_executed(obs=observation, done=done)
+            if sub_action["cmd_name"] == self.config.submit_command:
+                if self._rloop is not None:
+                    # Note: The trajectory/info will not include the last `submit` command
+                    self._rloop.on_submit(ReviewSubmission(trajectory=self._trajectory, info=self._info))
+                    done = self._rloop.retry()
+                    # fixme: If we vote retry, we still need to finish this attempt, then
+                    # add a "reset" command to the history and then continue.
+                else:
+                    done = True
+        else:
+            agent_name = sub_action["agent"]
+            sub_agent_output = self.call_subroutine(agent_name, sub_action, self._env)
+            observation = sub_agent_output
+            assert isinstance(observation, str) or observation is None
+            done = False
+        return observation, done
+
+    def _run_step(self, observation: str | None) -> tuple[str | None, bool]:
+        """Run a step of the agent (forward, execute, and save).
+
+        Returns:
+            observation: Observation
+            done: Whether `submit` or another exit reason was called
+        """
+
+        assert self.config is not None  # mypy
+        assert self._env is not None
+
         for hook in self.hooks:
             hook.on_step_start()
+
         # fixme: This will probably fail if the state command is not set
         state = self._env.communicate(self.state_command) if self.state_command else None
         thought, action, output = self.forward(observation, self._env.get_available_actions(), state)
         for hook in self.hooks:
             hook.on_actions_generated(thought=thought, action=action, output=output)
-        observations: list[str | None] = list()
         run_action: str = self._guard_multiline_input(action)
-        for sub_action in self.split_actions(run_action):
-            if sub_action["agent"] == self.name or sub_action["cmd_name"] == self.config.submit_command:
-                # Normal command, not a subroutine
-                for hook in self.hooks:
-                    hook.on_sub_action_started(sub_action=sub_action)
-                obs, _, done, _info = self._env.step(sub_action["action"])
-                self._info.update(_info)
-                for hook in self.hooks:
-                    hook.on_sub_action_executed(obs=obs, done=done)
-                observations.append(obs)
-                if sub_action["cmd_name"] == self.config.submit_command:
-                    if self._rloop is not None:
-                        # Note: The trajectory/info will not include the last `submit` command
-                        self._rloop.on_submit(ReviewSubmission(trajectory=self._trajectory, info=self._info))
-                        done = self._rloop.retry()
-                        # fixme: If we vote retry, we still need to finish this attempt, then
-                        # add a "reset" command to the history and then continue.
-                    else:
-                        done = True
-                if done:
-                    break
-            else:
-                agent_name = sub_action["agent"]
-                sub_agent_output = self.call_subroutine(agent_name, sub_action, self._env)
-                observations.append(sub_agent_output)
 
+        # Loop over sub-actions (if any)
+        done = False
+        observations: list[str | None] = list()
+        for sub_action in self.split_actions(run_action):
+            observation, done = self._run_sub_action(sub_action)
+            if done:
+                break
+            observations.append(observation)
         observation = "\n".join([obs for obs in observations if obs is not None])
 
         trajectory_step = TrajectoryStep(
@@ -863,7 +903,6 @@ class Agent:
             If return_type is "info_trajectory", returns a tuple of
             the info dictionary and the trajectory (list of dictionaries).
         """
-        done = False
         assert env.record is not None
         assert env.container_obj is not None
         if env.container_obj.id != self.last_container_id:
@@ -884,6 +923,7 @@ class Agent:
         # Run action/observation loop
         for hook in self.hooks:
             hook.on_run_start()
+        done = False
         while not done:
             observation, done = self._run_step(observation)
         for hook in self.hooks:
