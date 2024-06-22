@@ -7,12 +7,13 @@ from unittest import mock
 
 import pytest
 import yaml
-from conftest import swe_env_context
 
 import docker
 import docker.errors
 from sweagent import CONFIG_DIR
 from sweagent.environment.swe_env import EnvHook, EnvironmentArguments
+
+from .conftest import swe_env_context
 
 
 @pytest.mark.slow()

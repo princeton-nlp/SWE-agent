@@ -18,6 +18,7 @@ from sweagent.agent.models import (
     ContextWindowExceededError,
     CostLimitExceededError,
     ModelArguments,
+    ReplayModel,
     get_model,
 )
 from sweagent.agent.parsing import FormatError, ParseFunction
@@ -298,7 +299,11 @@ class Agent:
         assert self.config is not None  # mypy
         self.model.reset_stats(init_model_stats)
         self.instance_args = instance_args
+
         self._rloop = get_review_loop_from_config(self.config.review_loop_config, instance_args, self.model)
+        if isinstance(self.model, ReplayModel) and self._rloop is not None:
+            msg = "Cannot use a replay model with a review loop model yet"
+            raise NotImplementedError(msg)
 
         system_msg = self.config.system_template.format(**self.system_args)
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
@@ -812,14 +817,7 @@ class Agent:
             for hook in self.hooks:
                 hook.on_sub_action_executed(obs=observation, done=done)
             if sub_action["cmd_name"] == self.config.submit_command:
-                if self._rloop is not None:
-                    # Note: The trajectory/info will not include the last `submit` command
-                    self._rloop.on_submit(ReviewSubmission(trajectory=self._trajectory, info=self._info))
-                    done = self._rloop.retry()
-                    # fixme: If we vote retry, we still need to finish this attempt, then
-                    # add a "reset" command to the history and then continue.
-                else:
-                    done = True
+                done = True
         else:
             agent_name = sub_action["agent"]
             sub_agent_output = self.call_subroutine(agent_name, sub_action, self._env)
@@ -926,6 +924,15 @@ class Agent:
         done = False
         while not done:
             observation, done = self._run_step(observation)
+            if done:
+                # fixme: Would have to fix this for replay model
+                if self._rloop is not None:
+                    # Note: The trajectory/info will not include the last `submit` command
+                    self._rloop.on_submit(ReviewSubmission(trajectory=self._trajectory, info=self._info))
+                    retry = self._rloop.retry()
+                    done = not retry
+                else:
+                    done = True
         for hook in self.hooks:
             hook.on_run_done(trajectory=self._trajectory, info=self._info)
 

@@ -841,7 +841,14 @@ class ReplayModel(BaseModel):
 
 
 class InstantEmptySubmitTestModel(BaseModel):
-    MODELS = {"instant_empty_submit": {}}
+    MODELS = {
+        "instant_empty_submit": {
+            "max_context": 100_000,
+            "max_tokens_to_sample": 4096,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        }
+    }
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
         """This model immediately submits. Useful for testing purposes"""
@@ -856,6 +863,7 @@ class InstantEmptySubmitTestModel(BaseModel):
         elif self._action_idx == 1:
             self._action_idx = 0
             action = "DISCUSSION\nThe task should be resolved, so let's submit the patch.\n\n```\nsubmit\n```\n"
+        self.update_stats(0, 0)
         return action
 
 

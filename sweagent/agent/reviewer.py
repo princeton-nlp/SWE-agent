@@ -5,7 +5,7 @@ solving the issue and to select the best solution.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any, Literal
 
 from sweagent.agent.models import BaseModel
@@ -126,7 +126,10 @@ class Reviewer(AbstractReviewer):
 
     def format_messages(self, instance: INSTANCE_TYPE, submission: ReviewSubmission):
         system_message = self._config.system_template
-        user_message = self._config.instance_template.format(**instance, **submission)
+        # fixme: Add submission details
+        user_message = self._config.instance_template.format(
+            **instance,
+        )
         return [
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_message},
@@ -195,12 +198,13 @@ class BinaryReviewer(AbstractBinaryReviewer):
 
     def format_messages(self, instance: INSTANCE_TYPE, sub1: ReviewSubmission, sub2: ReviewSubmission):
         system_message = self._config.system_template
+        # fixme: Correct access to the elements!
         user_message = self._config.instance_template.format(
             **instance,
-            **{f"{k}1": v for k, v in sub1.items() if k != "traj"},
-            **{f"{k}2": v for k, v in sub1.items() if k != "traj"},
-            traj1=self._traj_formatter.format_trajectory(sub1["traj"]["trajectory"], i_traj=1),
-            traj2=self._traj_formatter.format_trajectory(sub2["traj"]["trajectory"], i_traj=2),
+            # **{f"{k}1": v for k, v in sub1.items() if k != "traj"},
+            # **{f"{k}2": v for k, v in sub1.items() if k != "traj"},
+            # traj1=self._traj_formatter.format_trajectory(sub1["traj"]["trajectory"], i_traj=1),
+            # traj2=self._traj_formatter.format_trajectory(sub2["traj"]["trajectory"], i_traj=2),
         )
         return [
             {"role": "system", "content": system_message},
@@ -283,6 +287,7 @@ class ReviewLoop(AbstractReviewLoop):
 
     def _review(self) -> bool:
         review = self._reviewer.review(self._instance, self._submissions[-1])
+        logger.debug("Review result: %s", asdict(review))
         self._reviews.append(review)
         return review.accept
 
@@ -293,9 +298,10 @@ class ReviewLoop(AbstractReviewLoop):
             # Require that the best submission is accepted, so don't
             # even need to compare here
             return
-        sub1 = self._submissions[-2]
+        sub1 = self._submissions[self._best_idx]
         sub2 = self._submissions[-1]
         cresult = self._breviewer.compare_submissions(self._instance, sub1, sub2)
+        logger.debug(f"Comparison between {self._best_idx} and -1 result: %s", asdict(cresult))
         self._comparisons.append((self._n_samples - 2, self._n_samples - 1, cresult))
         assert cresult.choice in [0, 1]
         # this was a comparison between the current best and the last one
@@ -303,15 +309,21 @@ class ReviewLoop(AbstractReviewLoop):
 
     def retry(self) -> bool:
         if self._n_samples >= self._loop_config.max_samples:
-            logger.debug("Exiting retry loop: max_samples reached")
+            logger.debug(
+                f"Exiting retry loop (n_samples={self._n_samples}, n_accepted={self._n_accepted}): max_samples reached"
+            )
             return False
 
         if self._reviews[-1].accept and self._n_samples >= self._loop_config.min_draws > 0:
-            logger.debug("Exiting retry loop: min_draws reached and last submission was accepted")
+            logger.debug(
+                f"Exiting retry loop (n_samples={self._n_samples}, n_accepted={self._n_accepted}): min_draws reached and last submission was accepted"
+            )
             return False
 
         if self._n_accepted >= self._loop_config.max_accepted_draws > 0:
-            logger.debug("Exiting retry loop: max_accepted_draws reached")
+            logger.debug(
+                f"Exiting retry loop (n_samples={self._n_samples}, n_accepted={self._n_accepted}): max_accepted_draws reached"
+            )
             return False
 
         return True
