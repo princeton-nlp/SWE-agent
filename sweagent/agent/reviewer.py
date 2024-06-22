@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from sweagent.agent.models import BaseModel
-from sweagent.types import ReviewSubmission
+from sweagent.types import ReviewSubmission, Trajectory
 from sweagent.utils.log import get_logger
 
 INSTANCE_TYPE = dict[str, Any]
@@ -96,12 +96,18 @@ class BinaryReviewerConfig:
 
 
 @dataclass
-class ReviewLoopConfig:
+class AbstractReviewLoopConfig:
+    """Every review loop config must have the following"""
+
+    review_loop_classname: str
+
+
+@dataclass
+class ReviewLoopConfig(AbstractReviewLoopConfig):
     """The configuration for the review loop"""
 
     reviewer_config: ReviewerConfig
     binary_reviewer_config: BinaryReviewerConfig
-    review_loop_classname: str = "ReviewLoop"
     reviewer_classname: str = "Reviewer"
     binary_reviewer_classname: str = "BinaryReviewer"
     max_samples: int = 2
@@ -219,6 +225,18 @@ class BinaryReviewer(AbstractBinaryReviewer):
         return BinaryReviewerResult(self.interpret(answer), output=answer, messages=messages)
 
 
+def split_trajectory(trajectory: Trajectory, submit_command: str) -> list[Trajectory]:
+    """Split a "cumulative" trajectory that includes
+    multiple retries into the individual parts. This basically means
+    finding the `submit` command and splitting along that.
+
+    Args:
+        trajectory: The cumulative trajectory
+        submit_command: The command that submits the solution
+            will probably be `submit`.
+    """
+
+
 class ReviewLoop(AbstractReviewLoop):
     def __init__(
         self,
@@ -232,6 +250,8 @@ class ReviewLoop(AbstractReviewLoop):
             loop_config.binary_reviewer_config, model
         )
         self._loop_config = loop_config
+        # Note: These are "cumulative" submissions, i.e., they include all retries
+        # up to that point.
         self._submissions: list[ReviewSubmission] = []
         self._reviews: list[ReviewerResult] = []
         self._comparisons: list[tuple[int, int, BinaryReviewerResult]] = []
@@ -301,8 +321,10 @@ class ReviewLoop(AbstractReviewLoop):
         return self._best_idx
 
 
-def get_review_loop_from_config(config, instance: INSTANCE_TYPE, model: BaseModel) -> AbstractReviewLoop | None:
-    if not config.review_loop_classname:
+def get_review_loop_from_config(
+    config: AbstractReviewLoopConfig | None, instance: INSTANCE_TYPE, model: BaseModel
+) -> AbstractReviewLoop | None:
+    if config is None:
         logger.debug("Running without review loop")
         return None
     return globals()[config.review_loop_classname](config, instance, model)

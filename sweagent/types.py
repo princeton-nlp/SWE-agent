@@ -18,7 +18,20 @@ class TrajectoryStep(TypedDict):
     thought: str
 
 
-TRAJECTORY_TYPE = list[TrajectoryStep]
+class _HistoryItem(TypedDict):
+    role: str
+
+
+class HistoryItem(_HistoryItem, total=False):
+    content: str | None
+    agent: str
+    is_demo: bool
+    thought: str
+    action: str | None
+
+
+History = list[HistoryItem]
+Trajectory = list[TrajectoryStep]
 
 
 class AgentInfo(TypedDict, total=False):
@@ -32,5 +45,7 @@ class AgentInfo(TypedDict, total=False):
 class ReviewSubmission:
     """Information that's passed to the reviewer"""
 
-    trajectory: TRAJECTORY_TYPE
+    #: Total trajectory (including several retries)
+    trajectory: Trajectory
+    #: Aggregate info dict (including several retries)
     info: AgentInfo

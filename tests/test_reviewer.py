@@ -30,6 +30,7 @@ def dummy_binary_reviewer_config() -> BinaryReviewerConfig:
 @pytest.fixture()
 def dummy_review_loop_config(dummy_reviewer_config, dummy_binary_reviewer_config) -> ReviewLoopConfig:
     return ReviewLoopConfig(
+        "ReviewLoop",
         dummy_reviewer_config,
         dummy_binary_reviewer_config,
     )
@@ -84,7 +85,12 @@ def test_loop_comparison(dummy_reviewer_config, dummy_binary_reviewer_config):
     # Only have one comparison: The two successes
     bmodel = DeterminedModel(["second"])
     lconfig = ReviewLoopConfig(
-        dummy_reviewer_config, dummy_binary_reviewer_config, max_samples=100, min_draws=100, max_accepted_draws=2
+        "ReviewLoop",
+        dummy_reviewer_config,
+        dummy_binary_reviewer_config,
+        max_samples=100,
+        min_draws=100,
+        max_accepted_draws=2,
     )
     loop = ReviewLoop(lconfig, instance={}, model=rmodel)
     loop._breviewer._model = bmodel
@@ -107,7 +113,7 @@ def test_loop_stop_max_fail(dummy_reviewer_config, dummy_binary_reviewer_config)
     rmodel = DeterminedModel(["fail"] * 5)
     # Only have one comparison: The two successes
     bmodel = DeterminedModel(["second"] * 5)
-    lconfig = ReviewLoopConfig(dummy_reviewer_config, dummy_binary_reviewer_config, max_samples=5)
+    lconfig = ReviewLoopConfig("ReviewLoop", dummy_reviewer_config, dummy_binary_reviewer_config, max_samples=5)
     loop = ReviewLoop(lconfig, instance={}, model=rmodel)
     loop._breviewer._model = bmodel
     for i in range(5):

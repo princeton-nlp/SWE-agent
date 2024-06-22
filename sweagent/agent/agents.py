@@ -23,7 +23,7 @@ from sweagent.agent.models import (
 from sweagent.agent.parsing import FormatError, ParseFunction
 from sweagent.agent.reviewer import AbstractReviewLoop, ReviewLoopConfig, get_review_loop_from_config
 from sweagent.environment.swe_env import SWEEnv
-from sweagent.types import TRAJECTORY_TYPE, AgentInfo, ReviewSubmission, TrajectoryStep
+from sweagent.types import AgentInfo, History, HistoryItem, ReviewSubmission, Trajectory, TrajectoryStep
 from sweagent.utils.config import convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 
@@ -217,7 +217,7 @@ class AgentHook:
 
     def on_step_done(self, *, trajectory_step: TrajectoryStep, model_stats: APIStats): ...
 
-    def on_run_done(self, *, trajectory: TRAJECTORY_TYPE, info: AgentInfo): ...
+    def on_run_done(self, *, trajectory: Trajectory, info: AgentInfo): ...
 
     def on_model_query(self, *, query: str, agent: str):
         """Actually query the model with the complete history."""
@@ -257,12 +257,26 @@ class Agent:
         # Requires instance, so is set in `setup` methods
         self._rloop: AbstractReviewLoop | None = None
 
+        # Set in run method
+        self._env: SWEEnv | None = None
+        self.traj_dir: None | Path = None
+
+        self._trajectory: Trajectory = []
+        self._info: AgentInfo = {}
+
+    @property
+    def traj_log_path(self) -> Path | None:
+        if self.traj_dir and self._env is not None:
+            assert self._env.record
+            return self.traj_dir / (self._env.record["instance_id"] + ".traj")
+        return None
+
     def add_hook(self, hook: AgentHook):
         """Add hook to agent"""
-        hook.on_init(self)
+        hook.on_init(agent=self)
         self.hooks.append(hook)
 
-    def _append_history(self, item: dict):
+    def _append_history(self, item: HistoryItem):
         for hook in self.hooks:
             hook.on_query_message_added(**item)
         self.history.append(item)
@@ -282,8 +296,10 @@ class Agent:
         system_msg = self.config.system_template.format(**self.system_args)
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
 
-        self.history: list[dict[str, Any]] = []
-        self._append_history({"role": "system", "content": system_msg, "agent": self.name})
+        self.history: History = []
+        self._trajectory = []
+        self._info = {}
+        self._append_history(HistoryItem({"role": "system", "content": system_msg, "agent": self.name}))
 
         if "history_to_messages" in dir(self.model):
             for demonstration_path in self.config.demonstrations:
@@ -336,17 +352,17 @@ class Agent:
         """Return the history of the agent since the last reset."""
         return self.config.history_processor([entry for entry in self.history if entry["agent"] == self.name])
 
-    def save_trajectory(
-        self, trajectory: list[dict[str, Any]], log_path: Path, env_name: str, info: dict[str, Any]
-    ) -> None:
+    def save_trajectory(self) -> None:
         """Save the trajectory"""
+        assert self._env is not None
         log_dict = {
-            "environment": env_name,
-            "trajectory": trajectory,
+            "environment": self._env.name,
+            "trajectory": self._trajectory,
             "history": self.history,
-            "info": info,
+            "info": self._info,
         }
-        log_path.write_text(json.dumps(log_dict, indent=2))
+        assert self.traj_log_path is not None
+        self.traj_log_path.write_text(json.dumps(log_dict, indent=2))
 
     def _get_first_match(self, action: str, pattern_type: str) -> re.Match | None:
         """Return the first match of a command pattern in the action string."""
@@ -745,7 +761,7 @@ class Agent:
         else:
             obs = None
         if env.returncode != 0:
-            self._append_history({"role": "user", "content": obs, "agent": agent_name})
+            self._append_history(HistoryItem({"role": "user", "content": obs, "agent": agent_name}))
             msg = f"Nonzero return code: {env.returncode} for init_observation in {agent_name}.\n{obs}"
             raise RuntimeError(msg)
         return_type = self.config._subroutines[agent_name].return_type
@@ -763,13 +779,70 @@ class Agent:
         self.model.stats.replace(sub_agent.model.stats)
         return sub_agent_output
 
+    def _run_step(self, observation: str | None) -> tuple[str | None, bool]:
+        # mypy checks
+        assert self.config is not None
+        for hook in self.hooks:
+            hook.on_step_start()
+        # fixme: This will probably fail if the state command is not set
+        state = self._env.communicate(self.state_command) if self.state_command else None
+        thought, action, output = self.forward(observation, self._env.get_available_actions(), state)
+        for hook in self.hooks:
+            hook.on_actions_generated(thought=thought, action=action, output=output)
+        observations: list[str | None] = list()
+        run_action: str = self._guard_multiline_input(action)
+        for sub_action in self.split_actions(run_action):
+            if sub_action["agent"] == self.name or sub_action["cmd_name"] == self.config.submit_command:
+                # Normal command, not a subroutine
+                for hook in self.hooks:
+                    hook.on_sub_action_started(sub_action=sub_action)
+                obs, _, done, _info = self._env.step(sub_action["action"])
+                self._info.update(_info)
+                for hook in self.hooks:
+                    hook.on_sub_action_executed(obs=obs, done=done)
+                observations.append(obs)
+                if sub_action["cmd_name"] == self.config.submit_command:
+                    if self._rloop is not None:
+                        # Note: The trajectory/info will not include the last `submit` command
+                        self._rloop.on_submit(ReviewSubmission(trajectory=self._trajectory, info=self._info))
+                        done = self._rloop.retry()
+                        # fixme: If we vote retry, we still need to finish this attempt, then
+                        # add a "reset" command to the history and then continue.
+                    else:
+                        done = True
+                if done:
+                    break
+            else:
+                agent_name = sub_action["agent"]
+                sub_agent_output = self.call_subroutine(agent_name, sub_action, self._env)
+                observations.append(sub_agent_output)
+
+        observation = "\n".join([obs for obs in observations if obs is not None])
+
+        trajectory_step = TrajectoryStep(
+            {
+                "action": action,
+                "observation": observation,
+                "response": output,
+                "state": state,
+                "thought": thought,
+            },
+        )
+        self._trajectory.append(trajectory_step)
+        model_stats: APIStats = self.model.stats
+        self._info["model_stats"] = model_stats.to_dict()
+        self.save_trajectory()
+        for hook in self.hooks:
+            hook.on_step_done(trajectory_step=trajectory_step, model_stats=model_stats)
+        return observation, done
+
     def run(
         self,
         setup_args: dict[str, Any],
         env: SWEEnv,
         observation: str | None = None,
         traj_dir: Path | None = None,
-        return_type: str | None = "info_trajectory",
+        return_type: str = "info_trajectory",
         init_model_stats: APIStats | None = None,
     ):
         """
@@ -791,11 +864,8 @@ class Agent:
             the info dictionary and the trajectory (list of dictionaries).
         """
         done = False
-        # mypy checks
-        assert env.container_obj is not None
         assert env.record is not None
-        assert self.config is not None
-
+        assert env.container_obj is not None
         if env.container_obj.id != self.last_container_id:
             self.logger.info(f"Initializing agent settings for container {env.container_obj.id}")
             self.init_environment_vars(env)
@@ -803,71 +873,26 @@ class Agent:
         # Re-initialize primary
         self.setup(setup_args, init_model_stats)
 
-        for hook in self.hooks:
-            hook.on_run_start()
+        # Save/reset some attributes
+        self._trajectory = Trajectory()
+        self._env = env
+        self._info = AgentInfo()
+        self.traj_dir = traj_dir
+
+        self.logger.info("Trajectory will be saved to %s", self.traj_log_path)
 
         # Run action/observation loop
-        trajectory: list[TrajectoryStep] = []
-        info: AgentInfo = {}
-        if traj_dir:
-            traj_log_path = traj_dir / (env.record["instance_id"] + ".traj")
-            self.logger.info("Trajectory will be saved to %s", traj_log_path)
-        while not done:
-            for hook in self.hooks:
-                hook.on_step_start()
-            state = env.communicate(self.state_command) if self.state_command else None
-            thought, action, output = self.forward(observation, env.get_available_actions(), state)
-            for hook in self.hooks:
-                hook.on_actions_generated(thought=thought, action=action, output=output)
-            observations = list()
-            run_action = self._guard_multiline_input(action)
-            for sub_action in self.split_actions(run_action):
-                if sub_action["agent"] == self.name or sub_action["cmd_name"] == self.config.submit_command:
-                    for hook in self.hooks:
-                        hook.on_sub_action_started(sub_action=sub_action)
-                    obs, _, done, info = env.step(sub_action["action"])
-                    for hook in self.hooks:
-                        hook.on_sub_action_executed(obs=obs, done=done)
-                    observations.append(obs)
-                    if sub_action["cmd_name"] == self.config.submit_command:
-                        if self._rloop is not None:
-                            self._rloop.on_submit(ReviewSubmission(trajectory=trajectory, info=info))
-                            done = self._rloop.retry()
-                        else:
-                            done = True
-                    if done:
-                        break
-                else:
-                    agent_name = sub_action["agent"]
-                    sub_agent_output = self.call_subroutine(agent_name, sub_action, env)
-                    observations.append(sub_agent_output)
-
-            observation = "\n".join([obs for obs in observations if obs is not None])
-
-            trajectory_step = TrajectoryStep(
-                {
-                    "action": action,
-                    "observation": observation,
-                    "response": output,
-                    "state": state,
-                    "thought": thought,
-                },
-            )
-            trajectory.append(trajectory_step)
-            model_stats: APIStats = self.model.stats
-            info["model_stats"] = model_stats.to_dict()
-            if traj_dir:
-                self.save_trajectory(trajectory, traj_log_path, env_name=env.name, info=info)
-            for hook in self.hooks:
-                hook.on_step_done(trajectory_step=trajectory_step, model_stats=model_stats)
-
         for hook in self.hooks:
-            hook.on_run_done(trajectory, info)
+            hook.on_run_start()
+        while not done:
+            observation, done = self._run_step(observation)
+        for hook in self.hooks:
+            hook.on_run_done(trajectory=self._trajectory, info=self._info)
 
-        self.logger.info("Trajectory saved to %s", traj_log_path)
+        self.logger.info("Trajectory saved to %s", self.traj_log_path)
 
         if return_type == "info":
-            return info
+            return self._info
         if return_type == "info_trajectory":
-            return info, trajectory
-        return trajectory[-1][return_type]
+            return self._info, self._trajectory
+        return self._trajectory[-1][return_type]
