@@ -13,7 +13,7 @@ Running SWE-agent in your browser is the easiest way to try out our project.
 
 ## Running the Web UI
 
-Go to the terminal and enter
+Go to the terminal and enter. Make sure to have Docker running in the background.
 
 ```bash
 ./start_web_ui.sh
