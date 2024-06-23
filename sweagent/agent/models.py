@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -121,7 +122,8 @@ class BaseModel:
             self.stats = APIStats(total_cost=self.stats.total_cost)
             logger.info("Resetting model stats")
         else:
-            self.stats = other
+            # Make sure to copy the stats to avoid modifying the original
+            self.stats = copy.deepcopy(other)
 
     def update_stats(self, input_tokens: int, output_tokens: int) -> float:
         """

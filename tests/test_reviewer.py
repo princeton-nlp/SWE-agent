@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import json
+import logging
+import pprint
+
 import pytest
 
 from run import ActionsArguments, Main, ScriptArguments
@@ -37,14 +41,33 @@ def dummy_review_loop_config(dummy_reviewer_config, dummy_binary_reviewer_config
 
 
 class DeterminedModel(BaseModel):
+    MODELS = {
+        "determined_model": {
+            "max_context": 100_000,
+            "max_tokens_to_sample": 4096,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        }
+    }
+
     def __init__(self, replies: list[str]):
+        ma = ModelArguments("determined_model")
+        super().__init__(ma, [])  # type: ignore
         self._replies = replies
         self._idx = 0
 
     def query(self, messages):
         reply = self._replies[self._idx]
         self._idx += 1
+        self.update_stats(0, 0)
         return reply
+
+
+def test_determined_model_costs():
+    model = DeterminedModel([""])
+    assert model.stats.api_calls == 0
+    model.query([{"role": "system", "content": ""}])
+    assert model.stats.api_calls == 1
 
 
 def test_get_from_config(dummy_review_loop_config):
@@ -107,12 +130,14 @@ def test_loop_comparison(dummy_reviewer_config, dummy_binary_reviewer_config):
         else:
             assert loop.get_best() == 2
     assert loop._n_samples == 3
+    assert rmodel.stats.api_calls == 3
+    assert bmodel.stats.api_calls == 1
 
 
 def test_loop_stop_max_fail(dummy_reviewer_config, dummy_binary_reviewer_config):
     rmodel = DeterminedModel(["fail"] * 5)
     # Only have one comparison: The two successes
-    bmodel = DeterminedModel(["second"] * 5)
+    bmodel = DeterminedModel(["second"] * 4)
     lconfig = ReviewLoopConfig("ReviewLoop", dummy_reviewer_config, dummy_binary_reviewer_config, max_samples=5)
     loop = ReviewLoop(lconfig, instance={}, model=rmodel)
     loop._breviewer._model = bmodel
@@ -125,6 +150,8 @@ def test_loop_stop_max_fail(dummy_reviewer_config, dummy_binary_reviewer_config)
         else:
             assert not loop.retry()
         assert loop.get_best() == i
+    assert rmodel.stats.api_calls == 5
+    assert bmodel.stats.api_calls == 4
 
 
 def get_agent_arguments(review_loop_config) -> AgentArguments:
@@ -172,11 +199,11 @@ def test_agent_with_reviewer(dummy_reviewer_config, dummy_binary_reviewer_config
 
         def on_setup_done(self):
             # Same setup as in test_loop_comparison
-            rmodel = DeterminedModel(["success", "fail", "success", "fail"])
-            bmodel = DeterminedModel(["second"])
+            model = DeterminedModel(["success", "fail", "success", "second"])
             rloop: ReviewLoop = self._agent._rloop  # type: ignore
-            rloop._reviewer._model = rmodel  # type: ignore
-            rloop._breviewer._model = bmodel  # type: ignore
+            rloop._reviewer._model = model  # type: ignore
+            rloop._breviewer._model = model  # type: ignore
+            rloop._model = model
 
         def on_run_done(self, trajectory, info):
             rloop: ReviewLoop = self._agent._rloop  # type: ignore
@@ -184,8 +211,19 @@ def test_agent_with_reviewer(dummy_reviewer_config, dummy_binary_reviewer_config
             assert rloop._n_samples == 3
             assert rloop.get_best() == 2
             assert info["exit_status"] == "submitted"
-            assert info["model_stats"]["api_calls"] == 3 * 2
+            assert info["model_stats"]["api_calls"] == 2
 
     main = Main(sa)
     main.agent.add_hook(InjectRModelsTests())
+    main.agent.logger.setLevel(logging.ERROR)
     main.main()
+    assert main.agent._rloop.model_stats.api_calls == 4
+    full_info = json.loads(main.agent.traj_path.read_text())  # type: ignore
+    full_info["attempts"] = [
+        {k: v for k, v in attempt.items() if k not in ["trajectory", "history"]} for attempt in full_info["attempts"]
+    ]
+    del full_info["trajectory"]
+    del full_info["history"]
+    pprint.pprint(full_info)
+    assert len(full_info["attempts"]) == 3
+    assert full_info["info"]["model_stats"]["api_calls"] == 3 * 2 + 4

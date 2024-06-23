@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass, field
 from typing import Any, Literal
 
-from sweagent.agent.models import BaseModel
+from sweagent.agent.models import APIStats, BaseModel
 from sweagent.types import ReviewSubmission, Trajectory
 from sweagent.utils.log import get_logger
 
@@ -68,8 +68,27 @@ class AbstractReviewLoop(ABC):
         """Called when the agent submits a solution"""
 
     @abstractmethod
-    def get_best(self):
+    def get_best(self) -> int:
         """Returns the best solution"""
+
+    @property
+    @abstractmethod
+    def model_stats(self) -> APIStats:
+        """Returns the API stats of the model (if any)"""
+
+    @property
+    @abstractmethod
+    def reviews(self) -> list[ReviewerResult]: ...
+
+    @property
+    @abstractmethod
+    def comparisons(self) -> list[tuple[int, int, BinaryReviewerResult]]:
+        """Get information about comparisons
+
+        Returns:
+            A list of tuples, where each tuple contains the indices of the
+            compared submissions and the result of the comparison.
+        """
 
 
 # --- CONFIGS ---
@@ -123,6 +142,7 @@ class Reviewer(AbstractReviewer):
     def __init__(self, config: ReviewerConfig, model: BaseModel):
         self._config = config
         self._model = model
+        print("Reviewer model id", id(self._model))
 
     def format_messages(self, instance: INSTANCE_TYPE, submission: ReviewSubmission):
         system_message = self._config.system_template
@@ -146,7 +166,9 @@ class Reviewer(AbstractReviewer):
 
     def review(self, instance: dict[str, Any], submission: ReviewSubmission) -> ReviewerResult:
         messages = self.format_messages(instance, submission)
+        print("reviewer stats before query", self._model.stats, id(self._model))
         answer = self._model.query(messages)
+        print("reviewer stats after query", self._model.stats, id(self._model))
         return ReviewerResult(self.interpret(answer), answer, messages=messages)
 
 
@@ -248,8 +270,11 @@ class ReviewLoop(AbstractReviewLoop):
         instance: INSTANCE_TYPE,
         model: BaseModel,
     ):
+        self._model = model
+        print("Review loop model id", id(self._model))
         self._instance = instance
         self._reviewer: AbstractReviewer = globals()[loop_config.reviewer_classname](loop_config.reviewer_config, model)
+        print("Reviewer id ", id(self._reviewer))
         self._breviewer: AbstractBinaryReviewer = globals()[loop_config.binary_reviewer_classname](
             loop_config.binary_reviewer_config, model
         )
@@ -280,10 +305,16 @@ class ReviewLoop(AbstractReviewLoop):
     def _n_accepted(self) -> int:
         return sum([r.accept for r in self._reviews])
 
+    @property
+    def model_stats(self) -> APIStats:
+        return self._model.stats
+
     def on_submit(self, submission: ReviewSubmission) -> None:
         self._submissions.append(submission)
+        print("before submit", self._model.stats, id(self._model), id(self._reviewer))
         self._review()
         self._compare()
+        print("after submit", self._model.stats, id(self._model), id(self._reviewer))
 
     def _review(self) -> bool:
         review = self._reviewer.review(self._instance, self._submissions[-1])

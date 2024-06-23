@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import re
 from collections import defaultdict
@@ -19,7 +20,6 @@ from sweagent.agent.models import (
     ContextWindowExceededError,
     CostLimitExceededError,
     ModelArguments,
-    ReplayModel,
     get_model,
 )
 from sweagent.agent.parsing import FormatError, ParseFunction
@@ -250,6 +250,10 @@ class Agent:
 
     def __init__(self, name: str, args: AgentArguments):
         self.name = name
+        # todo: currently only used to get the model name, so might remove this later
+        self._args = args
+        #: Model used by the agent. Note: Will initialize a separate model together with the reviewer
+        #: (if any) to disentangle costs.
         self.model = get_model(args.model, args.config._commands + args.config.subroutine_types)
         self.config = args.config
         assert self.config is not None  # mypy
@@ -335,6 +339,7 @@ class Agent:
             hook.on_query_message_added(**item)
         self.history.append(item)
 
+    # todo: klieret: Long term: Might make more sense to reinitialize the agent class for every instance instead of this
     def setup(self, instance_args: dict[str, Any], init_model_stats: APIStats | None = None) -> None:
         """Setup the agent for a new instance. This includes
         formatting the system message and adding demonstrations to the history.
@@ -343,22 +348,39 @@ class Agent:
             instance_args: Arguments for the instance
         """
         assert self.config is not None  # mypy
-        self.model.reset_stats(init_model_stats)
         self.instance_args = instance_args
 
-        self._rloop = get_review_loop_from_config(self.config.review_loop_config, instance_args, self.model)
-        if isinstance(self.model, ReplayModel) and self._rloop is not None:
-            msg = "Cannot use a replay model with a review loop model yet"
-            raise NotImplementedError(msg)
+        if self.config.review_loop_config is not None:
+            rmodel = get_model(self._args.model, [])
+            rmodel.reset_stats()
+            self._rloop = get_review_loop_from_config(self.config.review_loop_config, instance_args, rmodel)
 
+        self._i_attempt = 0
+        self._history_by_attempt = defaultdict(list)
+        self._trajectory_by_attempt = defaultdict(list)
+        self._info_by_attempt = defaultdict(dict)  # type: ignore
+        self._extra_info = {}
+
+        self.setup_attempt(init_model_stats=init_model_stats)
+
+        for hook in self.hooks:
+            hook.on_setup_done()
+
+    def setup_attempt(self, *, init_model_stats: APIStats | None = None) -> None:
+        """Setup the agent for a new attempt. This includes resetting the model stats."""
+        assert self.config is not None  # mypy
+        if self._i_attempt > 0 and init_model_stats is not None:
+            msg = (
+                "We might be dealing with nested retries, where subroutines are mixed with retries. "
+                "Currently, this messes up accounting with init_model_stats."
+            )
+            raise ValueError(msg)
+        self.model.reset_stats(init_model_stats)
+        # self.model = get_model(self._args.model, self.config._commands + self.config.subroutine_types)
+        # fixme: This doesn't reset total cost
         system_msg = self.config.system_template.format(**self.system_args)
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
-
-        self.history: History = []
-        self.trajectory = []
-        self.info = {}
         self._append_history(HistoryItem({"role": "system", "content": system_msg, "agent": self.name}))
-
         if "history_to_messages" in dir(self.model):
             for demonstration_path in self.config.demonstrations:
                 if self.config.demonstration_template is None and not self.config.put_demos_in_history:
@@ -397,8 +419,6 @@ class Agent:
                             "role": "user",
                         },
                     )
-        for hook in self.hooks:
-            hook.on_setup_done()
 
     @property
     def state_command(self) -> str:
@@ -410,22 +430,49 @@ class Agent:
         """Return the history of the agent since the last reset."""
         return self.config.history_processor([entry for entry in self.history if entry["agent"] == self.name])
 
+    def _get_total_stats(self) -> APIStats:
+        """Combine model stats of different attempts and the reviewer"""
+        total_stats = APIStats()
+        for stats in self._info_by_attempt.values():
+            assert "model_stats" in stats  # mypy
+            attempt_stats = APIStats(**stats["model_stats"])
+            total_stats += attempt_stats
+        if self._rloop is not None:
+            total_stats += self._rloop.model_stats
+        print("loop from sum", self._rloop.model_stats)
+        print("total", total_stats)
+        return total_stats
+
     def save_trajectory(
         self,
     ) -> None:
         """Save the trajectory to disk.
         This includes the history, the environment state, and the model stats.
         """
-        assert self._env is not None
-        log_dict = {
-            "environment": self._env.name,
-            "trajectory": self.trajectory,
-            "history": self.history,
-            "info": self.info,
-        }
-        data = log_dict
+
+        def get_attempt_data(attempt_idx: int = -1) -> dict[str, Any]:
+            """Get data saved for every attempt"""
+            assert self._env is not None
+            # The deepcopy here is important because else the
+            # data["info"]["model_stats"] update will create havoc!
+            return copy.deepcopy(
+                {
+                    "environment": self._env.name,
+                    "trajectory": self._trajectory_by_attempt[attempt_idx],
+                    "history": self._history_by_attempt[attempt_idx],
+                    "info": self._info_by_attempt[attempt_idx],
+                }
+            )
+
         if self._rloop is not None:
-            pass
+            best_attempt_idx = self._rloop.get_best()
+            data = {
+                "attempts": [get_attempt_data(i) for i in range(self._i_attempt + 1)],
+                **get_attempt_data(best_attempt_idx),
+            }
+            data["info"]["model_stats"] = self._get_total_stats().to_dict()
+        else:
+            data = {**get_attempt_data(), "extra_info": self._extra_info}
         assert self.traj_path is not None
         self.traj_path.write_text(json.dumps(data, indent=2))
 
@@ -845,7 +892,7 @@ class Agent:
             return_type=return_type,
             init_model_stats=self.model.stats,
         )
-        self._history_by_attempt += sub_agent.history
+        self.history += sub_agent.history
         self.set_environment_vars(env, env_vars)
         env.communicate(f"cd {cwd}")
         self.model.stats.replace(sub_agent.model.stats)
@@ -922,7 +969,6 @@ class Agent:
         self.trajectory.append(trajectory_step)
         model_stats: APIStats = self.model.stats
         self.info["model_stats"] = model_stats.to_dict()
-        self.save_trajectory()
         for hook in self.hooks:
             hook.on_step_done(trajectory_step=trajectory_step, model_stats=model_stats)
         return observation, done
@@ -982,12 +1028,17 @@ class Agent:
                 if self._rloop is not None:
                     # Note: The trajectory/info will not include the last `submit` command
                     self._rloop.on_submit(ReviewSubmission(trajectory=self.trajectory, info=self.info))
+                    # (make sure to save trajectory after self._rloop.on_submit)
+                    self.save_trajectory()
                     retry = self._rloop.retry()
                     if retry:
-                        self.reset_agent_for_retry()
+                        self._i_attempt += 1
+                        self.setup_attempt()
                     done = not retry
                 else:
+                    self.save_trajectory()
                     done = True
+            # note: Don't pull out save_trajectory here because it deppends on _i_attempt
         for hook in self.hooks:
             hook.on_run_done(trajectory=self.trajectory, info=self.info)
 
@@ -998,9 +1049,3 @@ class Agent:
         if return_type == "info_trajectory":
             return self.info, self.trajectory
         return self.trajectory[-1][return_type]
-
-    def reset_agent_for_retry(self):
-        """When using a retry loop, this method is called to reset the history,
-        info, environment, etc. in order to prepare for a new attempt to solve the issue.
-        """
-        ...
