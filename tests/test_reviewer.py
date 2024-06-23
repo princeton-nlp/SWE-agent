@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import logging
 import pprint
 
 import pytest
@@ -215,7 +214,7 @@ def test_agent_with_reviewer(dummy_reviewer_config, dummy_binary_reviewer_config
 
     main = Main(sa)
     main.agent.add_hook(InjectRModelsTests())
-    main.agent.logger.setLevel(logging.ERROR)
+    # main.agent.logger.setLevel(logging.ERROR)
     main.main()
     assert main.agent._rloop.model_stats.api_calls == 4
     full_info = json.loads(main.agent.traj_path.read_text())  # type: ignore

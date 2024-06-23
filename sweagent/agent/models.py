@@ -147,14 +147,14 @@ class BaseModel:
         self.stats.tokens_received += output_tokens
         self.stats.api_calls += 1
 
-        # Log updated cost values to std. out.
-        logger.info(
+        # Log updated cost values to std. err
+        logger.debug(
             f"input_tokens={input_tokens:,}, "
             f"output_tokens={output_tokens:,}, "
             f"instance_cost={self.stats.instance_cost:.2f}, "
             f"cost={cost:.2f}",
         )
-        logger.info(
+        logger.debug(
             f"total_tokens_sent={self.stats.tokens_sent:,}, "
             f"total_tokens_received={self.stats.tokens_received:,}, "
             f"total_cost={self.stats.total_cost:.2f}, "

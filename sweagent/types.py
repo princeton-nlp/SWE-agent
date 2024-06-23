@@ -7,7 +7,9 @@ because of circular dependencies.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TypedDict
+from typing import Any, Literal, TypedDict
+
+from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 
 
 class TrajectoryStep(TypedDict):
@@ -34,11 +36,14 @@ History = list[HistoryItem]
 Trajectory = list[TrajectoryStep]
 
 
+# todo: Make this actually have the dataclasses instead of dict versions
 class AgentInfo(TypedDict, total=False):
     # same as `APIStats` from models.py
     model_stats: dict[str, float]
     exit_status: str
     submission: str | None
+    # same as `ReviewerResult`
+    review: dict[str, Any]
 
 
 @dataclass
@@ -49,3 +54,17 @@ class ReviewSubmission:
     trajectory: Trajectory
     #: Aggregate info dict (including several retries)
     info: AgentInfo
+
+
+@dataclass(frozen=True)
+class ReviewerResult(FrozenSerializable):
+    accept: bool
+    output: str
+    messages: list[dict[str, str]]
+
+
+@dataclass(frozen=True)
+class BinaryReviewerResult(FrozenSerializable):
+    choice: Literal[0, 1]
+    output: str
+    messages: list[dict[str, str]]

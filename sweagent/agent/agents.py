@@ -282,10 +282,6 @@ class Agent:
         self._trajectory_by_attempt: dict[int, Trajectory] = defaultdict(list)
         self._info_by_attempt: dict[int, AgentInfo] = defaultdict(dict)
 
-        #: Any additional information that is not run-dependent that is added to the output
-        #: file (also called trajectory)
-        self._extra_info: dict[str, Any] = {}
-
     @property
     def history(self) -> History:
         """History that is passed on to the model.
@@ -359,7 +355,6 @@ class Agent:
         self._history_by_attempt = defaultdict(list)
         self._trajectory_by_attempt = defaultdict(list)
         self._info_by_attempt = defaultdict(dict)  # type: ignore
-        self._extra_info = {}
 
         self.setup_attempt(init_model_stats=init_model_stats)
 
@@ -442,8 +437,6 @@ class Agent:
             total_stats += attempt_stats
         if self._rloop is not None:
             total_stats += self._rloop.model_stats
-        print("loop from sum", self._rloop.model_stats)
-        print("total", total_stats)
         return total_stats
 
     def save_trajectory(
@@ -474,8 +467,11 @@ class Agent:
                 **get_attempt_data(best_attempt_idx),
             }
             data["info"]["model_stats"] = self._get_total_stats().to_dict()
+            data["extra_info"] = {"comparisons": [(a, b, comp.to_dict()) for a, b, comp in self._rloop.comparisons]}
         else:
-            data = {**get_attempt_data(), "extra_info": self._extra_info}
+            data = {
+                **get_attempt_data(),
+            }
         assert self.traj_path is not None
         self.traj_path.write_text(json.dumps(data, indent=2))
 
@@ -1032,8 +1028,9 @@ class Agent:
                     # Note: The trajectory/info will not include the last `submit` command
                     self._rloop.on_submit(ReviewSubmission(trajectory=self.trajectory, info=self.info))
                     # (make sure to save trajectory after self._rloop.on_submit)
-                    self.save_trajectory()
                     retry = self._rloop.retry()
+                    self.info["review"] = self._rloop.reviews[-1].to_dict()
+                    self.save_trajectory()
                     if retry:
                         self._i_attempt += 1
                         self.setup_attempt()

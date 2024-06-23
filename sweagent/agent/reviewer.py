@@ -9,20 +9,14 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Literal
 
 from sweagent.agent.models import APIStats, BaseModel
-from sweagent.types import ReviewSubmission, Trajectory
+from sweagent.types import BinaryReviewerResult, ReviewerResult, ReviewSubmission
 from sweagent.utils.log import get_logger
 
 INSTANCE_TYPE = dict[str, Any]
 
 logger = get_logger("reviewer")
 
-
 # --- INTERFACES ---
-@dataclass
-class ReviewerResult:
-    accept: bool
-    output: str
-    messages: list[dict[str, str]]
 
 
 class AbstractReviewer(ABC):
@@ -33,13 +27,6 @@ class AbstractReviewer(ABC):
     @abstractmethod
     def review(self, instance: INSTANCE_TYPE, submission) -> ReviewerResult:
         """Returns True if the submission is believed to be correct"""
-
-
-@dataclass
-class BinaryReviewerResult:
-    choice: Literal[0, 1]
-    output: str
-    messages: list[dict[str, str]]
 
 
 class AbstractBinaryReviewer(ABC):
@@ -139,17 +126,20 @@ class ReviewLoopConfig(AbstractReviewLoopConfig):
 
 # fixme: Reviewer should insta-reject on exit_cost
 class Reviewer(AbstractReviewer):
+    LOG_PREFIX = "🧑‍⚖️ Reviewer: "
+
     def __init__(self, config: ReviewerConfig, model: BaseModel):
         self._config = config
         self._model = model
-        print("Reviewer model id", id(self._model))
 
     def format_messages(self, instance: INSTANCE_TYPE, submission: ReviewSubmission):
         system_message = self._config.system_template
+        logger.debug(f"{self.LOG_PREFIX}MODEL INPUT (system)\n{system_message}")
         # fixme: Add submission details
         user_message = self._config.instance_template.format(
             **instance,
         )
+        logger.debug(f"{self.LOG_PREFIX}MODEL INPUT (user)\n{user_message}")
         return [
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_message},
@@ -166,10 +156,11 @@ class Reviewer(AbstractReviewer):
 
     def review(self, instance: dict[str, Any], submission: ReviewSubmission) -> ReviewerResult:
         messages = self.format_messages(instance, submission)
-        print("reviewer stats before query", self._model.stats, id(self._model))
         answer = self._model.query(messages)
-        print("reviewer stats after query", self._model.stats, id(self._model))
-        return ReviewerResult(self.interpret(answer), answer, messages=messages)
+        accept = self.interpret(answer)
+        accept_emoji = "✅" if accept else "❌"
+        logger.info(f"{self.LOG_PREFIX}{accept_emoji}\n{answer}")
+        return ReviewerResult(accept, answer, messages=messages)
 
 
 # todo: Couldn't I just replace the whole thing with Jinja templates?
@@ -210,6 +201,8 @@ class TrajectoryFormatter:
 
 
 class BinaryReviewer(AbstractBinaryReviewer):
+    LOG_PREFIX = "⚖️ Binary Reviewer: "
+
     def __init__(self, config: BinaryReviewerConfig, model: BaseModel):
         self._config = config
         self._model = model
@@ -220,6 +213,7 @@ class BinaryReviewer(AbstractBinaryReviewer):
 
     def format_messages(self, instance: INSTANCE_TYPE, sub1: ReviewSubmission, sub2: ReviewSubmission):
         system_message = self._config.system_template
+        logger.debug(f"{self.LOG_PREFIX}MODEL INPUT (system)\n{system_message}")
         # fixme: Correct access to the elements!
         user_message = self._config.instance_template.format(
             **instance,
@@ -228,6 +222,7 @@ class BinaryReviewer(AbstractBinaryReviewer):
             # traj1=self._traj_formatter.format_trajectory(sub1["traj"]["trajectory"], i_traj=1),
             # traj2=self._traj_formatter.format_trajectory(sub2["traj"]["trajectory"], i_traj=2),
         )
+        logger.debug(f"{self.LOG_PREFIX}MODEL INPUT (user)\n{user_message}")
         return [
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_message},
@@ -248,22 +243,16 @@ class BinaryReviewer(AbstractBinaryReviewer):
     ) -> BinaryReviewerResult:
         messages = self.format_messages(instance, sub1, sub2)
         answer = self._model.query(messages)
-        return BinaryReviewerResult(self.interpret(answer), output=answer, messages=messages)
-
-
-def split_trajectory(trajectory: Trajectory, submit_command: str) -> list[Trajectory]:
-    """Split a "cumulative" trajectory that includes
-    multiple retries into the individual parts. This basically means
-    finding the `submit` command and splitting along that.
-
-    Args:
-        trajectory: The cumulative trajectory
-        submit_command: The command that submits the solution
-            will probably be `submit`.
-    """
+        idx = self.interpret(answer)
+        # Use words because else confusion with 0-based vs 1-based indices
+        choice_emoji = "first" if idx == 0 else "second"
+        logger.info(f"{self.LOG_PREFIX}{choice_emoji}\n{answer}")
+        return BinaryReviewerResult(idx, output=answer, messages=messages)
 
 
 class ReviewLoop(AbstractReviewLoop):
+    LOG_PREFIX = "🔄 Review Loop: "
+
     def __init__(
         self,
         loop_config: ReviewLoopConfig,
@@ -271,10 +260,8 @@ class ReviewLoop(AbstractReviewLoop):
         model: BaseModel,
     ):
         self._model = model
-        print("Review loop model id", id(self._model))
         self._instance = instance
         self._reviewer: AbstractReviewer = globals()[loop_config.reviewer_classname](loop_config.reviewer_config, model)
-        print("Reviewer id ", id(self._reviewer))
         self._breviewer: AbstractBinaryReviewer = globals()[loop_config.binary_reviewer_classname](
             loop_config.binary_reviewer_config, model
         )
@@ -311,14 +298,11 @@ class ReviewLoop(AbstractReviewLoop):
 
     def on_submit(self, submission: ReviewSubmission) -> None:
         self._submissions.append(submission)
-        print("before submit", self._model.stats, id(self._model), id(self._reviewer))
         self._review()
         self._compare()
-        print("after submit", self._model.stats, id(self._model), id(self._reviewer))
 
     def _review(self) -> bool:
         review = self._reviewer.review(self._instance, self._submissions[-1])
-        logger.debug("Review result: %s", asdict(review))
         self._reviews.append(review)
         return review.accept
 
@@ -339,22 +323,19 @@ class ReviewLoop(AbstractReviewLoop):
         self._best_idx = [self._best_idx, self._n_samples - 1][cresult.choice]
 
     def retry(self) -> bool:
+        stat_str = f"n_samples={self._n_samples}, n_accepted={self._n_accepted}"
         if self._n_samples >= self._loop_config.max_samples:
-            logger.debug(
-                f"Exiting retry loop (n_samples={self._n_samples}, n_accepted={self._n_accepted}): max_samples reached"
-            )
+            logger.info(f"{self.LOG_PREFIX}Exiting retry loop ({stat_str}): `max_samples` reached")
             return False
 
         if self._reviews[-1].accept and self._n_samples >= self._loop_config.min_draws > 0:
-            logger.debug(
-                f"Exiting retry loop (n_samples={self._n_samples}, n_accepted={self._n_accepted}): min_draws reached and last submission was accepted"
+            logger.info(
+                f"{self.LOG_PREFIX}Existing retry loop ({stat_str}): `min_draws` reached and last submission was accepted"
             )
             return False
 
         if self._n_accepted >= self._loop_config.max_accepted_draws > 0:
-            logger.debug(
-                f"Exiting retry loop (n_samples={self._n_samples}, n_accepted={self._n_accepted}): max_accepted_draws reached"
-            )
+            logger.info(f"{self.LOG_PREFIX}Exiting retry loop ({stat_str}): `max_accepted_draws` reached")
             return False
 
         return True
