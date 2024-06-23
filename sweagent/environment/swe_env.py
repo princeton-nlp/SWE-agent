@@ -325,33 +325,8 @@ class SWEEnv(gym.Env):
         if self._repo_name not in folders:
             self._copy_repo()
 
-        # Clean repository of any modifications + Checkout base commit
-        for cmd in [
-            "echo -n > /root/files_to_edit.txt",
-            f"cd {self._repo_name}",
-            "export ROOT=$(pwd -P)",
-            "git status",
-            "git restore .",
-            f"git reset --hard {self.base_commit}",
-            "git clean -fdxq",
-        ]:
-            self.communicate_with_handling(
-                input=cmd,
-                error_msg="Failed to clean repository",
-            )
-
-        # Reset environment variables
-        for cmd in [
-            'export CURRENT_FILE=""',
-            "export CURRENT_LINE=0",
-            "export SEARCH_RESULTS=()",
-            "export SEARCH_FILES=()",
-            "export SEARCH_INDEX=0",
-        ]:
-            self.communicate_with_handling(
-                input=cmd,
-                error_msg="Failed to reset environment variables",
-            )
+        self._reset_repository()
+        self._reset_environment_variables()
 
         # Set up environment
         self.communicate_with_handling(
@@ -386,6 +361,45 @@ class SWEEnv(gym.Env):
             self._apply_test_patch()
         # Write any metadata to info if necessary
         return None, info
+
+    def _reset_repository(self) -> None:
+        """Clean repository of any modifications + Checkout base commit"""
+        cmds = [
+            "echo -n > /root/files_to_edit.txt",
+            f"cd /{self._repo_name}",
+            "export ROOT=$(pwd -P)",
+            "git status",
+            "git restore .",
+            f"git reset --hard {self.base_commit}",
+            "git clean -fdxq",
+        ]
+        self.communicate_with_handling(
+            input=" && ".join(cmds),
+            error_msg="Failed to clean repository",
+        )
+
+    def _reset_environment_variables(self) -> None:
+        """Reset environment variables (`CURRENT_FILE`) etc. within container"""
+        cmd = [
+            'export CURRENT_FILE=""',
+            "export CURRENT_LINE=0",
+            "export SEARCH_RESULTS=()",
+            "export SEARCH_FILES=()",
+            "export SEARCH_INDEX=0",
+        ]
+        self.communicate_with_handling(
+            input=" && ".join(cmd),
+            error_msg="Failed to reset environment variables",
+        )
+
+    def reset_for_new_attempt(
+        self,
+    ) -> None:
+        """Compared to `reset`, which prepares the container for a new instance,
+        this prepares the container for taking another shot at the same instance.
+        """
+        self._reset_repository()
+        self._reset_environment_variables()
 
     def _apply_test_patch(self):
         """

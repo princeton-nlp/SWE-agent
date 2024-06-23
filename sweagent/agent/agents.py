@@ -375,6 +375,9 @@ class Agent:
                 "Currently, this messes up accounting with init_model_stats."
             )
             raise ValueError(msg)
+        if self._i_attempt > 0:
+            assert self._env is not None  # mypy
+            self._env.reset_for_new_attempt()
         self.model.reset_stats(init_model_stats)
         # self.model = get_model(self._args.model, self.config._commands + self.config.subroutine_types)
         # fixme: This doesn't reset total cost
