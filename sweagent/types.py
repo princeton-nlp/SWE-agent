@@ -55,6 +55,17 @@ class ReviewSubmission:
     #: Aggregate info dict (including several retries)
     info: AgentInfo
 
+    def to_format_dict(self) -> dict[str, Any]:
+        """Return all the data that is used to format the
+        messages. Trajectory is excluded because it needs special treatment.
+        """
+        assert "exit_status" in self.info  # mypy
+        assert "submission" in self.info
+        return {
+            "exit_status": self.info["exit_status"],
+            "submission": self.info["submission"],
+        }
+
 
 @dataclass(frozen=True)
 class ReviewerResult(FrozenSerializable):

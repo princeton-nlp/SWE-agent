@@ -9,7 +9,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Literal
 
 from sweagent.agent.models import APIStats, BaseModel
-from sweagent.types import BinaryReviewerResult, ReviewerResult, ReviewSubmission
+from sweagent.types import BinaryReviewerResult, ReviewerResult, ReviewSubmission, Trajectory, TrajectoryStep
 from sweagent.utils.log import get_logger
 
 INSTANCE_TYPE = dict[str, Any]
@@ -87,6 +87,13 @@ class ReviewerConfig:
 
     system_template: str
     instance_template: str
+    #: If a submission autosubmits because of total cost, it will be automatically
+    #: rejected
+    reject_exit_cost: bool = True
+    #: Filter the following actions from the trajectory
+    traj_filter: list[str] = field(default_factory=list)
+    #: Format of the trajectory item
+    traj_item_template: str = "Model: {response}\n\nObservation: {observation}"
 
 
 @dataclass
@@ -131,13 +138,18 @@ class Reviewer(AbstractReviewer):
     def __init__(self, config: ReviewerConfig, model: BaseModel):
         self._config = config
         self._model = model
+        self._traj_formatter = TrajectoryFormatter(
+            traj_filter=config.traj_filter,
+            traj_item_template=config.traj_item_template,
+        )
 
     def format_messages(self, instance: INSTANCE_TYPE, submission: ReviewSubmission):
         system_message = self._config.system_template
         logger.debug(f"{self.LOG_PREFIX}MODEL INPUT (system)\n{system_message}")
-        # fixme: Add submission details
         user_message = self._config.instance_template.format(
             **instance,
+            **submission.to_format_dict(),
+            traj=self._traj_formatter.format_trajectory(submission.trajectory),
         )
         logger.debug(f"{self.LOG_PREFIX}MODEL INPUT (user)\n{user_message}")
         return [
@@ -155,9 +167,18 @@ class Reviewer(AbstractReviewer):
         return False
 
     def review(self, instance: dict[str, Any], submission: ReviewSubmission) -> ReviewerResult:
-        messages = self.format_messages(instance, submission)
-        answer = self._model.query(messages)
-        accept = self.interpret(answer)
+        exit_status = submission.info.get("exit_status")
+        messages = []
+        if not exit_status:
+            answer = "No exit status in submission, will reject."
+            accept = False
+        elif self._config.reject_exit_cost and "exit_cost" in exit_status:
+            answer = "Submission rejected because of exit cost."
+            accept = False
+        else:
+            messages = self.format_messages(instance, submission)
+            answer = self._model.query(messages)
+            accept = self.interpret(answer)
         accept_emoji = "✅" if accept else "❌"
         logger.info(f"{self.LOG_PREFIX}{accept_emoji}\n{answer}")
         return ReviewerResult(accept, answer, messages=messages)
@@ -170,33 +191,28 @@ class TrajectoryFormatter:
         traj_filter: list[str] | None = None,
         traj_item_template: str = "Model: {response}\n\nObservation: {observation}",
     ):
+        """Formats trajectories for the use in prompts"""
         self._traj_filter = traj_filter or []
         self._traj_item_template = traj_item_template
 
-    def _include_trajectory_item(self, item) -> bool:
+    def _include_trajectory_step(self, item: TrajectoryStep) -> bool:
         action = item["action"].strip()
         for f in self._traj_filter:
             if action.startswith(f):
                 return False
         return True
 
-    def _format_trajectory_item(self, response: str, observation: str, i: int, i_traj: int = 1) -> str:
+    def _format_trajectory_step(self, step: TrajectoryStep, i_step: int, i_traj: int = 1) -> str:
         return self._traj_item_template.format(
-            response=response,
-            observation=observation,
-            i=i,
+            **step,
+            i_step=i_step,
             i_traj=i_traj,
         )
 
-    def format_trajectory(self, trajectory: list[dict[str, str]], i_traj: int = 1) -> str:
-        traj_messages = [
-            (item["response"], item["observation"]) for item in trajectory if self._include_trajectory_item(item)
-        ]
+    def format_trajectory(self, trajectory: Trajectory, i_traj: int = 1) -> str:
+        traj_messages = [step for step in trajectory if self._include_trajectory_step(step)]
         return "\n\n".join(
-            [
-                self._format_trajectory_item(response, observation, i, i_traj=i_traj)
-                for i, (response, observation) in enumerate(traj_messages)
-            ]
+            [self._format_trajectory_step(step, i_step, i_traj=i_traj) for i_step, step in enumerate(traj_messages)]
         )
 
 
@@ -211,16 +227,19 @@ class BinaryReviewer(AbstractBinaryReviewer):
             traj_item_template=config.traj_item_template,
         )
 
+    @staticmethod
+    def _add_dict_suffix(d: dict[str, Any], suffix: str) -> dict[str, Any]:
+        return {f"{k}{suffix}": v for k, v in d.items()}
+
     def format_messages(self, instance: INSTANCE_TYPE, sub1: ReviewSubmission, sub2: ReviewSubmission):
         system_message = self._config.system_template
         logger.debug(f"{self.LOG_PREFIX}MODEL INPUT (system)\n{system_message}")
-        # fixme: Correct access to the elements!
         user_message = self._config.instance_template.format(
             **instance,
-            # **{f"{k}1": v for k, v in sub1.items() if k != "traj"},
-            # **{f"{k}2": v for k, v in sub1.items() if k != "traj"},
-            # traj1=self._traj_formatter.format_trajectory(sub1["traj"]["trajectory"], i_traj=1),
-            # traj2=self._traj_formatter.format_trajectory(sub2["traj"]["trajectory"], i_traj=2),
+            **self._add_dict_suffix(sub1.to_format_dict(), "1"),
+            **self._add_dict_suffix(sub2.to_format_dict(), "2"),
+            traj1=self._traj_formatter.format_trajectory(sub1.trajectory, i_traj=1),
+            traj2=self._traj_formatter.format_trajectory(sub2.trajectory, i_traj=2),
         )
         logger.debug(f"{self.LOG_PREFIX}MODEL INPUT (user)\n{user_message}")
         return [
