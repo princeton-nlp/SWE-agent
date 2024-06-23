@@ -4,7 +4,7 @@
 
 [All new commits](https://github.com/princeton-nlp/SWE-agent/compare/v0.6.0...v0.6.1)
 
-This is (mostly) a patch release, in particular fixing several issues that had been introduced by the speed improvements of v0.7.0.
+This is (mostly) a patch release, in particular fixing several issues that had been introduced by the speed improvements of v0.6.0.
 We also solve a bug where existing linter errors in a file left SWE-agent unable to edit (because of our lint-retry-loop).
 
 ### Breaking changes
