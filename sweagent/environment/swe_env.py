@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import hashlib
 import json
+import logging
 import os
 import random
 import re
@@ -753,6 +754,7 @@ class SWEEnv(gym.Env):
             output: output from container
         """
         if input.strip() != "exit":
+            self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
             output, valid = self._check_syntax(input)
             if not valid:
                 return output  # shows syntax errors
@@ -760,6 +762,7 @@ class SWEEnv(gym.Env):
                 input,
                 timeout_duration=timeout_duration,
             )
+            self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
             self.communicate_output = output
             return output
         else:

@@ -19,13 +19,14 @@ body:
   attributes:
     label: Steps/commands/code to Reproduce
     description: >
-      **Please add the full command that you were running as well as how you set up the software (docker, conda, etc.)**
+      **Please add the FULL COMMAND that you were running as well as how you set up the software (docker, conda, etc.)**
       Please always copy code as text and not as a screenshot.
       Enclose code/commands/log output in [triple backticks](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#quoting-code).
     placeholder: |
-      ```
       Sample code/commands to reproduce the problem.
-      Enclose code in triple backticks.
+
+      ```
+      PLEASE INCLUDE THE FULL COMMAND HERE.
       ```
   validations:
     required: true
@@ -35,10 +36,10 @@ body:
     description: >
       Please paste or describe the expected results.
       Use [triple backticks](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#quoting-code) around log/error messages.
+      You should fine the full log in your `trajectory` folder (look for `*.log` files).
     placeholder: >
       ```
-      some error message here.
-      Enclose it in triple backticks.
+      Full log file here
       ```
   validations:
     required: true
@@ -57,9 +58,7 @@ body:
     label: Checklist
     description: We can only help you if you have done the following
     options:
-      - label: I'm running with the latest docker container/on the latest development version
-        required: true
-      - label: I've searched the other issues for a duplicate
+      - label: I'm running with the latest docker container/on the latest development version (this means running both `git pull` and `docker pull sweagent/swe-agent:latest`)
         required: true
       - label: I have copied the full command/code that I ran (as text, not as screenshot!)
         required: true
