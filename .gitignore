@@ -188,7 +188,7 @@ website/frontend/build
 # trajectory files
 trajectories/**
 !trajectories/demonstrations/**
-
+data/**
 .vscode/**
 
 # PyCharm
