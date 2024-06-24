@@ -1280,7 +1280,12 @@ See <a href="../../installation/keys/">here</a> for more information.</p>
 <li>All API keys (for LMs and GitHub) can be set as an environment variable. See <a href="../../installation/keys/">here</a> for more information.</li>
 <li><code>SWE_AGENT_CONFIG_ROOT</code>: Used to resolve relative paths in the <a href="../config/">config</a></li>
 <li><code>SWE_AGENT_ENV_LONG_TIMEOUT</code> (default: 500): Timeout in seconds used for commands that install instance environment.</li>
-<li><code>SWE_AGENT_LOG_TIME</code>: Add timestamps to log (<strong>can only be set as an environment variable</strong>)</li>
+</ul>
+<p>The following three variables can only be set as environment variables, not in the config file</p>
+<ul>
+<li><code>SWE_AGENT_LOG_TIME</code>: Add timestamps to log</li>
+<li><code>SWE_AGENT_LOG_STREAM_LEVEL</code>: Level of logging that is shown on the command line interface (<code>TRACE</code> being a custom level below <code>DEBUG</code>)</li>
+<li><code>SWE_AGENT_LOG_FILE_LEVEL</code>: Like  <code>SWE_AGENT_LOG_STREAM_LEVEL</code> but for the log file</li>
 </ul>
 <div class="admonition warning">
 <p class="admonition-title">Unstable</p>
