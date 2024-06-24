@@ -14,7 +14,6 @@ except ModuleNotFoundError as e:
     )
     raise RuntimeError(msg) from e
 import json
-import os
 import re
 import subprocess
 import traceback
@@ -426,7 +425,7 @@ class Main:
         """Check if we should skip this instance based on the instance filter and skip_existing flag."""
         # Skip instances that don't match the instance filter
         if re.match(self.args.instance_filter, instance_id) is None:
-            logger.info(f"Instance filter not matched. Skipping instance {instance_id}")
+            logger.info(f"⏭️ Instance filter not matched. Skipping instance {instance_id}")
             return True
 
         # If flag is set to False, don't skip
@@ -435,19 +434,25 @@ class Main:
 
         # Check if there's an existing trajectory for this instance
         log_path = self.traj_dir / (instance_id + ".traj")
-        if log_path.exists():
-            with log_path.open("r") as f:
-                data = json.load(f)
-            # If the trajectory has no exit status, it's incomplete and we will redo it
-            exit_status = data["info"].get("exit_status", None)
-            if exit_status == "early_exit" or exit_status is None:
-                logger.info(f"Found existing trajectory with no exit status: {log_path}")
-                logger.info("Removing incomplete trajectory...")
-                os.remove(log_path)
-            else:
-                logger.info(f"⏭️ Skipping existing trajectory: {log_path}")
-                return True
-        return False
+        if not log_path.exists():
+            return False
+
+        content = log_path.read_text()
+        if not content.strip():
+            logger.warning("Found empty trajectory: %s. Removing.", log_path)
+            log_path.unlink()
+            return False
+
+        data = json.loads(content)
+        # If the trajectory has no exit status, it's incomplete and we will redo it
+        exit_status = data["info"].get("exit_status", None)
+        if exit_status == "early_exit" or exit_status is None:
+            logger.warning(f"Found existing trajectory with no exit status: {log_path}. Removing.")
+            log_path.unlink()
+            return False
+
+        logger.info(f"⏭️ Skipping existing trajectory: {log_path}")
+        return True
 
     def _save_predictions(self, instance_id: str, info):
         output_file = self.traj_dir / "all_preds.jsonl"
