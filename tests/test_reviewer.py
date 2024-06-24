@@ -18,6 +18,7 @@ from sweagent.agent.reviewer import (
     ReviewLoopConfig,
     get_review_loop_from_config,
 )
+from sweagent.types import ReviewSubmission
 
 
 @pytest.fixture()
@@ -77,25 +78,41 @@ def test_reviewer(dummy_reviewer_config):
     model = DeterminedModel(["success", "fail", "false", ""])
     reviewer = Reviewer(dummy_reviewer_config, model)
     instance = {}
-    submission = {}
+    submission = _get_fake_submission()
     assert reviewer.review(instance, submission).accept
     assert not reviewer.review(instance, submission).accept
     assert not reviewer.review(instance, submission).accept
     assert not reviewer.review(instance, submission).accept
 
 
-def _get_fake_trajectory():
-    return {
-        "traj": {"trajectory": ""},
-    }
+def test_reviewer_reject_no_exit(dummy_reviewer_config):
+    model = DeterminedModel([])
+    reviewer = Reviewer(dummy_reviewer_config, model)
+    sub = _get_fake_submission()
+    del sub.info["exit_status"]
+    assert not reviewer.review({}, sub).accept
+
+
+def test_reviewer_reject_exit_cost(dummy_reviewer_config):
+    model = DeterminedModel([])
+    reviewer = Reviewer(dummy_reviewer_config, model)
+    sub = _get_fake_submission(exit_status="submitted (exit_cost)")
+    assert not reviewer.review({}, sub).accept
+
+
+def _get_fake_submission(exit_status="submitted"):
+    return ReviewSubmission(
+        trajectory=[],
+        info={"exit_status": exit_status},
+    )
 
 
 def test_binary_reviewer(dummy_binary_reviewer_config):
     model = DeterminedModel(["first", "second", "false", ""])
     br = BinaryReviewer(dummy_binary_reviewer_config, model)
     instance = {}
-    sub1 = _get_fake_trajectory()
-    osub2 = _get_fake_trajectory()
+    sub1 = _get_fake_submission()
+    osub2 = _get_fake_submission()
     assert br.compare_submissions(instance, sub1, osub2).choice == 0
     assert br.compare_submissions(instance, sub1, osub2).choice == 1
     assert br.compare_submissions(instance, sub1, osub2).choice == 0
@@ -117,7 +134,7 @@ def test_loop_comparison(dummy_reviewer_config, dummy_binary_reviewer_config):
     loop = ReviewLoop(lconfig, instance={}, model=rmodel)
     loop._breviewer._model = bmodel
     for i in range(3):
-        loop.on_submit(_get_fake_trajectory())
+        loop.on_submit(_get_fake_submission())
         print(loop.reviews)
         print(loop.comparisons)
         if i < 2:
@@ -142,7 +159,7 @@ def test_loop_stop_max_fail(dummy_reviewer_config, dummy_binary_reviewer_config)
     loop._breviewer._model = bmodel
     for i in range(5):
         print(i)
-        loop.on_submit(_get_fake_trajectory())
+        loop.on_submit(_get_fake_submission())
         print(loop._reviews)
         if i < 4:
             assert loop.retry()
