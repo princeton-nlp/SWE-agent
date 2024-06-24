@@ -2024,7 +2024,8 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 
               <details class="quote">
                 <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">306</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">305</span>
+<span class="normal">306</span>
 <span class="normal">307</span>
 <span class="normal">308</span>
 <span class="normal">309</span>
@@ -2101,8 +2102,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <span class="normal">380</span>
 <span class="normal">381</span>
 <span class="normal">382</span>
-<span class="normal">383</span>
-<span class="normal">384</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">AnthropicModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="normal">383</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">AnthropicModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">MODELS</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;claude-instant&quot;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s2">&quot;max_context&quot;</span><span class="p">:</span> <span class="mi">100_000</span><span class="p">,</span>
@@ -2212,7 +2212,8 @@ Reference: <a href="https://docs.anthropic.com/claude/reference/complete_post">h
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">363</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">362</span>
+<span class="normal">363</span>
 <span class="normal">364</span>
 <span class="normal">365</span>
 <span class="normal">366</span>
@@ -2220,8 +2221,7 @@ Reference: <a href="https://docs.anthropic.com/claude/reference/complete_post">h
 <span class="normal">368</span>
 <span class="normal">369</span>
 <span class="normal">370</span>
-<span class="normal">371</span>
-<span class="normal">372</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">history_to_messages</span><span class="p">(</span>
+<span class="normal">371</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">history_to_messages</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
     <span class="n">is_demonstration</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -2252,7 +2252,8 @@ Reference: <a href="https://docs.anthropic.com/claude/reference/complete_post">h
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">374</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">373</span>
+<span class="normal">374</span>
 <span class="normal">375</span>
 <span class="normal">376</span>
 <span class="normal">377</span>
@@ -2261,8 +2262,7 @@ Reference: <a href="https://docs.anthropic.com/claude/reference/complete_post">h
 <span class="normal">380</span>
 <span class="normal">381</span>
 <span class="normal">382</span>
-<span class="normal">383</span>
-<span class="normal">384</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@retry</span><span class="p">(</span>
+<span class="normal">383</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@retry</span><span class="p">(</span>
     <span class="n">wait</span><span class="o">=</span><span class="n">wait_random_exponential</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">15</span><span class="p">),</span>
     <span class="n">reraise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">stop</span><span class="o">=</span><span class="n">stop_after_attempt</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
@@ -2654,7 +2654,8 @@ float: The cost of the response.</p>
 
               <details class="quote">
                 <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">387</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">386</span>
+<span class="normal">387</span>
 <span class="normal">388</span>
 <span class="normal">389</span>
 <span class="normal">390</span>
@@ -2738,8 +2739,7 @@ float: The cost of the response.</p>
 <span class="normal">468</span>
 <span class="normal">469</span>
 <span class="normal">470</span>
-<span class="normal">471</span>
-<span class="normal">472</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BedrockModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="normal">471</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BedrockModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">MODELS</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;anthropic.claude-instant-v1&quot;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s2">&quot;max_context&quot;</span><span class="p">:</span> <span class="mi">100_000</span><span class="p">,</span>
@@ -2855,7 +2855,8 @@ float: The cost of the response.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">444</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">443</span>
+<span class="normal">444</span>
 <span class="normal">445</span>
 <span class="normal">446</span>
 <span class="normal">447</span>
@@ -2866,8 +2867,7 @@ float: The cost of the response.</p>
 <span class="normal">452</span>
 <span class="normal">453</span>
 <span class="normal">454</span>
-<span class="normal">455</span>
-<span class="normal">456</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">history_to_messages</span><span class="p">(</span>
+<span class="normal">455</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">history_to_messages</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
     <span class="n">is_demonstration</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -2901,7 +2901,8 @@ float: The cost of the response.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">458</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">457</span>
+<span class="normal">458</span>
 <span class="normal">459</span>
 <span class="normal">460</span>
 <span class="normal">461</span>
@@ -2914,8 +2915,7 @@ float: The cost of the response.</p>
 <span class="normal">468</span>
 <span class="normal">469</span>
 <span class="normal">470</span>
-<span class="normal">471</span>
-<span class="normal">472</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@retry</span><span class="p">(</span>
+<span class="normal">471</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@retry</span><span class="p">(</span>
     <span class="n">wait</span><span class="o">=</span><span class="n">wait_random_exponential</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">15</span><span class="p">),</span>
     <span class="n">reraise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">stop</span><span class="o">=</span><span class="n">stop_after_attempt</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
@@ -2962,7 +2962,8 @@ float: The cost of the response.</p>
 
               <details class="quote">
                 <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">733</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">732</span>
+<span class="normal">733</span>
 <span class="normal">734</span>
 <span class="normal">735</span>
 <span class="normal">736</span>
@@ -3013,8 +3014,7 @@ float: The cost of the response.</p>
 <span class="normal">781</span>
 <span class="normal">782</span>
 <span class="normal">783</span>
-<span class="normal">784</span>
-<span class="normal">785</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">HumanModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="normal">784</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">HumanModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">MODELS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;human&quot;</span><span class="p">:</span> <span class="p">{}}</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">ModelArguments</span><span class="p">,</span> <span class="n">commands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Command</span><span class="p">]):</span>
@@ -3097,7 +3097,8 @@ float: The cost of the response.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">744</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">743</span>
+<span class="normal">744</span>
 <span class="normal">745</span>
 <span class="normal">746</span>
 <span class="normal">747</span>
@@ -3109,8 +3110,7 @@ float: The cost of the response.</p>
 <span class="normal">753</span>
 <span class="normal">754</span>
 <span class="normal">755</span>
-<span class="normal">756</span>
-<span class="normal">757</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">history_to_messages</span><span class="p">(</span>
+<span class="normal">756</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">history_to_messages</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
     <span class="n">is_demonstration</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -3145,7 +3145,8 @@ float: The cost of the response.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">759</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">758</span>
+<span class="normal">759</span>
 <span class="normal">760</span>
 <span class="normal">761</span>
 <span class="normal">762</span>
@@ -3170,8 +3171,7 @@ float: The cost of the response.</p>
 <span class="normal">781</span>
 <span class="normal">782</span>
 <span class="normal">783</span>
-<span class="normal">784</span>
-<span class="normal">785</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="n">action_prompt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&gt; &quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">784</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="n">action_prompt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&gt; &quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Logic for handling user input to pass to SWEEnv</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3230,7 +3230,8 @@ float: The cost of the response.</p>
 
               <details class="quote">
                 <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">788</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">787</span>
+<span class="normal">788</span>
 <span class="normal">789</span>
 <span class="normal">790</span>
 <span class="normal">791</span>
@@ -3248,8 +3249,7 @@ float: The cost of the response.</p>
 <span class="normal">803</span>
 <span class="normal">804</span>
 <span class="normal">805</span>
-<span class="normal">806</span>
-<span class="normal">807</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">HumanThoughtModel</span><span class="p">(</span><span class="n">HumanModel</span><span class="p">):</span>
+<span class="normal">806</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">HumanThoughtModel</span><span class="p">(</span><span class="n">HumanModel</span><span class="p">):</span>
     <span class="n">MODELS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;human_thought&quot;</span><span class="p">:</span> <span class="p">{}}</span>
 
     <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -3299,7 +3299,8 @@ float: The cost of the response.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">791</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">790</span>
+<span class="normal">791</span>
 <span class="normal">792</span>
 <span class="normal">793</span>
 <span class="normal">794</span>
@@ -3314,8 +3315,7 @@ float: The cost of the response.</p>
 <span class="normal">803</span>
 <span class="normal">804</span>
 <span class="normal">805</span>
-<span class="normal">806</span>
-<span class="normal">807</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">806</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Logic for handling user input (both thought + action) to pass to SWEEnv</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3364,7 +3364,8 @@ float: The cost of the response.</p>
 
               <details class="quote">
                 <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">856</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">855</span>
+<span class="normal">856</span>
 <span class="normal">857</span>
 <span class="normal">858</span>
 <span class="normal">859</span>
@@ -3379,8 +3380,7 @@ float: The cost of the response.</p>
 <span class="normal">868</span>
 <span class="normal">869</span>
 <span class="normal">870</span>
-<span class="normal">871</span>
-<span class="normal">872</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">InstantEmptySubmitTestModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="normal">871</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">InstantEmptySubmitTestModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">MODELS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;instant_empty_submit&quot;</span><span class="p">:</span> <span class="p">{}}</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">ModelArguments</span><span class="p">,</span> <span class="n">commands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Command</span><span class="p">]):</span>
@@ -3427,10 +3427,10 @@ float: The cost of the response.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">859</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">858</span>
+<span class="normal">859</span>
 <span class="normal">860</span>
-<span class="normal">861</span>
-<span class="normal">862</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">ModelArguments</span><span class="p">,</span> <span class="n">commands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Command</span><span class="p">]):</span>
+<span class="normal">861</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">ModelArguments</span><span class="p">,</span> <span class="n">commands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Command</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This model immediately submits. Useful for testing purposes&quot;&quot;&quot;</span>
     <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">commands</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_action_idx</span> <span class="o">=</span> <span class="mi">0</span>
@@ -3548,7 +3548,8 @@ float: The cost of the response.</p>
 
               <details class="quote">
                 <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">580</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">579</span>
+<span class="normal">580</span>
 <span class="normal">581</span>
 <span class="normal">582</span>
 <span class="normal">583</span>
@@ -3608,8 +3609,7 @@ float: The cost of the response.</p>
 <span class="normal">637</span>
 <span class="normal">638</span>
 <span class="normal">639</span>
-<span class="normal">640</span>
-<span class="normal">641</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">OllamaModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="normal">640</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">OllamaModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">MODELS</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span>
         <span class="k">lambda</span><span class="p">:</span> <span class="p">{</span>
             <span class="s2">&quot;max_context&quot;</span><span class="p">:</span> <span class="mi">128_000</span><span class="p">,</span>
@@ -3701,7 +3701,8 @@ float: The cost of the response.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">595</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">594</span>
+<span class="normal">595</span>
 <span class="normal">596</span>
 <span class="normal">597</span>
 <span class="normal">598</span>
@@ -3713,8 +3714,7 @@ float: The cost of the response.</p>
 <span class="normal">604</span>
 <span class="normal">605</span>
 <span class="normal">606</span>
-<span class="normal">607</span>
-<span class="normal">608</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">history_to_messages</span><span class="p">(</span>
+<span class="normal">607</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">history_to_messages</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
     <span class="n">is_demonstration</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -3749,7 +3749,8 @@ float: The cost of the response.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">610</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">609</span>
+<span class="normal">610</span>
 <span class="normal">611</span>
 <span class="normal">612</span>
 <span class="normal">613</span>
@@ -3779,8 +3780,7 @@ float: The cost of the response.</p>
 <span class="normal">637</span>
 <span class="normal">638</span>
 <span class="normal">639</span>
-<span class="normal">640</span>
-<span class="normal">641</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@retry</span><span class="p">(</span>
+<span class="normal">640</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@retry</span><span class="p">(</span>
     <span class="n">wait</span><span class="o">=</span><span class="n">wait_random_exponential</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">15</span><span class="p">),</span>
     <span class="n">reraise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">stop</span><span class="o">=</span><span class="n">stop_after_attempt</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
@@ -3967,8 +3967,7 @@ float: The cost of the response.</p>
 <span class="normal">299</span>
 <span class="normal">300</span>
 <span class="normal">301</span>
-<span class="normal">302</span>
-<span class="normal">303</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">OpenAIModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="normal">302</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">OpenAIModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">MODELS</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;gpt-3.5-turbo-0125&quot;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s2">&quot;max_context&quot;</span><span class="p">:</span> <span class="mi">16_385</span><span class="p">,</span>
@@ -4036,12 +4035,11 @@ float: The cost of the response.</p>
 
         <span class="c1"># Set OpenAI key</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">model_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;azure&quot;</span><span class="p">):</span>
-            <span class="k">if</span> <span class="s2">&quot;model&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">model</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="s2">&quot;The --model CLI argument is ignored when using the Azure GPT endpoint. &quot;</span>
-                    <span class="s2">&quot;The model is determined by the AZURE_OPENAI_DEPLOYMENT key/&quot;</span>
-                    <span class="s2">&quot;environment variable (this might change in the future).&quot;</span><span class="p">,</span>
-                <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;The --model CLI argument is ignored when using the Azure GPT endpoint. &quot;</span>
+                <span class="s2">&quot;The model is determined by the AZURE_OPENAI_DEPLOYMENT key/&quot;</span>
+                <span class="s2">&quot;environment variable (this might change in the future).&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">api_model</span> <span class="o">=</span> <span class="n">keys_config</span><span class="p">[</span><span class="s2">&quot;AZURE_OPENAI_DEPLOYMENT&quot;</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">AzureOpenAI</span><span class="p">(</span>
                 <span class="n">api_key</span><span class="o">=</span><span class="n">keys_config</span><span class="p">[</span><span class="s2">&quot;AZURE_OPENAI_API_KEY&quot;</span><span class="p">],</span>
@@ -4123,7 +4121,8 @@ float: The cost of the response.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">263</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">262</span>
+<span class="normal">263</span>
 <span class="normal">264</span>
 <span class="normal">265</span>
 <span class="normal">266</span>
@@ -4135,8 +4134,7 @@ float: The cost of the response.</p>
 <span class="normal">272</span>
 <span class="normal">273</span>
 <span class="normal">274</span>
-<span class="normal">275</span>
-<span class="normal">276</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">history_to_messages</span><span class="p">(</span>
+<span class="normal">275</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">history_to_messages</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
     <span class="n">is_demonstration</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -4171,7 +4169,8 @@ float: The cost of the response.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">278</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">277</span>
+<span class="normal">278</span>
 <span class="normal">279</span>
 <span class="normal">280</span>
 <span class="normal">281</span>
@@ -4195,8 +4194,7 @@ float: The cost of the response.</p>
 <span class="normal">299</span>
 <span class="normal">300</span>
 <span class="normal">301</span>
-<span class="normal">302</span>
-<span class="normal">303</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@retry</span><span class="p">(</span>
+<span class="normal">302</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@retry</span><span class="p">(</span>
     <span class="n">wait</span><span class="o">=</span><span class="n">wait_random_exponential</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">15</span><span class="p">),</span>
     <span class="n">reraise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">stop</span><span class="o">=</span><span class="n">stop_after_attempt</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
@@ -4254,7 +4252,8 @@ float: The cost of the response.</p>
 
               <details class="quote">
                 <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">810</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">809</span>
+<span class="normal">810</span>
 <span class="normal">811</span>
 <span class="normal">812</span>
 <span class="normal">813</span>
@@ -4296,8 +4295,7 @@ float: The cost of the response.</p>
 <span class="normal">849</span>
 <span class="normal">850</span>
 <span class="normal">851</span>
-<span class="normal">852</span>
-<span class="normal">853</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ReplayModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="normal">852</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ReplayModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">MODELS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;replay&quot;</span><span class="p">:</span> <span class="p">{}}</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">ModelArguments</span><span class="p">,</span> <span class="n">commands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Command</span><span class="p">]):</span>
@@ -4371,7 +4369,8 @@ float: The cost of the response.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">831</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">830</span>
+<span class="normal">831</span>
 <span class="normal">832</span>
 <span class="normal">833</span>
 <span class="normal">834</span>
@@ -4392,8 +4391,7 @@ float: The cost of the response.</p>
 <span class="normal">849</span>
 <span class="normal">850</span>
 <span class="normal">851</span>
-<span class="normal">852</span>
-<span class="normal">853</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">852</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Logic for tracking which replay action to pass to SWEEnv</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -4448,7 +4446,8 @@ float: The cost of the response.</p>
 
               <details class="quote">
                 <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">644</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">643</span>
+<span class="normal">644</span>
 <span class="normal">645</span>
 <span class="normal">646</span>
 <span class="normal">647</span>
@@ -4533,8 +4532,7 @@ float: The cost of the response.</p>
 <span class="normal">726</span>
 <span class="normal">727</span>
 <span class="normal">728</span>
-<span class="normal">729</span>
-<span class="normal">730</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">TogetherModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="normal">729</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">TogetherModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="c1"># Check https://docs.together.ai/docs/inference-models for model names, context</span>
     <span class="c1"># Check https://www.together.ai/pricing for pricing</span>
     <span class="n">MODELS</span> <span class="o">=</span> <span class="p">{</span>
@@ -4651,7 +4649,8 @@ float: The cost of the response.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">690</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">689</span>
+<span class="normal">690</span>
 <span class="normal">691</span>
 <span class="normal">692</span>
 <span class="normal">693</span>
@@ -4661,8 +4660,7 @@ float: The cost of the response.</p>
 <span class="normal">697</span>
 <span class="normal">698</span>
 <span class="normal">699</span>
-<span class="normal">700</span>
-<span class="normal">701</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">history_to_messages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="n">is_demonstration</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">700</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">history_to_messages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="n">is_demonstration</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create `prompt` by filtering out all keys except for role/content per `history` turn</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -4695,7 +4693,8 @@ float: The cost of the response.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">703</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">702</span>
+<span class="normal">703</span>
 <span class="normal">704</span>
 <span class="normal">705</span>
 <span class="normal">706</span>
@@ -4721,8 +4720,7 @@ float: The cost of the response.</p>
 <span class="normal">726</span>
 <span class="normal">727</span>
 <span class="normal">728</span>
-<span class="normal">729</span>
-<span class="normal">730</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@retry</span><span class="p">(</span>
+<span class="normal">729</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@retry</span><span class="p">(</span>
     <span class="n">wait</span><span class="o">=</span><span class="n">wait_random_exponential</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">15</span><span class="p">),</span>
     <span class="n">reraise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">stop</span><span class="o">=</span><span class="n">stop_after_attempt</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
@@ -4781,7 +4779,8 @@ Reference: <a href="https://docs.anthropic.com/claude/reference/complete_post">h
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">475</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">474</span>
+<span class="normal">475</span>
 <span class="normal">476</span>
 <span class="normal">477</span>
 <span class="normal">478</span>
@@ -4828,8 +4827,7 @@ Reference: <a href="https://docs.anthropic.com/claude/reference/complete_post">h
 <span class="normal">519</span>
 <span class="normal">520</span>
 <span class="normal">521</span>
-<span class="normal">522</span>
-<span class="normal">523</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">anthropic_history_to_messages</span><span class="p">(</span>
+<span class="normal">522</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">anthropic_history_to_messages</span><span class="p">(</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">AnthropicModel</span> <span class="o">|</span> <span class="n">BedrockModel</span><span class="p">,</span>
     <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
     <span class="n">is_demonstration</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -4899,7 +4897,8 @@ Reference: <a href="https://docs.anthropic.com/claude/reference/complete_post">h
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">526</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">525</span>
+<span class="normal">526</span>
 <span class="normal">527</span>
 <span class="normal">528</span>
 <span class="normal">529</span>
@@ -4949,8 +4948,7 @@ Reference: <a href="https://docs.anthropic.com/claude/reference/complete_post">h
 <span class="normal">573</span>
 <span class="normal">574</span>
 <span class="normal">575</span>
-<span class="normal">576</span>
-<span class="normal">577</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">anthropic_query</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">AnthropicModel</span> <span class="o">|</span> <span class="n">BedrockModel</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">576</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">anthropic_query</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">AnthropicModel</span> <span class="o">|</span> <span class="n">BedrockModel</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Query the Anthropic API with the given `history` and return the response.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -5023,7 +5021,8 @@ Reference: <a href="https://docs.anthropic.com/claude/reference/complete_post">h
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">875</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">874</span>
+<span class="normal">875</span>
 <span class="normal">876</span>
 <span class="normal">877</span>
 <span class="normal">878</span>
@@ -5054,8 +5053,7 @@ Reference: <a href="https://docs.anthropic.com/claude/reference/complete_post">h
 <span class="normal">903</span>
 <span class="normal">904</span>
 <span class="normal">905</span>
-<span class="normal">906</span>
-<span class="normal">907</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_model</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="n">ModelArguments</span><span class="p">,</span> <span class="n">commands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Command</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="normal">906</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_model</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="n">ModelArguments</span><span class="p">,</span> <span class="n">commands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Command</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns correct model object given arguments and commands</span>
 <span class="sd">    &quot;&quot;&quot;</span>
