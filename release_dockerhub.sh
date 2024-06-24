@@ -45,7 +45,7 @@ DOCKER_CONTEXT_NAME="sweagent-multiplatform"
 docker buildx use "$DOCKER_CONTEXT_NAME" ||  docker buildx create --use --name "$DOCKER_CONTEXT_NAME"
 
 on_error() {
-    echo "====> ERROR!!! IMPORTANT: Make sure if you've already pushed something to dockerhub or pushed the tag to github!" >&2
+    echo "====> ERROR!!! IMPORTANT: Make sure that you've already pushed something to dockerhub or pushed the tag to github!" >&2
 }
 trap on_error ERR
 
@@ -67,18 +67,3 @@ echo "🔥 swe-agent-run pushed to dockerhub"
 echo "------------------------------------------"
 echo "Building of all images done"
 echo "------------------------------------------"
-
-
-if [ "$VERSION_STR" != "latest" ]; then
-    git tag v${VERSION_STR} || {
-        echo "Failed to create a tag in git" >&2
-        exit 5
-    }
-    echo "🔥 Tag v${VERSION_STR} created in git (local)!"
-
-    git push origin v${VERSION_STR} || {
-        echo "Failed to push the tag to github" >&2
-        exit 6
-    }
-    echo "🔥 Tag v${VERSION_STR} pushed to github"
-fi
