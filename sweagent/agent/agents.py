@@ -446,7 +446,7 @@ class Agent:
         This includes the history, the environment state, and the model stats.
         """
 
-        def get_attempt_data(attempt_idx: int = -1) -> dict[str, Any]:
+        def get_attempt_data(attempt_idx: int) -> dict[str, Any]:
             """Get data saved for every attempt"""
             assert self._env is not None
             # The deepcopy here is important because else the
@@ -470,8 +470,9 @@ class Agent:
             data["extra_info"] = {"comparisons": [(a, b, comp.to_dict()) for a, b, comp in self._rloop.comparisons]}
         else:
             data = {
-                **get_attempt_data(),
+                **get_attempt_data(0),
             }
+
         assert self.traj_path is not None
         self.traj_path.write_text(json.dumps(data, indent=2))
 
@@ -1022,6 +1023,7 @@ class Agent:
         done = False
         while not done:
             observation, done = self._run_step(observation)
+            self.save_trajectory()
             if done:
                 # fixme: Would have to fix this for replay model
                 if self._rloop is not None:
@@ -1030,15 +1032,14 @@ class Agent:
                     # (make sure to save trajectory after self._rloop.on_submit)
                     retry = self._rloop.retry()
                     self.info["review"] = self._rloop.reviews[-1].to_dict()
+                    # Call save_trajectory again to save the updated info with the final reviews
                     self.save_trajectory()
                     if retry:
                         self._i_attempt += 1
                         self.setup_attempt()
                     done = not retry
                 else:
-                    self.save_trajectory()
                     done = True
-            # note: Don't pull out save_trajectory here because it deppends on _i_attempt
         for hook in self.hooks:
             hook.on_run_done(trajectory=self.trajectory, info=self.info)
 
