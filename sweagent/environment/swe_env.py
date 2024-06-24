@@ -10,7 +10,7 @@ import subprocess
 import time
 import traceback
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any
 
 import gymnasium as gym
@@ -28,6 +28,7 @@ from sweagent.environment.utils import (
     PROCESS_DONE_MARKER_END,
     PROCESS_DONE_MARKER_START,
     InvalidGithubURL,
+    PatchFormatter,
     copy_anything_to_container,
     copy_file_to_container,
     format_trajectory_markdown,
@@ -420,6 +421,14 @@ class SWEEnv(gym.Env):
         )
         os.remove(path_to_patch)
 
+    def _get_edited_files_with_context(self, patch: str) -> dict[str, str]:
+        """Get the edited files with context from the patch"""
+        pf = PatchFormatter(patch, read_method=self.read_file)
+        out = {}
+        for context_length in [30, 50, 70]:
+            out[f"edited_files{context_length}"] = pf.get_files_str(original=False, context_length=context_length)
+        return out
+
     def step(self, action: str) -> tuple[str | None, int, bool, AgentInfo]:
         """
         Runs given action in environment and returns corresponding output
@@ -449,6 +458,8 @@ class SWEEnv(gym.Env):
                 self.logger.info(f"Found submission: {submission}")
                 info["exit_status"] = f"submitted ({action})"
                 info["submission"] = submission
+                for k, v in self._get_edited_files_with_context(patch=submission).items():
+                    info[k] = v
                 observation = "Exited (autosubmitted)"
                 self.logger.info("Exiting with autosubmission")
                 return observation, 0, True, info
@@ -495,6 +506,8 @@ class SWEEnv(gym.Env):
             self.logger.info(f"Found submission: {submission}")
             info["exit_status"] = "submitted"
             info["submission"] = submission if submission.strip() != "" else None
+            for k, v in self._get_edited_files_with_context(patch=submission).items():
+                info[k] = v
             observation = submission if submission.strip() != "" else None
             return observation, 0, True, info
         return observation, 0, False, info
@@ -1156,3 +1169,15 @@ class SWEEnv(gym.Env):
                 "any required changes onto the branch and then click "
                 "'Ready for Review' to bring it to the attention of the maintainers.",
             )
+
+    def read_file(self, path: str | PurePath) -> str:
+        """Read file contents from container
+
+        Args:
+            path: Path to file relative to repository root
+
+        Returns:
+            file_contents: Contents of file as string
+        """
+        path_in_container = f"/{self._repo_name}/{path}"
+        return self.communicate(f"cat {str(path_in_container)}")

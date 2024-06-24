@@ -44,6 +44,9 @@ class AgentInfo(TypedDict, total=False):
     submission: str | None
     # same as `ReviewerResult`
     review: dict[str, Any]
+    edited_files30: str
+    edited_files50: str
+    edited_files70: str
 
 
 @dataclass
@@ -55,16 +58,15 @@ class ReviewSubmission:
     #: Aggregate info dict (including several retries)
     info: AgentInfo
 
-    def to_format_dict(self) -> dict[str, Any]:
+    def to_format_dict(self, *, suffix="") -> dict[str, Any]:
         """Return all the data that is used to format the
         messages. Trajectory is excluded because it needs special treatment.
         """
-        assert "exit_status" in self.info  # mypy
-        assert "submission" in self.info
-        return {
-            "exit_status": self.info["exit_status"],
-            "submission": self.info["submission"],
-        }
+        out = {}
+        for k, v in self.info.items():
+            if isinstance(v, str):
+                out[f"{k}{suffix}"] = v
+        return out
 
 
 @dataclass(frozen=True)

@@ -74,6 +74,14 @@ def test_execute_setup_script(tmp_path, test_env_args):
 
 
 @pytest.mark.slow()
+def test_read_file(tmp_path, test_env_args):
+    with swe_env_context(test_env_args) as env:
+        env.reset()
+        content = env.read_file(Path("tests/filetoread.txt"))
+        assert content.splitlines()[-1].strip() == "SWEEnv.read_file"
+
+
+@pytest.mark.slow()
 def test_execute_environment(tmp_path, test_env_args, capsys):
     test_env = {
         "python": "3.6",

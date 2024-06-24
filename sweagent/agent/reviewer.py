@@ -227,17 +227,13 @@ class BinaryReviewer(AbstractBinaryReviewer):
             traj_item_template=config.traj_item_template,
         )
 
-    @staticmethod
-    def _add_dict_suffix(d: dict[str, Any], suffix: str) -> dict[str, Any]:
-        return {f"{k}{suffix}": v for k, v in d.items()}
-
     def format_messages(self, instance: INSTANCE_TYPE, sub1: ReviewSubmission, sub2: ReviewSubmission):
         system_message = self._config.system_template
         logger.debug(f"{self.LOG_PREFIX}MODEL INPUT (system)\n{system_message}")
         user_message = self._config.instance_template.format(
             **instance,
-            **self._add_dict_suffix(sub1.to_format_dict(), "1"),
-            **self._add_dict_suffix(sub2.to_format_dict(), "2"),
+            **sub1.to_format_dict(suffix="1"),
+            **sub2.to_format_dict(suffix="2"),
             traj1=self._traj_formatter.format_trajectory(sub1.trajectory, i_traj=1),
             traj2=self._traj_formatter.format_trajectory(sub2.trajectory, i_traj=2),
         )
