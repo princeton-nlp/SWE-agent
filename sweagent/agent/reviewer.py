@@ -5,8 +5,10 @@ solving the issue and to select the best solution.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from typing import Any, Literal
+
+from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 
 from sweagent.agent.models import APIStats, BaseModel
 from sweagent.types import BinaryReviewerResult, ReviewerResult, ReviewSubmission, Trajectory, TrajectoryStep
@@ -81,8 +83,8 @@ class AbstractReviewLoop(ABC):
 # --- CONFIGS ---
 
 
-@dataclass
-class ReviewerConfig:
+@dataclass(frozen=True)
+class ReviewerConfig(FrozenSerializable):
     """The configuration for the reviewer"""
 
     system_template: str
@@ -96,8 +98,8 @@ class ReviewerConfig:
     traj_item_template: str = "Model: {response}\n\nObservation: {observation}"
 
 
-@dataclass
-class BinaryReviewerConfig:
+@dataclass(frozen=True)
+class BinaryReviewerConfig(FrozenSerializable):
     """The configuration for the binary reviewer"""
 
     system_template: str
@@ -108,19 +110,13 @@ class BinaryReviewerConfig:
     traj_item_template: str = "Model: {response}\n\nObservation: {observation}"
 
 
-@dataclass
-class AbstractReviewLoopConfig:
-    """Every review loop config must have the following"""
-
-    review_loop_classname: str
-
-
-@dataclass
-class ReviewLoopConfig(AbstractReviewLoopConfig):
+@dataclass(frozen=True)
+class ReviewLoopConfig(FrozenSerializable):
     """The configuration for the review loop"""
 
     reviewer_config: ReviewerConfig
     binary_reviewer_config: BinaryReviewerConfig
+    review_loop_classname: str = "ReviewLoop"
     reviewer_classname: str = "Reviewer"
     binary_reviewer_classname: str = "BinaryReviewer"
     max_samples: int = 2
@@ -331,7 +327,6 @@ class ReviewLoop(AbstractReviewLoop):
         sub1 = self._submissions[self._best_idx]
         sub2 = self._submissions[-1]
         cresult = self._breviewer.compare_submissions(self._instance, sub1, sub2)
-        logger.debug(f"Comparison between {self._best_idx} and -1 result: %s", asdict(cresult))
         self._comparisons.append((self._n_samples - 2, self._n_samples - 1, cresult))
         assert cresult.choice in [0, 1]
         # this was a comparison between the current best and the last one
@@ -361,7 +356,7 @@ class ReviewLoop(AbstractReviewLoop):
 
 
 def get_review_loop_from_config(
-    config: AbstractReviewLoopConfig | None, instance: INSTANCE_TYPE, model: BaseModel
+    config: ReviewLoopConfig | None, instance: INSTANCE_TYPE, model: BaseModel
 ) -> AbstractReviewLoop | None:
     if config is None:
         logger.debug("Running without review loop")
