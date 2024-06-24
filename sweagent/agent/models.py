@@ -246,6 +246,12 @@ class OpenAIModel(BaseModel):
 
         # Set OpenAI key
         if self.args.model_name.startswith("azure"):
+            if "model" in self.args and self.args.model:
+                logger.warning(
+                    "The --model CLI argument is ignored when using the Azure GPT endpoint. "
+                    "The model is determined by the AZURE_OPENAI_DEPLOYMENT key/"
+                    "environment variable (this might change in the future).",
+                )
             self.api_model = keys_config["AZURE_OPENAI_DEPLOYMENT"]
             self.client = AzureOpenAI(
                 api_key=keys_config["AZURE_OPENAI_API_KEY"],
@@ -328,6 +334,12 @@ class AnthropicModel(BaseModel):
             "cost_per_input_token": 3e-06,
             "cost_per_output_token": 1.5e-05,
         },
+        "claude-3-5-sonnet-20240620": {
+            "max_context": 200_000,
+            "max_tokens": 4096,
+            "cost_per_input_token": 3e-06,
+            "cost_per_output_token": 1.5e-05,
+        },
         "claude-3-haiku-20240307": {
             "max_context": 200_000,
             "max_tokens": 4096,
@@ -341,6 +353,7 @@ class AnthropicModel(BaseModel):
         "claude-opus": "claude-3-opus-20240229",
         "claude-sonnet": "claude-3-sonnet-20240229",
         "claude-haiku": "claude-3-haiku-20240307",
+        "claude-sonnet-3.5": "claude-3-5-sonnet-20240620",
     }
 
     def __init__(self, args: ModelArguments, commands: list[Command]):

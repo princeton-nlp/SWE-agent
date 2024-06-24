@@ -44,7 +44,7 @@ from sweagent.types import AgentInfo
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import default_logger, get_logger
 
-LONG_TIMEOUT = 500
+LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500))
 PATH_TO_REQS = "/root/requirements.txt"
 PATH_TO_ENV_YML = "/root/environment.yml"
 
@@ -245,9 +245,10 @@ class SWEEnv(gym.Env):
         else:
             self.logger.info("Trying to clone from non-mirror...")
             clone_url = f"https://{token_prefix}github.com/{self.record['repo']}.git"
-        clone_method = keys_config.get("SWE_AGENT_CLONE_METHOD", default="sparse", choices=["sparse", "full"])
+        clone_method = keys_config.get("SWE_AGENT_CLONE_METHOD", default="shallow", choices=["shallow", "full"])
         if len(self.data) > 1 or self.persistent:
             msg = "Falling back to full cloning method due to multiple instances or persistent container"
+            clone_method = "full"
             self.logger.debug(msg)
         if clone_method == "full":
             self.communicate_with_handling(
@@ -530,8 +531,14 @@ class SWEEnv(gym.Env):
         elif self.persistent:
             # stopping is Podman specific, but doesn't hurt to include
             # https://stackoverflow.com/a/32428199/
-            # Sleeping to avoid https://github.com/princeton-nlp/SWE-agent/issues/496 ??
-            time.sleep(0.1)
+            # Want to avoid https://github.com/princeton-nlp/SWE-agent/issues/496
+            # Note that container_obj.status might not be updated throughout the container
+            # lifecycle, so let's get the container_obj again
+            assert self.container_name
+            try:
+                self.container_obj = docker.from_env().containers.get(self.container_name)
+            except Exception as e:
+                self.logger.warning(f"Failed to get fresh container object: {e}", exc_info=True)
             if self.container_obj.status not in {"paused", "exited", "dead", "stopping"}:
                 try:
                     self.container_obj.pause()
@@ -548,6 +555,10 @@ class SWEEnv(gym.Env):
                 self.container_obj.remove(force=True)
             except KeyboardInterrupt:
                 raise
+            except docker.errors.NotFound:
+                # We already tried to exit the container, so it's actually good if
+                # it's not found
+                pass
             except Exception:
                 self.logger.warning("Failed to remove container", exc_info=True)
             else:
@@ -658,7 +669,9 @@ class SWEEnv(gym.Env):
     ) -> str:
         """Experimental version of `_communicate`"""
         assert self.container is not None
-        command_suffix = f"echo {PROCESS_DONE_MARKER_START}$?{PROCESS_DONE_MARKER_END}\n"
+        # Sleep to ensure that the exit code is in the last line
+        # See https://github.com/princeton-nlp/SWE-agent/issues/595
+        command_suffix = f"sleep 0.01; echo {PROCESS_DONE_MARKER_START}$?{PROCESS_DONE_MARKER_END}\n"
         try:
             self.returncode = None
             cmd = input if input.endswith("\n") else input + "\n"
@@ -672,7 +685,12 @@ class SWEEnv(gym.Env):
             msg = "Failed to communicate with container"
             raise RuntimeError(msg)
 
-        buffer, exit_code = read_with_timeout_experimental(self.container, timeout_duration)
+        try:
+            buffer, exit_code = read_with_timeout_experimental(self.container, timeout_duration)
+        except Exception:
+            msg = f"Read with timeout failed on input:\n---\n{input}\n---"
+            self.logger.error(msg)
+            raise
         self.returncode = int(exit_code)
         return buffer
 
@@ -708,7 +726,7 @@ class SWEEnv(gym.Env):
             self.logger.error(f"Read with timeout failed on input:\n---\n{input}\n---")
             raise e
         if not exit_code.isdigit():
-            msg = f"Container crashed. Failed to get exit code. Output:\n---\n{buffer}\n---"
+            msg = f"Failed to get exit code. Failed to get exit code. Output:\n---\n{buffer}\n---"
             raise RuntimeError(msg)
         self.returncode = int(exit_code)
         return buffer

@@ -224,11 +224,12 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
             try:
                 data = os.read(fd, 4096)
             except BlockingIOError:
+                logger.error("BlockingIOError while reading from subprocess.", exc_info=True)
                 break
             if data:
                 buffer += data
-        if PROCESS_DONE_MARKER_START in buffer.decode():
-            break
+                if PROCESS_DONE_MARKER_START in buffer.decode():
+                    break
         time.sleep(0.01)  # Prevents CPU hogging
 
     if container.poll() is not None:
@@ -239,10 +240,9 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
         raise TimeoutError(msg)
     decoded = buffer.decode()
     body = "\n".join(line for line in decoded.splitlines() if not line.startswith(PROCESS_DONE_MARKER_START))
-    last_line = decoded.splitlines()[-1]
-    _results = PROCESS_DONE_REGEX.search(last_line)
+    _results = PROCESS_DONE_REGEX.search(decoded)
     if _results is None:
-        msg = f"Could not find process done marker in last line: {last_line=}, {body=}"
+        msg = f"Could not find process done marker in last line: {decoded=}, {body=}"
         raise ValueError(msg)
     exit_code = _results.group(1)
     return body, exit_code
