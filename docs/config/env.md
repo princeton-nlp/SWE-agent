@@ -9,7 +9,12 @@ This page details all environment variables that are currently in use by SWE-age
 * All API keys (for LMs and GitHub) can be set as an environment variable. See [here](../installation/keys.md) for more information.
 * `SWE_AGENT_CONFIG_ROOT`: Used to resolve relative paths in the [config](config.md)
 * `SWE_AGENT_ENV_LONG_TIMEOUT` (default: 500): Timeout in seconds used for commands that install instance environment.
-* `SWE_AGENT_LOG_TIME`: Add timestamps to log (**can only be set as an environment variable**)
+
+The following three variables can only be set as environment variables, not in the config file
+
+* `SWE_AGENT_LOG_TIME`: Add timestamps to log
+* `SWE_AGENT_LOG_STREAM_LEVEL`: Level of logging that is shown on the command line interface (`TRACE` being a custom level below `DEBUG`)
+* `SWE_AGENT_LOG_FILE_LEVEL`: Like  `SWE_AGENT_LOG_STREAM_LEVEL` but for the log file
 
 !!! warning "Unstable"
     The following variables might still be subject to change
