@@ -12,6 +12,7 @@ from sweagent.agent.models import BaseModel, ModelArguments
 from sweagent.agent.reviewer import (
     BinaryReviewer,
     BinaryReviewerConfig,
+    GTCConfig,
     Reviewer,
     ReviewerConfig,
     ReviewLoop,
@@ -185,12 +186,13 @@ def get_agent_arguments(review_loop_config) -> AgentArguments:
 @pytest.mark.slow()
 def test_agent_with_reviewer(dummy_reviewer_config, dummy_binary_reviewer_config, test_env_args):
     rl_config = ReviewLoopConfig(
-        "ReviewLoop",
         dummy_reviewer_config,
         dummy_binary_reviewer_config,
+        GTCConfig(),
         max_samples=100,
         min_draws=100,
         max_accepted_draws=2,
+        gtc_classname="GraveToCradle",
     )
     agent_args = get_agent_arguments(rl_config)
     assert agent_args.config.review_loop_config is not None

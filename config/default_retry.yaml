@@ -58,6 +58,7 @@ instance_template: |-
 
   6. When editing files, it is easy to accidentally specify a wrong line number or to write code with incorrect indentation. Always check the code after you issue an edit to make sure that it reflects what you wanted to accomplish. If it didn't, issue another command to fix it.
 
+  {failed_verdicts_with_submissions}
 
   (Open file: {open_file})
   (Current directory: {working_dir})
@@ -231,4 +232,4 @@ review_loop_config:
   max_samples: 10
   min_draws: 100
   max_accepted_draws: 2
-
+  gtc_classname: GraveToCradle

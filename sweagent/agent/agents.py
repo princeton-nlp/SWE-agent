@@ -282,6 +282,10 @@ class Agent:
         self._trajectory_by_attempt: dict[int, Trajectory] = defaultdict(list)
         self._info_by_attempt: dict[int, AgentInfo] = defaultdict(dict)
 
+        #: Variables to be referenced in the templates that are forwarded from one
+        #: solution attempt to the next
+        self._forwarded_vars: dict[str, Any] = {}
+
     @property
     def history(self) -> History:
         """History that is passed on to the model.
@@ -355,6 +359,9 @@ class Agent:
         self._history_by_attempt = defaultdict(list)
         self._trajectory_by_attempt = defaultdict(list)
         self._info_by_attempt = defaultdict(dict)  # type: ignore
+        self._forwarded_vars = {}
+        if self._rloop is not None:
+            self._forwarded_vars = self._rloop.get_forwarded_vars()
 
         self.setup_attempt(init_model_stats=init_model_stats)
 
@@ -674,6 +681,7 @@ class Agent:
                     **self.system_args,
                     **state_vars,
                     observation=(observation if observation is not None else ""),
+                    **self._forwarded_vars,
                 ),
             )
 
@@ -1031,6 +1039,7 @@ class Agent:
                     self._rloop.on_submit(ReviewSubmission(trajectory=self.trajectory, info=self.info))
                     # (make sure to save trajectory after self._rloop.on_submit)
                     retry = self._rloop.retry()
+                    self._forwarded_vars = self._rloop.get_forwarded_vars()
                     self.info["review"] = self._rloop.reviews[-1].to_dict()
                     # Call save_trajectory again to save the updated info with the final reviews
                     self.save_trajectory()

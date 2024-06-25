@@ -43,6 +43,27 @@ class AbstractBinaryReviewer(ABC):
         """Returns 0 if sub1 is better, 1 if sub2 is better"""
 
 
+class AbstractGraveToCradle(ABC):
+    """Forward messages from past attempts to the next one"""
+
+    @abstractmethod
+    def get_forwarded_vars(
+        self,
+        submissions: list[ReviewSubmission],
+        reviews: list[ReviewerResult],
+        breviews: list[tuple[int, int, BinaryReviewerResult]],
+    ) -> dict[str, Any]:
+        """Get the variables that should be forwarded to the next iteration.
+
+        Note: Must return a dictionary with the correct keys even when called
+        with empty lists. This is because else we cannot use the variables in the template
+        when we call for the first attempt.
+
+        Returns:
+            A dictionary of variables that should be forwarded to the next iteration.
+        """
+
+
 class AbstractReviewLoop(ABC):
     """The review loop controls how often the agent tries to solve
     the issue and how it selects the best solution.
@@ -79,6 +100,14 @@ class AbstractReviewLoop(ABC):
             compared submissions and the result of the comparison.
         """
 
+    def get_forwarded_vars(self) -> dict[str, Any]:
+        """Get the variables that should be forwarded to the next iteration.
+
+        Returns:
+            A dictionary of variables that should be forwarded to the next iteration.
+        """
+        return {}
+
 
 # --- CONFIGS ---
 
@@ -111,14 +140,21 @@ class BinaryReviewerConfig(FrozenSerializable):
 
 
 @dataclass(frozen=True)
+class GTCConfig(FrozenSerializable):
+    """The configuration for the GraveToCradle"""
+
+
+@dataclass(frozen=True)
 class ReviewLoopConfig(FrozenSerializable):
     """The configuration for the review loop"""
 
     reviewer_config: ReviewerConfig
     binary_reviewer_config: BinaryReviewerConfig
+    gtc_config: GTCConfig | None = None
     review_loop_classname: str = "ReviewLoop"
     reviewer_classname: str = "Reviewer"
     binary_reviewer_classname: str = "BinaryReviewer"
+    gtc_classname: str = ""
     max_samples: int = 2
     min_draws: int = 1
     max_accepted_draws: int = 0
@@ -261,6 +297,33 @@ class BinaryReviewer(AbstractBinaryReviewer):
         return BinaryReviewerResult(idx, output=answer, messages=messages)
 
 
+class GraveToCradle(AbstractGraveToCradle):
+    def __init__(self, config: GTCConfig, model: BaseModel):
+        self._config = config
+        self._model = model
+
+    def get_forwarded_vars(
+        self,
+        submissions: list[ReviewSubmission],
+        reviews: list[ReviewerResult],
+        breviews: list[tuple[int, int, BinaryReviewerResult]],
+    ) -> dict[str, Any]:
+        assert len(submissions) == len(reviews)
+        failed_idxs = [i for i, r in enumerate(reviews) if not r.accept]
+        if not failed_idxs:
+            return {"failed_verdicts_with_submissions": ""}
+        msg_lines = ["The following previous submissions were deemed to be incorrect:"]
+        for i, idx in enumerate(failed_idxs):
+            info = submissions[idx].info
+            if not info.get("submission"):
+                continue
+            submission = info["submission"]
+            review = reviews[idx].output
+            msg_lines.append(f"Submission {i+1}:\n\n{submission}\n\nReview {i+1}:\n\n{review}")
+        msg = "\n\n".join(msg_lines)
+        return {"failed_verdicts_with_submissions": msg}
+
+
 class ReviewLoop(AbstractReviewLoop):
     LOG_PREFIX = "🔄 Review Loop: "
 
@@ -276,6 +339,9 @@ class ReviewLoop(AbstractReviewLoop):
         self._breviewer: AbstractBinaryReviewer = globals()[loop_config.binary_reviewer_classname](
             loop_config.binary_reviewer_config, model
         )
+        self._gtc: AbstractGraveToCradle | None = None
+        if loop_config.gtc_classname:
+            self._gtc = globals()[loop_config.gtc_classname](loop_config.gtc_config, model)
         self._loop_config = loop_config
         # Note: These are "cumulative" submissions, i.e., they include all retries
         # up to that point.
@@ -353,6 +419,11 @@ class ReviewLoop(AbstractReviewLoop):
     def get_best(self) -> int:
         assert len(self._reviews) == len(self._submissions)
         return self._best_idx
+
+    def get_forwarded_vars(self) -> dict[str, Any]:
+        if self._gtc is None:
+            return {}
+        return self._gtc.get_forwarded_vars(self._submissions, self._reviews, self._comparisons)
 
 
 def get_review_loop_from_config(
