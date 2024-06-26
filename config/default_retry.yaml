@@ -109,6 +109,7 @@ parse_command: ParseCommandDetailed
 history_processor: Last5Observations
 demonstrations:
 - trajectories/demonstrations/replay__marshmallow-code__marshmallow-1867__default_sys-env_window100__t-0.20__p-0.95__c-2.00__install-1/marshmallow-code__marshmallow-1867.traj
+review_loop_classname: ReviewLoop
 review_loop_config:
   reviewer_config:
     system_template: |
@@ -228,7 +229,6 @@ review_loop_config:
       - scroll_up
       - scroll_down
     traj_item_template: 'Step {i_step} thought:\n{response}\n\Step {i_step} output:\n{observation}'
-  review_loop_classname: ReviewLoop
   max_samples: 10
   min_draws: 100
   max_accepted_draws: 2
