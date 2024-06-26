@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - main
+      - reviewer
     paths-ignore:
       - 'docs/**'
       - 'README.md'
@@ -15,6 +16,7 @@ on:
   pull_request:
     branches:
       - main
+      - reviewer
     paths-ignore:
       - 'docs/**'
       - 'README.md'
