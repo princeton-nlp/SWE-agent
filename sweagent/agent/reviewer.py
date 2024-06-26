@@ -38,7 +38,12 @@ class AbstractBinaryReviewer(ABC):
 
     @abstractmethod
     def compare_submissions(
-        self, instance: INSTANCE_TYPE, sub1: ReviewSubmission, sub2: ReviewSubmission
+        self,
+        instance: INSTANCE_TYPE,
+        sub1: ReviewSubmission,
+        sub2: ReviewSubmission,
+        rev1: ReviewerResult,
+        rev2: ReviewerResult,
     ) -> BinaryReviewerResult:
         """Returns 0 if sub1 is better, 1 if sub2 is better"""
 
@@ -286,7 +291,12 @@ class BinaryReviewer(AbstractBinaryReviewer):
         return 0
 
     def compare_submissions(
-        self, instance: INSTANCE_TYPE, sub1: ReviewSubmission, sub2: ReviewSubmission
+        self,
+        instance: INSTANCE_TYPE,
+        sub1: ReviewSubmission,
+        sub2: ReviewSubmission,
+        rev1: ReviewerResult,
+        rev2: ReviewerResult,
     ) -> BinaryReviewerResult:
         messages = self.format_messages(instance, sub1, sub2)
         answer = self._model.query(messages)
@@ -392,7 +402,9 @@ class ReviewLoop(AbstractReviewLoop):
             return
         sub1 = self._submissions[self._best_idx]
         sub2 = self._submissions[-1]
-        cresult = self._breviewer.compare_submissions(self._instance, sub1, sub2)
+        rev1 = self._reviews[self._best_idx]
+        rev2 = self._reviews[-1]
+        cresult = self._breviewer.compare_submissions(self._instance, sub1, sub2, rev1, rev2)
         self._comparisons.append((self._n_samples - 2, self._n_samples - 1, cresult))
         assert cresult.choice in [0, 1]
         # this was a comparison between the current best and the last one
