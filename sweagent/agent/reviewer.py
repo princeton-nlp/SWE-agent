@@ -153,10 +153,10 @@ class GTCConfig(FrozenSerializable):
 class ReviewLoopConfig(FrozenSerializable):
     """The configuration for the review loop"""
 
+    review_loop_classname: str
     reviewer_config: ReviewerConfig | None = None
     binary_reviewer_config: BinaryReviewerConfig | None = None
     gtc_config: GTCConfig | None = None
-    review_loop_classname: str | None = None
     reviewer_classname: str | None = None
     binary_reviewer_classname: str | None = None
     gtc_classname: str = ""

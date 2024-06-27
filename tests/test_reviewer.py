@@ -19,7 +19,7 @@ from sweagent.agent.reviewer import (
     ReviewLoopConfig,
     get_review_loop_from_config,
 )
-from sweagent.types import ReviewSubmission
+from sweagent.types import ReviewerResult, ReviewSubmission
 
 
 @pytest.fixture()
@@ -35,9 +35,10 @@ def dummy_binary_reviewer_config() -> BinaryReviewerConfig:
 @pytest.fixture()
 def dummy_review_loop_config(dummy_reviewer_config, dummy_binary_reviewer_config) -> ReviewLoopConfig:
     return ReviewLoopConfig(
-        "ReviewLoop",
-        dummy_reviewer_config,
-        dummy_binary_reviewer_config,
+        review_loop_classname="ReviewLoop",
+        reviewer_classname="Reviewer",
+        reviewer_config=dummy_reviewer_config,
+        binary_reviewer_config=dummy_binary_reviewer_config,
     )
 
 
@@ -114,10 +115,11 @@ def test_binary_reviewer(dummy_binary_reviewer_config):
     instance = {}
     sub1 = _get_fake_submission()
     osub2 = _get_fake_submission()
-    assert br.compare_submissions(instance, sub1, osub2).choice == 0
-    assert br.compare_submissions(instance, sub1, osub2).choice == 1
-    assert br.compare_submissions(instance, sub1, osub2).choice == 0
-    assert br.compare_submissions(instance, sub1, osub2).choice == 0
+    drr = ReviewerResult(True, "", [])
+    assert br.compare_submissions(instance, sub1, osub2, drr, drr).choice == 0
+    assert br.compare_submissions(instance, sub1, osub2, drr, drr).choice == 1
+    assert br.compare_submissions(instance, sub1, osub2, drr, drr).choice == 0
+    assert br.compare_submissions(instance, sub1, osub2, drr, drr).choice == 0
 
 
 def test_loop_comparison(dummy_reviewer_config, dummy_binary_reviewer_config):
@@ -125,9 +127,11 @@ def test_loop_comparison(dummy_reviewer_config, dummy_binary_reviewer_config):
     # Only have one comparison: The two successes
     bmodel = DeterminedModel(["second"])
     lconfig = ReviewLoopConfig(
-        "ReviewLoop",
-        dummy_reviewer_config,
-        dummy_binary_reviewer_config,
+        review_loop_classname="ReviewLoop",
+        reviewer_classname="Reviewer",
+        reviewer_config=dummy_reviewer_config,
+        binary_reviewer_classname="BinaryReviewer",
+        binary_reviewer_config=dummy_binary_reviewer_config,
         max_samples=100,
         min_draws=100,
         max_accepted_draws=2,
@@ -155,7 +159,14 @@ def test_loop_stop_max_fail(dummy_reviewer_config, dummy_binary_reviewer_config)
     rmodel = DeterminedModel(["fail"] * 5)
     # Only have one comparison: The two successes
     bmodel = DeterminedModel(["second"] * 4)
-    lconfig = ReviewLoopConfig("ReviewLoop", dummy_reviewer_config, dummy_binary_reviewer_config, max_samples=5)
+    lconfig = ReviewLoopConfig(
+        "ReviewLoop",
+        reviewer_classname="Reviewer",
+        binary_reviewer_classname="BinaryReviewer",
+        reviewer_config=dummy_reviewer_config,
+        binary_reviewer_config=dummy_binary_reviewer_config,
+        max_samples=5,
+    )
     loop = ReviewLoop(lconfig, instance={}, model=rmodel)
     loop._breviewer._model = bmodel
     for i in range(5):
@@ -186,13 +197,16 @@ def get_agent_arguments(review_loop_config) -> AgentArguments:
 @pytest.mark.slow()
 def test_agent_with_reviewer(dummy_reviewer_config, dummy_binary_reviewer_config, test_env_args):
     rl_config = ReviewLoopConfig(
-        dummy_reviewer_config,
-        dummy_binary_reviewer_config,
-        GTCConfig(),
+        review_loop_classname="ReviewLoop",
+        reviewer_classname="Reviewer",
+        binary_reviewer_classname="BinaryReviewer",
+        reviewer_config=dummy_reviewer_config,
+        binary_reviewer_config=dummy_binary_reviewer_config,
+        gtc_classname="GraveToCradle",
+        gtc_config=GTCConfig(),
         max_samples=100,
         min_draws=100,
         max_accepted_draws=2,
-        gtc_classname="GraveToCradle",
     )
     agent_args = get_agent_arguments(rl_config)
     assert agent_args.config.review_loop_config is not None
