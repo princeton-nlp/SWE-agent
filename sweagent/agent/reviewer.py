@@ -153,12 +153,12 @@ class GTCConfig(FrozenSerializable):
 class ReviewLoopConfig(FrozenSerializable):
     """The configuration for the review loop"""
 
-    reviewer_config: ReviewerConfig
-    binary_reviewer_config: BinaryReviewerConfig
+    reviewer_config: ReviewerConfig | None = None
+    binary_reviewer_config: BinaryReviewerConfig | None = None
     gtc_config: GTCConfig | None = None
-    review_loop_classname: str = "ReviewLoop"
-    reviewer_classname: str = "Reviewer"
-    binary_reviewer_classname: str = "BinaryReviewer"
+    review_loop_classname: str | None = None
+    reviewer_classname: str | None = None
+    binary_reviewer_classname: str | None = None
     gtc_classname: str = ""
     max_samples: int = 2
     min_draws: int = 1
@@ -346,9 +346,12 @@ class ReviewLoop(AbstractReviewLoop):
         self._model = model
         self._instance = instance
         self._reviewer: AbstractReviewer = globals()[loop_config.reviewer_classname](loop_config.reviewer_config, model)
-        self._breviewer: AbstractBinaryReviewer = globals()[loop_config.binary_reviewer_classname](
-            loop_config.binary_reviewer_config, model
-        )
+        if loop_config.binary_reviewer_classname is not None:
+            self._breviewer: AbstractBinaryReviewer | None = globals()[loop_config.binary_reviewer_classname](
+                loop_config.binary_reviewer_config, model
+            )
+        else:
+            self._breviewer = None
         self._gtc: AbstractGraveToCradle | None = None
         if loop_config.gtc_classname:
             self._gtc = globals()[loop_config.gtc_classname](loop_config.gtc_config, model)
@@ -394,6 +397,9 @@ class ReviewLoop(AbstractReviewLoop):
         return review.accept
 
     def _compare(self) -> None:
+        if self._breviewer is None:
+            self._best_idx = self._n_samples - 1
+            return
         if self._n_samples < 2:
             return
         if self._reviews[self._best_idx].accept and not self._reviews[-1].accept:
@@ -429,7 +435,8 @@ class ReviewLoop(AbstractReviewLoop):
         return True
 
     def get_best(self) -> int:
-        assert len(self._reviews) == len(self._submissions)
+        if self._breviewer is not None:
+            assert len(self._reviews) == len(self._submissions)
         return self._best_idx
 
     def get_forwarded_vars(self) -> dict[str, Any]:
