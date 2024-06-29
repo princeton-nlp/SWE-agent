@@ -164,6 +164,11 @@ class ReviewLoopConfig(FrozenSerializable):
     min_draws: int = 1
     max_accepted_draws: int = 0
 
+    def validate(self):
+        if self.max_accepted_draws > self.min_draws:
+            msg = "`max_accepted_draws` must be less than or equal to `min_draws`, else it has no effect"
+            raise ValueError(msg)
+
 
 # --- IMPLEMENTATIONS ---
 
@@ -422,7 +427,7 @@ class ReviewLoop(AbstractReviewLoop):
             logger.info(f"{self.LOG_PREFIX}Exiting retry loop ({stat_str}): `max_samples` reached")
             return False
 
-        if self._reviews[-1].accept and self._n_samples >= self._loop_config.min_draws > 0:
+        if self._reviews[-1].accept and self._n_samples >= self._loop_config.min_draws:
             logger.info(
                 f"{self.LOG_PREFIX}Existing retry loop ({stat_str}): `min_draws` reached and last submission was accepted"
             )
