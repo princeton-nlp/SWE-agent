@@ -122,7 +122,7 @@ def test_binary_reviewer(dummy_binary_reviewer_config):
     assert br.compare_submissions(instance, sub1, osub2, drr, drr).choice == 0
 
 
-def test_loop_comparison(dummy_reviewer_config, dummy_binary_reviewer_config):
+def test_loop_comparison_quit_after_max_accepted(dummy_reviewer_config, dummy_binary_reviewer_config):
     rmodel = DeterminedModel(["success", "fail", "success", "fail"])
     # Only have one comparison: The two successes
     bmodel = DeterminedModel(["second"])
@@ -150,6 +150,34 @@ def test_loop_comparison(dummy_reviewer_config, dummy_binary_reviewer_config):
             assert loop.get_best() == 0
         else:
             assert loop.get_best() == 2
+    assert loop._n_samples == 3
+    assert rmodel.stats.api_calls == 3
+    assert bmodel.stats.api_calls == 1
+
+
+def test_loop_comparison_quit_after_accept(dummy_reviewer_config, dummy_binary_reviewer_config):
+    rmodel = DeterminedModel(["fail", "fail", "success"])
+    # Only have one comparison: The two successes
+    bmodel = DeterminedModel(["second"])
+    lconfig = ReviewLoopConfig(
+        review_loop_classname="ReviewLoop",
+        reviewer_classname="Reviewer",
+        reviewer_config=dummy_reviewer_config,
+        binary_reviewer_classname="BinaryReviewer",
+        binary_reviewer_config=dummy_binary_reviewer_config,
+        max_samples=100,
+    )
+    loop = ReviewLoop(lconfig, instance={}, model=rmodel)
+    loop._breviewer._model = bmodel
+    for i in range(3):
+        loop.on_submit(_get_fake_submission())
+        print(loop.reviews)
+        print(loop.comparisons)
+        if i < 2:
+            assert loop.retry()
+        else:
+            assert not loop.retry()
+        assert loop.get_best() == i
     assert loop._n_samples == 3
     assert rmodel.stats.api_calls == 3
     assert bmodel.stats.api_calls == 1

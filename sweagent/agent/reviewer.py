@@ -411,6 +411,11 @@ class ReviewLoop(AbstractReviewLoop):
             # Require that the best submission is accepted, so don't
             # even need to compare here
             return
+        if not self._reviews[self._best_idx].accept and self._reviews[-1].accept:
+            # If the best submission is not accepted, but the last one is,
+            # then the last one is the new best
+            self._best_idx = self._n_samples - 1
+            return
         sub1 = self._submissions[self._best_idx]
         sub2 = self._submissions[-1]
         rev1 = self._reviews[self._best_idx]
