@@ -157,7 +157,7 @@ def test_loop_comparison_quit_after_max_accepted(dummy_reviewer_config, dummy_bi
 
 def test_loop_comparison_quit_after_accept(dummy_reviewer_config, dummy_binary_reviewer_config):
     rmodel = DeterminedModel(["fail", "fail", "success"])
-    # Only have one comparison: The two successes
+    # Only have one comparison: The two fails
     bmodel = DeterminedModel(["second"])
     lconfig = ReviewLoopConfig(
         review_loop_classname="ReviewLoop",

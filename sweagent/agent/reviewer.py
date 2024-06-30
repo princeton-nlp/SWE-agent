@@ -4,6 +4,7 @@ solving the issue and to select the best solution.
 
 from __future__ import annotations
 
+import copy
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Literal
@@ -128,8 +129,11 @@ class ReviewerConfig(FrozenSerializable):
     reject_exit_cost: bool = True
     #: Filter the following actions from the trajectory
     traj_filter: list[str] = field(default_factory=list)
+    #: Filter outputs from the following actions from the trajectory
+    traj_output_filter: list[str] = field(default_factory=list)
     #: Format of the trajectory item
     traj_item_template: str = "Model: {response}\n\nObservation: {observation}"
+    filter_failed_edits: bool = False
 
 
 @dataclass(frozen=True)
@@ -183,6 +187,8 @@ class Reviewer(AbstractReviewer):
         self._traj_formatter = TrajectoryFormatter(
             traj_filter=config.traj_filter,
             traj_item_template=config.traj_item_template,
+            traj_output_filter=config.traj_output_filter,
+            filter_failed_edits=config.filter_failed_edits,
         )
 
     def format_messages(self, instance: INSTANCE_TYPE, submission: ReviewSubmission):
@@ -230,21 +236,38 @@ class Reviewer(AbstractReviewer):
 class TrajectoryFormatter:
     def __init__(
         self,
+        *,
         traj_filter: list[str] | None = None,
+        traj_output_filter: list[str] | None = None,
         traj_item_template: str = "Model: {response}\n\nObservation: {observation}",
+        filter_failed_edits: bool = False,
     ):
         """Formats trajectories for the use in prompts"""
         self._traj_filter = traj_filter or []
+        self._traj_output_filter = traj_output_filter or []
         self._traj_item_template = traj_item_template
+        self._filter_failed_edits = filter_failed_edits
 
-    def _include_trajectory_step(self, item: TrajectoryStep) -> bool:
+    def _include_step(self, item: TrajectoryStep) -> bool:
         action = item["action"].strip()
         for f in self._traj_filter:
+            if action.startswith(f):
+                return False
+        if self._filter_failed_edits and "Your proposed edit has introduced new syntax error(s)" in item["observation"]:
+            return False
+        return True
+
+    def _include_step_output(self, item: TrajectoryStep) -> bool:
+        action = item["action"].strip()
+        for f in self._traj_output_filter:
             if action.startswith(f):
                 return False
         return True
 
     def _format_trajectory_step(self, step: TrajectoryStep, i_step: int, i_traj: int = 1) -> str:
+        step = copy.deepcopy(step)
+        if not self._include_step_output(step):
+            step["observation"] = "[Output omitted]"
         return self._traj_item_template.format(
             **step,
             i_step=i_step,
@@ -252,7 +275,7 @@ class TrajectoryFormatter:
         )
 
     def format_trajectory(self, trajectory: Trajectory, i_traj: int = 1) -> str:
-        traj_messages = [step for step in trajectory if self._include_trajectory_step(step)]
+        traj_messages = [step for step in trajectory if self._include_step(step)]
         return "\n\n".join(
             [self._format_trajectory_step(step, i_step, i_traj=i_traj) for i_step, step in enumerate(traj_messages)]
         )
