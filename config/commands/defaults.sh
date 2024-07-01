@@ -26,7 +26,7 @@ _constrain_line() {
 
 # @yaml
 # signature: open <path> [<line_number>]
-# docstring: opens the file at the given path in the editor. If line_number is provided, the window will be move to include that line
+# docstring: opens the file at the given path in the editor. If line_number is provided, the window will be move to include that line. If no number is provided, an abridged view of the file will be shown.
 # arguments:
 #   path:
 #     type: string
@@ -34,7 +34,7 @@ _constrain_line() {
 #     required: true
 #   line_number:
 #     type: integer
-#     description: the line number to move the window to (if not provided, the window will start at the top of the file)
+#     description: the line number to move the window to (if not provided, an abridged view of the whole file will be shown)
 #     required: false
 open() {
     if [ -z "$1" ]
@@ -71,7 +71,12 @@ open() {
         export CURRENT_FILE=$(realpath $1)
         export CURRENT_LINE=$line_number
         _constrain_line
-        _print
+        if [ -n "$2" ]; then
+            _print
+        else
+            filemap "$1"
+            echo "To go to a specific line, use the goto command. You can also search for text using the \`search_file\` command."
+        fi
     elif [ -d "$1" ]; then
         echo "Error: $1 is a directory. You can only open files. Use cd or ls to navigate directories."
     else
