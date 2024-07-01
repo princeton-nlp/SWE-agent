@@ -37,10 +37,12 @@ class TrajSplitter:
     def _get_experiment_id(self, results_dir: Path) -> str:
         return results_dir.stem
 
+    def _get_preds_path(self, i_attempt: int) -> Path:
+        return self._results_dir / "by_attempt" / str(i_attempt) / "preds.jsonl"
+
     def _save_preds(self, *, i_attempt: int, instance_id: str, experiment_id: str, pred: str) -> None:
-        out_dir = self._results_dir / "by_attempt" / str(i_attempt)
-        out_dir.mkdir(parents=True, exist_ok=True)
-        out_path = out_dir / "preds.jsonl"
+        out_path = self._get_preds_path(i_attempt)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.touch(exist_ok=True)
         with out_path.open("a") as f:
             f.write(
@@ -55,6 +57,8 @@ class TrajSplitter:
             data = json.loads(traj.read_text())
             attempts = self._get_attempts(data)
             for i_attempt, attempt in enumerate(attempts):
+                # This is important because else we'll add duplicates to the file
+                self._get_preds_path(i_attempt).unlink(missing_ok=True)
                 i_attempts += 1
                 iid = self._get_instance_id(traj)
                 pred = self._get_pred_from_attempt(attempt)
@@ -66,6 +70,8 @@ class TrajSplitter:
                     experiment_id=eid,
                     pred=pred,
                 )
+                attempt_traj_path = self._get_preds_path(i_attempt).parent / f"{iid}.traj"
+                attempt_traj_path.write_text(json.dumps(attempt, indent=2))
         logger.info("Wrote a total of %d predictions", i_attempts)
 
 
