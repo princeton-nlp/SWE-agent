@@ -14,7 +14,7 @@ Installation from source is the preferred way to set up SWE-agent on your machin
     ```
 4. Run
     ```
-    pip install --upgrade pip && pip install --editable .
+    python -m pip install --upgrade pip && pip install --editable .
     ```
     at the repository root (as with any python setup, it's recommended to use [conda][] or [virtual environments][] to manage dependencies).
 5. Run
