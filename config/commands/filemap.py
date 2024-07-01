@@ -1,3 +1,5 @@
+#!/root/miniconda3/bin/python
+
 # @yaml
 # signature: filemap <file_path>
 # docstring: Print the contents of a Python file, skipping lengthy function and method definitions.
