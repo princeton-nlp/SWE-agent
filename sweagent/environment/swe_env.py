@@ -7,6 +7,7 @@ import logging
 import os
 import random
 import re
+import shlex
 import subprocess
 import time
 import traceback
@@ -730,8 +731,6 @@ class SWEEnv(gym.Env):
             output: output from container
         """
         if input.strip() != "exit":
-            if set_last_action:
-                input = f"{input.strip()}; export LAST_ACTION='{input.strip()}'"
             self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
             output, valid = self._check_syntax(input)
             if not valid:
@@ -742,6 +741,12 @@ class SWEEnv(gym.Env):
             )
             self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
             self.communicate_output = output
+            if set_last_action:
+                # Cannot merge this with last command, because of multiline command
+                # handling.
+                last_action_string = shlex.quote(input.strip())
+                input = f"export LAST_ACTION={last_action_string}"
+                self._communicate(input, timeout_duration=5)
             return output
         else:
             self.container.terminate()
