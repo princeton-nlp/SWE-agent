@@ -120,15 +120,6 @@ goto() {
     _print
 }
 
-_scroll_warning_message() {
-    local current_scroll_count=${SCROLL_COUNT:-0}
-    export SCROLL_COUNT=$((current_scroll_count + 1))
-    if [ $SCROLL_COUNT -gt 2 ]; then
-        echo "Warning: You have scrolled $SCROLL_COUNT times. This is very inefficient."
-        echo "If you know what you are looking for, use \`search_file <pattern>\` instead."
-    fi
-}
-
 # @yaml
 # signature: scroll_down
 # docstring: moves the window down {WINDOW} lines
@@ -141,7 +132,6 @@ scroll_down() {
     export CURRENT_LINE=$(jq -n "$CURRENT_LINE + $WINDOW - $OVERLAP")
     _constrain_line
     _print
-    _scroll_warning_message
 }
 
 # @yaml
@@ -156,7 +146,6 @@ scroll_up() {
     export CURRENT_LINE=$(jq -n "$CURRENT_LINE - $WINDOW + $OVERLAP")
     _constrain_line
     _print
-    _scroll_warning_message
 }
 
 # @yaml
