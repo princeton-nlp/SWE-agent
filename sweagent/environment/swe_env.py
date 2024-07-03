@@ -788,7 +788,7 @@ class SWEEnv(gym.Env):
             pids = [x for x in pids if x[1] != "ps" and x[0] not in self.parent_pids]
         return pids
 
-    def get_submission(self, output: str) -> str:
+    def get_submission(self, output: str) -> str | None:
         """
         Function for extracting diff patch submission at the end of an episode.
 
