@@ -50,15 +50,19 @@ class TrajSplitter:
                 + "\n"
             )
 
+    def _remove_existing_preds(self) -> None:
+        existing_preds = list(self._results_dir.glob("by_attempt/*/preds.jsonl"))
+        for pred_path in existing_preds:
+            pred_path.unlink()
+
     def split(self) -> None:
         i_attempts = 0
         eid = self._get_experiment_id(self._results_dir)
+        self._remove_existing_preds()
         for traj in self._get_trajs():
             data = json.loads(traj.read_text())
             attempts = self._get_attempts(data)
             for i_attempt, attempt in enumerate(attempts):
-                # This is important because else we'll add duplicates to the file
-                self._get_preds_path(i_attempt).unlink(missing_ok=True)
                 i_attempts += 1
                 iid = self._get_instance_id(traj)
                 pred = self._get_pred_from_attempt(attempt)
