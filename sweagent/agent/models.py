@@ -241,6 +241,7 @@ class OpenAIModel(BaseModel):
         "gpt3-0125": "gpt-3.5-turbo-0125",
         "gpt4-turbo": "gpt-4-turbo-2024-04-09",
         "gpt4o": "gpt-4o-2024-05-13",
+        "coder": "deepseek-coder",
     }
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
@@ -262,6 +263,9 @@ class OpenAIModel(BaseModel):
                 azure_endpoint=keys_config["AZURE_OPENAI_ENDPOINT"],
                 api_version=keys_config.get("AZURE_OPENAI_API_VERSION", "2024-02-01"),
             )
+        elif self.args.model_name.startswith("deepseek") or self.args.model_name.startswith("coder"):
+            api_base_url: str | None = keys_config.get("DEEPSEEK_API_BASE_URL", None)
+            self.client = OpenAI(api_key=keys_config["DEEPSEEK_API_KEY"], base_url=api_base_url)
         else:
             api_base_url: str | None = keys_config.get("OPENAI_API_BASE_URL", None)
             self.client = OpenAI(api_key=keys_config["OPENAI_API_KEY"], base_url=api_base_url)
@@ -897,6 +901,7 @@ def get_model(args: ModelArguments, commands: list[Command] | None = None):
         or args.model_name.startswith("ft:gpt")
         or args.model_name.startswith("azure:gpt")
         or args.model_name.startswith("deepseek")
+        or args.model_name in OpenAIModel.SHORTCUTS
     ):
         return OpenAIModel(args, commands)
     elif args.model_name.startswith("claude"):
