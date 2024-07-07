@@ -225,6 +225,11 @@ class OpenAIModel(BaseModel):
             "cost_per_input_token": 5e-06,
             "cost_per_output_token": 15e-06,
         },
+        "deepseek-coder": {
+            "max_context": 32_000,
+            "cost_per_input_token": 1.4e-07,
+            "cost_per_output_token": 2.8e-07,
+        },
     }
 
     SHORTCUTS = {
@@ -891,6 +896,7 @@ def get_model(args: ModelArguments, commands: list[Command] | None = None):
         args.model_name.startswith("gpt")
         or args.model_name.startswith("ft:gpt")
         or args.model_name.startswith("azure:gpt")
+        or args.model_name.startswith("deepseek")
     ):
         return OpenAIModel(args, commands)
     elif args.model_name.startswith("claude"):
