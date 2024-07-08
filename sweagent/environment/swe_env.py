@@ -312,6 +312,7 @@ class SWEEnv(gym.Env):
         # Set query, gold command
         self.base_commit = self.record["base_commit"]
         self.query = self.record["problem_statement"]
+        self.challenge = self.record.get("challenge")
         self.reward = None
 
         ### Reset Container ###

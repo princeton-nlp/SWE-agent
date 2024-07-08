@@ -360,8 +360,18 @@ class Main:
         tests = ""
         if "FAIL_endTO_PASS" in self.env.record:
             tests = "\n".join([f"- {x}" for x in self.env.record["FAIL_TO_PASS"]])
+        
+        challenge = getattr(self.env, "challenge", None)
+        if challenge is not None:
+            name = challenge["name"]
+            description = challenge["description"]
+            category_friendly = challenge["category_friendly"]
+            points = challenge["points"]
+            files = challenge["files"]
 
-        setup_args = {"issue": issue, "files": files, "test_files": test_files, "tests": tests}
+        setup_args = {"issue": issue, "files": files, "test_files": test_files, "tests": tests,
+                      "name": name, "description": description, "category_friendly": category_friendly,
+                      "points": points}
         info, trajectory = self.agent.run(
             setup_args=setup_args,
             env=self.env,

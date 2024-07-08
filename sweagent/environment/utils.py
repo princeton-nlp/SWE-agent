@@ -29,6 +29,15 @@ DOCKER_START_UP_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY",
 GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
 GITHUB_REPO_URL_PATTERN = re.compile(r".*[/@]?github\.com\/([^/]+)\/([^/]+)")
 
+CTF_CHALLENGES_CATEGORIES = {
+    "rev": "reverse engineering",
+    "pwn": "binary exploitation",
+    "web": "web security",
+    "crypto": "cryptography",
+    "misc": "miscellaneous",
+    "forensics": "forensics",
+}
+
 logger = get_logger("env_utils")
 
 
@@ -530,12 +539,13 @@ class InstanceBuilder:
     
     def set_problem_statement_from_challenge_json(self, file_path: str) -> str:
         challenge = json.loads(Path(file_path).read_text())
-        # TODO: need to proper load the template from the configuration
-        self.set_problem_statement_from_text("""
-The CTF challenge is a {category_friendly} problem named "{name}", worth {points} points. The description is:
-{description}
-Files included in the challenge: {files}""".format(name=challenge.get("name"), description=challenge.get("description"), points=challenge.get("points"), files=challenge.get("files"), category_friendly="cryptography"))
-        self.args["files"] = challenge["files"]
+        self.args["challenge"] = dict()
+        self.args["challenge"]["files"] = challenge.get("files", "No files are provided in this challenge.")
+        self.args["challenge"]["name"] = challenge["name"]
+        self.args["challenge"]["description"] = challenge["description"]
+        self.args["challenge"]["points"] = challenge.get("points", 10)
+        self.args["challenge"]["category_friendly"] = CTF_CHALLENGES_CATEGORIES.get(challenge["category"])
+        self.set_problem_statement_from_text(f"{challenge['name']} {challenge['description']}")
 
     def set_problem_statement_from_file(self, file_path: str):
         if Path(file_path).name == "challenge.json":
