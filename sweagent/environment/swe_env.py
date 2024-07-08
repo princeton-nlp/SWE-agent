@@ -223,11 +223,22 @@ class SWEEnv(gym.Env):
         for hook in self.hooks:
             hook.on_copy_repo_started(repo_type=self.record["repo_type"], repo_path=self.record["repo"])
         if self.record["repo_type"] == "local":
-            copy_anything_to_container(
-                self.container_obj,
-                self.record["repo"].removeprefix("local://"),
-                "/" + self._repo_name,
-            )
+            if "files" in self.record:
+                self.communicate_with_handling(input=f"mkdir {self._repo_name}", 
+                                               error_msg=f"Failed to create {self._repo_name} in container")
+                for file_name in self.record["files"]:
+                    self.logger.debug(f"Copying file {file_name} to container")
+                    copy_anything_to_container(
+                        self.container_obj,
+                        str(Path(self.record["repo"].removeprefix("local://")) / file_name),
+                        "/" + self._repo_name
+                    )
+            else:
+                copy_anything_to_container(
+                    self.container_obj,
+                    self.record["repo"].removeprefix("local://"),
+                    "/" + self._repo_name,
+                )
             self.communicate_with_handling(
                 input=f"chown -R root:root {self._repo_name}",
                 error_msg="Failed to change permissions on copied repository",

@@ -527,9 +527,21 @@ class InstanceBuilder:
         )
         self.args["instance_id"] = f"{owner}__{repo}-i{issue_number}"
         self.args["problem_statement_source"] = "online"
+    
+    def set_problem_statement_from_challenge_json(self, file_path: str) -> str:
+        challenge = json.loads(Path(file_path).read_text())
+        # TODO: need to proper load the template from the configuration
+        self.set_problem_statement_from_text("""
+The CTF challenge is a {category_friendly} problem named "{name}", worth {points} points. The description is:
+{description}
+Files included in the challenge: {files}""".format(name=challenge.get("name"), description=challenge.get("description"), points=challenge.get("points"), files=challenge.get("files"), category_friendly="cryptography"))
+        self.args["files"] = challenge["files"]
 
     def set_problem_statement_from_file(self, file_path: str):
-        self.set_problem_statement_from_text(Path(file_path).read_text())
+        if Path(file_path).name == "challenge.json":
+            self.set_problem_statement_from_challenge_json(file_path)
+        else:
+            self.set_problem_statement_from_text(Path(file_path).read_text())
 
     def set_problem_statement_from_text(self, text: str):
         self.args["problem_statement"] = text
@@ -658,7 +670,7 @@ def get_instances(
     # The next if statement is very brittle logic to determine if we're processing a single instance
     if (
         file_path.startswith("text://")
-        or (Path(file_path).is_file() and Path(file_path).suffix in [".md", ".txt"])
+        or (Path(file_path).is_file() and (Path(file_path).suffix in [".md", ".txt"] or Path(file_path).name == "challenge.json"))
         or is_github_issue_url(file_path)
     ):
         ib = InstanceBuilder(token=token)
