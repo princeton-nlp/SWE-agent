@@ -1,0 +1,4 @@
+# Example file for setting up django
+python: "3.9"
+install: "python setup.py install"
+pip_packages: ["setuptools"]
