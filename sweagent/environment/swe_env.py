@@ -7,6 +7,7 @@ import logging
 import os
 import random
 import re
+import shlex
 import subprocess
 import time
 import traceback
@@ -1118,8 +1119,12 @@ class SWEEnv(gym.Env):
             timeout_duration=10,
         )
         dry_run_flag = "--allow-empty" if _dry_run else ""
+        commit_msg = [
+            shlex.quote("Fix: {issue.title}"),
+            shlex.quote("Closes #{issue.number}"),
+        ]
         self.communicate_with_handling(
-            input=f"git commit -m 'Fix: {issue.title}' -m 'Closes #{issue.number}' {dry_run_flag}",
+            input=f"git commit -m {commit_msg[0]} -m  {commit_msg[1]} {dry_run_flag}",
             error_msg="Failed to commit changes",
             timeout_duration=10,
         )
