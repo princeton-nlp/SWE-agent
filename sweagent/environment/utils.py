@@ -26,6 +26,8 @@ from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
 DOCKER_START_UP_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 1))
+DOCKER_COMPOSE_TERMINATION_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 60))
+DOCKER_COMPOSE_STARTUP_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 600))
 GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
 GITHUB_REPO_URL_PATTERN = re.compile(r".*[/@]?github\.com\/([^/]+)\/([^/]+)")
 
@@ -262,6 +264,53 @@ def get_background_pids(container_obj: Container):
     bash_pids = [x for x in pids if x[1] == "bash"]
     other_pids = [x for x in pids if x[1] not in {"bash"}]
     return bash_pids, other_pids
+
+
+def terminate_docker_compose(docker_compose_path: Path) -> None:
+    terminate_cmd = [
+        "docker",
+        "compose",
+        "-f",
+        str(docker_compose_path),
+        "down",
+    ]
+    logger.debug("Terminating docker-compose with command: %s", shlex.join(terminate_cmd))
+    compose = subprocess.Popen(
+        terminate_cmd,
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=STDOUT,
+        text=True,
+        bufsize=1,  # line buffered
+    )
+    _, error = compose.communicate(timeout=DOCKER_COMPOSE_TERMINATION_DELAY)
+    if error:
+        logger.error(f"Unexpected compose termination error: {error}")
+
+
+def get_docker_compose(docker_compose_path: Path) -> Path:
+    startup_cmd = [
+        "docker",
+        "compose",
+        "-f",
+        str(docker_compose_path),
+        "up",
+        "-d",
+        "--force-recreate",
+    ]
+    logger.debug("Starting docker-compose with command: %s", shlex.join(startup_cmd))
+    compose = subprocess.Popen(
+        startup_cmd,
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=STDOUT,
+        text=True,
+        bufsize=1,  # line buffered
+    )
+    _, error = compose.communicate(timeout=DOCKER_COMPOSE_STARTUP_DELAY)
+    if error:
+        logger.error(f"Unexpected compose setup error: {error}")
+    return docker_compose_path
 
 
 def _get_non_persistent_container(ctr_name: str, image_name: str) -> tuple[subprocess.Popen, set[str]]:
@@ -544,7 +593,13 @@ class InstanceBuilder:
         self.args["challenge"]["name"] = challenge["name"]
         self.args["challenge"]["description"] = challenge["description"]
         self.args["challenge"]["points"] = challenge.get("points", 10)
+        self.args["challenge"]["category"] = challenge["category"]
         self.args["challenge"]["category_friendly"] = CTF_CHALLENGES_CATEGORIES.get(challenge["category"])
+        if (Path(file_path).parent / "docker-compose.yml").is_file():
+            logger.debug(f"Found docker_compose file in {Path(file_path).parent}")
+            self.args["challenge"]["docker_compose"] = (Path(file_path).parent / "docker-compose.yml")
+        self.args["challenge"]["port"] = challenge.get("internal_port")
+        self.args["challenge"]["server_name"] = challenge.get("box")
         self.set_problem_statement_from_text(f"{challenge['name']} {challenge['description']}")
 
     def set_problem_statement_from_file(self, file_path: str):

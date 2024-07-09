@@ -32,6 +32,7 @@ from sweagent.environment.utils import (
     copy_anything_to_container,
     copy_file_to_container,
     format_trajectory_markdown,
+    get_docker_compose,
     get_container,
     get_gh_issue_data,
     get_instances,
@@ -39,6 +40,7 @@ from sweagent.environment.utils import (
     parse_gh_issue_url,
     read_with_timeout,
     read_with_timeout_experimental,
+    terminate_docker_compose,
 )
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import default_logger, get_logger
@@ -179,6 +181,8 @@ class SWEEnv(gym.Env):
         self.image_name = args.image_name
         self.container_obj: docker.models.containers.Container | None = None
         self.container: subprocess.Popen | None = None
+        self.docker_compose: subprocess.Popen | None = None
+        self.challenge: dict[str, Any] | None = None
         self._reset_container()
 
         self.idx = 0
@@ -316,6 +320,7 @@ class SWEEnv(gym.Env):
         self.reward = None
 
         ### Reset Container ###
+        self._init_docker_compose()
 
         if self.args.cache_task_images:
             cached_image = self._get_cached_task_image_name()
@@ -511,6 +516,8 @@ class SWEEnv(gym.Env):
             self.logger.warning("Errors when exiting container", exc_info=True)
         assert self.container is not None  # mypy
         self.container.terminate()
+        if self.docker_compose is not None:
+            terminate_docker_compose(self.docker_compose)
         if self.container_obj is None:
             pass
         elif self.persistent:
@@ -563,6 +570,15 @@ class SWEEnv(gym.Env):
                 self.logger.warning("Failed to terminate container", exc_info=True)
             else:
                 self.logger.debug("Terminated container")
+        if self.docker_compose is not None:
+            try:
+                terminate_docker_compose(self.docker_compose)
+            except KeyboardInterrupt:
+                raise
+            except:
+                self.logger.warning("Failed to terminate docker compose", exc_info=True)
+            else:
+                self.logger.debug("Terminated docker compose")
         self._init_container()
         self._init_scripts()
 
@@ -582,6 +598,14 @@ class SWEEnv(gym.Env):
         image_name_sanitized = image_name.replace("/", "-")
         image_name_sanitized = image_name_sanitized.replace(":", "-")
         return f"{image_name_sanitized}-{hash_object.hexdigest()[:10]}"
+    
+    def _init_docker_compose(self) -> None:
+        """
+        Handles docker compose initialization for challenge with docker compose file.
+        """
+        if self.challenge is not None and self.challenge.get("docker_compose") is not None:
+            self.docker_compose = get_docker_compose(self.challenge.get("docker_compose"))
+        self.logger.info("🌱 Initialized docker compose for challenge")
 
     def _init_container(self, cached_image: str | None = None) -> None:
         """
