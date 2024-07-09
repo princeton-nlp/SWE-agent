@@ -644,7 +644,9 @@ class SWEEnv(gym.Env):
         assert self.container is not None
         # Sleep to ensure that the exit code is in the last line
         # See https://github.com/princeton-nlp/SWE-agent/issues/595
-        command_suffix = f"sleep 0.01; echo {PROCESS_DONE_MARKER_START}$?{PROCESS_DONE_MARKER_END}\n"
+        command_suffix = (
+            f'EXITSTATUS="$?"; sleep 0.01; echo {PROCESS_DONE_MARKER_START}$EXITSTATUS{PROCESS_DONE_MARKER_END}\n'
+        )
         try:
             self.returncode = None
             cmd = input if input.endswith("\n") else input + "\n"
@@ -664,6 +666,21 @@ class SWEEnv(gym.Env):
             msg = f"Read with timeout failed on input:\n---\n{input}\n---"
             self.logger.error(msg)
             raise
+        if exit_code == "$EXITSTATUS":
+            # this sometimes happens if the command badly fails
+            # for example if you just try to run python with no arguments
+            # in this case, the error message is usually also garbage, so let's set
+            # something new.
+            # See https://github.com/princeton-nlp/SWE-agent/issues/630
+            buffer = (
+                "Unkknown error occurred when running the command. Please double check syntax "
+                "and that you're not running an interactive command."
+            )
+            self.logger.warning("Couldn't get real exit code. Setting it to 999")
+            exit_code = 999
+        elif not exit_code.isdigit():
+            msg = f"Failed to get exit code. Output:\n---\n{buffer}\n---"
+            raise RuntimeError(msg)
         self.returncode = int(exit_code)
         return buffer
 
@@ -699,7 +716,7 @@ class SWEEnv(gym.Env):
             self.logger.error(f"Read with timeout failed on input:\n---\n{input}\n---")
             raise e
         if not exit_code.isdigit():
-            msg = f"Failed to get exit code. Failed to get exit code. Output:\n---\n{buffer}\n---"
+            msg = f"Failed to get exit code. Output:\n---\n{buffer}\n---"
             raise RuntimeError(msg)
         self.returncode = int(exit_code)
         return buffer
