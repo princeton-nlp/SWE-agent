@@ -852,14 +852,6 @@ def remove_triple_backticks(text: str) -> str:
     return "\n".join(line.removeprefix("```") for line in text.splitlines())
 
 
-_MARKDOWN_TRAJECTORY_EMOJI_MAPPING = {
-    "observation": "👀",
-    "response": "️🧑‍🚒",
-    "state": "🧠",
-    "thought": "💡",
-}
-
-
 def format_trajectory_markdown(trajectory: list[dict[str, str]]):
     """Format a trajectory as a markdown string for use in gh PR description."""
     prefix = [
@@ -870,18 +862,14 @@ def format_trajectory_markdown(trajectory: list[dict[str, str]]):
     ]
     steps = []
     for i, step in enumerate(trajectory):
-        step_strs = []
-        for key, value in step.items():
-            emoji = _MARKDOWN_TRAJECTORY_EMOJI_MAPPING.get(key, "")
-            if emoji:
-                emoji += " "
-            step_strs.append(f"**{emoji}{key.capitalize()} ({i})**:")
-            if key in ["observation", "state", "action"]:
-                step_strs.append("```")
-                step_strs.append(remove_triple_backticks(value).strip())
-                step_strs.append("```")
-            else:
-                step_strs.append(value.strip())
+        step_strs = [
+            f"**🧑‍🚒 Response ({i})**: ",
+            f"{step['response'].strip()}",
+            f"**👀‍ Observation ({i})**:",
+            "```",
+            f"{remove_triple_backticks(step['observation']).strip()}",
+            "```",
+        ]
         steps.append("\n".join(step_strs))
     suffix = [
         "",
