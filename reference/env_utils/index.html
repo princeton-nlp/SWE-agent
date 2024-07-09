@@ -2330,7 +2330,15 @@ path to a markdown or text file.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/environment/utils.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">766</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">758</span>
+<span class="normal">759</span>
+<span class="normal">760</span>
+<span class="normal">761</span>
+<span class="normal">762</span>
+<span class="normal">763</span>
+<span class="normal">764</span>
+<span class="normal">765</span>
+<span class="normal">766</span>
 <span class="normal">767</span>
 <span class="normal">768</span>
 <span class="normal">769</span>
@@ -2345,19 +2353,7 @@ path to a markdown or text file.</p>
 <span class="normal">778</span>
 <span class="normal">779</span>
 <span class="normal">780</span>
-<span class="normal">781</span>
-<span class="normal">782</span>
-<span class="normal">783</span>
-<span class="normal">784</span>
-<span class="normal">785</span>
-<span class="normal">786</span>
-<span class="normal">787</span>
-<span class="normal">788</span>
-<span class="normal">789</span>
-<span class="normal">790</span>
-<span class="normal">791</span>
-<span class="normal">792</span>
-<span class="normal">793</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">format_trajectory_markdown</span><span class="p">(</span><span class="n">trajectory</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]):</span>
+<span class="normal">781</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">format_trajectory_markdown</span><span class="p">(</span><span class="n">trajectory</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Format a trajectory as a markdown string for use in gh PR description.&quot;&quot;&quot;</span>
     <span class="n">prefix</span> <span class="o">=</span> <span class="p">[</span>
         <span class="s2">&quot;&lt;details&gt;&quot;</span><span class="p">,</span>
@@ -2367,18 +2363,14 @@ path to a markdown or text file.</p>
     <span class="p">]</span>
     <span class="n">steps</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">trajectory</span><span class="p">):</span>
-        <span class="n">step_strs</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">step</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">emoji</span> <span class="o">=</span> <span class="n">_MARKDOWN_TRAJECTORY_EMOJI_MAPPING</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">emoji</span><span class="p">:</span>
-                <span class="n">emoji</span> <span class="o">+=</span> <span class="s2">&quot; &quot;</span>
-            <span class="n">step_strs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">emoji</span><span class="si">}{</span><span class="n">key</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">)**:&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;observation&quot;</span><span class="p">,</span> <span class="s2">&quot;state&quot;</span><span class="p">,</span> <span class="s2">&quot;action&quot;</span><span class="p">]:</span>
-                <span class="n">step_strs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;```&quot;</span><span class="p">)</span>
-                <span class="n">step_strs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">remove_triple_backticks</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
-                <span class="n">step_strs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;```&quot;</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">step_strs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="n">step_strs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">&quot;**🧑‍🚒 Response (</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">)**: &quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">step</span><span class="p">[</span><span class="s1">&#39;response&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;**👀‍ Observation (</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">)**:&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;```&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">remove_triple_backticks</span><span class="p">(</span><span class="n">step</span><span class="p">[</span><span class="s1">&#39;observation&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;```&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
         <span class="n">steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">step_strs</span><span class="p">))</span>
     <span class="n">suffix</span> <span class="o">=</span> <span class="p">[</span>
         <span class="s2">&quot;&quot;</span><span class="p">,</span>
