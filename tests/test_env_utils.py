@@ -7,7 +7,6 @@ import subprocess
 import pytest
 
 from sweagent.environment.utils import (
-    _MARKDOWN_TRAJECTORY_EMOJI_MAPPING,
     InvalidGithubURL,
     format_trajectory_markdown,
     get_associated_commit_urls,
@@ -26,8 +25,6 @@ def test_format_trajectory_markdown(test_trajectory):
     formatted = format_trajectory_markdown(test_trajectory["trajectory"])
     assert formatted.startswith("<details>")
     assert formatted.endswith("</details>")
-    for emoji in _MARKDOWN_TRAJECTORY_EMOJI_MAPPING.values():
-        assert emoji in formatted
 
 
 def test_remove_triple_backticks():
