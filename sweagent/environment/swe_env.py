@@ -722,9 +722,13 @@ class SWEEnv(gym.Env):
         self.returncode = int(exit_code)
         return buffer
 
-    def _check_syntax(self, input: str):
+    def _check_syntax(self, input: str) -> tuple[str, bool]:
         """
-        Saves environment variables to file
+        Check syntax of command.
+
+        Returns:
+            output: Output of the command
+            success: whether the exit code was 0
         """
         output = self._communicate(f"/bin/bash -n <<'EOF'\n{input}\nEOF\n")
         return output, self.returncode == 0
@@ -761,7 +765,7 @@ class SWEEnv(gym.Env):
             self.communicate_output = ""
             return ""
 
-    def communicate_with_handling(self, input: str, error_msg: str, timeout_duration=25) -> str:
+    def communicate_with_handling(self, input: str, error_msg: str, timeout_duration: int = 25) -> str:
         """
         Wrapper for communicate function that raises error if return code is non-zero
 
@@ -789,7 +793,7 @@ class SWEEnv(gym.Env):
         """
         return []
 
-    def get_pids(self, all_pids=False) -> list[str]:
+    def get_pids(self, all_pids: bool = False) -> list[str]:
         """
         Gets list of processes running inside docker container
 
@@ -1064,7 +1068,7 @@ class SWEEnv(gym.Env):
                 msg = f"Invalid command type: {command['type']}"
                 raise ValueError(msg)
 
-    def interrupt(self):
+    def interrupt(self) -> None:
         """
         Send interrupt signal to container and exhaust stdout buffer with a communicate call
         """
@@ -1085,7 +1089,7 @@ class SWEEnv(gym.Env):
             msg = "Failed to interrupt container"
             raise RuntimeError(msg)
 
-    def open_pr(self, *, trajectory, _dry_run: bool = False):
+    def open_pr(self, *, trajectory, _dry_run: bool = False) -> None:
         """Create PR to repository
 
         Args:

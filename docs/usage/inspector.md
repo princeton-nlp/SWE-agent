@@ -25,4 +25,7 @@ The inspector will then be launched in the browser:
 
 ![trajectory inspector](../assets/inspector.png)
 
+If you do not see evaluation results, make sure that the SWE-bench output
+is called `results.json` and is in the same directory as the trajectories.
+
 {% include-markdown "../_footer.md" %}
