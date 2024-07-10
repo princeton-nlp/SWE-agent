@@ -51,6 +51,7 @@ nav:
     - "background/index.md"
     - "Overview": "background/overview.md"
     - "ACI": "background/aci.md"
+    - "Architecture": "background/architecture.md"
   - Installation:
     - "installation/index.md"
     - "Use in-browser": "installation/codespaces.md"
