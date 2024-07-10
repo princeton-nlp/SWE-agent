@@ -18,6 +18,7 @@ claude-opus
 claude-sonnet
 claude-haiku
 claude-sonnet-3.5
+deepseek-coder
 azure:gpt4
 ```
 
