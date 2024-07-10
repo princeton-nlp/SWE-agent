@@ -410,7 +410,7 @@ class SWEEnv(gym.Env):
 
     def step(self, action: str) -> tuple[str | None, int, bool, dict]:
         """
-        Runs given action in environment and returns corresponding output
+        Runs an action proposed by the agent in the environment and returns the corresponding output.
 
         Args:
             action: command to run in bash shell
@@ -450,7 +450,7 @@ class SWEEnv(gym.Env):
         # Attempt to run action in container
         observation = ""
         try:
-            observation = self.communicate(input=action, timeout_duration=25)
+            observation = self.communicate(input=action, timeout_duration=25, set_last_action=True)
         except TimeoutError:
             try:
                 self.interrupt()
@@ -690,6 +690,12 @@ class SWEEnv(gym.Env):
         input: str,
         timeout_duration=25,
     ) -> str:
+        """Runs command in container and returns output
+
+        Args:
+            input: command to run in container
+            timeout_duration: duration to wait for output
+        """
         assert self.container is not None
         communicate_method = keys_config.get(
             "SWE_AGENT_COMMUNICATE_METHOD", default="end-marker", choices=["end-marker", "processes"]
@@ -733,16 +739,14 @@ class SWEEnv(gym.Env):
         output = self._communicate(f"/bin/bash -n <<'EOF'\n{input}\nEOF\n")
         return output, self.returncode == 0
 
-    def communicate(
-        self,
-        input: str,
-        timeout_duration=25,
-    ) -> str:
+    def communicate(self, input: str, timeout_duration: int = 25, *, set_last_action: bool = False) -> str:
         """
         Sends input to container and returns output
 
         Args:
             input: input to send to container
+            timeout_duration: duration to wait for output
+            set_last_action: whether to set the LAST_ACTION environment variable
 
         Returns:
             output: output from container
@@ -758,6 +762,12 @@ class SWEEnv(gym.Env):
             )
             self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
             self.communicate_output = output
+            if set_last_action:
+                # Cannot merge this with last command, because of multiline command
+                # handling.
+                last_action_string = shlex.quote(input.strip())
+                input = f"export LAST_ACTION={last_action_string}"
+                self._communicate(input, timeout_duration=5)
             return output
         else:
             self.container.terminate()
