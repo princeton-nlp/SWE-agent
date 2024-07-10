@@ -25,6 +25,8 @@ from sweagent.utils.log import get_logger
 
 logger = get_logger("api_models")
 
+_MAX_RETRIES = keys_config.get("SWE_AGENT_MODEL_MAX_RETRIES", 10)
+
 
 @dataclass(frozen=True)
 class ModelArguments(FrozenSerializable):
@@ -279,7 +281,7 @@ class OpenAIModel(BaseModel):
     @retry(
         wait=wait_random_exponential(min=1, max=15),
         reraise=True,
-        stop=stop_after_attempt(3),
+        stop=stop_after_attempt(_MAX_RETRIES),
         retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
     )
     def query(self, history: list[dict[str, str]]) -> str:
@@ -375,7 +377,7 @@ class AnthropicModel(BaseModel):
     @retry(
         wait=wait_random_exponential(min=1, max=15),
         reraise=True,
-        stop=stop_after_attempt(3),
+        stop=stop_after_attempt(_MAX_RETRIES),
         retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
     )
     def query(self, history: list[dict[str, str]]) -> str:
@@ -459,7 +461,7 @@ class BedrockModel(BaseModel):
     @retry(
         wait=wait_random_exponential(min=1, max=15),
         reraise=True,
-        stop=stop_after_attempt(3),
+        stop=stop_after_attempt(_MAX_RETRIES),
         retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
     )
     def query(self, history: list[dict[str, str]]) -> str:
@@ -611,7 +613,7 @@ class OllamaModel(BaseModel):
     @retry(
         wait=wait_random_exponential(min=1, max=15),
         reraise=True,
-        stop=stop_after_attempt(3),
+        stop=stop_after_attempt(_MAX_RETRIES),
         retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
     )
     def query(self, history: list[dict[str, str]]) -> str:
@@ -704,7 +706,7 @@ class TogetherModel(BaseModel):
     @retry(
         wait=wait_random_exponential(min=1, max=15),
         reraise=True,
-        stop=stop_after_attempt(3),
+        stop=stop_after_attempt(_MAX_RETRIES),
         retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
     )
     def query(self, history: list[dict[str, str]]) -> str:

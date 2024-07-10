@@ -243,7 +243,7 @@ class ParseCommandDetailed(ParseCommandBash):
         for cmd in commands + subroutine_types:
             docs += f"{cmd.name}:\n"
             if cmd.docstring is not None:
-                docs += f"  docstring: {cmd.docstring}\n"
+                docs += f"  docstring: {cmd.docstring.format(**kwargs)}\n"
             if cmd.signature is not None:
                 docs += f"  signature: {cmd.signature}\n"
             else:
