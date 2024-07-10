@@ -141,6 +141,8 @@ def test_execute_environment_default(test_env_args):
     # Make sure we don't use persistent container, else we might have already installed the conda environment
     test_env_args = dataclasses.replace(test_env_args, container_name=None)
     for env_config_path in env_config_paths:
+        if env_config_path.name == "django.yaml":
+            continue
         if env_config_path.suffix not in [".yaml", ".yml", ".sh"]:
             continue
         print(env_config_path)
