@@ -1299,7 +1299,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <p><code>SWEEnv</code> then installs the dependencies of the repository to which the task instance belongs into a new conda environment (4).</p>
 <p>The second class that is initialized by <code>run.py</code> is the <a href="../../reference/agent/"><code>Agent</code></a> class (5). It can be configured with a yaml file (see <a href="../../config/config/">config</a>). It's most important method is <code>forward()</code> which prompts the model and executes its action.</p>
 <p>To prompt the model, the history (all prompts to the model together with actions and outputs) need to be sent to the LM. In order to make the best use of the context window of the model, the history gets compressed by a <code>HistoryFormatter</code> (7). The model output (8) is then interpreted by the <code>Agent</code> class and executed in the Shell session via <code>SWEEnv</code>.</p>
-<p>The <a href="../aci/">ACI</a> elements are implemented as custom commands (9) that are available to the shell session.</p>
+<p>The <a href="../aci/">ACI</a> elements are implemented as <a href="../../config/commands/">custom commands</a> (9) that are available to the shell session.</p>
 
 
 
