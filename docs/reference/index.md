@@ -6,6 +6,9 @@
     Also note that SWE-agent is still developed very actively, so the python implementation details
     are still changing. See [the changelog](../installation/changelog.md) for more information.
 
+!!! tip "SWE-agent architecture"
+    Please first read the [architecture page](../background/architecture.md) for an overview of SWE-agent.
+
 The core:
 
 * The `sweagent/agent/` []() submodule implements the agent.
