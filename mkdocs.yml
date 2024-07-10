@@ -50,7 +50,7 @@ nav:
   - Background:
     - "background/index.md"
     - "Overview": "background/overview.md"
-    - "ACI": "background/aci.md"
+    - "Agent-Computer Interface": "background/aci.md"
     - "Architecture": "background/architecture.md"
   - Installation:
     - "installation/index.md"
