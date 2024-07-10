@@ -482,7 +482,7 @@ class Agent:
         Returns:
             thought: model reasoning
             action: action that the model proposes
-            output: raw model output
+            output: raw model output (not output of the action)
         """
         thought, action, output = self.forward_with_error_check(observation, state)
 
@@ -505,7 +505,7 @@ class Agent:
         """Query the model with the current state and observation with the appropriate template.
 
         Returns:
-            output: raw model output
+            output: raw model output (not output of the command)
         """
         assert self.config is not None  # mypy
 

@@ -36,6 +36,8 @@ Every command subscribes to the following skeleton code.
     * `CURRENT_LINE`: First line of the window that is currently being shown/edited
     * `WINDOW` (start line to end line): Part of the file that is currently shown/edited
     * `START_CURSOR`, `END_CURSOR`: Only used for the `cursors_*` commands.
+* You can also use environment variables to set parameters for your commands. For this, edit the `env_vars` section of the [config](config.md).
+  For example, the `WINDOW` setting controls the number of context lines shown when editing a file.
 
 ## Displaying the Command to SWE-agent
 After you define a command, there are a small set of additional steps to making it available for the agent to use.
