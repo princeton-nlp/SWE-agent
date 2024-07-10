@@ -2640,7 +2640,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <span class="sd">        Returns:</span>
 <span class="sd">            thought: model reasoning</span>
 <span class="sd">            action: action that the model proposes</span>
-<span class="sd">            output: raw model output</span>
+<span class="sd">            output: raw model output (not output of the action)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">thought</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_with_error_check</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
 
@@ -2663,7 +2663,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Query the model with the current state and observation with the appropriate template.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            output: raw model output</span>
+<span class="sd">            output: raw model output (not output of the command)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># mypy</span>
 
@@ -3441,7 +3441,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
             </td>
             <td>
               <div class="doc-md-description">
-                <p>raw model output</p>
+                <p>raw model output (not output of the action)</p>
               </div>
             </td>
           </tr>
@@ -3489,7 +3489,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <span class="sd">    Returns:</span>
 <span class="sd">        thought: model reasoning</span>
 <span class="sd">        action: action that the model proposes</span>
-<span class="sd">        output: raw model output</span>
+<span class="sd">        output: raw model output (not output of the action)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">thought</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_with_error_check</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
 
@@ -3542,7 +3542,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
             </td>
             <td>
               <div class="doc-md-description">
-                <p>raw model output</p>
+                <p>raw model output (not output of the command)</p>
               </div>
             </td>
           </tr>
@@ -3598,7 +3598,7 @@ Forked/branched off of SWE-agent? Please use our latest formatting to resolve me
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Query the model with the current state and observation with the appropriate template.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        output: raw model output</span>
+<span class="sd">        output: raw model output (not output of the command)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># mypy</span>
 
