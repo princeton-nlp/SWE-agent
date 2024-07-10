@@ -10,6 +10,6 @@ The central entry point to SWE-agent is the `run.py` script (1). It initializes 
 
 The second class that is initialized by `run.py` is the [`Agent`](../reference/agent.md) class (5). It can be configured with a yaml file (see [config](../config/config.md)). It's most important method is `forward()` which prompts the model and executes its action.
 
-To prompt the model, the history (all prompts to the model together with actions and outputs) need to be sent to the LM. In order to make the best use of the context window of the model, the history gets compressed by a `HistoryFormatter` (7). The model output (8) is then interpreted by the `Agent` class and executed in the Shell session via `SWEEnv`.
+To prompt the model, the history (all prompts to the model together with actions and outputs) need to be sent to the LM. In order to make the best use of the context window of the model, the history gets compressed by a `HistoryProcessor` (7). The model output (8) is then interpreted by the `Agent` class and executed in the Shell session via `SWEEnv`.
 
 The [ACI](aci.md) elements are implemented as [custom commands](../config/commands.md) (9) that are available to the shell session.
