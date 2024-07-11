@@ -264,8 +264,10 @@ class OpenAIModel(BaseModel):
                 api_version=keys_config.get("AZURE_OPENAI_API_VERSION", "2024-02-01"),
             )
         elif self.args.model_name.startswith("deepseek") or self.args.model_name.startswith("coder"):
-            api_base_url: str | None = keys_config.get("DEEPSEEK_API_BASE_URL", None)
-            self.client = OpenAI(api_key=keys_config["DEEPSEEK_API_KEY"], base_url=api_base_url)
+            self.client = OpenAI(
+                api_key=keys_config["DEEPSEEK_API_KEY"],
+                base_url=keys_config["DEEPSEEK_API_BASE_URL"],
+            )
         else:
             api_base_url: str | None = keys_config.get("OPENAI_API_BASE_URL", None)
             self.client = OpenAI(api_key=keys_config["OPENAI_API_KEY"], base_url=api_base_url)
