@@ -2,11 +2,6 @@
 Thanks for contributing a pull request!
 -->
 
-> [!NOTE]
-> IF YOU SEE A LOT OF FORMATTING RELATED MERGE CONFLICTS
-> PLEASE MAKE SURE THAT YOU ARE USING OUR CODE FORMATTER.
-> Please see [our development guide](https://princeton-nlp.github.io/SWE-agent/dev/contribute/).
-
 #### Reference Issues/PRs
 <!--
 Example: "Fixes #1234", "See also #3456"
