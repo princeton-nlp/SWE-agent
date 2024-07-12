@@ -36,7 +36,7 @@ system_template: |-
   You're free to use any other bash commands you want (e.g. find, grep, cat, ls, cd) in addition to the special commands listed above.
   However, the environment does NOT support interactive session commands (e.g. python, vim), so please do not invoke them.
 instance_template: |-
-  We're currently solving the following issue within our repository. Here's the issue text:
+  We're currently attempting to solve the following problem:
   ISSUE:
   {issue}
 
