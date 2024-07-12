@@ -65,7 +65,7 @@ python run.py \
 <summary>Output</summary>
 
 ```
---8<-- "docs/usage/leetcode_example.md"
+--8<-- "docs/usage/coding_challenge_output.log"
 ```
 
 </details>
