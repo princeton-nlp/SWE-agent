@@ -63,6 +63,7 @@ nav:
   - Usage:
     - "usage/index.md"
     - "Command line usage": "usage/cl_tutorial.md"
+    - "Solving coding challenges": "usage/coding_challenges.md"
     - "Using the web UI": "usage/web_ui.md"
     - "Trajectories": "usage/trajectories.md"
     - "Trajectory inspector": "usage/inspector.md"

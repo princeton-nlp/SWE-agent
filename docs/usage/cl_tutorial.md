@@ -4,6 +4,7 @@ This tutorial walks you trough running SWE-agent from the command line.
 Beginners might also be interested in the our web-based GUI (see [here](web_ui.md)).
 This tutorial focuses on using SWE-agent as a tool to solve individual issues.
 Benchmarking SWE-agent is covered [separately](benchmarking.md).
+Finally, we have a different tutorial for using SWE-agent for [coding challenges](coding_challenges.md).
 
 ## Getting started
 
