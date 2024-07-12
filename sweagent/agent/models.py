@@ -236,7 +236,6 @@ class OpenAIModel(BaseModel):
         "gpt3-0125": "gpt-3.5-turbo-0125",
         "gpt4-turbo": "gpt-4-turbo-2024-04-09",
         "gpt4o": "gpt-4o-2024-05-13",
-        "coder": "deepseek-coder",
     }
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
