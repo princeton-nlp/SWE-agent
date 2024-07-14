@@ -140,7 +140,25 @@ The config file can have the following keys:
 * `install`: A custom command
 * `post_install`: A list of custom commands
 
+Instead of the `setup.yaml` file, you can also directly specify the path to a shell script, e.g., `--environment_setup /path/to/setup.sh`.
 If you have very specific requirements, that can _not_ be installed via conda, you can [create a custom Docker image](../config/docker.md).
+
+### Installing non-python dependencies
+
+While SWE-agent has so far only been benchmarked and optimized for python project, you can still use it on repositories of any language.
+
+In most cases, this means creating a [custom Docker image](../config/docker.md). However, you can for example install node dependencies with
+`--environment_setup setup.sh`, where `setup.sh` looks as follows:
+
+```bash
+apt-get update
+yes|apt-get install curl
+yes|curl -L https://bit.ly/n-install | bash
+/root/n/bin/n latest
+npm install
+```
+
+However, this will take some time, so make sure to cache the environment (see the next section) or create a [custom Docker image](../config/docker.md).
 
 ## Speeding up SWE-agent <a name="speedup"></a>
 
