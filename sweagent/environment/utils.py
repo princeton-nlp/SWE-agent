@@ -588,12 +588,9 @@ class InstanceBuilder:
     
     def set_problem_statement_from_challenge_json(self, file_path: str) -> str:
         challenge = json.loads(Path(file_path).read_text())
-        self.args["challenge"] = dict()
+        self.args["challenge"] = challenge
         self.args["challenge"]["files"] = challenge.get("files", "No files are provided in this challenge.")
-        self.args["challenge"]["name"] = challenge["name"]
-        self.args["challenge"]["description"] = challenge["description"]
         self.args["challenge"]["points"] = challenge.get("points", 10)
-        self.args["challenge"]["category"] = challenge["category"]
         self.args["challenge"]["category_friendly"] = CTF_CHALLENGES_CATEGORIES.get(challenge["category"])
         if (Path(file_path).parent / "docker-compose.yml").is_file():
             logger.debug(f"Found docker_compose file in {Path(file_path).parent}")
