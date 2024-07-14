@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.28">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.29">
     
     
       
@@ -24,7 +24,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.6543a935.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.76a95c52.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
@@ -750,6 +750,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Installing dependencies and setting up the environment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installing-non-python-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installing non-python dependencies
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1381,6 +1396,21 @@
       Installing dependencies and setting up the environment
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Installing dependencies and setting up the environment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installing-non-python-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installing non-python dependencies
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2379,7 +2409,19 @@ changes to the package code take effect without having to reinstall the package.
 <li><code>install</code>: A custom command</li>
 <li><code>post_install</code>: A list of custom commands</li>
 </ul>
-<p>If you have very specific requirements, that can <em>not</em> be installed via conda, you can <a href="../../config/docker/">create a custom Docker image</a>.</p>
+<p>Instead of the <code>setup.yaml</code> file, you can also directly specify the path to a shell script, e.g., <code>--environment_setup /path/to/setup.sh</code>.
+If you have very specific requirements, that can <em>not</em> be installed via conda, you can <a href="../../config/docker/">create a custom Docker image</a>.</p>
+<h3 id="installing-non-python-dependencies">Installing non-python dependencies</h3>
+<p>While SWE-agent has so far only been benchmarked and optimized for python project, you can still use it on repositories of any language.</p>
+<p>In most cases, this means creating a <a href="../../config/docker/">custom Docker image</a>. However, you can for example install node dependencies with
+<code>--environment_setup setup.sh</code>, where <code>setup.sh</code> looks as follows:</p>
+<div class="highlight"><pre><span></span><code>apt-get<span class="w"> </span>update
+yes<span class="p">|</span>apt-get<span class="w"> </span>install<span class="w"> </span>curl
+yes<span class="p">|</span>curl<span class="w"> </span>-L<span class="w"> </span>https://bit.ly/n-install<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
+/root/n/bin/n<span class="w"> </span>latest
+npm<span class="w"> </span>install
+</code></pre></div>
+<p>However, this will take some time, so make sure to cache the environment (see the next section) or create a <a href="../../config/docker/">custom Docker image</a>.</p>
 <h2 id="speeding-up-swe-agent">Speeding up SWE-agent <a name="speedup"></a></h2>
 <div class="admonition tip">
 <p class="admonition-title">Speed up in v0.6</p>
