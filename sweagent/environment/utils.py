@@ -288,6 +288,29 @@ def terminate_docker_compose(docker_compose_path: Path) -> None:
         logger.error(f"Unexpected compose termination error: {error}")
 
 
+def attach_network_interface_to_container(container_name: str) -> None:
+    cmd = [
+        "docker",
+        "network",
+        "connect",
+        "ctfnet",
+        container_name,
+    ]
+    logger.debug("Attaching NIC to container with command: %s", shlex.join(cmd))
+    compose = subprocess.Popen(
+        cmd,
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=STDOUT,
+        text=True,
+        bufsize=1,  # line buffered
+    )
+    _, error = compose.communicate(timeout=DOCKER_START_UP_DELAY)
+    if error:
+        logger.error(f"Unexpected compose setup error: {error}")
+        raise RuntimeError(error)
+
+
 def get_docker_compose(docker_compose_path: Path) -> Path:
     startup_cmd = [
         "docker",

@@ -29,6 +29,7 @@ from sweagent.environment.utils import (
     PROCESS_DONE_MARKER_END,
     PROCESS_DONE_MARKER_START,
     InvalidGithubURL,
+    attach_network_interface_to_container,
     copy_anything_to_container,
     copy_file_to_container,
     format_trajectory_markdown,
@@ -337,6 +338,9 @@ class SWEEnv(gym.Env):
             else:
                 self.logger.info(f"Cached image {cached_image} not found, rebuilding task environment...")
 
+        # Init docker network
+        self._init_docker_network()
+
         # Clone repository if not already cloned
         self.communicate(input="cd /")
         folders = self.communicate(input="ls").split("\n")
@@ -598,6 +602,14 @@ class SWEEnv(gym.Env):
         image_name_sanitized = image_name.replace("/", "-")
         image_name_sanitized = image_name_sanitized.replace(":", "-")
         return f"{image_name_sanitized}-{hash_object.hexdigest()[:10]}"
+    
+    def _init_docker_network(self) -> None:
+        """
+        Add the "ctfnet" network interface for all the containers used for CTF challenges
+        """
+        assert self.container_name is not None
+        if self.challenge is not None:
+            attach_network_interface_to_container(self.container_name)
     
     def _init_docker_compose(self) -> None:
         """
