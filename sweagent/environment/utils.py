@@ -886,3 +886,7 @@ def format_trajectory_markdown(trajectory: list[dict[str, str]]):
         "</details>",
     ]
     return "\n".join(prefix) + "\n\n---\n\n".join(steps) + "\n".join(suffix)
+
+
+def extract_flag_format(flag: str) -> str:
+    return re.sub(r"{.*}$", "{...}", flag)

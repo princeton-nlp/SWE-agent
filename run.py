@@ -49,6 +49,7 @@ from sweagent.environment.utils import (
     get_associated_commit_urls,
     get_data_path_name,
     get_gh_issue_data,
+    extract_flag_format,
     parse_gh_issue_url,
 )
 
@@ -364,6 +365,7 @@ class Main:
         setup_args = {"issue": issue, "files": files, "test_files": test_files, "tests": tests}
         challenge = getattr(self.env, "challenge", None)
         if challenge is not None:
+            setup_args["flag_format"] = extract_flag_format(challenge["flag"])
             setup_args["name"] = challenge["name"]
             setup_args["description"] = challenge["description"]
             setup_args["category_friendly"] = challenge["category_friendly"]

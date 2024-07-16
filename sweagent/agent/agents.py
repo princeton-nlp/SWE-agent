@@ -276,7 +276,7 @@ class Agent:
         self.model.reset_stats(init_model_stats)
         self.instance_args = instance_args
 
-        system_msg = self.config.system_template.format(**self.system_args)
+        system_msg = self.config.system_template.format(**self.system_args, **self.instance_args)
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
 
         self.history: list[dict[str, Any]] = []
