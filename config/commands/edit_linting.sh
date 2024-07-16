@@ -46,7 +46,30 @@ edit() {
         return
     fi
 
-    local linter_cmd="flake8 --isolated --select=F821,F822,F831,E111,E112,E113,E999,E902"
+    # Prep a JSX-enabled config file for eslint 9
+    cat <<EOF > eslint.config.mjs
+// eslint.config.js
+export default [
+    {
+        "languageOptions": {
+            "parserOptions": {
+                "ecmaFeatures": {
+                    "jsx": true
+                }
+            }
+        }
+    }
+];
+EOF
+    
+    # Infer linter based on file extension
+    case "$CURRENT_FILE" in
+        *.py) linter_cmd="flake8 --isolated --select=F821,F822,F831,E111,E112,E113,E999,E902" ;;
+        *.[jt]sx?) linter_cmd="eslint ."
+        *.html?) linter_cmd="htmlhint --format unix" ;;
+        *.sh) linter_cmd="shellcheck" ;;
+        *) linter_cmd="" ;;
+    esac
     local linter_before_edit=$($linter_cmd "$CURRENT_FILE" 2>&1)
 
     # Bash array starts at 0, so let's adjust
@@ -70,10 +93,13 @@ edit() {
     # Write the new stuff directly back into the original file
     printf "%s\n" "${new_lines[@]}" >| "$CURRENT_FILE"
 
-    # Run linter
-    if [[ $CURRENT_FILE == *.py ]]; then
+    # Run linter 
+    if [ -n "$linter_cmd" ]; then
         _lint_output=$($linter_cmd "$CURRENT_FILE" 2>&1)
         lint_output=$(_split_string "$_lint_output" "$linter_before_edit" "$((start_line+1))" "$end_line" "$line_count")
+        # TODO: rework the above to be less python/flake dependent in the
+        # associated file _split_string or remove _split_string from non-py
+        # to get started at all.
     else
         # do nothing
         lint_output=""

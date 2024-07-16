@@ -373,8 +373,10 @@ class SWEEnv(gym.Env):
         # Call install environment helper function if specified
         if self.install_environment:
             self.install_env()
-        # Install mypy for linting purposes
+        # Install linters
         self.communicate_with_handling("pip install flake8", error_msg="Failed to install flake8 (lint library)")
+        self.communicate_with_handling("npm install -g eslint", error_msg="Failed to install eslint (lint library)")
+        self.communicate_with_handling("npm install -g htmlhint", error_msg="Failed to install htmlhint (lint library)")
 
         if self.args.cache_task_images:
             envs = self.communicate("env")
