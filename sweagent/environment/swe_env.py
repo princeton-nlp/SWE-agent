@@ -875,6 +875,10 @@ class SWEEnv(gym.Env):
         Returns:
             output: output from container
         """
+        if self.challenge is not None and input.startswith("git"):
+            msg = "Skipping git commands for CTF challenges"
+            self.logger.debug(msg)
+            return msg
         logs = self.communicate(input, timeout_duration=timeout_duration)
         if self.returncode != 0:
             self.logger.error(f"{error_msg}: {logs}")
