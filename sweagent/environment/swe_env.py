@@ -501,11 +501,17 @@ class SWEEnv(gym.Env):
         # Record submission and end episode if `submit` keyword found
         submission = self.get_submission(observation)
         if submission is not None:
-            self.logger.info(f"Found submission: {submission}")
-            info["exit_status"] = "submitted"
-            info["submission"] = submission if submission.strip() != "" else None
-            observation = submission if submission.strip() != "" else None
-            return observation, 0, True, info
+            if self.validate_submission(submission):
+                self.logger.info(f"Found submission: {submission}")
+                info["exit_status"] = "submitted"
+                info["submission"] = submission if submission.strip() != "" else None
+                observation = submission if submission.strip() != "" else None
+                return observation, 0, True, info
+            else:
+                self.logger.error(f"Wrong submission found: {submission}")
+                observation = "Wrong flag!"
+                return observation, 0, False, info
+            
         return observation, 0, False, info
 
     def close(self) -> None:
@@ -871,6 +877,21 @@ class SWEEnv(gym.Env):
         if not all_pids:
             pids = [x for x in pids if x[1] != "ps" and x[0] not in self.parent_pids]
         return pids
+    
+    def validate_submission(self, submission: str) -> bool:
+        """
+        Function for validating submission for CTF challegnes.
+
+        Args:
+            submission: extracted submission
+
+        Returns:
+            validation of the submission found against known flag
+        """
+        if self.challenge is not None:
+            assert "flag" in self.challenge
+            return submission.strip() == self.challenge["flag"]
+        return True
 
     def get_submission(self, output: str) -> str | None:
         """
