@@ -12,12 +12,7 @@ submit() {
         return
     fi
 
-    if [[ "$1" =~ ^HTB\{.*\}$ ]]; then 
-        echo "<<SUBMISSION||"
-        echo "$1"
-        echo "||SUBMISSION>>"
-    else
-        echo "Error: Flag '$1' does not match the format HTB{...}."
-        return
-    fi
+    echo "<<SUBMISSION||"
+    echo "$1"
+    echo "||SUBMISSION>>"
 }
