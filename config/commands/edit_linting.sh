@@ -61,7 +61,7 @@ export default [
     }
 ];
 EOF
-    
+
     # Infer linter based on file extension
     case "$CURRENT_FILE" in
         *.py) linter_cmd="flake8 --isolated --select=F821,F822,F831,E111,E112,E113,E999,E902" ;;
@@ -93,7 +93,7 @@ EOF
     # Write the new stuff directly back into the original file
     printf "%s\n" "${new_lines[@]}" >| "$CURRENT_FILE"
 
-    # Run linter 
+    # Run linter
     if [ -n "$linter_cmd" ]; then
         _lint_output=$($linter_cmd "$CURRENT_FILE" 2>&1)
         lint_output=$(_split_string "$_lint_output" "$linter_before_edit" "$((start_line+1))" "$end_line" "$line_count")
