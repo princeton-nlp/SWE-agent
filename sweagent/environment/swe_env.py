@@ -229,10 +229,10 @@ class SWEEnv(gym.Env):
         for hook in self.hooks:
             hook.on_copy_repo_started(repo_type=self.record["repo_type"], repo_path=self.record["repo"])
         if self.record["repo_type"] == "local":
-            if "files" in self.record:
+            if "challenge" in self.record:
                 self.communicate_with_handling(input=f"mkdir {self._repo_name}", 
                                                error_msg=f"Failed to create {self._repo_name} in container")
-                for file_name in self.record["files"]:
+                for file_name in self.record["challenge"]["files"]:
                     self.logger.debug(f"Copying file {file_name} to container")
                     copy_anything_to_container(
                         self.container_obj,
@@ -835,6 +835,10 @@ class SWEEnv(gym.Env):
         Returns:
             output: output from container
         """
+        if self.challenge is not None and input.startswith("git"):
+            msg = "Skipping git commands for CTF challenges"
+            self.logger.debug(msg)
+            return msg
         logs = self.communicate(input, timeout_duration=timeout_duration)
         if self.returncode != 0:
             self.logger.error(f"{error_msg}: {logs}")

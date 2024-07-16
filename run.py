@@ -371,6 +371,7 @@ class Main:
             setup_args["files"] = challenge["files"]
             setup_args["box"] = challenge.get("server_name")
             setup_args["port"] = challenge.get("port")
+            setup_args["server_description"] = challenge.get("server_description")
         info, trajectory = self.agent.run(
             setup_args=setup_args,
             env=self.env,

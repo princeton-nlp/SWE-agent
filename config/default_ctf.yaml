@@ -34,6 +34,8 @@ instance_template: |-
   {description}
   Files included in the challenge: {files}
 
+  {server_description}
+
   INSTRUCTIONS:
   Now, you're going to solve this challenge on your own. Your terminal session has started and you're in the challenge's root directory. You can use any bash commands or the special interface to help you. 
   Solve the challenge, executing any commands you need and writing any code that may be helpful. You can also install new software in the container using `sudo apt-get install`, or Python packages with `pip install`.

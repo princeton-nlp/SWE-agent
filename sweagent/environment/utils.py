@@ -237,7 +237,7 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
                 break
             if data:
                 buffer += data
-                if PROCESS_DONE_MARKER_START in buffer.decode():
+                if PROCESS_DONE_MARKER_START in buffer.decode('utf-8', errors='backslashreplace').replace('\r\n', '\n'):
                     break
         time.sleep(0.01)  # Prevents CPU hogging
 
@@ -608,6 +608,15 @@ class InstanceBuilder:
         )
         self.args["instance_id"] = f"{owner}__{repo}-i{issue_number}"
         self.args["problem_statement_source"] = "online"
+
+    def set_server_description(self, server_name: str | None, port: int | None) -> None:
+        if server_name is None or port is None:
+            self.args["challenge"]["server_description"] = ""
+            return
+        if self.args["challenge"]["category"] in {"web", "misc"} and self.args["challenge"].get("proto") != "nc":
+            self.args["challenge"]["server_description"] = f"The challenge web server is running on `{server_name}` port `{port}` and you can access it from within the container environment using `curl http://{server_name}:{port}`."
+        else:
+            self.args["challenge"]["server_description"] = f"The challenge web server is running on `{server_name}` port `{port}` and you can access it from within the container environment using `nc {server_name}:{port}`."
     
     def set_problem_statement_from_challenge_json(self, file_path: str) -> str:
         challenge = json.loads(Path(file_path).read_text())
@@ -620,6 +629,7 @@ class InstanceBuilder:
             self.args["challenge"]["docker_compose"] = (Path(file_path).parent / "docker-compose.yml")
         self.args["challenge"]["port"] = challenge.get("internal_port")
         self.args["challenge"]["server_name"] = challenge.get("box")
+        self.set_server_description(self.args["challenge"]["server_name"], self.args["challenge"]["port"])
         self.set_problem_statement_from_text(f"{challenge['name']} {challenge['description']}")
 
     def set_problem_statement_from_file(self, file_path: str):
