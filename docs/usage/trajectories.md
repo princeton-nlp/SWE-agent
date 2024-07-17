@@ -54,7 +54,7 @@ Each call to `run.py` produces a single `trajectories/<user name>/<experiment na
 
 !!! tip
     * Evaluation is not completed by `run.py`, it is a separate step (see [benchmarking](benchmarking.md))
-    * `all_preds.jsonl` can be referenced directly into `evaluation/run_eval.sh` to run evaluation (see [benchmarking](benchmarking.md))
+    * `all_preds.jsonl` can be referenced directly into SWE-bench to run evaluation (see [benchmarking](benchmarking.md))
     * Trajectories can be turned into custom demonstrations for SWE-agent ([more information](../config/demonstrations.md)).
 
 {% include-markdown "../_footer.md" %}
