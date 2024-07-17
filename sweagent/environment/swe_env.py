@@ -20,7 +20,8 @@ import yaml
 from ghapi.all import GhApi
 from git import Repo
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
-from swebench import MAP_VERSION_TO_INSTALL, get_environment_yml, get_requirements
+from swebench.harness.constants import MAP_REPO_VERSION_TO_SPECS
+from swebench.harness.utils import get_environment_yml, get_requirements
 
 import docker
 import docker.errors
@@ -892,7 +893,7 @@ class SWEEnv(gym.Env):
                 raise ValueError(msg)
         else:
             try:
-                return MAP_VERSION_TO_INSTALL[self.record["repo"]][str(self.record["version"])]
+                return MAP_REPO_VERSION_TO_SPECS[self.record["repo"]][str(self.record["version"])]
             except KeyError as e:
                 msg = (
                     "Tried to look up install configs in swe-bench, but failed. "

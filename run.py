@@ -38,7 +38,7 @@ from rich.markdown import Markdown
 from simple_parsing import parse
 from simple_parsing.helpers.flatten import FlattenedAccess
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
-from swebench import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
+from swebench.harness.constants import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
 from unidiff import PatchSet
 
 from sweagent.agent.agents import Agent, AgentArguments
