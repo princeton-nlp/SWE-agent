@@ -120,7 +120,7 @@ def copy_anything_to_container(container: Container, host_path: str, container_p
         raise RuntimeError(msg) from e
 
 
-def read_with_timeout(container: subprocess.Popen, pid_func: Callable, timeout_duration: int) -> str:
+def read_with_timeout(container: subprocess.Popen, pid_func: Callable, timeout_duration: int | float) -> str:
     """
     Read data from a subprocess with a timeout.
     This function uses a file descriptor to read data from the subprocess in a non-blocking way.
@@ -182,7 +182,7 @@ PROCESS_DONE_MARKER_END = ":PROCESS-DONE///"
 PROCESS_DONE_REGEX = re.compile(rf"{PROCESS_DONE_MARKER_START}(.+?){PROCESS_DONE_MARKER_END}")
 
 
-def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration: int) -> tuple[str, str]:
+def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration: int | float) -> tuple[str, str]:
     """
     Read data from a subprocess with a timeout.
     This function uses a file descriptor to read data from the subprocess in a non-blocking way.
