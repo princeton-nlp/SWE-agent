@@ -55,11 +55,6 @@ echo "------------------------------------------"
 docker buildx build  --platform=linux/amd64,linux/arm64  -t ${USER}/swe-agent:${VERSION_STR} -f docker/swe.Dockerfile --push .
 echo "🔥 swe-agent pushed to dockerhub"
 echo "------------------------------------------"
-echo "Building swe-eval"
-echo "------------------------------------------"
-docker buildx build  --platform=linux/amd64,linux/arm64 -t ${USER}/swe-eval:${VERSION_STR} -f docker/eval.Dockerfile --push .
-echo "🔥 swe-eval pushed to dockerhub"
-echo "------------------------------------------"
 echo "Building swe-agent-run"
 echo "------------------------------------------"
 docker buildx build  --platform=linux/amd64,linux/arm64 -t ${USER}/swe-agent-run:${VERSION_STR} --push .
