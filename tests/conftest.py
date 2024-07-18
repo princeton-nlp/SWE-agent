@@ -39,8 +39,8 @@ def test_data_sources_path(test_data_path) -> Path:
 def test_trajectory_path(test_trajectories_path) -> Path:
     traj = (
         test_trajectories_path
-        / "gpt4__klieret__swe-agent-test-repo__default_from_url__t-0.00__p-0.95__c-3.00__install-1"
-        / "klieret__swe-agent-test-repo-i1.traj"
+        / "gpt4__swe-agent__test-repo__default_from_url__t-0.00__p-0.95__c-3.00__install-1"
+        / "swe-agent__test-repo-i1.traj"
     )
     assert traj.exists()
     return traj

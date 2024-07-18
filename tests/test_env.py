@@ -21,8 +21,8 @@ def test_env_args(
     tmpdir_factory,
 ):
     """This will use a persistent container"""
-    local_repo_path = tmpdir_factory.getbasetemp() / "swe-agent-test-repo"
-    clone_cmd = ["git", "clone", "https://github.com/klieret/swe-agent-test-repo", local_repo_path]
+    local_repo_path = tmpdir_factory.getbasetemp() / "test-repo"
+    clone_cmd = ["git", "clone", "https://github.com/swe-agent/test-repo", local_repo_path]
     subprocess.run(clone_cmd, check=True)
     data_path = local_repo_path / "problem_statements" / "1.md"
     test_env_args = EnvironmentArguments(
@@ -175,7 +175,7 @@ def test_execute_environment_clone_python(tmp_path, test_env_args, capsys):
 def test_open_pr(test_env_args):
     test_env_args = dataclasses.replace(
         test_env_args,
-        data_path="https://github.com/klieret/swe-agent-test-repo/issues/1",
+        data_path="https://github.com/swe-agent/test-repo/issues/1",
         repo_path="",
     )
     with swe_env_context(test_env_args) as env:
