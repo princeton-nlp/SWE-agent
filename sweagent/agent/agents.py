@@ -1038,7 +1038,7 @@ class Agent:
                     # Note: The trajectory/info will not include the last `submit` command
                     self._rloop.on_submit(ReviewSubmission(trajectory=self.trajectory, info=self.info))
                     # (make sure to save trajectory after self._rloop.on_submit)
-                    retry = self._rloop.retry()
+                    retry: bool = self._rloop.retry()
                     self._forwarded_vars = self._rloop.get_forwarded_vars()
                     self.info["review"] = self._rloop.reviews[-1].to_dict()
                     # Call save_trajectory again to save the updated info with the final reviews

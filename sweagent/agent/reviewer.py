@@ -28,7 +28,7 @@ class AbstractReviewer(ABC):
     """
 
     @abstractmethod
-    def review(self, instance: INSTANCE_TYPE, submission) -> ReviewerResult:
+    def review(self, instance: INSTANCE_TYPE, submission: ReviewSubmission) -> ReviewerResult:
         """Returns True if the submission is believed to be correct"""
 
 
