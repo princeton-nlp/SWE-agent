@@ -46,6 +46,7 @@ from sweagent.utils.config import keys_config
 from sweagent.utils.log import default_logger, get_logger
 
 LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500))
+AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
 PATH_TO_REQS = "/root/requirements.txt"
 PATH_TO_ENV_YML = "/root/environment.yml"
 
@@ -451,7 +452,7 @@ class SWEEnv(gym.Env):
         # Attempt to run action in container
         observation = ""
         try:
-            observation = self.communicate(input=action, timeout_duration=25, set_last_action=True)
+            observation = self.communicate(input=action, timeout_duration=AGENT_ACTION_TIMEOUT, set_last_action=True)
         except TimeoutError:
             try:
                 self.interrupt()
@@ -640,7 +641,7 @@ class SWEEnv(gym.Env):
     def _communicate_experimental(
         self,
         input: str,
-        timeout_duration=25,
+        timeout_duration: int | float = 25,
     ) -> str:
         """Experimental version of `_communicate`"""
         assert self.container is not None
@@ -689,7 +690,7 @@ class SWEEnv(gym.Env):
     def _communicate(
         self,
         input: str,
-        timeout_duration=25,
+        timeout_duration: int | float = 25,
     ) -> str:
         """Runs command in container and returns output
 
@@ -740,7 +741,7 @@ class SWEEnv(gym.Env):
         output = self._communicate(f"/bin/bash -n <<'EOF'\n{input}\nEOF\n")
         return output, self.returncode == 0
 
-    def communicate(self, input: str, timeout_duration: int = 25, *, set_last_action: bool = False) -> str:
+    def communicate(self, input: str, timeout_duration: int | float = 25, *, set_last_action: bool = False) -> str:
         """
         Sends input to container and returns output
 
@@ -776,7 +777,7 @@ class SWEEnv(gym.Env):
             self.communicate_output = ""
             return ""
 
-    def communicate_with_handling(self, input: str, error_msg: str, timeout_duration: int = 25) -> str:
+    def communicate_with_handling(self, input: str, error_msg: str, timeout_duration: int | float = 25) -> str:
         """
         Wrapper for communicate function that raises error if return code is non-zero
 
