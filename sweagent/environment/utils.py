@@ -217,6 +217,7 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
             return True
         return bool(select.select([fd], [], [], 0.01)[0])
 
+    n_decode_failures = 0
     while time.time() < end_time:
         if ready_to_read(fd):
             try:
@@ -226,7 +227,14 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
                 break
             if data:
                 buffer += data
-                if PROCESS_DONE_MARKER_START in buffer.decode():
+                try:
+                    decoded = buffer.decode()
+                except UnicodeDecodeError:
+                    n_decode_failures += 1
+                    if n_decode_failures > 30:
+                        msg = "Too many decode failures while reading from subprocess."
+                        raise RuntimeError(msg)
+                if PROCESS_DONE_MARKER_START in decoded:
                     break
         time.sleep(0.01)  # Prevents CPU hogging
 
