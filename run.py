@@ -330,7 +330,7 @@ class Main:
         hook.on_init(args=self.args, agent=self.agent, env=self.env, traj_dir=self.traj_dir)
         self.hooks.append(hook)
 
-    def run(self, index):
+    def run(self, index: int) -> None:
         # Reset environment
         instance_id = self.env.data[index]["instance_id"]
         for hook in self.hooks:
@@ -391,7 +391,7 @@ class Main:
                 logger.info("Container closed")
                 raise
             except Exception as e:
-                traceback.print_exc()
+                logger.warning(traceback.format_exc())
                 if self.args.raise_exceptions:
                     self.env.close()
                     raise e
