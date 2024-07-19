@@ -642,7 +642,7 @@ class Agent:
             output: raw model output
         """
         try:
-            output = self.forward_model(observation, state)
+            return self.check_format_and_requery(self.forward_model(observation, state))
         except KeyboardInterrupt:
             raise
         except RuntimeError as e:
@@ -665,7 +665,6 @@ class Agent:
                 "exit_api",
                 f"exit due to retry error: {e}",
             )
-        return self.check_format_and_requery(output)
 
     def init_environment_vars(self, env: SWEEnv):
         self.set_environment_vars(env, self.config.env_variables)
