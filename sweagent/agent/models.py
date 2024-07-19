@@ -246,7 +246,9 @@ class OpenAIModel(BaseModel):
         logging.getLogger("openai").setLevel(logging.WARNING)
         logging.getLogger("httpx").setLevel(logging.WARNING)
 
-        # Set OpenAI key
+        self._setup_client()
+
+    def _setup_client(self):
         if self.args.model_name.startswith("azure"):
             logger.warning(
                 "The --model CLI argument is ignored when using the Azure GPT endpoint. "
@@ -304,6 +306,21 @@ class OpenAIModel(BaseModel):
         output_tokens = response.usage.completion_tokens
         self.update_stats(input_tokens, output_tokens)
         return response.choices[0].message.content
+
+
+class DeepSeekModel(OpenAIModel):
+    MODELS = {
+        "deepseek-coder": {
+            "max_context": 32_000,
+            "cost_per_input_token": 1.4e-07,
+            "cost_per_output_token": 2.8e-07,
+        },
+    }
+    SHORTCUTS = {}
+
+    def _setup_client(self) -> None:
+        api_base_url: str = keys_config["DEEPSEEK_API_BASE_URL"]
+        self.client = OpenAI(api_key=keys_config["DEEPSEEK_API_KEY"], base_url=api_base_url)
 
 
 class AnthropicModel(BaseModel):
@@ -901,6 +918,7 @@ def get_model(args: ModelArguments, commands: list[Command] | None = None):
         args.model_name.startswith("gpt")
         or args.model_name.startswith("ft:gpt")
         or args.model_name.startswith("azure:gpt")
+        or args.model_name in OpenAIModel.SHORTCUTS
     ):
         return OpenAIModel(args, commands)
     elif args.model_name.startswith("claude"):
@@ -909,6 +927,8 @@ def get_model(args: ModelArguments, commands: list[Command] | None = None):
         return BedrockModel(args, commands)
     elif args.model_name.startswith("ollama"):
         return OllamaModel(args, commands)
+    elif args.model_name.startswith("deepseek"):
+        return DeepSeekModel(args, commands)
     elif args.model_name in TogetherModel.SHORTCUTS:
         return TogetherModel(args, commands)
     elif args.model_name == "instant_empty_submit":

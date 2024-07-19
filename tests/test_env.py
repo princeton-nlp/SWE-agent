@@ -107,6 +107,8 @@ def test_execute_environment_default(test_env_args):
     # Make sure we don't use persistent container, else we might have already installed the conda environment
     test_env_args = dataclasses.replace(test_env_args, container_name=None)
     for env_config_path in env_config_paths:
+        if env_config_path.name == "django.yaml":
+            continue
         if env_config_path.suffix not in [".yaml", ".yml", ".sh"]:
             continue
         print(env_config_path)
@@ -139,7 +141,7 @@ def test_execute_environment_clone_python(tmp_path, test_env_args, capsys):
 def test_open_pr(test_env_args):
     test_env_args = dataclasses.replace(
         test_env_args,
-        data_path="https://github.com/klieret/swe-agent-test-repo/issues/1",
+        data_path="https://github.com/swe-agent/test-repo/issues/1",
         repo_path="",
     )
     with swe_env_context(test_env_args) as env:

@@ -13,16 +13,16 @@ logging.TRACE = 5  # type: ignore
 logging.addLevelName(logging.TRACE, "TRACE")  # type: ignore
 
 
-def _interpret_level_from_env(level: str | None) -> int:
+def _interpret_level_from_env(level: str | None, *, default=logging.DEBUG) -> int:
     if not level:
-        return logging.DEBUG
+        return default
     if level.isnumeric():
         return int(level)
-    return getattr(logging, level.upper(), logging.DEBUG)
+    return getattr(logging, level.upper())
 
 
 _STREAM_LEVEL = _interpret_level_from_env(os.environ.get("SWE_AGENT_LOG_STREAM_LEVEL"))
-_FILE_LEVEL = _interpret_level_from_env(os.environ.get("SWE_AGENT_LOG_FILE_LEVEL"))
+_FILE_LEVEL = _interpret_level_from_env(os.environ.get("SWE_AGENT_LOG_FILE_LEVEL"), default=logging.TRACE)
 
 
 def get_logger(name: str) -> logging.Logger:

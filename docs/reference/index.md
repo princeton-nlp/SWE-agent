@@ -6,6 +6,9 @@
     Also note that SWE-agent is still developed very actively, so the python implementation details
     are still changing. See [the changelog](../installation/changelog.md) for more information.
 
+!!! tip "SWE-agent architecture"
+    Please first read the [architecture page](../background/architecture.md) for an overview of SWE-agent.
+
 The core:
 
 * The `sweagent/agent/` []() submodule implements the agent.
@@ -20,4 +23,3 @@ More subolders
 * See the [`scripts/`](https://github.com/princeton-nlp/SWE-agent/tree/main/scripts/) folder for other useful scripts and details.
 * See the [`config/`](https://github.com/princeton-nlp/SWE-agent/tree/main/config/) folder for details about how you can define your own configuration!
 * See the [`trajectories/`](https://github.com/princeton-nlp/SWE-agent/tree/main/trajectories) folder for details about the output of `run.py`.
-* See the [`evaluation/`](https://github.com/princeton-nlp/SWE-agent/tree/main/evaluation/) folder for details about how evaluation works.

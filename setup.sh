@@ -8,7 +8,4 @@ echo "Setting up docker image for swe-agent..."
 # https://github.com/princeton-nlp/SWE-agent/issues/245
 docker build -t sweagent/swe-agent:latest -f docker/swe.Dockerfile --build-arg TARGETARCH=$(uname -m) .
 
-echo "Setting up docker image for evaluation..."
-docker build -t sweagent/swe-eval:latest -f docker/eval.Dockerfile .
-
 echo "Done with setup!"

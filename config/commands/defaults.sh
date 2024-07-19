@@ -120,6 +120,25 @@ goto() {
     _print
 }
 
+_scroll_warning_message() {
+    # Warn the agent if we scroll too many times
+    # Message will be shown if scroll is called more than WARN_AFTER_SCROLLING_TIMES (default 3) times
+    # Initialize variable if it's not set
+    export SCROLL_COUNT=${SCROLL_COUNT:-0}
+    # Reset if the last command wasn't about scrolling
+    if [ "$LAST_ACTION" != "scroll_up" ] && [ "$LAST_ACTION" != "scroll_down" ]; then
+        export SCROLL_COUNT=0
+    fi
+    # Increment because we're definitely scrolling now
+    export SCROLL_COUNT=$((SCROLL_COUNT + 1))
+    if [ $SCROLL_COUNT -ge ${WARN_AFTER_SCROLLING_TIMES:-3} ]; then
+        echo ""
+        echo "WARNING: Scrolling many times in a row is very inefficient."
+        echo "If you know what you are looking for, use \`search_file <pattern>\` instead."
+        echo ""
+    fi
+}
+
 # @yaml
 # signature: scroll_down
 # docstring: moves the window down {WINDOW} lines
@@ -132,6 +151,7 @@ scroll_down() {
     export CURRENT_LINE=$(jq -n "$CURRENT_LINE + $WINDOW - $OVERLAP")
     _constrain_line
     _print
+    _scroll_warning_message
 }
 
 # @yaml
@@ -146,6 +166,7 @@ scroll_up() {
     export CURRENT_LINE=$(jq -n "$CURRENT_LINE - $WINDOW + $OVERLAP")
     _constrain_line
     _print
+    _scroll_warning_message
 }
 
 # @yaml

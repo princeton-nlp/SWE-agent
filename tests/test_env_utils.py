@@ -7,7 +7,6 @@ import subprocess
 import pytest
 
 from sweagent.environment.utils import (
-    _MARKDOWN_TRAJECTORY_EMOJI_MAPPING,
     InvalidGithubURL,
     format_trajectory_markdown,
     get_associated_commit_urls,
@@ -26,8 +25,6 @@ def test_format_trajectory_markdown(test_trajectory):
     formatted = format_trajectory_markdown(test_trajectory["trajectory"])
     assert formatted.startswith("<details>")
     assert formatted.endswith("</details>")
-    for emoji in _MARKDOWN_TRAJECTORY_EMOJI_MAPPING.values():
-        assert emoji in formatted
 
 
 def test_remove_triple_backticks():
@@ -89,10 +86,10 @@ def test_get_associated_commit_urls():
 
 
 def test_get_instance_gh_issue():
-    instance = get_instances("https://github.com/klieret/swe-agent-test-repo/issues/1", **_TOKEN)[0]
+    instance = get_instances("https://github.com/swe-agent/test-repo/issues/1", **_TOKEN)[0]
     compare_with = {
-        "repo": "klieret/swe-agent-test-repo",
-        "instance_id": "klieret__swe-agent-test-repo-i1",
+        "repo": "swe-agent/test-repo",
+        "instance_id": "swe-agent__test-repo-i1",
         "repo_type": "github",
     }
     for key in compare_with:
@@ -112,16 +109,16 @@ def clone_repo(tmp_path, repo_url):
 
 
 def test_get_instance_gh_issue_local_repo(tmp_path):
-    clone_repo(tmp_path, "https://github.com/klieret/swe-agent-test-repo/")
+    clone_repo(tmp_path, "https://github.com/swe-agent/test-repo/")
     instance = get_instances(
-        file_path="https://github.com/klieret/swe-agent-test-repo/issues/1",
-        repo_path=str(tmp_path / "swe-agent-test-repo"),
+        file_path="https://github.com/swe-agent/test-repo/issues/1",
+        repo_path=str(tmp_path / "test-repo"),
         **_TOKEN,
     )[0]
     compare_with = {
-        "repo": str(tmp_path.resolve() / "swe-agent-test-repo"),
+        "repo": str(tmp_path.resolve() / "test-repo"),
         "repo_type": "local",
-        "instance_id": "klieret__swe-agent-test-repo-i1",
+        "instance_id": "swe-agent__test-repo-i1",
     }
     for key in compare_with:
         assert instance[key] == compare_with[key]
@@ -131,15 +128,15 @@ def test_get_instance_gh_issue_local_repo(tmp_path):
 
 
 def test_get_instance_local_issue_local_repo(tmp_path):
-    clone_repo(tmp_path, "https://github.com/klieret/swe-agent-test-repo/")
+    clone_repo(tmp_path, "https://github.com/swe-agent/test-repo/")
     issue_path = tmp_path / "issue.txt"
     issue_path.write_text("asdf")
     instance = get_instances(
         file_path=str(issue_path),
-        repo_path=str(tmp_path / "swe-agent-test-repo"),
+        repo_path=str(tmp_path / "test-repo"),
     )[0]
     compare_with = {
-        "repo": str(tmp_path.resolve() / "swe-agent-test-repo"),
+        "repo": str(tmp_path.resolve() / "test-repo"),
         "repo_type": "local",
         "instance_id": hashlib.sha256(b"asdf").hexdigest()[:6],
         "problem_statement": "asdf",
@@ -152,14 +149,14 @@ def test_get_instance_local_issue_local_repo(tmp_path):
 
 def test_get_instance_gh_issue_gh_repo(tmp_path):
     instance = get_instances(
-        file_path="https://github.com/klieret/swe-agent-test-repo/issues/1",
+        file_path="https://github.com/swe-agent/test-repo/issues/1",
         repo_path="https://github.com/princeton-nlp/SWE-agent",
         **_TOKEN,
     )[0]
     compare_with = {
         "repo": "princeton-nlp/SWE-agent",
         "repo_type": "github",
-        "instance_id": "klieret__swe-agent-test-repo-i1",
+        "instance_id": "swe-agent__test-repo-i1",
     }
     for key in compare_with:
         assert instance[key] == compare_with[key]

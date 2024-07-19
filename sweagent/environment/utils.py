@@ -23,7 +23,6 @@ from unidiff import PatchSet
 
 import docker
 from docker.models.containers import Container
-from sweagent.types import Trajectory
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
@@ -122,7 +121,7 @@ def copy_anything_to_container(container: Container, host_path: str, container_p
         raise RuntimeError(msg) from e
 
 
-def read_with_timeout(container: subprocess.Popen, pid_func: Callable, timeout_duration: int) -> str:
+def read_with_timeout(container: subprocess.Popen, pid_func: Callable, timeout_duration: int | float) -> str:
     """
     Read data from a subprocess with a timeout.
     This function uses a file descriptor to read data from the subprocess in a non-blocking way.
@@ -184,7 +183,7 @@ PROCESS_DONE_MARKER_END = ":PROCESS-DONE///"
 PROCESS_DONE_REGEX = re.compile(rf"{PROCESS_DONE_MARKER_START}(.+?){PROCESS_DONE_MARKER_END}")
 
 
-def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration: int) -> tuple[str, str]:
+def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration: int | float) -> tuple[str, str]:
     """
     Read data from a subprocess with a timeout.
     This function uses a file descriptor to read data from the subprocess in a non-blocking way.
@@ -219,6 +218,7 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
             return True
         return bool(select.select([fd], [], [], 0.01)[0])
 
+    n_decode_failures = 0
     while time.time() < end_time:
         if ready_to_read(fd):
             try:
@@ -228,7 +228,14 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
                 break
             if data:
                 buffer += data
-                if PROCESS_DONE_MARKER_START in buffer.decode():
+                try:
+                    decoded = buffer.decode()
+                except UnicodeDecodeError:
+                    n_decode_failures += 1
+                    if n_decode_failures > 30:
+                        msg = "Too many decode failures while reading from subprocess."
+                        raise RuntimeError(msg)
+                if PROCESS_DONE_MARKER_START in decoded:
                     break
         time.sleep(0.01)  # Prevents CPU hogging
 
@@ -757,15 +764,7 @@ def remove_triple_backticks(text: str) -> str:
     return "\n".join(line.removeprefix("```") for line in text.splitlines())
 
 
-_MARKDOWN_TRAJECTORY_EMOJI_MAPPING = {
-    "observation": "👀",
-    "response": "️🧑‍🚒",
-    "state": "🧠",
-    "thought": "💡",
-}
-
-
-def format_trajectory_markdown(trajectory: Trajectory):
+def format_trajectory_markdown(trajectory: list[dict[str, str]]):
     """Format a trajectory as a markdown string for use in gh PR description."""
     prefix = [
         "<details>",
@@ -775,18 +774,14 @@ def format_trajectory_markdown(trajectory: Trajectory):
     ]
     steps = []
     for i, step in enumerate(trajectory):
-        step_strs = []
-        for key, value in step.items():
-            emoji = _MARKDOWN_TRAJECTORY_EMOJI_MAPPING.get(key, "")
-            if emoji:
-                emoji += " "
-            step_strs.append(f"**{emoji}{key.capitalize()} ({i})**:")
-            if key in ["observation", "state", "action"]:
-                step_strs.append("```")
-                step_strs.append(remove_triple_backticks(value).strip())
-                step_strs.append("```")
-            else:
-                step_strs.append(value.strip())
+        step_strs = [
+            f"**🧑‍🚒 Response ({i})**: ",
+            f"{step['response'].strip()}",
+            f"**👀‍ Observation ({i})**:",
+            "```",
+            f"{remove_triple_backticks(step['observation']).strip()}",
+            "```",
+        ]
         steps.append("\n".join(step_strs))
     suffix = [
         "",

@@ -46,8 +46,8 @@ def test_data_sources_path(test_data_path) -> Path:
 def test_trajectory_path(test_trajectories_path) -> Path:
     traj = (
         test_trajectories_path
-        / "gpt4__klieret__swe-agent-test-repo__default_from_url__t-0.00__p-0.95__c-3.00__install-1"
-        / "klieret__swe-agent-test-repo-i1.traj"
+        / "gpt4__swe-agent__test-repo__default_from_url__t-0.00__p-0.95__c-3.00__install-1"
+        / "swe-agent__test-repo-i1.traj"
     )
     assert traj.exists()
     return traj
@@ -63,8 +63,8 @@ def test_env_args(
     tmpdir_factory,
 ) -> Generator[EnvironmentArguments]:
     """This will use a persistent container"""
-    local_repo_path = tmpdir_factory.getbasetemp() / "swe-agent-test-repo"
-    clone_cmd = ["git", "clone", "https://github.com/klieret/swe-agent-test-repo", local_repo_path]
+    local_repo_path = tmpdir_factory.getbasetemp() / "test-repo"
+    clone_cmd = ["git", "clone", "https://github.com/swe-agent/test-repo", local_repo_path]
     subprocess.run(clone_cmd, check=True)
     data_path = local_repo_path / "problem_statements" / "1.md"
     test_env_args = EnvironmentArguments(

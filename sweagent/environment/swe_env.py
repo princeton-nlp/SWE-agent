@@ -7,6 +7,7 @@ import logging
 import os
 import random
 import re
+import shlex
 import subprocess
 import time
 import traceback
@@ -19,7 +20,8 @@ import yaml
 from ghapi.all import GhApi
 from git import Repo
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
-from swebench import MAP_VERSION_TO_INSTALL, get_environment_yml, get_requirements
+from swebench.harness.constants import MAP_REPO_VERSION_TO_SPECS
+from swebench.harness.utils import get_environment_yml, get_requirements
 
 import docker
 import docker.errors
@@ -46,6 +48,7 @@ from sweagent.utils.config import keys_config
 from sweagent.utils.log import default_logger, get_logger
 
 LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500))
+AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
 PATH_TO_REQS = "/root/requirements.txt"
 PATH_TO_ENV_YML = "/root/environment.yml"
 
@@ -436,7 +439,7 @@ class SWEEnv(gym.Env):
 
     def step(self, action: str) -> tuple[str | None, int, bool, AgentInfo]:
         """
-        Runs given action in environment and returns corresponding output
+        Runs an action proposed by the agent in the environment and returns the corresponding output.
 
         Args:
             action: command to run in bash shell
@@ -479,7 +482,7 @@ class SWEEnv(gym.Env):
         # Attempt to run action in container
         observation = ""
         try:
-            observation = self.communicate(input=action, timeout_duration=25)
+            observation = self.communicate(input=action, timeout_duration=AGENT_ACTION_TIMEOUT, set_last_action=True)
         except TimeoutError:
             try:
                 self.interrupt()
@@ -669,13 +672,15 @@ class SWEEnv(gym.Env):
     def _communicate_experimental(
         self,
         input: str,
-        timeout_duration=25,
+        timeout_duration: int | float = 25,
     ) -> str:
         """Experimental version of `_communicate`"""
         assert self.container is not None
         # Sleep to ensure that the exit code is in the last line
         # See https://github.com/princeton-nlp/SWE-agent/issues/595
-        command_suffix = f"sleep 0.01; echo {PROCESS_DONE_MARKER_START}$?{PROCESS_DONE_MARKER_END}\n"
+        command_suffix = (
+            f'EXITSTATUS="$?"; sleep 0.01; echo {PROCESS_DONE_MARKER_START}$EXITSTATUS{PROCESS_DONE_MARKER_END}\n'
+        )
         try:
             self.returncode = None
             cmd = input if input.endswith("\n") else input + "\n"
@@ -695,14 +700,35 @@ class SWEEnv(gym.Env):
             msg = f"Read with timeout failed on input:\n---\n{input}\n---"
             self.logger.error(msg)
             raise
+        if exit_code == "$EXITSTATUS":
+            # this sometimes happens if the command badly fails
+            # for example if you just try to run python with no arguments
+            # in this case, the error message is usually also garbage, so let's set
+            # something new.
+            # See https://github.com/princeton-nlp/SWE-agent/issues/630
+            buffer = (
+                "Unkknown error occurred when running the command. Please double check syntax "
+                "and that you're not running an interactive command."
+            )
+            self.logger.warning("Couldn't get real exit code. Setting it to 999")
+            exit_code = 999
+        elif not exit_code.isdigit():
+            msg = f"Failed to get exit code. Output:\n---\n{buffer}\n---"
+            raise RuntimeError(msg)
         self.returncode = int(exit_code)
         return buffer
 
     def _communicate(
         self,
         input: str,
-        timeout_duration=25,
+        timeout_duration: int | float = 25,
     ) -> str:
+        """Runs command in container and returns output
+
+        Args:
+            input: command to run in container
+            timeout_duration: duration to wait for output
+        """
         assert self.container is not None
         communicate_method = keys_config.get(
             "SWE_AGENT_COMMUNICATE_METHOD", default="end-marker", choices=["end-marker", "processes"]
@@ -730,28 +756,30 @@ class SWEEnv(gym.Env):
             self.logger.error(f"Read with timeout failed on input:\n---\n{input}\n---")
             raise e
         if not exit_code.isdigit():
-            msg = f"Failed to get exit code. Failed to get exit code. Output:\n---\n{buffer}\n---"
+            msg = f"Failed to get exit code. Output:\n---\n{buffer}\n---"
             raise RuntimeError(msg)
         self.returncode = int(exit_code)
         return buffer
 
-    def _check_syntax(self, input: str):
+    def _check_syntax(self, input: str) -> tuple[str, bool]:
         """
-        Saves environment variables to file
+        Check syntax of command.
+
+        Returns:
+            output: Output of the command
+            success: whether the exit code was 0
         """
         output = self._communicate(f"/bin/bash -n <<'EOF'\n{input}\nEOF\n")
         return output, self.returncode == 0
 
-    def communicate(
-        self,
-        input: str,
-        timeout_duration=25,
-    ) -> str:
+    def communicate(self, input: str, timeout_duration: int | float = 25, *, set_last_action: bool = False) -> str:
         """
         Sends input to container and returns output
 
         Args:
             input: input to send to container
+            timeout_duration: duration to wait for output
+            set_last_action: whether to set the LAST_ACTION environment variable
 
         Returns:
             output: output from container
@@ -767,6 +795,12 @@ class SWEEnv(gym.Env):
             )
             self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
             self.communicate_output = output
+            if set_last_action:
+                # Cannot merge this with last command, because of multiline command
+                # handling.
+                last_action_string = shlex.quote(input.strip())
+                input = f"export LAST_ACTION={last_action_string}"
+                self._communicate(input, timeout_duration=5)
             return output
         else:
             self.container.terminate()
@@ -774,7 +808,7 @@ class SWEEnv(gym.Env):
             self.communicate_output = ""
             return ""
 
-    def communicate_with_handling(self, input: str, error_msg: str, timeout_duration=25) -> str:
+    def communicate_with_handling(self, input: str, error_msg: str, timeout_duration: int | float = 25) -> str:
         """
         Wrapper for communicate function that raises error if return code is non-zero
 
@@ -802,7 +836,7 @@ class SWEEnv(gym.Env):
         """
         return []
 
-    def get_pids(self, all_pids=False) -> list[str]:
+    def get_pids(self, all_pids: bool = False) -> list[str]:
         """
         Gets list of processes running inside docker container
 
@@ -819,7 +853,7 @@ class SWEEnv(gym.Env):
             pids = [x for x in pids if x[1] != "ps" and x[0] not in self.parent_pids]
         return pids
 
-    def get_submission(self, output: str) -> str:
+    def get_submission(self, output: str) -> str | None:
         """
         Function for extracting diff patch submission at the end of an episode.
 
@@ -891,7 +925,7 @@ class SWEEnv(gym.Env):
                 raise ValueError(msg)
         else:
             try:
-                return MAP_VERSION_TO_INSTALL[self.record["repo"]][str(self.record["version"])]
+                return MAP_REPO_VERSION_TO_SPECS[self.record["repo"]][str(self.record["version"])]
             except KeyError as e:
                 msg = (
                     "Tried to look up install configs in swe-bench, but failed. "
@@ -1077,7 +1111,7 @@ class SWEEnv(gym.Env):
                 msg = f"Invalid command type: {command['type']}"
                 raise ValueError(msg)
 
-    def interrupt(self):
+    def interrupt(self) -> None:
         """
         Send interrupt signal to container and exhaust stdout buffer with a communicate call
         """
@@ -1098,7 +1132,7 @@ class SWEEnv(gym.Env):
             msg = "Failed to interrupt container"
             raise RuntimeError(msg)
 
-    def open_pr(self, *, trajectory, _dry_run: bool = False):
+    def open_pr(self, *, trajectory, _dry_run: bool = False) -> None:
         """Create PR to repository
 
         Args:
@@ -1132,8 +1166,12 @@ class SWEEnv(gym.Env):
             timeout_duration=10,
         )
         dry_run_flag = "--allow-empty" if _dry_run else ""
+        commit_msg = [
+            shlex.quote("Fix: {issue.title}"),
+            shlex.quote("Closes #{issue.number}"),
+        ]
         self.communicate_with_handling(
-            input=f"git commit -m 'Fix: {issue.title}' -m 'Closes #{issue.number}' {dry_run_flag}",
+            input=f"git commit -m {commit_msg[0]} -m  {commit_msg[1]} {dry_run_flag}",
             error_msg="Failed to commit changes",
             timeout_duration=10,
         )
