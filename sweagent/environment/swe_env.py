@@ -425,10 +425,13 @@ class SWEEnv(gym.Env):
 
     def _get_edited_files_with_context(self, patch: str) -> dict[str, str]:
         """Get the edited files with context from the patch"""
-        pf = PatchFormatter(patch, read_method=self.read_file)
+        pf = PatchFormatter(patch, read_method=self.read_file) if patch else None
         out = {}
         for context_length in [30, 50, 70]:
-            out[f"edited_files{context_length}"] = pf.get_files_str(original=False, context_length=context_length)
+            value = "Empty. No edited files found."
+            if pf is not None:
+                value = pf.get_files_str(original=False, context_length=context_length)
+            out[f"edited_files{context_length}"] = value
         return out
 
     def step(self, action: str) -> tuple[str | None, int, bool, AgentInfo]:
@@ -445,6 +448,8 @@ class SWEEnv(gym.Env):
             info: additional information (e.g. debugging information)
         """
         info: AgentInfo = {}
+        # Make sure to have the right keys even if the submission is missing/empty
+        info.update(self._get_edited_files_with_context(patch=""))  # type: ignore
 
         observation = ""
         # Handle special actions
@@ -460,8 +465,7 @@ class SWEEnv(gym.Env):
                 self.logger.info(f"Found submission: {submission}")
                 info["exit_status"] = f"submitted ({action})"
                 info["submission"] = submission
-                for k, v in self._get_edited_files_with_context(patch=submission).items():
-                    info[k] = v
+                info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
                 observation = "Exited (autosubmitted)"
                 self.logger.info("Exiting with autosubmission")
                 return observation, 0, True, info
@@ -508,8 +512,7 @@ class SWEEnv(gym.Env):
             self.logger.info(f"Found submission: {submission}")
             info["exit_status"] = "submitted"
             info["submission"] = submission if submission.strip() != "" else None
-            for k, v in self._get_edited_files_with_context(patch=submission).items():
-                info[k] = v
+            info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
             observation = submission if submission.strip() != "" else None
             return observation, 0, True, info
         return observation, 0, False, info
