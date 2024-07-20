@@ -126,6 +126,8 @@ review_loop_config:
       Determine if the problem persists.
 
       If you believe the problem has been resolved, answer "success". If you believe the problem persists, answer "fail".
+
+      THE LAST LINE OF YOUR RESPONSE MUST BE EITHER "SUCCESS" OR "FAIL".
     instance_template: |
       INPUT 1: Problem statement
 

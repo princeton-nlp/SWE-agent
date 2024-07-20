@@ -66,6 +66,9 @@ class ReviewSubmission:
         for k, v in self.info.items():
             if isinstance(v, str):
                 out[f"{k}{suffix}"] = v
+            elif isinstance(v, dict):
+                for k2, v2 in v.items():
+                    out[f"{k}_{k2}{suffix}"] = v2
         return out
 
 

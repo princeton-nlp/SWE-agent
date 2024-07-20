@@ -146,6 +146,9 @@ class BinaryReviewerConfig(FrozenSerializable):
     traj_filter: list[str] = field(default_factory=list)
     #: Format of the trajectory item
     traj_item_template: str = "Model: {response}\n\nObservation: {observation}"
+    traj_output_filter: list[str] = field(default_factory=list)
+    traj_filter_failed_edits: bool = False
+    traj_only_show_last_n_output: int = 0
 
 
 @dataclass(frozen=True)
@@ -177,7 +180,6 @@ class ReviewLoopConfig(FrozenSerializable):
 # --- IMPLEMENTATIONS ---
 
 
-# fixme: Reviewer should insta-reject on exit_cost
 class Reviewer(AbstractReviewer):
     LOG_PREFIX = "🧑‍⚖️ Reviewer: "
 
@@ -241,12 +243,14 @@ class TrajectoryFormatter:
         traj_output_filter: list[str] | None = None,
         traj_item_template: str = "Model: {response}\n\nObservation: {observation}",
         filter_failed_edits: bool = False,
+        only_show_last_n_output: int = 0,
     ):
         """Formats trajectories for the use in prompts"""
         self._traj_filter = traj_filter or []
         self._traj_output_filter = traj_output_filter or []
         self._traj_item_template = traj_item_template
         self._filter_failed_edits = filter_failed_edits
+        self._only_show_last_n_output = only_show_last_n_output
 
     def _include_step(self, item: TrajectoryStep) -> bool:
         action = item["action"].strip()
@@ -257,16 +261,18 @@ class TrajectoryFormatter:
             return False
         return True
 
-    def _include_step_output(self, item: TrajectoryStep) -> bool:
+    def _include_step_output(self, item: TrajectoryStep, i_step: int, n_steps: int) -> bool:
+        if self._only_show_last_n_output > 0 and i_step < n_steps - self._only_show_last_n_output:
+            return False
         action = item["action"].strip()
         for f in self._traj_output_filter:
             if action.startswith(f):
                 return False
         return True
 
-    def _format_trajectory_step(self, step: TrajectoryStep, i_step: int, i_traj: int = 1) -> str:
+    def _format_trajectory_step(self, step: TrajectoryStep, i_step: int, *, n_steps: int, i_traj: int = 1) -> str:
         step = copy.deepcopy(step)
-        if not self._include_step_output(step):
+        if not self._include_step_output(step, i_step, n_steps=n_steps):
             step["observation"] = "[Output omitted]"
         return self._traj_item_template.format(
             **step,
@@ -277,7 +283,10 @@ class TrajectoryFormatter:
     def format_trajectory(self, trajectory: Trajectory, i_traj: int = 1) -> str:
         traj_messages = [step for step in trajectory if self._include_step(step)]
         return "\n\n".join(
-            [self._format_trajectory_step(step, i_step, i_traj=i_traj) for i_step, step in enumerate(traj_messages)]
+            [
+                self._format_trajectory_step(step, i_step, i_traj=i_traj, n_steps=len(traj_messages))
+                for i_step, step in enumerate(traj_messages)
+            ]
         )
 
 
@@ -290,6 +299,9 @@ class BinaryReviewer(AbstractBinaryReviewer):
         self._traj_formatter = TrajectoryFormatter(
             traj_filter=config.traj_filter,
             traj_item_template=config.traj_item_template,
+            traj_output_filter=config.traj_output_filter,
+            filter_failed_edits=config.traj_filter_failed_edits,
+            only_show_last_n_output=config.traj_only_show_last_n_output,
         )
 
     def format_messages(self, instance: INSTANCE_TYPE, sub1: ReviewSubmission, sub2: ReviewSubmission):
