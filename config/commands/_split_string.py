@@ -14,10 +14,13 @@ Where:
     <n_lines> is the number of lines added in the edit
 """
 
+# ruff: noqa: UP007 UP006 UP035
+
 from __future__ import annotations
 
 import sys
 from dataclasses import dataclass
+from typing import List, Optional, Tuple
 
 
 @dataclass
@@ -37,8 +40,8 @@ class Flake8Error:
 
 
 def _update_previous_errors(
-    previous_errors: list[Flake8Error], replacement_window: tuple[int, int], replacement_n_lines: int
-) -> list[Flake8Error]:
+    previous_errors: List[Flake8Error], replacement_window: tuple[int, int], replacement_n_lines: int
+) -> List[Flake8Error]:
     """Update the line numbers of the previous errors to what they would be after the edit window.
     This is a helper function for `_filter_previous_errors`.
 
@@ -74,8 +77,8 @@ def format_flake8_output(
     show_line_numbers: bool = False,
     *,
     previous_errors_string: str = "",
-    replacement_window: tuple[int, int] | None = None,
-    replacement_n_lines: int | None = None,
+    replacement_window: Optional[Tuple[int, int]] = None,
+    replacement_n_lines: Optional[int] = None,
 ) -> str:
     """Filter flake8 output for previous errors and print it for a given file.
 
