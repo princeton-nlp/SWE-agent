@@ -124,9 +124,9 @@ class ReviewerConfig(FrozenSerializable):
 
     system_template: str
     instance_template: str
-    #: If a submission autosubmits because of total cost, it will be automatically
-    #: rejected
-    reject_exit_cost: bool = True
+    #: If a submission autosubmits because of total cost or a similar exit status,
+    #: it will be desk rejected
+    reject_exit_status: bool = True
     #: Filter the following actions from the trajectory
     traj_filter: list[str] = field(default_factory=list)
     #: Filter outputs from the following actions from the trajectory
@@ -240,8 +240,8 @@ class Reviewer(AbstractReviewer):
         if not exit_status:
             answer = "No exit status in submission, will reject."
             accept = False
-        elif self._config.reject_exit_cost and "exit_cost" in exit_status:
-            answer = "Submission rejected because of exit cost."
+        elif self._config.reject_exit_status and exit_status.strip() != "submitted":
+            answer = f"Submission desk-rejected because of exit status {exit_status!r}."
             accept = False
         else:
             messages = self.format_messages(instance, submission)
