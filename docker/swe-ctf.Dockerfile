@@ -44,7 +44,7 @@ RUN unzip -d /usr/local jadx-1.4.7.zip
 RUN rm -f jadx-1.4.7.zip
 
 # Install wine & wine32
-# RUN dpkg --add-architecture i386 && apt update && apt install -y wine wine32
+RUN dpkg --add-architecture i386 && apt update && apt install -y wine wine32
 
 # Install ghidra
 RUN cd /opt \
