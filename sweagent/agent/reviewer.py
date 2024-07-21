@@ -467,7 +467,7 @@ class ReviewLoop(AbstractReviewLoop):
             logger.info(f"{self.LOG_PREFIX}Exiting retry loop ({stat_str}): `max_samples` reached")
             return False
 
-        if self._reviews[-1].accept and self._n_samples >= self._loop_config.min_draws:
+        if self._n_accepted and self._n_samples >= self._loop_config.min_draws:
             logger.info(
                 f"{self.LOG_PREFIX}Existing retry loop ({stat_str}): `min_draws` reached and last submission was accepted"
             )
