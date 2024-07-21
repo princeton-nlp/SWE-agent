@@ -29,9 +29,7 @@ RUN apt-get update && apt-get install -y \
 # Install radare2
 WORKDIR /tmp
 RUN apt-get update && apt-get install -y curl netcat qemu-user qemu-user-static
-RUN wget https://github.com/radareorg/radare2/releases/download/5.8.8/radare2_5.8.8_${TARGETARCH}.deb && \
-        apt-get install -y ./radare2_5.8.8_${TARGETARCH}.deb && \
-        rm -rf ./radare2_5.8.8_${TARGETARCH}.deb
+RUN curl -Ls https://github.com/radareorg/radare2/releases/download/5.8.8/radare2-5.8.8.tar.xz | tar xJv radare2-5.8.8/sys/install.sh
 
 # Sagemath
 RUN apt-get install -y sagemath
@@ -54,6 +52,7 @@ RUN cd /opt \
     && unzip ghidra.zip \
     && rm -f ghidra.zip
 ENV PATH=$PATH:/opt/ghidra_11.0.1_PUBLIC/support:/opt/ghidra_11.0.1_PUBLIC/Ghidra
+COPY docker/ghidra_scripts /ghidra_scripts
 
 # Install python requirements
 ENV PIP_NO_CACHE_DIR=1

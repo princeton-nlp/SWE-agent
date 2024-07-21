@@ -1,0 +1,96 @@
+#!/root/miniconda3/bin/python
+
+# @yaml
+# signature: decompile <binary_path> <function_name>
+# docstring: Decompile a binary and prints the decompilation of a given function name
+# arguments:
+#   binary_path:
+#       type: file path
+#       description: The path to the binary to be decompiled
+#       required: true
+#   function_name:
+#       type: string
+#       description: The function name to be decompiled, or main by default
+#       required: false
+
+import argparse
+import subprocess
+import re
+import json
+import tempfile
+from typing import Annotated
+from pathlib import Path
+
+GHIDRA_BINARY = "analyzeHeadless"
+
+class Decompile:
+    def __init__(self):
+        self._decomp_cache = {}
+
+    def __call__(self,
+                 path: Annotated[str,"path to the binary to decompile"],
+                 function: Annotated[str,"the function to decompile"] = 'main'):
+        """Decompile a function from a binary using Ghidra."""
+        if path is None or not Path(path).is_file():
+            return f"Error: Binary {path} does not exist! Please try again with a real binary file."
+        if function is None:
+            function = "main"
+        return self.decompile(path, function)
+
+    def find_function(self, dis, function):
+        if function in dis["functions"]:
+            return dis["functions"][function]
+        # Looking for main entry point, so try other names also
+        if function == "main":
+            if "_start" in dis["functions"]:
+                return dis["functions"]["_start"]
+            if "invoke_main" in dis["functions"]:
+                return dis["functions"]["invoke_main"]
+        # Check if requesting radare2 unnamed function with address
+        if re.match(r"fcn\.[0-9a-f]+$", function):
+            addr = function[4:]
+            if addr in dis["addresses"]:
+                return dis["functions"][dis["addresses"][addr]]
+        # Nothing found
+        return None
+
+    def decompile(self, binary, function):
+        # Look for the decompilation output in "decomp"
+        basename = Path(binary).name
+        if basename not in self._decomp_cache:
+            decomp_output = Path(f"decomp/{basename}.decomp.json")
+            if decomp_output.exists():
+                self._decomp_cache[basename] = json.loads(decomp_output.read_text())
+            else:
+                if not self.run_ghidra(basename, decomp_output):
+                    return f"Error: Decompilation for {binary} not available"
+                self._decomp_cache[basename] = json.loads(decomp_output.read_text())
+
+        if found := self.find_function(self._decomp_cache[basename], function):
+            return f"Decompilation Found!\n{found}"
+        else:
+            return f"Error: Function {function} not found in {binary}.\nThese are the available functions found: {", ".join(self._decomp_cache[basename]['functions'].keys())}"
+
+    def run_ghidra(self, binary, output):
+        real_binary = Path(binary)
+        if not real_binary or not real_binary.exists():
+            return False
+        output.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir = Path(tmpdir)
+            subprocess.run(
+                [GHIDRA_BINARY, tmpdir, "DummyProj", "-scriptpath", '/ghidra_scripts',
+                 "-import", real_binary, "-postscript", "DecompileToJson.java", output],
+                check=False, capture_output=True,
+            )
+            return output.exists()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Print the contents of a Python file, skipping lengthy function and method definitions."
+    )
+    parser.add_argument("file_path", type=str, help="The path to the binary to be decompiled")
+    parser.add_argument("--function_name", type=str, help="The function name to be decompiled", required=False, default="main")
+    args = parser.parse_args()
+    print(Decompile()(args.file_path, args.function_name))

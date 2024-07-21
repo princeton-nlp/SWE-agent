@@ -99,5 +99,6 @@ command_files:
 - config/commands/edit_linting.sh
 - config/commands/_split_string.py
 - config/commands/submit_ctf.sh
+- config/commands/decompile.py
 parse_command: ParseCommandDetailed
 history_processor: Last5Observations
