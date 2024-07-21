@@ -104,7 +104,10 @@ exclude = [
     "node_modules",
     "site-packages",
     "venv",
+    # ---- project specific ----
     "tests/test_data",
+    # Exclude commands so they don't get the __future__ imports
+    "config/commands",
 ]
 
 line-length = 120

@@ -16,8 +16,6 @@ Where:
 
 # ruff: noqa: UP007 UP006 UP035
 
-from __future__ import annotations
-
 import sys
 from dataclasses import dataclass
 from typing import List, Optional, Tuple

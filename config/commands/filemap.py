@@ -9,8 +9,6 @@
 #       description: The path to the file to be read
 #       required: true
 
-from __future__ import annotations
-
 import argparse
 import warnings
 
