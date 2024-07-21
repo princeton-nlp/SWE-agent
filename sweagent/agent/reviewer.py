@@ -167,14 +167,32 @@ class ReviewLoopConfig(FrozenSerializable):
     reviewer_classname: str | None = None
     binary_reviewer_classname: str | None = None
     gtc_classname: str = ""
+    #: Maximal number of attempts
     max_samples: int = 2
+    #: Minimal number of attempts.
     min_draws: int = 1
+    #: For use together with a `min_draws > 1`. Even if we have
+    #: not reached the `min_draws`, we will stop if we have accepted
+    #: `max_accepted_draws` submissions.
     max_accepted_draws: int = 0
 
     def validate(self):
+        """Checks config. Raises `ValueError` in case of misconfiguration"""
+        if self.min_draws < 1:
+            msg = "`min_draws` must be at least 1"
+            raise ValueError(msg)
+        if self.max_samples < 1:
+            msg = "`max_samples` must be at least 1"
+            raise ValueError(msg)
+        if self.max_samples < self.min_draws:
+            msg = "`max_samples` must be greater than or equal to `min_draws`"
+            raise ValueError(msg)
         if self.max_accepted_draws > self.min_draws:
             msg = "`max_accepted_draws` must be less than or equal to `min_draws`, else it has no effect"
             raise ValueError(msg)
+
+    def __post_init__(self):
+        self.validate()
 
 
 # --- IMPLEMENTATIONS ---
@@ -463,17 +481,22 @@ class ReviewLoop(AbstractReviewLoop):
 
     def retry(self) -> bool:
         stat_str = f"n_samples={self._n_samples}, n_accepted={self._n_accepted}"
+        # n_samples is 1-based
         if self._n_samples >= self._loop_config.max_samples:
+            # We've exceeded our budget. Returning best solution no matter what.
             logger.info(f"{self.LOG_PREFIX}Exiting retry loop ({stat_str}): `max_samples` reached")
             return False
 
         if self._n_accepted and self._n_samples >= self._loop_config.min_draws:
+            # We have an accepted submission and have reached the minimum number of draws
             logger.info(
                 f"{self.LOG_PREFIX}Existing retry loop ({stat_str}): `min_draws` reached and last submission was accepted"
             )
             return False
 
         if self._n_accepted >= self._loop_config.max_accepted_draws > 0:
+            # We have reached more than the required number of accepted submissions.
+            # Exiting even if we haven't reached the minimum number of draws.
             logger.info(f"{self.LOG_PREFIX}Exiting retry loop ({stat_str}): `max_accepted_draws` reached")
             return False
 
