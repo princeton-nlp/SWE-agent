@@ -160,6 +160,7 @@ review_loop_config:
       For example:
 
       Investigation 1 Step 1 action:
+      DISCUSSION
       We have found a bug in the code. Let's try to reproduce it.
       ```
       create reproduce.py
@@ -171,7 +172,7 @@ review_loop_config:
       After the command, there is a description of the output of the command ("Step {i} output: ").
       The most important actions are
 
-      -  `open {file}`: This action opens the file {file}. The output of the command shows part of the content of the file.
+      - `open {file}`: This action opens the file {file}. The output of the command shows part of the content of the file.
       - `edit {from}:{to}`, followed by the content to replace lines {from} to {to}. This action always affects the currently
         opened file. The output of the command is the content of the file after the edit.
       - `python {file}`: This action executes the Python script {file}. The output of the command is the output of the script.
@@ -248,6 +249,12 @@ review_loop_config:
 
       {traj1}
 
+      This is the final patch of investigation 1:
+
+      ```
+      {submission1}
+      ```
+
       ========================
       INPUT 3: Investigation 2
       ========================
@@ -255,6 +262,13 @@ review_loop_config:
       Investigation 2 used {model_stats_api_calls2} API calls to fix the problem. The investigation is as follows:
 
       {traj2}
+
+      This is the final patch of investigation 2:
+
+      ```
+      {submission2}
+      ```
+
     traj_only_show_last_n_output: 3
     traj_item_template: |
       Investigation {i_traj} Step {i_step}:

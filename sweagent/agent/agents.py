@@ -959,6 +959,8 @@ class Agent:
         observations: list[str | None] = list()
         for sub_action in self.split_actions(run_action):
             observation, done = self._run_sub_action(sub_action)
+            # If the last sub-action is done, the observation is not
+            # appended.
             if done:
                 break
             observations.append(observation)
