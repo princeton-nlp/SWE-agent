@@ -12,7 +12,7 @@
         <link rel="prev" href="..">
       
       
-        <link rel="next" href="overview/">
+        <link rel="next" href="aci/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -302,8 +302,6 @@
       
         
       
-        
-      
     
     
     
@@ -340,27 +338,6 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="overview/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Overview
-  </span>
-  
-
-      </a>
-    </li>
-  
-
               
             
               
@@ -1288,8 +1265,22 @@
 
 
 <h1 id="learn-more-about-the-swe-agent-project">Learn more about the SWE-agent project.</h1>
-<p>This section of the documentation talks about the architecture, research goals and general direction of the project.</p>
-<p>Want to just run it? Skip ahead to our <a href="../installation/">installation notes</a>.</p>
+<p>This section of the documentation talks about the architecture and research goals of SWE-agent.</p>
+<p>Just want to run SWE-agent? Skip ahead to our <a href="../installation/">installation notes</a>.</p>
+<p>SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix issues in GitHub repositories.</p>
+<p>On <a href="https://github.com/princeton-nlp/SWE-bench">SWE-bench</a>, SWE-agent resolves <strong>12.29%</strong> of issues, achieving the state-of-the-art performance on the full test set.</p>
+<p>We accomplish our results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, view, edit and execute code files. We call this an 🤖 <strong>Agent-Computer Interface (ACI)</strong>.
+Read more about the ACI <a href="aci/">here</a>.</p>
+<p>SWE-agent is built and maintained by researchers from Princeton University.</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/CeMtJ4XObAM?si=W2tyY9EpEe-v12EU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<p>If you found this work helpful, please consider using the following citation:</p>
+<div class="highlight"><pre><span></span><code>@misc{yang2024sweagent,
+      title={SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering},
+      author={John Yang and Carlos E. Jimenez and Alexander Wettig and Kilian Lieret and Shunyu Yao and Karthik Narasimhan and Ofir Press},
+      year={2024},
+}
+</code></pre></div>
 
 
 
@@ -1336,13 +1327,13 @@
         
         
           
-          <a href="overview/" class="md-footer__link md-footer__link--next" aria-label="Next: Overview">
+          <a href="aci/" class="md-footer__link md-footer__link--next" aria-label="Next: Agent-Computer Interface">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Overview
+                Agent-Computer Interface
               </div>
             </div>
             <div class="md-footer__button md-icon">
