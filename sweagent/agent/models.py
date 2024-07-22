@@ -225,6 +225,11 @@ class OpenAIModel(BaseModel):
             "cost_per_input_token": 5e-06,
             "cost_per_output_token": 15e-06,
         },
+        "gpt-4o-mini": {
+            "max_context": 128_000,
+            "cost_per_input_token": 5e-06,
+            "cost_per_output_token": 15e-06,
+        },
     }
 
     SHORTCUTS = {
