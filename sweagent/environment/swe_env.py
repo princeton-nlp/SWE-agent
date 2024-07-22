@@ -1026,6 +1026,7 @@ class SWEEnv(gym.Env):
                 self.communicate_with_handling(
                     pre_install_cmd,
                     error_msg="Pre-install commands failed to execute successfully",
+                    timeout_duration=LONG_TIMEOUT,
                 )
             self.logger.debug("Ran pre-install commands")
         self.logger.info(f"Installing {self._repo_name} at base commit...")
