@@ -12,7 +12,7 @@ SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix b
 
     Learn more about the project goals and academic research.
 
-    [:octicons-arrow-right-24: Learn more](background/overview.md)
+    [:octicons-arrow-right-24: Learn more](background/index.md)
 
 -   :material-download:{ .lg .middle } __Installation__
 
