@@ -38,7 +38,7 @@ class Flake8Error:
 
 
 def _update_previous_errors(
-    previous_errors: List[Flake8Error], replacement_window: tuple[int, int], replacement_n_lines: int
+    previous_errors: List[Flake8Error], replacement_window: Tuple[int, int], replacement_n_lines: int
 ) -> List[Flake8Error]:
     """Update the line numbers of the previous errors to what they would be after the edit window.
     This is a helper function for `_filter_previous_errors`.
