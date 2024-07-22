@@ -951,14 +951,10 @@ class SWEEnv(gym.Env):
                 self.communicate(f"rm {PATH_TO_REQS}")
             elif packages == "environment.yml":
                 # Write environment.yml to file
-                if install_configs.get("no_use_env"):
-                    content_env_yml = get_environment_yml(self.record, env_name)
-                else:
-                    content_env_yml = get_environment_yml(
-                        self.record,
-                        env_name,
-                        python_version=install_configs["python"],
-                    )
+                content_env_yml = get_environment_yml(self.record, env_name)
+                # Hotfix for
+                if not install_configs.get("no_use_env"):
+                    content_env_yml += f'\n  - python={install_configs["python"]}\n'
                 copy_file_to_container(self.container_obj, content_env_yml, PATH_TO_ENV_YML)
                 if install_configs.get("no_use_env"):
                     # Create conda environment
