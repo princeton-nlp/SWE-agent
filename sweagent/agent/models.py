@@ -241,7 +241,7 @@ class OpenAIModel(BaseModel):
         "gpt3-0125": "gpt-3.5-turbo-0125",
         "gpt4-turbo": "gpt-4-turbo-2024-04-09",
         "gpt4o": "gpt-4o-2024-05-13",
-        "gpt-4o-mini": "gpt-4o-mini-2024-07-18"
+        "gpt-4o-mini": "gpt-4o-mini-2024-07-18",
     }
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
