@@ -33,6 +33,20 @@ python run.py --model_name ollama:deepseek-coder:6.7b-instruct \
   --config_file config/default_from_url.yaml
 ```
 
+### Qwen support
+
+When using the Qwen model, it operates with an OpenAI-compatible API. Therefore, you need to specify `OPENAI_API_KEY` and `OPENAI_API_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1` in the `keys.cfg` file. You can use the Qwen model by setting `--model_name` to `qwen`.
+
+```bash
+python run.py \
+  --model_name qwen \
+  --data_path https://github.com/SWE-agent/test-repo/issues/1 \
+  --config_file config/default_from_url.yaml \
+  --image_name=sweagent/swe-agent:latest
+```
+
+Refer to the documentation to obtain the `OPENAI_API_KEY`, see [here](https://help.aliyun.com/zh/dashscope/developer-reference/compatibility-of-openai-with-dashscope?spm=a2c4g.11186623.0.0.3eb75b785JJ2Nq).
+
 ### Models for testing
 
 We also provide models for testing SWE-agent without spending any credits

@@ -225,6 +225,11 @@ class OpenAIModel(BaseModel):
             "cost_per_input_token": 5e-06,
             "cost_per_output_token": 15e-06,
         },
+        "qwen-plus-0624": {
+            "max_context": 30_000,
+            "cost_per_input_token": 4e-06,
+            "cost_per_output_token": 1.2e-05,
+        },
     }
 
     SHORTCUTS = {
@@ -236,6 +241,7 @@ class OpenAIModel(BaseModel):
         "gpt3-0125": "gpt-3.5-turbo-0125",
         "gpt4-turbo": "gpt-4-turbo-2024-04-09",
         "gpt4o": "gpt-4o-2024-05-13",
+        "qwen": "qwen-plus-0624",
     }
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
