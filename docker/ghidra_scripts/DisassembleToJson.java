@@ -105,11 +105,45 @@ public class DisassembleToJson extends GhidraScript {
         return offsetStr;
     }
 
+    public String find_main(HashMap<String, String> function_map) {
+        // Find the `main` function from the `__libc_start_main` call
+        if (!function_map.containsKey("entry")) return null;
+        String entry =  function_map.get("entry");
+        int libc = entry.indexOf("CALL        <EXTERNAL>::__libc_start_main");
+        if (libc == -1) {
+            // Does not have symbol for __libc_start_main
+            // These two instructions are checked:
+            //     PUSH <func-ptr>
+            //     CALL <start-func>
+            // The <func-ptr> is the main function.
+            libc = entry.indexOf("CALL        FUN_");
+            if (libc == -1) return null;
+            entry = entry.substring(0, libc);
+            int push = entry.lastIndexOf("PUSH        FUN_");
+            if (push == -1) return null;
+            int funcend = entry.indexOf('\n', push);
+            return entry.substring(push + 12, funcend);
+        } else {
+            // Has symbol for __libc_start_main
+            // These two instructions are checked:
+            //     MOV RDI,<func-ptr>
+            //     CALL EXTERNAL::__libc_start_main
+            // The <func-ptr> is the main function.
+            entry = entry.substring(0, libc);
+            int rdi = entry.lastIndexOf("MOV         RDI,");
+            if (rdi == -1) return null;
+            int funcend = entry.indexOf('\n', rdi);
+            if (funcend == -1) return null;
+            return entry.substring(rdi + 16, funcend);
+        }
+    }
+
     public void export(String filename) {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         File outputFile = new File(filename);
         HashMap<String, String> function_map = new HashMap<String, String>();
         HashMap<String, String> address_map = new HashMap<String, String>();
+        String main_func = null;
 
         // Formatter for disassembled code
         TemplateSimplifier simplifier = new TemplateSimplifier();
@@ -241,9 +275,14 @@ public class DisassembleToJson extends GhidraScript {
             address_map.put(func.getEntryPoint().toString(), func.getName());
         }
 
-        HashMap<String, HashMap<String, String>> json_data = new HashMap<String, HashMap<String, String>>();
+        if (!function_map.containsKey("main"))
+            main_func = find_main(function_map);
+
+        HashMap<String, Object> json_data = new HashMap<String, Object>();
         json_data.put("functions", function_map);
         json_data.put("addresses", address_map);
+        if (main_func != null)
+            json_data.put("main", main_func);
         // Convert the HashMap to JSON
         String json = gson.toJson(json_data);
 

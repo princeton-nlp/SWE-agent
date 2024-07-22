@@ -1,16 +1,16 @@
 #!/root/miniconda3/bin/python
 
 # @yaml
-# signature: decompile <binary_path> <function_name>
-# docstring: Decompile a binary and prints the decompilation of a given function name
+# signature: disassemble <binary_path> <function_name>
+# docstring: Disassembles a binary and prints the disassembly of a given function name
 # arguments:
 #   binary_path:
 #       type: file path
-#       description: The path to the binary to be decompiled
+#       description: The path to the binary to be disassembled
 #       required: true
 #   function_name:
 #       type: string
-#       description: The function name to be decompiled, or main by default
+#       description: The function name to be disassembled, or main by default
 #       required: false
 
 import argparse
@@ -23,19 +23,19 @@ from pathlib import Path
 
 GHIDRA_BINARY = "analyzeHeadless"
 
-class Decompile:
+class Disassemble:
     def __init__(self):
         pass
 
     def __call__(self,
-                 path: Annotated[str,"path to the binary to decompile"],
-                 function: Annotated[str,"the function to decompile"] = 'main'):
-        """Decompile a function from a binary using Ghidra."""
+                 path: Annotated[str,"path to the binary to disassemble"],
+                 function: Annotated[str,"the function to disassemble"] = 'main'):
+        """Disassemble a function from a binary using Ghidra."""
         if path is None or not Path(path).is_file():
             return f"Error: Binary {path} does not exist! Please try again with a real binary file."
         if function is None:
             function = "main"
-        return self.decompile(path, function)
+        return self.disassemble(path, function)
 
     def find_function(self, dis, function):
         """Returns the name of the function found in the dict"""
@@ -59,24 +59,24 @@ class Decompile:
         # Nothing found
         return None
 
-    def decompile(self, binary, function):
-        # Look for the decompilation output in "decomp"
+    def disassemble(self, binary, function):
+        # Look for the disassembly output in "disas"
         basename = Path(binary).name
-        decomp_output = Path(f"ghidra_out/{basename}.decomp.json")
-        if not decomp_output.exists():
-            if not self.run_ghidra(basename, decomp_output):
-                return f"Error: Decompilation for {binary} not available"
-        self.ghidra_out = json.loads(decomp_output.read_text())
+        disas_output = Path(f"ghidra_out/{basename}.disas.json")
+        if not disas_output.exists():
+            if not self.run_ghidra(basename, disas_output):
+                return f"Error: Disassembly for {binary} not available"
+        self.ghidra_out = json.loads(disas_output.read_text())
 
         if found := self.find_function(self.ghidra_out, function):
             ret = self.ghidra_out["functions"][found]
             if found == function:
                 # Exact name found
-                return f"Decompilation Found!\n{ret}"
+                return f"Disassembly Found!\n{ret}"
             else:
-                return f"Function {function} not found! Instead, here is the decompilation of equivalent function {found}:\n{ret}"
+                return f"Function {function} not found! Instead, here is the disassembly of equivalent function {found}:\n{ret}"
         else:
-            funclist = ", ".join(self.ghidra_out['functions'].keys())
+            funclist = ", ".join(self.ghidra_out["functions"].keys())
             return f"Error: Function {function} not found in {binary}.\nThese are the available functions found: {funclist}"
 
     def run_ghidra(self, binary, output):
@@ -88,7 +88,7 @@ class Decompile:
             tmpdir = Path(tmpdir)
             subprocess.run(
                 [GHIDRA_BINARY, tmpdir, "DummyProj", "-scriptpath", '/ghidra_scripts',
-                 "-import", real_binary, "-postscript", "DecompileToJson.java", output],
+                 "-import", real_binary, "-postscript", "DisassembleToJson.java", output],
                 check=False, capture_output=True,
             )
             return output.exists()
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Print the contents of a Python file, skipping lengthy function and method definitions."
     )
-    parser.add_argument("file_path", type=str, help="The path to the binary to be decompiled")
-    parser.add_argument("--function_name", type=str, help="The function name to be decompiled", required=False, default="main")
+    parser.add_argument("file_path", type=str, help="The path to the binary to be disassembled")
+    parser.add_argument("--function_name", type=str, help="The function name to be disassembled", required=False, default="main")
     args = parser.parse_args()
-    print(Decompile()(args.file_path, args.function_name))
+    print(Disassemble()(args.file_path, args.function_name))
