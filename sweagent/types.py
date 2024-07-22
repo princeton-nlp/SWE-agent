@@ -69,7 +69,7 @@ class ReviewSubmission:
             # Observed that not all exit_cost lead to autosubmission
             # so sometimes this might be missing.
             info["submission"] = ""
-        for k, v in info:
+        for k, v in info.items():
             if isinstance(v, str):
                 out[f"{k}{suffix}"] = v
             elif isinstance(v, dict):
