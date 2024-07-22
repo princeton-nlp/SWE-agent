@@ -6,6 +6,7 @@ because of circular dependencies.
 
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass
 from typing import Any, Literal, TypedDict
 
@@ -63,7 +64,12 @@ class ReviewSubmission:
         messages. Trajectory is excluded because it needs special treatment.
         """
         out = {}
-        for k, v in self.info.items():
+        info = copy.deepcopy(self.info)
+        if not info.get("submission"):
+            # Observed that not all exit_cost lead to autosubmission
+            # so sometimes this might be missing.
+            info["submission"] = ""
+        for k, v in info:
             if isinstance(v, str):
                 out[f"{k}{suffix}"] = v
             elif isinstance(v, dict):
