@@ -22,7 +22,7 @@ This is the <a href="https://leetcode.com/problems/first-missing-positive/">firs
 </details>
 
 Second, we need to specify a repository wherein SWE-agent will work.
-Here, we can simply create an empty folder, and add a `main.py` file
+Here, we can simply create an empty folder (outside of the SWE-agent repository), and add a `main.py` file
 
 ```bash
 mkdir empty
