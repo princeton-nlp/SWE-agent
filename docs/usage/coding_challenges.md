@@ -59,7 +59,7 @@ python run.py \
     --repo_path /path/to/empty \
     --config_file config/coding_challenge.yaml \
     --model gpt4 \
-    --cost_limit 3.0
+    --per_instance_cost_limit 3.0
 ```
 
 <details>
