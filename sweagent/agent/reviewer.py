@@ -175,6 +175,9 @@ class ReviewLoopConfig(FrozenSerializable):
     #: not reached the `min_draws`, we will stop if we have accepted
     #: `max_accepted_draws` submissions.
     max_accepted_draws: int = 0
+    #: If set > 0 and there are more than this number of consecutive attempts
+    #: with an 'exit cost' exit stats, the review loop will quit.
+    max_n_consec_exit_cost: int = 0
 
     def validate(self):
         """Checks config. Raises `ValueError` in case of misconfiguration"""
@@ -423,6 +426,8 @@ class ReviewLoop(AbstractReviewLoop):
         # top through k calls to the binary reviewer. Here, we store the
         # corresponding index
         self._best_idx: int = 0
+        #: Number of consecutive exit cost submissions
+        self._n_consec_exit_cost: int = 0
 
     @property
     def reviews(self) -> list[ReviewerResult]:
@@ -452,6 +457,10 @@ class ReviewLoop(AbstractReviewLoop):
     def _review(self) -> bool:
         review = self._reviewer.review(self._instance, self._submissions[-1])
         self._reviews.append(review)
+        if "exit_cost" in self._submissions[-1].info.get("exit_status", "").lower():
+            self._n_consec_exit_cost += 1
+        else:
+            self._n_consec_exit_cost = 0
         return review.accept
 
     def _compare(self) -> None:
@@ -498,6 +507,13 @@ class ReviewLoop(AbstractReviewLoop):
             # We have reached more than the required number of accepted submissions.
             # Exiting even if we haven't reached the minimum number of draws.
             logger.info(f"{self.LOG_PREFIX}Exiting retry loop ({stat_str}): `max_accepted_draws` reached")
+            return False
+
+        max_n_exit_cost = self._loop_config.max_n_consec_exit_cost
+        if self._n_consec_exit_cost >= max_n_exit_cost > 0:
+            logger.info(
+                f"{self.LOG_PREFIX}Exiting retry loop ({stat_str}): {max_n_exit_cost} exit cost attempts reached"
+            )
             return False
 
         return True

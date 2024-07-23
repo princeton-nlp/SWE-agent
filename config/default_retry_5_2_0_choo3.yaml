@@ -279,3 +279,4 @@ review_loop_config:
   max_samples: 5
   min_draws: 2
   max_accepted_draws: 0
+  max_n_consec_exit_cost: 3
