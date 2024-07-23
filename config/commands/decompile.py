@@ -69,7 +69,7 @@ class Decompile:
         if found := self.find_function(self._decomp_cache[basename], function):
             return f"Decompilation Found!\n{found}"
         else:
-            return f"Error: Function {function} not found in {binary}.\nThese are the available functions found: {", ".join(self._decomp_cache[basename]['functions'].keys())}"
+            return f"Error: Function {function} not found in {binary}.\nThese are the available functions found: {', '.join(self._decomp_cache[basename]['functions'].keys())}"
 
     def run_ghidra(self, binary, output):
         real_binary = Path(binary)
