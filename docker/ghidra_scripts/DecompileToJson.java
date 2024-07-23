@@ -19,9 +19,21 @@ public class DecompileToJson extends GhidraScript {
         log = LogManager.getLogger(DecompileToJson.class);
     }
 
+    public String find_main(HashMap<String, String> function_map) {
+        // Find the `main` function from the `__libc_start_main` call
+        if (!function_map.containsKey("entry")) return null;
+        String entry =  function_map.get("entry");
+        int libc = entry.indexOf("__libc_start_main(");
+        if (libc == -1) return null;
+        int funcend = entry.indexOf(',', libc);
+        if (funcend == -1) return null;
+        return entry.substring(libc + 18, funcend);
+    }
+
     public void export(String filename) {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         File outputFile = new File(filename);
+        String main_func = null;
         HashMap<String, String> function_map = new HashMap<String, String>();
         HashMap<String, String> address_map = new HashMap<String, String>();
         DecompInterface ifc = new DecompInterface();
@@ -39,9 +51,15 @@ public class DecompileToJson extends GhidraScript {
             System.out.println(func.getName());
         }
 
-        HashMap<String, HashMap<String, String>> json_data = new HashMap<String, HashMap<String, String>>();
+        if (!function_map.containsKey("main"))
+            main_func = find_main(function_map);
+
+        //HashMap<String, HashMap<String, String>> json_data = new HashMap<String, HashMap<String, String>>();
+        HashMap<String, Object> json_data = new HashMap<String, Object>();
         json_data.put("functions", function_map);
         json_data.put("addresses", address_map);
+        if (main_func != null)
+            json_data.put("main", main_func);
         // Convert the HashMap to JSON
         String json = gson.toJson(json_data);
 

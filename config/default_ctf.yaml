@@ -100,5 +100,6 @@ command_files:
 - config/commands/_split_string.py
 - config/commands/submit_ctf.sh
 - config/commands/decompile.py
+- config/commands/disassemble.py
 parse_command: ParseCommandDetailed
 history_processor: Last5Observations

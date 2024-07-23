@@ -1,4 +1,4 @@
-FROM sweagent/swe-agent:latest
+FROM sweagent/swe-agent:0.6.1
 
 ARG TARGETARCH
 
