@@ -26,6 +26,7 @@ Here, we can simply create an empty folder, and add a `main.py` file
 
 ```bash
 mkdir empty
+git init
 touch main.py
 ```
 
