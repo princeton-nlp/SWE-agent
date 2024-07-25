@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Tab, Tabs } from "react-bootstrap";
 import Form from "react-bootstrap/Form";
-import "../../static/runControl.css";
 import { PlayFill, StopFill } from "react-bootstrap-icons";
-
 import { Link } from "react-router-dom";
+import "../../static/runControl.css";
 
 function LRunControl({
   isComputing,
@@ -19,17 +18,19 @@ function LRunControl({
 }) {
   // ps = problem statement
   const [psType, setPsType] = useState("gh");
+  const [psInputValue, setPsInputValue] = useState("");
   const defaultInstallCommand = "pip install --editable .";
-
   const defaultPS =
     "https://github.com/marshmallow-code/marshmallow/issues/1357";
-
-  const defaultRepo = "https://github.com/swe-agent-demo/marshmallow";
 
   const handlePsTypeChange = (event) => {
     const selectedType = event.target.value;
     setPsType(selectedType);
   };
+
+  useEffect(() => {
+    setPsInputValue("");
+  }, [psType]);
 
   function getPsInput() {
     // Problem statement input controls based on the value of the problem statement type
@@ -41,13 +42,14 @@ function LRunControl({
           <input
             type="text"
             className="form-control"
-            onChange={(e) =>
+            onChange={(e) => {
+              setPsInputValue(e.target.value);
               setRunConfig((draft) => {
                 draft.environment.data_path = e.target.value;
-              })
-            }
+              });
+            }}
             placeholder={"Example: " + defaultPS}
-            defaultValue=""
+            value={psInputValue}
           />
         </div>
       );
@@ -61,13 +63,14 @@ function LRunControl({
           <input
             type="text"
             className="form-control"
-            onChange={(e) =>
+            onChange={(e) => {
+              setPsInputValue(e.target.value);
               setRunConfig((draft) => {
                 draft.environment.data_path = e.target.value;
-              })
-            }
+              });
+            }}
             placeholder="/path/to/your/local/file.md"
-            defaultValue=""
+            value={psInputValue}
           />
         </div>
       );
