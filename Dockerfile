@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Install nodejs
 RUN apt update && \
-    apt install -y nodejs npm && \
+    apt install -y nodejs npm shellcheck && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
