@@ -146,3 +146,7 @@ index 1e7f08f..beabaa7 100644
 +    print("All test cases passed successfully.")
 ```
 </details>
+
+### Improving SWE-agent for coding challenges
+
+By default, the demonstration trajectory the agent uses while solving a coding challenge is one in which it needs to solve a small bug in a short piece of code (from the HumanEvalFix dataset). Since that process is not too similar to solving a coding challenge, performance would probably substantially improve if the agent was given a demonstration trajectory in which it has to solve an actual programming challenge. To learn how to do that, read [this](../config/demonstrations.md). 
