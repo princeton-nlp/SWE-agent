@@ -1,7 +1,7 @@
 #!/root/miniconda3/bin/python
 
 # @yaml
-# signature: decompile <binary_path> <function_name>
+# signature: decompile <binary_path> [--function_name <function_name>] 
 # docstring: Decompile a binary and prints the decompilation of a given function name
 # arguments:
 #   binary_path:

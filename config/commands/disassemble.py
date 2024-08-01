@@ -1,7 +1,7 @@
 #!/root/miniconda3/bin/python
 
 # @yaml
-# signature: disassemble <binary_path> <function_name>
+# signature: disassemble <binary_path> [--function_name <function_name>] 
 # docstring: Disassembles a binary and prints the disassembly of a given function name
 # arguments:
 #   binary_path:
