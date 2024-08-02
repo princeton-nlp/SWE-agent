@@ -10,6 +10,7 @@ from pathlib import Path
 import together
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
 from openai import AzureOpenAI, BadRequestError, OpenAI
+import groq
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
 from tenacity import (
     retry,
@@ -227,9 +228,9 @@ class OpenAIModel(BaseModel):
         },
         "gpt-4o-mini-2024-07-18": {
             "max_context": 128_000,
-            "cost_per_input_token": 5e-06,
-            "cost_per_output_token": 15e-06,
-        },
+            "cost_per_input_token": 1.5e-07,
+            "cost_per_output_token": 6e-07,
+        },#FIX
     }
 
     SHORTCUTS = {
@@ -664,6 +665,87 @@ class OllamaModel(BaseModel):
         self.update_stats(input_tokens, output_tokens)
         return response["message"]["content"]
 
+class GroqModel(BaseModel):
+    MODELS = {
+        "llama3-8b-8192": {
+            "max_context": 8192,
+            "cost_per_input_token": 5e-08,
+            "cost_per_output_token": 8e-08,
+        },
+        "llama3-70b-8192":{
+            "max_context": 8192,
+            "cost_per_input_token": 5.9e-07,
+            "cost_per_output_token": 7.9e-07,
+        },
+        "llama-3.1-8b-instant":{
+            "max_context": 4096,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        },
+        "llama-3.1-70b-versatile":{
+            "max_context": 4096,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        },
+        "llama-3.1-405b-reasoning":{
+            "max_context": 4096,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        }
+    }
+    SHORTCUTS = {
+        "L3-8b": "llama3-8b-8192",
+        "L3-70b": "llama3-70b-8192",
+        "L3.1-8b": "llama-3.1-8b-instant",
+        "L3.1-70b": "llama-3.1-70b-versatile",
+        "L3.1-405b": "llama-3.1-405b-reasoning"
+    }
+    def __init__(self, args: ModelArguments, commands: list[Command]):
+        super().__init__(args, commands)
+        #assert groq._version >= "0.8.0", "Please upgrade to Groq SDK v0.8.0 or later."
+
+        self.groq_client = groq.Groq(api_key=keys_config["GROQ_API_KEY"])
+
+    def history_to_messages(self, history: list[dict[str, str]], is_demonstration: bool = False) -> str:
+        """
+        Create `prompt` by filtering out all keys except for role/content per `history` turn
+        """
+        # Remove system messages if it is a demonstration
+        if is_demonstration:
+            history = [entry for entry in history if entry["role"] != "system"]
+        # Map history to TogetherAI format
+        mapping = {"user": "human", "assistant": "bot", "system": "bot"}
+        prompt = [f'<{mapping[d["role"]]}>: {d["content"]}' for d in history]
+        prompt = "\n".join(prompt)
+        return f"{prompt}\n<bot>:"
+    
+    @retry(
+        wait=wait_random_exponential(min=1, max=15),
+        reraise=True,
+        stop=stop_after_attempt(_MAX_RETRIES),
+        retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
+    )
+    def query(self, history: list[dict[str, str]]) -> str:
+        """
+        Query the Groq API with the given `history` and return the response.
+        """
+        prompt = self.history_to_messages(history)
+        # Anthropic's count_tokens is convenient because it caches and utilizes huggingface/tokenizers, so we will use.
+        max_tokens_to_sample = self.model_metadata["max_context"] - Anthropic().count_tokens(prompt)
+
+        #TODO: Add some kind of warnings if prompt is too long and truncate to 8192
+        #Obviously, this should really be fixed at the prompt level
+        output = self.groq_client.chat.completions.create(
+            model=self.api_model,
+            messages = [{"role":"user","content":prompt}],
+            temperature=self.args.temperature,
+            top_p = self.args.top_p
+        )
+        response = output.choices[0].message.content
+        input_tokens = output.usage.prompt_tokens
+        output_tokens = output.usage.completion_tokens
+        self.update_stats(input_tokens, output_tokens)
+        return response
 
 class TogetherModel(BaseModel):
     # Check https://docs.together.ai/docs/inference-models for model names, context
@@ -927,6 +1009,8 @@ def get_model(args: ModelArguments, commands: list[Command] | None = None):
         return DeepSeekModel(args, commands)
     elif args.model_name in TogetherModel.SHORTCUTS:
         return TogetherModel(args, commands)
+    elif args.model_name in GroqModel.SHORTCUTS:
+        return GroqModel(args,commands)
     elif args.model_name == "instant_empty_submit":
         return InstantEmptySubmitTestModel(args, commands)
     else:
