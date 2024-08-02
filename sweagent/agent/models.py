@@ -230,7 +230,7 @@ class OpenAIModel(BaseModel):
             "max_context": 128_000,
             "cost_per_input_token": 1.5e-07,
             "cost_per_output_token": 6e-07,
-        },#FIX
+        },
     }
 
     SHORTCUTS = {
