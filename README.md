@@ -12,6 +12,35 @@
   <a href="https://arxiv.org/abs/2405.15793"><strong>Preprint</strong></a>
 </p>
 
+
+## Hackathon Instructions
+
+#### 1. Pyenv
+   /bash<br>
+   `pyenv install 3.11.0`<br>
+   `pyenv virtualenv 3.11.0 SWE-bench`<br>
+   `pyenv activate SWE-bench`
+   `pip install .`
+
+#### Add API Keys
+- Groq has free inference (low rate limits though)
+- Baseten is offering some money apparently - TODO: take them up on that offer and integrate BaseTen into our agent 
+
+#### Docker
+Open Docker
+docker pull sweagent/swe-agent:latest
+
+#### Test
+trajectories/jp/L3-8b__SWE-bench_Lite__default_
+         _t-0.00__p-0.95__c-3.00__install-1/marshmallow-
+         code__marshmallow-1359.traj
+
+#### Edit Config
+--config_file config/default_from_url.yaml
+  
+
+## Begin Default SWE-Agent Code
+
 **SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can resolve issues in real GitHub repositories.**
 
 On [SWE-bench](https://github.com/princeton-nlp/SWE-bench), SWE-agent resolves 12.47% of issues, achieving the state-of-the-art performance on the full test set.

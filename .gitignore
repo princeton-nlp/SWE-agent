@@ -193,3 +193,6 @@ data/**
 
 # PyCharm
 .idea/
+
+.devcontainer/keys.cfg
+.env
