@@ -3,7 +3,7 @@ from __future__ import annotations
 import io
 import subprocess
 from contextlib import redirect_stdout
-
+import time
 from run import main, ScriptArguments, EnvironmentArguments, AgentArguments, ModelArguments, ActionsArguments, CONFIG_DIR
 
 def get_args_dev(
@@ -71,6 +71,8 @@ def run_swebench_evaluation(
     max_workers=1,
     run_id="josh-testing",
     split="dev",
+    dev_ids = None,
+    test_ids = None
 ):
     if predictions_path_override is None:
         dataset_name = full_dataset_name.split('/')[-1]
@@ -85,8 +87,11 @@ def run_swebench_evaluation(
     with open(predictions_path, "r") as f:
         all_preds = [json.loads(line) for line in f]
     # Separate predictions into dev and test
-    dev_preds = [pred for pred in all_preds if pred["instance_id"] in ids_by_split["dev"]]
-    test_preds = [pred for pred in all_preds if pred["instance_id"] in ids_by_split["test"]]
+
+    dev_ids = dev_ids if dev_ids is not None else ids_by_split["dev"]
+    test_ids = test_ids if test_ids is not None else ids_by_split["test"]
+    dev_preds = [pred for pred in all_preds if pred["instance_id"] in dev_ids]
+    test_preds = [pred for pred in all_preds if pred["instance_id"] in test_ids]
 
     # Save dev predictions
     dev_preds_path = predictions_path.replace("all_preds.jsonl", "all_dev_preds.jsonl")
@@ -107,7 +112,7 @@ def run_swebench_evaluation(
     preds = dev_preds if split == "dev" else test_preds
     if len(preds) == 0:
         print(f"No predictions found for split {split}")
-        return
+        return [], []
     else:
         print(f"Running evaluation for split {split} - {len(preds)} predictions found")
     command = [
@@ -127,8 +132,9 @@ def run_swebench_evaluation(
     ]
 
     # Split out data from dev/test into separate preds file and run on it
-
+    t0 = time.time()
     result = subprocess.run(command, capture_output=True, text=True)
+    print("Time taken to run swebench: ", time.time() - t0)
     print("STDERR:", result.stderr)
     # Parse and print the summary
     lines = result.stdout.split("\n")
@@ -147,7 +153,7 @@ def run_swebench_evaluation(
             for id in success_ids + failed_ids:
                 color = Fore.LIGHTGREEN_EX if id in success_ids else Fore.LIGHTRED_EX
                 print(f"{color}• {id}{Style.RESET_ALL}")
-
+    return success_ids, failed_ids
 
 def run_and_catch_logs(
     model_name=None, instance="marshmallow-code__marshmallow-1359", cost_limit=0.05, split="dev"
@@ -163,6 +169,7 @@ def run_and_catch_logs(
     captured_logs = output.getvalue()
     log_lines = captured_logs.splitlines()
     print(f"Captured {len(log_lines)} lines of logs")
+    return log_lines
 
 
 # TODO: goal here is for us to be able to run swe-agent and then eval it with swe-bench to know correct/incorrect.
@@ -176,13 +183,13 @@ if __name__ == "__main__":
 
     #export PYTHONPATH=/<path to SWE-agent directory>/SWE-agent
 
-    mode = ["mini","sonnet","L3.1-70b-Together","L3.1-405b-Baseten", 'L3.1-70b-Groq'][3]
+    mode = ["mini","sonnet","L3.1-70b-Together","L3.1-405b-Baseten", 'L3.1-70b-Groq'][1]
     if mode == "mini":
         model_name = "gpt-4o-mini"
         cost_limit = 0.05
     elif mode == "sonnet":
         model_name = "claude-3-5-sonnet-20240620"
-        cost_limit = 1.50
+        cost_limit = 1.5
     elif mode == "L3.1-70b-Together":
         model_name = "L3.1-70b-Together"
         cost_limit = 0.50
@@ -192,16 +199,17 @@ if __name__ == "__main__":
     elif mode == "L3.1-70b-Groq":
         model_name = "L3.1-70b-Groq"
         cost_limit = 1.0
-    run_agent = True
+    run_agent = False
     evaluate_agent = True
-    split = "dev"
+    split = "test"
     first_question_index = 0
-    last_question_index = 23
+    last_question_index = 100
 
     runnable_problems_by_split = get_runnable_problems(
         f"trajectories/jp/{model_name}__SWE-bench_Lite__default__t-0.00__p-0.95__c-{cost_limit:.2f}__install-1"
     )
     print("Model name: ", model_name)
+    print("Split: ", split)
     print({k: len(v) for k, v in runnable_problems_by_split.items()})
 
     if run_agent:
@@ -237,14 +245,34 @@ if __name__ == "__main__":
     # • pydicom__pydicom-1694
     # test 
     # • astropy__astropy-14995
+    # • django__django-11039
+    # • django__django-11099
+    # • django__django-11133
+    # • django__django-12453
+    # • django__django-12983
+    # • django__django-13658
+    # • django__django-14382
+    # • django__django-14855
 
     # claude-3-5-sonnet-20240620
     # - only 3 actually complete with limit = 1
+    # - 4 complete with limit 1.5, but gets 2/4
+    # dev
+    # • pvlib__pvlib-python-1154
+    # • pydicom__pydicom-1256
+    # test (0-30)
+    # • django__django-11001
+
+
     # - TODO: write down incomplete / empty patch in eval logs
 
     # L3.1-70b-Together
 
     # L3.1-405b-BaseTen
+    # dev
+    # • pydicom__pydicom-1694
+    # test
+
 
     # ERROR: No matching distribution found for vtk
 
