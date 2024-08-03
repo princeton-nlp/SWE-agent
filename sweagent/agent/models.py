@@ -846,12 +846,14 @@ class TogetherModel(BaseModel):
 class BaseTen(BaseModel):
     MODELS = {
         "L3.1-405b-BaseTen": {
+            "api_key_name": "BASETEN_API_KEY_405B",
             "model_id": "7wlxp82w",
             "max_context": 128_000,
             "cost_per_input_token": 0,
             "cost_per_output_token": 0,
         },
          "L3.1-70b-BaseTen": {
+             "api_key_name": "BASETEN_API_KEY_70B",
              "model_id": "jwd78r4w",
              "max_context": 128_000,
              "cost_per_input_token": 0,
@@ -880,10 +882,10 @@ class BaseTen(BaseModel):
         prompt = "\n".join(prompt)
         return f"{prompt}\n<bot>:"
     
-    def baseten_wrapper(self, prompt: str, model_id: str, max_tokens: int = 500) -> str:
+    def baseten_wrapper(self, prompt: str, model_id: str, api_key_name: str, max_tokens: int = 500) -> str:
         import os
         import requests
-        API_KEY = os.getenv("BASETEN_API_KEY")
+        API_KEY = os.getenv(api_key_name)
         response = requests.post(
             f"https://model-{model_id}.api.baseten.co/production/predict",
             headers={"Authorization": f"Api-Key {API_KEY}"},
@@ -893,6 +895,7 @@ class BaseTen(BaseModel):
                 "max_tokens": max_tokens
             }
         )
+        print(response.json())
         return response.json()['text']
     
     def query(self, history: list[dict[str, str]]) -> str:
@@ -902,10 +905,10 @@ class BaseTen(BaseModel):
         prompt = self.history_to_messages(history)
         # Anthropic's count_tokens is convenient because it caches and utilizes huggingface/tokenizers, so we will use.
         max_tokens_to_sample = self.model_metadata["max_context"] - Anthropic().count_tokens(prompt)
-        model_id = self.model_metadata['model_id']
         response = self.baseten_wrapper(
             prompt=prompt,
-            model_id=model_id,
+            model_id=self.model_metadata['model_id'],
+            api_key_name=self.model_metadata['api_key_name'],
             max_tokens = min([500, max_tokens_to_sample])
         )
         # Calculate + update costs, return response
