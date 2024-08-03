@@ -63,7 +63,7 @@ def get_runnable_problems(trajectory_path):
 def run_swebench_evaluation(
     predictions_path_override=None,
     model_name=None,
-    dataset_name="princeton-nlp/SWE-bench_Lite",
+    full_dataset_name="princeton-nlp/SWE-bench_Lite",
     cost_limit=0.05,
     temperature=0.00,
     top_p=0.95,
@@ -72,7 +72,8 @@ def run_swebench_evaluation(
     split="dev",
 ):
     if predictions_path_override is None:
-        predictions_path = f"trajectories/jp/{model_name}/{dataset_name}__SWE-bench_Lite__default__t-{temperature:.2f}__p-0.95__c-{cost_limit}__install-1/all_preds.jsonl"
+        dataset_name = full_dataset_name.split('/')[-1]
+        predictions_path = f"trajectories/jp/{model_name}__{dataset_name}__default__t-{temperature:.2f}__p-0.95__c-{cost_limit:.2f}__install-1/all_preds.jsonl"
     else:
         predictions_path = predictions_path_override
 
@@ -111,7 +112,7 @@ def run_swebench_evaluation(
         "-m",
         "swebench.harness.run_evaluation",
         "--dataset_name",
-        dataset_name,
+        full_dataset_name,
         "--predictions_path",
         predictions_path,
         "--max_workers",
@@ -181,7 +182,7 @@ if __name__ == "__main__":
         cost_limit = 1
     elif mode == "L3.1-70b-Together":
         model_name = "L3.1-70b-Together"
-        cost_limit = 0.5
+        cost_limit = 0.50
     elif mode == "L3.1-405b-Baseten":
         model_name = "L3.1-405b-BaseTen"
         cost_limit = 1.0
@@ -215,8 +216,8 @@ if __name__ == "__main__":
             run_swebench_evaluation(
                 predictions_path_override=None,
                 model_name=model_name,
-                dataset_name="princeton-nlp/SWE-bench_Lite",
-                cost_limit=0.05,
+                full_dataset_name="princeton-nlp/SWE-bench_Lite",
+                cost_limit=cost_limit,
                 temperature=0.00,
                 top_p=0.95,
                 run_id="test",
