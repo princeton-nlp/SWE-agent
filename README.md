@@ -24,19 +24,19 @@
 
 #### Add API Keys
 - Groq has free inference (low rate limits though)
-- Baseten is offering some money apparently - TODO: take them up on that offer and integrate BaseTen into our agent 
+- Baseten is offering some money apparently - TODO: take them up on that offer and integrate BaseTen into our agent
 
 #### Docker
 Open Docker
 docker pull sweagent/swe-agent:latest
 
 #### Test
-python run.py --model_name L3-70b \     
+python run.py --model_name L3-70b \
   --instance_filter marshmallow-code__marshmallow-1359
 
 #### Edit Config
 --config_file config/default_from_url.yaml
-  
+
 
 ## Begin Default SWE-Agent Code
 

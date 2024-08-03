@@ -4,7 +4,16 @@ import io
 import subprocess
 from contextlib import redirect_stdout
 
-from run import main, ScriptArguments, EnvironmentArguments, AgentArguments, ModelArguments, ActionsArguments, CONFIG_DIR
+from run import (
+    CONFIG_DIR,
+    ActionsArguments,
+    AgentArguments,
+    EnvironmentArguments,
+    ModelArguments,
+    ScriptArguments,
+    main,
+)
+
 
 def get_args_dev(
     model_name=None,
@@ -72,7 +81,7 @@ def run_swebench_evaluation(
     split="dev",
 ):
     if predictions_path_override is None:
-        dataset_name = full_dataset_name.split('/')[-1]
+        dataset_name = full_dataset_name.split("/")[-1]
         predictions_path = f"trajectories/jp/{model_name}__{dataset_name}__default__t-{temperature:.2f}__p-0.95__c-{cost_limit:.2f}__install-1/all_preds.jsonl"
     else:
         predictions_path = predictions_path_override
@@ -81,7 +90,7 @@ def run_swebench_evaluation(
     import json
 
     # Load all predictions
-    with open(predictions_path, "r") as f:
+    with open(predictions_path) as f:
         all_preds = [json.loads(line) for line in f]
     # Separate predictions into dev and test
     dev_preds = [pred for pred in all_preds if pred["instance_id"] in ids_by_split["dev"]]
@@ -132,7 +141,7 @@ def run_swebench_evaluation(
     for line in lines:
         if "Report written to " in line:
             file_name = line.replace("Report written to ", "")
-            with open(file_name, "r") as f:
+            with open(file_name) as f:
                 summary = json.load(f)
             failed_ids = summary["unresolved_ids"]
             success_ids = summary["resolved_ids"]
@@ -146,9 +155,7 @@ def run_swebench_evaluation(
                 print(f"{color}• {id}{Style.RESET_ALL}")
 
 
-def run_and_catch_logs(
-    model_name=None, instance="marshmallow-code__marshmallow-1359", cost_limit=0.05, split="dev"
-):
+def run_and_catch_logs(model_name=None, instance="marshmallow-code__marshmallow-1359", cost_limit=0.05, split="dev"):
     output = io.StringIO()
     with redirect_stdout(output):
         main(
@@ -166,14 +173,15 @@ def run_and_catch_logs(
 # Then, to enable us to add scoring functions that parse through the logged lines and keep track of intermediate metrics
 if __name__ == "__main__":
     from datasets import load_dataset
+
     d = load_dataset("princeton-nlp/SWE-bench_Lite")
     # TODO: seems like in my local env I'm struggling with two packages causing run fails
     # 0-2 types-pkg_resources
     # 10 Failed to build h5py
 
-    #export PYTHONPATH=/<path to SWE-agent directory>/SWE-agent
+    # export PYTHONPATH=/<path to SWE-agent directory>/SWE-agent
 
-    mode = ["mini","sonnet","L3.1-70b-Together","L3.1-405b-BaseTen", "L3.1-70b-BaseTen", 'L3.1-70b-Groq'][4]
+    mode = ["mini", "sonnet", "L3.1-70b-Together", "L3.1-405b-BaseTen", "L3.1-70b-BaseTen", "L3.1-70b-Groq"][4]
     if mode == "mini":
         model_name = "gpt-4o-mini"
         cost_limit = 0.05
@@ -208,7 +216,12 @@ if __name__ == "__main__":
         for question_index in range(first_question_index, last_question_index):
             print("Running agent for question index: ", question_index)
             print(d[split][question_index]["instance_id"])
-            run_and_catch_logs(model_name=model_name, instance=d[split][question_index]["instance_id"], cost_limit=cost_limit, split=split)
+            run_and_catch_logs(
+                model_name=model_name,
+                instance=d[split][question_index]["instance_id"],
+                cost_limit=cost_limit,
+                split=split,
+            )
     if evaluate_agent:
         import time
 
@@ -235,7 +248,7 @@ if __name__ == "__main__":
     # dev
     # • pvlib__pvlib-python-1072
     # • pydicom__pydicom-1694
-    # test 
+    # test
     # • astropy__astropy-14995
 
     # claude-3-5-sonnet-20240620

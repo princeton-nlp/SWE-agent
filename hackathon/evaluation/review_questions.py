@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datasets import load_dataset
 
 d = load_dataset("princeton-nlp/SWE-bench_Lite")
