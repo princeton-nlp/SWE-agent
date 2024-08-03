@@ -50,7 +50,8 @@ def get_runnable_problems(trajectory_path):
         for file in files:
             if file.endswith(".traj"):
                 traj_files.append(file.split(".")[0])
-
+    print("Checking: ",trajectory_path)
+    print("Trajectory files found: ", len(traj_files))
     dev_question_ids = [q["instance_id"] for q in d["dev"]]
     test_question_ids = [q["instance_id"] for q in d["test"]]
 
@@ -107,6 +108,8 @@ def run_swebench_evaluation(
     if len(preds) == 0:
         print(f"No predictions found for split {split}")
         return
+    else:
+        print(f"Running evaluation for split {split} - {len(preds)} predictions found")
     command = [
         "python",
         "-m",
@@ -173,13 +176,13 @@ if __name__ == "__main__":
 
     #export PYTHONPATH=/<path to SWE-agent directory>/SWE-agent
 
-    mode = ["mini","sonnet","L3.1-70b-Together","L3.1-405b-Baseten", 'L3.1-70b-Groq'][4]
+    mode = ["mini","sonnet","L3.1-70b-Together","L3.1-405b-Baseten", 'L3.1-70b-Groq'][3]
     if mode == "mini":
         model_name = "gpt-4o-mini"
         cost_limit = 0.05
     elif mode == "sonnet":
         model_name = "claude-3-5-sonnet-20240620"
-        cost_limit = 1
+        cost_limit = 1.50
     elif mode == "L3.1-70b-Together":
         model_name = "L3.1-70b-Together"
         cost_limit = 0.50
@@ -196,7 +199,7 @@ if __name__ == "__main__":
     last_question_index = 23
 
     runnable_problems_by_split = get_runnable_problems(
-        f"trajectories/jp/{model_name}__SWE-bench_Lite__default__t-0.00__p-0.95__c-0.05__install-1"
+        f"trajectories/jp/{model_name}__SWE-bench_Lite__default__t-0.00__p-0.95__c-{cost_limit:.2f}__install-1"
     )
     print("Model name: ", model_name)
     print({k: len(v) for k, v in runnable_problems_by_split.items()})
@@ -236,6 +239,8 @@ if __name__ == "__main__":
     # • astropy__astropy-14995
 
     # claude-3-5-sonnet-20240620
+    # - only 3 actually complete with limit = 1
+    # - TODO: write down incomplete / empty patch in eval logs
 
     # L3.1-70b-Together
 

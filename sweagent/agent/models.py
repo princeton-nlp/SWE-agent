@@ -884,7 +884,7 @@ class BaseTen(BaseModel):
                 "max_tokens": max_tokens
             }
         )
-        return response
+        return response.json()["text"]
     
     def query(self, history: list[dict[str, str]]) -> str:
         """
@@ -898,6 +898,7 @@ class BaseTen(BaseModel):
             prompt=prompt,
             max_tokens = min([500,max_tokens_to_sample])
         )
+        print()
         # Calculate + update costs, return response
         #response = completion["choices"][0]["text"].split("<human>")[0]
         input_tokens =0#completion["usage"]["prompt_tokens"]
