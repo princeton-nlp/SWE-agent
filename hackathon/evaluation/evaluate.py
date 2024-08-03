@@ -172,7 +172,7 @@ if __name__ == "__main__":
 
     #export PYTHONPATH=/<path to SWE-agent directory>/SWE-agent
 
-    mode = ["mini","sonnet","L3-70b"][1]
+    mode = ["mini","sonnet","L3-70b"][2]
     if mode == "mini":
         model_name = "gpt-4o-mini"
         cost_limit = 0.05
@@ -227,6 +227,10 @@ if __name__ == "__main__":
     # • pydicom__pydicom-1694
     # test 
     # • astropy__astropy-14995
+
+    # claude-3-5-sonnet-20240620
+
+    # L3.1-70b-Together
 
     # TODO
     # get successes with sonnet and mini

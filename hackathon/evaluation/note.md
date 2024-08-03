@@ -20,9 +20,8 @@ TODO:
   - Did we find the right file
   - Did we edit at least some of the right lines
   - Did our edit overlap with the gold edits in any way?
-
-export PYTHONPATH="/Users/jp/Documents/GitHub/SWE-agent"
-
+[] Add support for only training on non-SWE-Bench-Lite questions from SWE-Bench
+  - Evaluate on getable questions from SWE-Bench-Lite but don't try on them
 
 # Current Default Patterns
 
