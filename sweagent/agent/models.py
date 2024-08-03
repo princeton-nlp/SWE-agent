@@ -886,6 +886,9 @@ class BaseTen(BaseModel):
         import os
         import requests
         API_KEY = os.getenv(api_key_name)
+        if not API_KEY:
+            raise ValueError(f"API key for {api_key_name} not found in environment variables.")
+        
         response = requests.post(
             f"https://model-{model_id}.api.baseten.co/production/predict",
             headers={"Authorization": f"Api-Key {API_KEY}"},
@@ -895,7 +898,8 @@ class BaseTen(BaseModel):
                 "max_tokens": max_tokens
             }
         )
-        return response.json()['text']
+        response.raise_for_status()  # This will raise an HTTPError if the HTTP request returned an unsuccessful status code
+        return response.json().get('text', '')
     
     def query(self, history: list[dict[str, str]]) -> str:
         """
