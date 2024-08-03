@@ -56,5 +56,6 @@ if __name__ == "__main__":
                 run_id="test",
                 split=split,
                 max_workers=2,
+                full_dataset=d,
             )
         print("Time taken to evaluate runs: ", time.time() - t0)
