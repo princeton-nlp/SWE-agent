@@ -195,7 +195,7 @@ if __name__ == "__main__":
     print({k: len(v) for k, v in runnable_problems_by_split.items()})
 
     if run_agent:
-        for question_index in range(first_question_index, last_question_index:
+        for question_index in range(first_question_index, last_question_index):
             print("Running agent for question index: ", question_index)
             print(d[split][question_index]["instance_id"])
             run_and_catch_logs(model_name=model_name, instance=d[split][question_index]["instance_id"], cost_limit=cost_limit, split=split)
