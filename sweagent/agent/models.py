@@ -845,14 +845,23 @@ class TogetherModel(BaseModel):
 
 class BaseTen(BaseModel):
     MODELS = {
-    "L3.1-405b-BaseTen": {
+        "L3.1-405b-BaseTen": {
+            "model_id": "7wlxp82w",
             "max_context": 128_000,
             "cost_per_input_token": 0,
             "cost_per_output_token": 0,
+        },
+         "L3.1-70b-BaseTen": {
+             "model_id": "jwd78r4w",
+             "max_context": 128_000,
+             "cost_per_input_token": 0,
+             "cost_per_output_token": 0,
         }
     }
+    
     SHORTCUTS = {
-        "L3.1-405b-BaseTen": "L3.1-405b-BaseTen"
+        "L3.1-405b-BaseTen": "L3.1-405b-BaseTen",
+        "L3.1-70b-BaseTen": "L3.1-70b-BaseTen"
     }
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
@@ -871,12 +880,12 @@ class BaseTen(BaseModel):
         prompt = "\n".join(prompt)
         return f"{prompt}\n<bot>:"
     
-    def baseten_wrapper(self, prompt: str, max_tokens: int = 500) -> str:
+    def baseten_wrapper(self, prompt: str, model_id: str, max_tokens: int = 500) -> str:
         import os
         import requests
         API_KEY = os.getenv("BASETEN_API_KEY")
         response = requests.post(
-            "https://model-7wlxp82w.api.baseten.co/production/predict",
+            f"https://model-{model_id}.api.baseten.co/production/predict",
             headers={"Authorization": f"Api-Key {API_KEY}"},
             json={
                 "prompt": prompt,
@@ -888,20 +897,21 @@ class BaseTen(BaseModel):
     
     def query(self, history: list[dict[str, str]]) -> str:
         """
-        Query the Together API with the given `history` and return the response.
+        Query BaseTen with the given `history` and return the response.
         """
-        # Perform Together API call
         prompt = self.history_to_messages(history)
         # Anthropic's count_tokens is convenient because it caches and utilizes huggingface/tokenizers, so we will use.
         max_tokens_to_sample = self.model_metadata["max_context"] - Anthropic().count_tokens(prompt)
+        model_id = self.model_metadata['model_id']
         response = self.baseten_wrapper(
             prompt=prompt,
-            max_tokens = min([500,max_tokens_to_sample])
+            model_id=model_id,
+            max_tokens = min([500, max_tokens_to_sample])
         )
         # Calculate + update costs, return response
         #response = completion["choices"][0]["text"].split("<human>")[0]
-        input_tokens =0#completion["usage"]["prompt_tokens"]
-        output_tokens = 0#completion["usage"]["completion_tokens"]
+        input_tokens = 0 #completion["usage"]["prompt_tokens"]
+        output_tokens = 0 #completion["usage"]["completion_tokens"]
         self.update_stats(input_tokens, output_tokens)
         return response
 
