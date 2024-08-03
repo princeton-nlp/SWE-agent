@@ -62,16 +62,19 @@ def get_runnable_problems(trajectory_path):
     }
 
 
-def compare_filename_in_patches(pred_patch, expected_patches):
-    if not pred_patch or expected_patches is None:
+def compare_filename_in_patches(pred_patch, expected_patch):
+    if not pred_patch or expected_patch is None:
         return 0.0
     pred_match = re.findall(r'\+\+\+ b/(.*)', pred_patch)
     if not pred_match:
         return 0.0
     
     pred_filenames = {match.lower().strip() for match in pred_match}
-    expected_filenames = {re.search(r'\+\+\+ b/(.*)', patch).group(1).lower().strip() for patch in expected_patches if re.search(r'\+\+\+ b/(.*)', patch)}
-    
+
+    expected_match = re.findall(r'\+\+\+ b/(.*)', expected_patch)
+    if not expected_match:
+        return 1.0
+    expected_filenames = {match.lower().strip() for match in expected_match}
     if not expected_filenames:
         return 0.0
     
@@ -208,7 +211,7 @@ if __name__ == "__main__":
 
     #export PYTHONPATH=/<path to SWE-agent directory>/SWE-agent
 
-    mode = ["mini","sonnet","L3.1-70b-Together","L3.1-405b-BaseTen", "L3.1-70b-BaseTen", 'L3.1-70b-Groq'][4]
+    mode = ["mini","sonnet","L3.1-70b-Together","L3.1-405b-BaseTen", "L3.1-70b-BaseTen", 'L3.1-70b-Groq'][3]
     if mode == "mini":
         model_name = "gpt-4o-mini"
         cost_limit = 0.05
@@ -230,8 +233,9 @@ if __name__ == "__main__":
     run_agent = False
     evaluate_agent = True
     split = "dev"
-    first_question_index = 5
-    last_question_index = 10
+    first_question_index = 0
+    last_question_index = 23
+    ids = ['pvlib__pvlib-python-1072']
 
     runnable_problems_by_split = get_runnable_problems(
         f"trajectories/{getuser()}/{model_name}__SWE-bench_Lite__default__t-0.00__p-0.95__c-0.05__install-1"
@@ -241,6 +245,8 @@ if __name__ == "__main__":
 
     if run_agent:
         for question_index in range(first_question_index, last_question_index):
+            if len(ids) > 0 and d[split][question_index]["instance_id"] not in ids:
+                continue
             print("Running agent for question index: ", question_index)
             print(d[split][question_index]["instance_id"])
             run_and_catch_logs(model_name=model_name, instance=d[split][question_index]["instance_id"], cost_limit=cost_limit, split=split)
