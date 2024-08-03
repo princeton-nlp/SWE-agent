@@ -2,9 +2,20 @@ from __future__ import annotations
 
 import io
 import subprocess
-from contextlib import redirect_stdout
 import time
-from run import main, ScriptArguments, EnvironmentArguments, AgentArguments, ModelArguments, ActionsArguments, CONFIG_DIR
+from contextlib import redirect_stdout
+from typing import List
+
+from run import (
+    CONFIG_DIR,
+    ActionsArguments,
+    AgentArguments,
+    EnvironmentArguments,
+    ModelArguments,
+    ScriptArguments,
+    main,
+)
+
 
 def get_args_dev(
     model_name=None,
@@ -155,7 +166,7 @@ def run_swebench_evaluation(
                 print(f"{color}• {id}{Style.RESET_ALL}")
     return success_ids, failed_ids
 
-def run_and_catch_logs(
+def run_agent_and_catch_logs(
     model_name=None, instance="marshmallow-code__marshmallow-1359", cost_limit=0.05, split="dev"
 ):
     output = io.StringIO()
@@ -171,111 +182,16 @@ def run_and_catch_logs(
     print(f"Captured {len(log_lines)} lines of logs")
     return log_lines
 
+def run_agents_and_catch_logs(model_name, instance_ids: List, instance_cost_limit: float, split: str):
+    import multiprocessing
+
+    num_cpus = multiprocessing.cpu_count()
+    with multiprocessing.Pool(processes=num_cpus) as pool:
+        results = pool.starmap(run_agent_and_catch_logs, [(model_name, instance_id, instance_cost_limit, split) for instance_id in instance_ids])
+    
+    log_lines = [line for result in results for line in result]
+    return log_lines
+
 
 # TODO: goal here is for us to be able to run swe-agent and then eval it with swe-bench to know correct/incorrect.
 # Then, to enable us to add scoring functions that parse through the logged lines and keep track of intermediate metrics
-if __name__ == "__main__":
-    from datasets import load_dataset
-    d = load_dataset("princeton-nlp/SWE-bench_Lite")
-    # TODO: seems like in my local env I'm struggling with two packages causing run fails
-    # 0-2 types-pkg_resources
-    # 10 Failed to build h5py
-
-    #export PYTHONPATH=/<path to SWE-agent directory>/SWE-agent
-
-    mode = ["mini","sonnet","L3.1-70b-Together","L3.1-405b-Baseten", 'L3.1-70b-Groq'][1]
-    if mode == "mini":
-        model_name = "gpt-4o-mini"
-        cost_limit = 0.05
-    elif mode == "sonnet":
-        model_name = "claude-3-5-sonnet-20240620"
-        cost_limit = 1.5
-    elif mode == "L3.1-70b-Together":
-        model_name = "L3.1-70b-Together"
-        cost_limit = 0.50
-    elif mode == "L3.1-405b-Baseten":
-        model_name = "L3.1-405b-BaseTen"
-        cost_limit = 1.0
-    elif mode == "L3.1-70b-Groq":
-        model_name = "L3.1-70b-Groq"
-        cost_limit = 1.0
-    run_agent = False
-    evaluate_agent = True
-    split = "test"
-    first_question_index = 0
-    last_question_index = 100
-
-    runnable_problems_by_split = get_runnable_problems(
-        f"trajectories/jp/{model_name}__SWE-bench_Lite__default__t-0.00__p-0.95__c-{cost_limit:.2f}__install-1"
-    )
-    print("Model name: ", model_name)
-    print("Split: ", split)
-    print({k: len(v) for k, v in runnable_problems_by_split.items()})
-
-    if run_agent:
-        for question_index in range(first_question_index, last_question_index):
-            print("Running agent for question index: ", question_index)
-            print(d[split][question_index]["instance_id"])
-            run_and_catch_logs(model_name=model_name, instance=d[split][question_index]["instance_id"], cost_limit=cost_limit, split=split)
-    if evaluate_agent:
-        import time
-
-        t0 = time.time()
-        splits = ["dev", "test"]
-        for split in splits:
-            print("Running evaluation for split: ", split)
-            run_swebench_evaluation(
-                predictions_path_override=None,
-                model_name=model_name,
-                full_dataset_name="princeton-nlp/SWE-bench_Lite",
-                cost_limit=cost_limit,
-                temperature=0.00,
-                top_p=0.95,
-                run_id="test",
-                split=split,
-                max_workers=2,
-            )
-        print("Time taken: ", time.time() - t0)
-        # 9.560726881027222 - cached 14/0
-        #
-    # Successes so far
-    # gpt-4o-mini
-    # dev
-    # • pvlib__pvlib-python-1072
-    # • pydicom__pydicom-1694
-    # test 
-    # • astropy__astropy-14995
-    # • django__django-11039
-    # • django__django-11099
-    # • django__django-11133
-    # • django__django-12453
-    # • django__django-12983
-    # • django__django-13658
-    # • django__django-14382
-    # • django__django-14855
-
-    # claude-3-5-sonnet-20240620
-    # - only 3 actually complete with limit = 1
-    # - 4 complete with limit 1.5, but gets 2/4
-    # dev
-    # • pvlib__pvlib-python-1154
-    # • pydicom__pydicom-1256
-    # test (0-30)
-    # • django__django-11001
-
-
-    # - TODO: write down incomplete / empty patch in eval logs
-
-    # L3.1-70b-Together
-
-    # L3.1-405b-BaseTen
-    # dev
-    # • pydicom__pydicom-1694
-    # test
-
-
-    # ERROR: No matching distribution found for vtk
-
-    # TODO
-    # get successes with sonnet and mini
-    # try out L3.1-70b with 128k context to see where it stacks up
