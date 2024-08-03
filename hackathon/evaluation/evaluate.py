@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import subprocess
 from contextlib import redirect_stdout
+import re
 
 from run import main, ScriptArguments, EnvironmentArguments, AgentArguments, ModelArguments, ActionsArguments, CONFIG_DIR
 from getpass import getuser
@@ -61,6 +62,22 @@ def get_runnable_problems(trajectory_path):
     }
 
 
+def compare_filename_in_patches(pred_patch, expected_patches):
+    if not pred_patch or expected_patches is None:
+        return 0.0
+    pred_match = re.findall(r'\+\+\+ b/(.*)', pred_patch)
+    if not pred_match:
+        return 0.0
+    
+    pred_filenames = {match.lower().strip() for match in pred_match}
+    expected_filenames = {re.search(r'\+\+\+ b/(.*)', patch).group(1).lower().strip() for patch in expected_patches if re.search(r'\+\+\+ b/(.*)', patch)}
+    
+    if not expected_filenames:
+        return 0.0
+    
+    matched_filenames = pred_filenames & expected_filenames
+    return len(matched_filenames) / len(expected_filenames) * 100.0
+
 def run_swebench_evaluation(
     predictions_path_override=None,
     model_name=None,
@@ -71,6 +88,7 @@ def run_swebench_evaluation(
     max_workers=1,
     run_id="josh-testing",
     split="dev",
+    full_dataset=None,
 ):
     if predictions_path_override is None:
         dataset_name = full_dataset_name.split('/')[-1]
@@ -108,6 +126,19 @@ def run_swebench_evaluation(
     if len(preds) == 0:
         print(f"No predictions found for split {split}")
         return
+    
+    milestone_1_percents = {}
+    dataset = full_dataset[split]
+    for pred in preds:
+        instance_id = pred["instance_id"]
+        filtered_dataset = dataset.filter(lambda example: example['instance_id'] == instance_id)
+        expected = filtered_dataset[0]
+        milestone_1_percents[instance_id] = compare_filename_in_patches(pred['model_patch'], expected['patch'])
+    milestone_1_success = [id for id, percent in milestone_1_percents.items() if percent == 100]
+    milestone_1_mean = sum(milestone_1_percents.values()) / len(milestone_1_percents) if milestone_1_percents else 0
+    print(f'PATCHED ALL FILES: {len(milestone_1_success)}/{len(preds)}')
+    print(f'MEAN FILES PATCHED: {milestone_1_mean:.2f}%')
+
     command = [
         "python",
         "-m",
@@ -144,7 +175,10 @@ def run_swebench_evaluation(
             print("\nResults:")
             for id in success_ids + failed_ids:
                 color = Fore.LIGHTGREEN_EX if id in success_ids else Fore.LIGHTRED_EX
-                print(f"{color}• {id}{Style.RESET_ALL}")
+                perc = milestone_1_percents.get(id, 0)
+                milestone_1_emoji = '✅' if perc == 100 else '❌'
+                milestone_1 = f' (PATCHED FILES: {perc}% {milestone_1_emoji})'
+                print(f"{color}• {id}{milestone_1}{Style.RESET_ALL}")
 
 
 def run_and_catch_logs(
@@ -193,11 +227,11 @@ if __name__ == "__main__":
     elif mode == "L3.1-70b-Groq":
         model_name = "L3.1-70b-Groq"
         cost_limit = 1.0
-    run_agent = True
+    run_agent = False
     evaluate_agent = True
     split = "dev"
-    first_question_index = 0
-    last_question_index = 23
+    first_question_index = 5
+    last_question_index = 10
 
     runnable_problems_by_split = get_runnable_problems(
         f"trajectories/{getuser()}/{model_name}__SWE-bench_Lite__default__t-0.00__p-0.95__c-0.05__install-1"
@@ -227,6 +261,7 @@ if __name__ == "__main__":
                 run_id="test",
                 split=split,
                 max_workers=2,
+                full_dataset=d
             )
         print("Time taken: ", time.time() - t0)
         # 9.560726881027222 - cached 14/0
