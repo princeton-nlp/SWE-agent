@@ -517,6 +517,31 @@ def get_args(args=None) -> ScriptArguments:
         description=Markdown(__doc__),
     )
 
+def get_args_dev(model_name = "gpt-4o-mini", instance_to_filter_by="marshmallow-code__marshmallow-1359",per_instance_cost_limit=0.025):
+    return ScriptArguments(
+        suffix="",
+        environment=EnvironmentArguments(
+            image_name="sweagent/swe-agent:latest",
+            data_path="princeton-nlp/SWE-bench_Lite",
+            split="dev",
+            verbose=False,
+            install_environment=True,
+            cache_task_images=False,
+        ),
+        skip_existing=True,
+        agent=AgentArguments(
+            model=ModelArguments(
+                model_name=model_name,
+                total_cost_limit=0.0,
+                per_instance_cost_limit=per_instance_cost_limit,
+                temperature=0.0,
+                top_p=0.95,
+            ),
+            config_file=CONFIG_DIR / "default.yaml",
+        ),
+        actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
+        instance_filter=instance_to_filter_by
+    )
 
 def main(args: ScriptArguments):
     Main(args).main()
