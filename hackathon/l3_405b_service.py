@@ -1,19 +1,23 @@
 import requests
 import json
+import os
 
-# Open session to enable streaming
-s = requests.Session()
-with s.post(
+# Send request without streaming
+API_KEY = os.getenv("BASETEN_API_KEY")
+response = requests.post(
     "https://model-7wlxp82w.api.baseten.co/production/predict",
-    headers={"Authorization": "Api-Key QLk2AhIS.ay5p1g5DPDeAcNqveNziEOmh2hW42b6Q"},
-    data=json.dumps({
-      "prompt": "What even is AGI?",
-      "stream": True,
-      "max_tokens": 1024
-    }),
-    # Include stream=True as an argument so the requests libray knows to stream
-    stream=True,
-) as resp:
-    # Print the generated tokens as they get streamed
-    for content in resp.iter_content():
-        print(content.decode("utf-8"), end="", flush=True)
+    headers={"Authorization": f"Api-Key {API_KEY}"},
+    json={
+        "prompt": "What even is AGI?",
+        "stream": False,
+        "max_tokens": 500
+    }
+)
+
+# Get the full response
+if response.status_code == 200:
+    result = response.json()
+    print(result)
+else:
+    print(f"Error: {response.status_code}")
+    print(response.text)

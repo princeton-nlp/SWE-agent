@@ -172,7 +172,7 @@ if __name__ == "__main__":
 
     #export PYTHONPATH=/<path to SWE-agent directory>/SWE-agent
 
-    mode = ["mini","sonnet","L3-70b"][2]
+    mode = ["mini","sonnet","L3-70b","L3.1-405b-Baseten"][3]
     if mode == "mini":
         model_name = "gpt-4o-mini"
         cost_limit = 0.05
@@ -182,6 +182,9 @@ if __name__ == "__main__":
     elif mode == "L3-70b":
         model_name = "L3.1-70b-Together"
         cost_limit = 0.5
+    elif mode == "L3.1-405b-Baseten":
+        model_name = "L3.1-405b-BaseTen"
+        cost_limit = 1.0
     run_agent = True
     evaluate_agent = True
     split = "dev"
@@ -231,6 +234,10 @@ if __name__ == "__main__":
     # claude-3-5-sonnet-20240620
 
     # L3.1-70b-Together
+
+    # L3.1-405b-BaseTen
+
+    # ERROR: No matching distribution found for vtk
 
     # TODO
     # get successes with sonnet and mini
