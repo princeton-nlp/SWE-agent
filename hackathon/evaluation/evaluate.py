@@ -173,20 +173,23 @@ if __name__ == "__main__":
 
     #export PYTHONPATH=/<path to SWE-agent directory>/SWE-agent
 
-    mode = ["mini","sonnet","L3-70b","L3.1-405b-Baseten"][1]
+    mode = ["mini","sonnet","L3.1-70b-Together","L3.1-405b-Baseten", 'L3.1-70b-Groq'][4]
     if mode == "mini":
         model_name = "gpt-4o-mini"
         cost_limit = 0.05
     elif mode == "sonnet":
         model_name = "claude-3-5-sonnet-20240620"
-        cost_limit = 1.00
-    elif mode == "L3-70b":
+        cost_limit = 1
+    elif mode == "L3.1-70b-Together":
         model_name = "L3.1-70b-Together"
         cost_limit = 0.50
     elif mode == "L3.1-405b-Baseten":
         model_name = "L3.1-405b-BaseTen"
-        cost_limit = 1.00
-    run_agent = False#True
+        cost_limit = 1.0
+    elif mode == "L3.1-70b-Groq":
+        model_name = "L3.1-70b-Groq"
+        cost_limit = 1.0
+    run_agent = True
     evaluate_agent = True
     split = "dev"
     first_question_index = 0
