@@ -31,9 +31,8 @@ Open Docker
 docker pull sweagent/swe-agent:latest
 
 #### Test
-trajectories/jp/L3-8b__SWE-bench_Lite__default_
-         _t-0.00__p-0.95__c-3.00__install-1/marshmallow-
-         code__marshmallow-1359.traj
+python run.py --model_name L3-70b \     
+  --instance_filter marshmallow-code__marshmallow-1359
 
 #### Edit Config
 --config_file config/default_from_url.yaml
