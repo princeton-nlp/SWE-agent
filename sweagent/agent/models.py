@@ -895,7 +895,6 @@ class BaseTen(BaseModel):
                 "max_tokens": max_tokens
             }
         )
-        print(response.json())
         return response.json()['text']
     
     def query(self, history: list[dict[str, str]]) -> str:
