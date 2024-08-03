@@ -7,7 +7,7 @@ from contextlib import redirect_stdout
 from run import main, ScriptArguments, EnvironmentArguments, AgentArguments, ModelArguments, ActionsArguments, CONFIG_DIR
 
 def get_args_dev(
-    model_name="gpt-4o-mini",
+    model_name=None,
     instance_to_filter_by="marshmallow-code__marshmallow-1359",
     per_instance_cost_limit=0.025,
     split="dev",
@@ -62,7 +62,7 @@ def get_runnable_problems(trajectory_path):
 
 def run_swebench_evaluation(
     predictions_path_override=None,
-    model_name="gpt-4o-mini",
+    model_name=None,
     dataset_name="princeton-nlp/SWE-bench_Lite",
     cost_limit=0.05,
     temperature=0.00,
@@ -146,7 +146,7 @@ def run_swebench_evaluation(
 
 
 def run_and_catch_logs(
-    model_name="gpt-4o-mini", instance="marshmallow-code__marshmallow-1359", cost_limit=0.05, split="dev"
+    model_name=None, instance="marshmallow-code__marshmallow-1359", cost_limit=0.05, split="dev"
 ):
     output = io.StringIO()
     with redirect_stdout(output):
@@ -172,29 +172,33 @@ if __name__ == "__main__":
 
     #export PYTHONPATH=/<path to SWE-agent directory>/SWE-agent
 
-    mode = ["mini","sonnet","L3-70b"][0]
+    mode = ["mini","sonnet","L3-70b"][1]
     if mode == "mini":
         model_name = "gpt-4o-mini"
         cost_limit = 0.05
     elif mode == "sonnet":
         model_name = "claude-3-5-sonnet-20240620"
-        cost_limit = 0.5
+        cost_limit = 1
     elif mode == "L3-70b":
-        model_name = ""
+        model_name = "L3.1-70b-Together"
         cost_limit = 0.5
     run_agent = True
     evaluate_agent = True
+    split = "dev"
+    first_question_index = 0
+    last_question_index = 23
+
     runnable_problems_by_split = get_runnable_problems(
         f"trajectories/jp/{model_name}__SWE-bench_Lite__default__t-0.00__p-0.95__c-0.05__install-1"
     )
+    print("Model name: ", model_name)
     print({k: len(v) for k, v in runnable_problems_by_split.items()})
 
-    split = "test"
     if run_agent:
-        for question_index in range(0, 10):
+        for question_index in range(first_question_index, last_question_index:
             print("Running agent for question index: ", question_index)
             print(d[split][question_index]["instance_id"])
-            run_and_catch_logs(instance=d[split][question_index]["instance_id"], cost_limit=cost_limit, split=split)
+            run_and_catch_logs(model_name=model_name, instance=d[split][question_index]["instance_id"], cost_limit=cost_limit, split=split)
     if evaluate_agent:
         import time
 
@@ -203,7 +207,7 @@ if __name__ == "__main__":
         for split in splits:
             print("Running evaluation for split: ", split)
             run_swebench_evaluation(
-                predictions_path_override=None,#"trajectories/jp/gpt-4o-mini__SWE-bench_Lite__default__t-0.00__p-0.95__c-0.05__install-1/all_preds.jsonl"
+                predictions_path_override=None,
                 model_name=model_name,
                 dataset_name="princeton-nlp/SWE-bench_Lite",
                 cost_limit=0.05,
@@ -218,8 +222,11 @@ if __name__ == "__main__":
         #
     # Successes so far
     # gpt-4o-mini
+    # dev
     # • pvlib__pvlib-python-1072
     # • pydicom__pydicom-1694
+    # test 
+    # • astropy__astropy-14995
 
     # TODO
     # get successes with sonnet and mini

@@ -21,6 +21,8 @@ TODO:
   - Did we edit at least some of the right lines
   - Did our edit overlap with the gold edits in any way?
 
+export PYTHONPATH="/Users/jp/Documents/GitHub/SWE-agent"
+
 
 # Current Default Patterns
 
