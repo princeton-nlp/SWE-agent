@@ -34,6 +34,11 @@ python run.py --model_name gpt-4o-mini \
 
 ## Score
 python -m swebench.harness.run_evaluation \
+    --dataset_name princeton-nlp/SWE-bench_Lite \
     --predictions_path /path/to/all_preds.jsonl \
     --max_workers 1
     --run_id test
+    --split dev
+
+For my machine
+python -m swebench.harness.run_evaluation --dataset_name princeton-nlp/SWE-bench_Lite --predictions_path trajectories/jp/gpt-4o-mini__SWE-bench_Lite__default__t-0.00__p-0.95__c-0.05__install-1/all_preds.jsonl --max_workers 1 --run_id test --split dev
