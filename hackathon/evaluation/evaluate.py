@@ -5,7 +5,7 @@ import subprocess
 import time
 from contextlib import redirect_stdout
 from typing import List
-
+import re
 from run import (
     CONFIG_DIR,
     ActionsArguments,
@@ -15,7 +15,7 @@ from run import (
     ScriptArguments,
     main,
 )
-
+from getpass import getuser
 
 def get_args_dev(
     model_name=None,
@@ -72,6 +72,25 @@ def get_runnable_problems(trajectory_path):
     }
 
 
+def compare_filename_in_patches(pred_patch, expected_patch):
+    if not pred_patch or expected_patch is None:
+        return 0.0
+    pred_match = re.findall(r'\+\+\+ b/(.*)', pred_patch)
+    if not pred_match:
+        return 0.0
+    
+    pred_filenames = {match.lower().strip() for match in pred_match}
+
+    expected_match = re.findall(r'\+\+\+ b/(.*)', expected_patch)
+    if not expected_match:
+        return 1.0
+    expected_filenames = {match.lower().strip() for match in expected_match}
+    if not expected_filenames:
+        return 0.0
+    
+    matched_filenames = pred_filenames & expected_filenames
+    return len(matched_filenames) / len(expected_filenames) * 100.0
+
 def run_swebench_evaluation(
     predictions_path_override=None,
     model_name=None,
@@ -83,11 +102,12 @@ def run_swebench_evaluation(
     run_id="josh-testing",
     split="dev",
     dev_ids = None,
-    test_ids = None
+    test_ids = None,
+    full_dataset=None,
 ):
     if predictions_path_override is None:
         dataset_name = full_dataset_name.split('/')[-1]
-        predictions_path = f"trajectories/jp/{model_name}__{dataset_name}__default__t-{temperature:.2f}__p-0.95__c-{cost_limit:.2f}__install-1/all_preds.jsonl"
+        predictions_path = f"trajectories/{getuser()}/{model_name}__{dataset_name}__default__t-{temperature:.2f}__p-0.95__c-{cost_limit:.2f}__install-1/all_preds.jsonl"
     else:
         predictions_path = predictions_path_override
 
@@ -126,6 +146,18 @@ def run_swebench_evaluation(
         return [], []
     else:
         print(f"Running evaluation for split {split} - {len(preds)} predictions found")
+    
+    milestone_1_percents = {}
+    dataset = full_dataset[split]
+    for pred in preds:
+        instance_id = pred["instance_id"]
+        filtered_dataset = dataset.filter(lambda example: example['instance_id'] == instance_id)
+        expected = filtered_dataset[0]
+        milestone_1_percents[instance_id] = compare_filename_in_patches(pred['model_patch'], expected['patch'])
+    milestone_1_success = [id for id, percent in milestone_1_percents.items() if percent == 100]
+    milestone_1_mean = sum(milestone_1_percents.values()) / len(milestone_1_percents) if milestone_1_percents else 0
+    print(f'PATCHED ALL FILES: {len(milestone_1_success)}/{len(preds)}')
+    print(f'MEAN FILES PATCHED: {milestone_1_mean:.2f}%')
     command = [
         "python",
         "-m",
@@ -163,8 +195,10 @@ def run_swebench_evaluation(
             print("\nResults:")
             for id in success_ids + failed_ids:
                 color = Fore.LIGHTGREEN_EX if id in success_ids else Fore.LIGHTRED_EX
-                print(f"{color}• {id}{Style.RESET_ALL}")
-    return success_ids, failed_ids
+                perc = milestone_1_percents.get(id, 0)
+                milestone_1_emoji = '✅' if perc == 100 else '❌'
+                milestone_1 = f' (PATCHED FILES: {perc}% {milestone_1_emoji})'
+                print(f"{color}• {id}{milestone_1}{Style.RESET_ALL}")
 
 def run_agent_and_catch_logs(
     model_name=None, instance="marshmallow-code__marshmallow-1359", cost_limit=0.05, split="dev"
