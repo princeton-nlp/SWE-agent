@@ -99,6 +99,7 @@ class AgentConfig(FrozenSerializable):
     _commands: list[Command] = field(default_factory=list)
     _subroutines: dict[str, Subroutine] = field(default_factory=dict)
     subroutine_types: list[Subroutine] = field(default_factory=list)
+    summarize_model_input: bool = False
 
     def __post_init__(self):
         object.__setattr__(self, "command_files", convert_paths_to_abspath(self.command_files))
@@ -544,6 +545,14 @@ class Agent:
 
         for hook in self.hooks:
             hook.on_model_query(query=self.local_history, agent=self.name)
+            
+        if self.config.summarize_model_input:
+            filtered_history = []
+            for entry in self.local_history:
+                if "is_demo" not in entry:
+                    filtered_history.append(entry)
+            return self.model.query(filtered_history)
+           
         return self.model.query(self.local_history)
 
     def retry_after_format_fail(self, output: str) -> str:

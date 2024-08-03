@@ -108,5 +108,6 @@ command_files:
 - config/commands/_split_string.py
 parse_command: ParseCommandDetailed
 history_processor: Last5Observations
+summarize_model_input: true
 demonstrations:
 - trajectories/demonstrations/replay__marshmallow-code__marshmallow-1867__default__t-0.20__p-0.95__c-2.00__install-1___install_from_source/marshmallow-code__marshmallow-1867.traj
