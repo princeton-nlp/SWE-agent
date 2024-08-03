@@ -841,6 +841,69 @@ class TogetherModel(BaseModel):
         output_tokens = completion["usage"]["completion_tokens"]
         self.update_stats(input_tokens, output_tokens)
         return response
+    
+
+class BaseTen(BaseModel):
+    MODELS = {
+    "L3.1-405b-BaseTen": {
+            "max_context": 128_000,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        }
+    }
+    SHORTCUTS = {
+        "L3.1-405b-BaseTen": "L3.1-405b-BaseTen"
+    }
+
+    def __init__(self, args: ModelArguments, commands: list[Command]):
+        super().__init__(args, commands)
+
+    def history_to_messages(self, history: list[dict[str, str]], is_demonstration: bool = False) -> str:
+        """
+        Create `prompt` by filtering out all keys except for role/content per `history` turn
+        """
+        # Remove system messages if it is a demonstration
+        if is_demonstration:
+            history = [entry for entry in history if entry["role"] != "system"]
+        # Map history to TogetherAI format
+        mapping = {"user": "human", "assistant": "bot", "system": "bot"}
+        prompt = [f'<{mapping[d["role"]]}>: {d["content"]}' for d in history]
+        prompt = "\n".join(prompt)
+        return f"{prompt}\n<bot>:"
+    
+    def baseten_wrapper(self, prompt: str, max_tokens: int = 500) -> str:
+        import os
+        import requests
+        API_KEY = os.getenv("BASETEN_API_KEY")
+        response = requests.post(
+            "https://model-7wlxp82w.api.baseten.co/production/predict",
+            headers={"Authorization": f"Api-Key {API_KEY}"},
+            json={
+                "prompt": prompt,
+                "stream": False,
+                "max_tokens": max_tokens
+            }
+        )
+        return response
+    
+    def query(self, history: list[dict[str, str]]) -> str:
+        """
+        Query the Together API with the given `history` and return the response.
+        """
+        # Perform Together API call
+        prompt = self.history_to_messages(history)
+        # Anthropic's count_tokens is convenient because it caches and utilizes huggingface/tokenizers, so we will use.
+        max_tokens_to_sample = self.model_metadata["max_context"] - Anthropic().count_tokens(prompt)
+        response = self.baseten_wrapper(
+            prompt=prompt,
+            max_tokens = min([500,max_tokens_to_sample])
+        )
+        # Calculate + update costs, return response
+        #response = completion["choices"][0]["text"].split("<human>")[0]
+        input_tokens =0#completion["usage"]["prompt_tokens"]
+        output_tokens = 0#completion["usage"]["completion_tokens"]
+        self.update_stats(input_tokens, output_tokens)
+        return response
 
 
 class HumanModel(BaseModel):
@@ -1018,6 +1081,8 @@ def get_model(args: ModelArguments, commands: list[Command] | None = None):
         return TogetherModel(args, commands)
     elif args.model_name in GroqModel.SHORTCUTS:
         return GroqModel(args, commands)
+    elif args.model_name in BaseTen.SHORTCUTS:
+        return BaseTen(args, commands)
     elif args.model_name == "instant_empty_submit":
         return InstantEmptySubmitTestModel(args, commands)
     else:
