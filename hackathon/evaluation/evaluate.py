@@ -5,6 +5,7 @@ import subprocess
 from contextlib import redirect_stdout
 
 from run import main, ScriptArguments, EnvironmentArguments, AgentArguments, ModelArguments, ActionsArguments, CONFIG_DIR
+from getpass import getuser
 
 def get_args_dev(
     model_name=None,
@@ -73,7 +74,7 @@ def run_swebench_evaluation(
 ):
     if predictions_path_override is None:
         dataset_name = full_dataset_name.split('/')[-1]
-        predictions_path = f"trajectories/jp/{model_name}__{dataset_name}__default__t-{temperature:.2f}__p-0.95__c-{cost_limit:.2f}__install-1/all_preds.jsonl"
+        predictions_path = f"trajectories/{getuser()}/{model_name}__{dataset_name}__default__t-{temperature:.2f}__p-0.95__c-{cost_limit:.2f}__install-1/all_preds.jsonl"
     else:
         predictions_path = predictions_path_override
 
@@ -199,7 +200,7 @@ if __name__ == "__main__":
     last_question_index = 23
 
     runnable_problems_by_split = get_runnable_problems(
-        f"trajectories/jp/{model_name}__SWE-bench_Lite__default__t-0.00__p-0.95__c-0.05__install-1"
+        f"trajectories/{getuser()}/{model_name}__SWE-bench_Lite__default__t-0.00__p-0.95__c-0.05__install-1"
     )
     print("Model name: ", model_name)
     print({k: len(v) for k, v in runnable_problems_by_split.items()})
