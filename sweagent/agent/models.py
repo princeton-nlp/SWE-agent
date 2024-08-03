@@ -731,7 +731,7 @@ class GroqModel(BaseModel):
         """
         prompt = self.history_to_messages(history)
         # Anthropic's count_tokens is convenient because it caches and utilizes huggingface/tokenizers, so we will use.
-        max_tokens_to_sample = self.model_metadata["max_context"] - Anthropic().count_tokens(prompt)
+        # max_tokens_to_sample = self.model_metadata["max_context"] - Anthropic().count_tokens(prompt)
 
         # TODO: Add some kind of warnings if prompt is too long and truncate to 8192
         # Obviously, this should really be fixed at the prompt level
