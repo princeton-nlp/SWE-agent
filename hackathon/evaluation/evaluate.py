@@ -25,6 +25,7 @@ if __name__ == "__main__":
     # TODO: seems like in my local env I'm struggling with
     # types-pkg_resources
     d = load_dataset("princeton-nlp/SWE-bench_Lite")
-    run_and_catch_logs(instance=d['dev'][4]['instance_id'])
+    question_index = 0
+    run_and_catch_logs(instance=d['dev'][question_index]['instance_id'])
 
     

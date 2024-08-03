@@ -5,6 +5,23 @@
 - Want good stats for multiple agent calls to get aggregate metrics to know what to prioritize
 
 
+# Current Programmatic Patterns
+python3 hackathon/evaluation/evaluate.py
+python -m swebench.harness.run_evaluation \
+    --predictions_path /path/to/all_preds.jsonl \
+    --max_workers 1
+    --run_id test
+
+
+TODO:
+[] Fix the issue where some questions fail bc they try to install a yanked package (types-pkg_resources). To replicate, simply run with question_index = 0
+[] Add support for invoking the swebench evaluator after running the agent
+[] Add support for meaningful parsing of the logs, using reference info from the question
+  - Did we find the right file
+  - Did we edit at least some of the right lines
+  - Did our edit overlap with the gold edits in any way?
+
+
 # Current Default Patterns
 
 ## Run
@@ -20,8 +37,3 @@ python -m swebench.harness.run_evaluation \
     --predictions_path /path/to/all_preds.jsonl \
     --max_workers 1
     --run_id test
-
-??
-ValueError: Some prediction IDs not found in dataset!
-Missing IDs:
-marshmallow-code__marshmallow-1359
