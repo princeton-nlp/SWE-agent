@@ -936,7 +936,7 @@ class SWEEnv(gym.Env):
                 self.logger.debug("Created conda environment")
                 # Write reqs to requirements.txt in docker container
                 content_reqs = get_requirements(self.record)
-                content_reqs = [x for x in content_reqs if 'pkg_resources' not in x]
+                content_reqs = [x for x in content_reqs if "pkg_resources" not in x]
                 copy_file_to_container(self.container_obj, content_reqs, PATH_TO_REQS)
                 # Create conda environment + install reqs
                 self.communicate_with_handling(

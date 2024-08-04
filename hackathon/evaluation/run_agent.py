@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 import time
 
 from hackathon.evaluation.evaluate import get_runnable_problems, run_agents_and_catch_logs, run_swebench_evaluation
 
 if __name__ == "__main__":
     from datasets import load_dataset
+
     d = load_dataset("princeton-nlp/SWE-bench_Lite")
 
-    mode = ["mini","sonnet","L3.1-70b-Together","L3.1-405b-Baseten", 'L3.1-70b-Groq'][0]
+    mode = ["mini", "sonnet", "L3.1-70b-Together", "L3.1-405b-Baseten", "L3.1-70b-Groq"][0]
     if mode == "mini":
         model_name = "gpt-4o-mini"
         cost_limit = 0.20
@@ -36,8 +39,13 @@ if __name__ == "__main__":
     print({k: len(v) for k, v in runnable_problems_by_split.items()})
     t0_agent = time.time()
     if run_agent:
-        question_ids = [d[split][question_index]["instance_id"] for question_index in range(first_question_index, last_question_index)]
-        run_agents_and_catch_logs(model_name=model_name, instance_ids=question_ids, instance_cost_limit=cost_limit, split=split)
+        question_ids = [
+            d[split][question_index]["instance_id"]
+            for question_index in range(first_question_index, last_question_index)
+        ]
+        run_agents_and_catch_logs(
+            model_name=model_name, instance_ids=question_ids, instance_cost_limit=cost_limit, split=split
+        )
     print("Time taken to run agent: ", time.time() - t0_agent)
     if evaluate_agent:
         import time

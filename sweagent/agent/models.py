@@ -7,10 +7,10 @@ from collections import defaultdict
 from dataclasses import dataclass, fields
 from pathlib import Path
 
+import groq
 import together
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
 from openai import AzureOpenAI, BadRequestError, OpenAI
-import groq
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
 from tenacity import (
     retry,
@@ -781,7 +781,7 @@ class TogetherModel(BaseModel):
             "max_context": 128_000,
             "cost_per_input_token": 9e-07,
             "cost_per_output_token": 9e-07,
-        }
+        },
     }
 
     SHORTCUTS = {
@@ -841,7 +841,7 @@ class TogetherModel(BaseModel):
         output_tokens = completion["usage"]["completion_tokens"]
         self.update_stats(input_tokens, output_tokens)
         return response
-    
+
 
 class BaseTen(BaseModel):
     MODELS = {
@@ -852,19 +852,16 @@ class BaseTen(BaseModel):
             "cost_per_input_token": 0,
             "cost_per_output_token": 0,
         },
-         "L3.1-70b-BaseTen": {
-             "api_key_name": "BASETEN_API_KEY_70B",
-             "model_id": "jwd78r4w",
-             "max_context": 128_000,
-             "cost_per_input_token": 0,
-             "cost_per_output_token": 0,
-        }
+        "L3.1-70b-BaseTen": {
+            "api_key_name": "BASETEN_API_KEY_70B",
+            "model_id": "jwd78r4w",
+            "max_context": 128_000,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        },
     }
-    
-    SHORTCUTS = {
-        "L3.1-405b-BaseTen": "L3.1-405b-BaseTen",
-        "L3.1-70b-BaseTen": "L3.1-70b-BaseTen"
-    }
+
+    SHORTCUTS = {"L3.1-405b-BaseTen": "L3.1-405b-BaseTen", "L3.1-70b-BaseTen": "L3.1-70b-BaseTen"}
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
         super().__init__(args, commands)
@@ -881,25 +878,23 @@ class BaseTen(BaseModel):
         prompt = [f'<{mapping[d["role"]]}>: {d["content"]}' for d in history]
         prompt = "\n".join(prompt)
         return f"{prompt}\n<bot>:"
-    
+
     def baseten_wrapper(self, prompt: str, model_id: str, api_key_name: str, max_tokens: int = 500) -> str:
         import os
+
         import requests
+
         API_KEY = os.getenv(api_key_name)
         if not API_KEY:
             raise ValueError(f"API key for {api_key_name} not found in environment variables.")
-        
+
         response = requests.post(
             f"https://model-{model_id}.api.baseten.co/production/predict",
             headers={"Authorization": f"Api-Key {API_KEY}"},
-            json={
-                "prompt": prompt,
-                "stream": False,
-                "max_tokens": max_tokens
-            }
+            json={"prompt": prompt, "stream": False, "max_tokens": max_tokens},
         )
         return response.json()["text"]
-    
+
     def query(self, history: list[dict[str, str]]) -> str:
         """
         Query BaseTen with the given `history` and return the response.
@@ -909,15 +904,15 @@ class BaseTen(BaseModel):
         max_tokens_to_sample = self.model_metadata["max_context"] - Anthropic().count_tokens(prompt)
         response = self.baseten_wrapper(
             prompt=prompt,
-            model_id=self.model_metadata['model_id'],
-            api_key_name=self.model_metadata['api_key_name'],
-            max_tokens = min([500, max_tokens_to_sample])
+            model_id=self.model_metadata["model_id"],
+            api_key_name=self.model_metadata["api_key_name"],
+            max_tokens=min([500, max_tokens_to_sample]),
         )
         print()
         # Calculate + update costs, return response
-        #response = completion["choices"][0]["text"].split("<human>")[0]
-        input_tokens = 0 #completion["usage"]["prompt_tokens"]
-        output_tokens = 0 #completion["usage"]["completion_tokens"]
+        # response = completion["choices"][0]["text"].split("<human>")[0]
+        input_tokens = 0  # completion["usage"]["prompt_tokens"]
+        output_tokens = 0  # completion["usage"]["completion_tokens"]
         self.update_stats(input_tokens, output_tokens)
         return response
 

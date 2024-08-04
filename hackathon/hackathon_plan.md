@@ -8,4 +8,3 @@ Unhobbling
 
 Learning
 - Can we FT L3.1-8/70b? May take some work getting unsloth setup
-  
