@@ -183,7 +183,7 @@ class SWEEnv(gym.Env):
         self.image_name = args.image_name
         self.container_obj: docker.models.containers.Container | None = None
         self.container: subprocess.Popen | None = None
-        self.docker_compose: subprocess.Popen | None = None
+        self.docker_compose: Path | None = None
         self.challenge: dict[str, Any] | None = None
         self._reset_container()
 
@@ -624,7 +624,7 @@ class SWEEnv(gym.Env):
         """
         if self.challenge is not None and self.challenge.get("docker_compose") is not None:
             self.docker_compose = get_docker_compose(self.challenge.get("docker_compose"))
-        self.logger.info("🌱 Initialized docker compose for challenge")
+            self.logger.info("🌱 Initialized docker compose for challenge")
 
     def _init_container(self, cached_image: str | None = None) -> None:
         """
