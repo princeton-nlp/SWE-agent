@@ -413,6 +413,7 @@ class Main:
                     logger.warning("❌ Failed on unknown instance")
                 self.env.reset_container()
                 continue
+        self.env.close()
         for hook in self.hooks:
             hook.on_end()
 

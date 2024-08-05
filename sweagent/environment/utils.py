@@ -889,4 +889,5 @@ def format_trajectory_markdown(trajectory: list[dict[str, str]]):
 
 
 def extract_flag_format(flag: str) -> str:
-    return re.sub(r"{.*}$", "{...}", flag)
+    flag_format = re.sub(r"{.*}$", "{...}", flag)
+    return flag_format if flag_format != flag else "..."
