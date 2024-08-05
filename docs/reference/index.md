@@ -18,7 +18,7 @@ The core:
     * [Read about the `SWEEnv` class](agent.md)
     * [Explore the code](https://github.com/princeton-nlp/SWE-agent/tree/main/sweagent/environment/)
 
-More subolders
+More subfolders
 
 * See the [`scripts/`](https://github.com/princeton-nlp/SWE-agent/tree/main/scripts/) folder for other useful scripts and details.
 * See the [`config/`](https://github.com/princeton-nlp/SWE-agent/tree/main/config/) folder for details about how you can define your own configuration!
