@@ -230,12 +230,14 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
                 try:
                     decoded = buffer.decode()
                 except UnicodeDecodeError:
+                    # Should we reset the buffer to skip the byte that causes the error?
                     n_decode_failures += 1
                     if n_decode_failures > 30:
                         msg = "Too many decode failures while reading from subprocess."
                         raise RuntimeError(msg)
-                if PROCESS_DONE_MARKER_START in decoded:
-                    break
+                else:
+                    if PROCESS_DONE_MARKER_START in decoded:
+                        break
         time.sleep(0.01)  # Prevents CPU hogging
 
     if container.poll() is not None:
