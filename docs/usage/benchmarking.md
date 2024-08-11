@@ -40,7 +40,7 @@ After installing SWE-bench, you can run `run_evaluation` as such:
 ```bash
 python -m swebench.harness.run_evaluation \
     --predictions_path /path/to/all_preds.jsonl \
-    --max_workers 1
+    --max_workers 1 \
     --run_id test
 ```
 
