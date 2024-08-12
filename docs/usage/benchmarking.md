@@ -46,4 +46,10 @@ python -m swebench.harness.run_evaluation \
 
 Head over to [SWE-bench](https://github.com/princeton-nlp/SWE-bench/) for details.
 
+!!! note "Default split"
+
+    When running `swe-agent` it uses the SWE-bench lite `dev` split by default (i.e., when not specifying `--data_path` or `--split`).
+    However, `swe-bench` assumes the SWE-bench lite `test` split by default.
+    When you get warnings from `swe-bench` about missing instances, make sure you specify `--split test` or `--split dev` appropriately.
+
 {% include-markdown "../_footer.md" %}
