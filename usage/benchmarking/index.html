@@ -1382,6 +1382,12 @@ They were relatively thin wrappers around <code>swe-bench</code>. After the <cod
 <span class="w">    </span>--run_id<span class="w"> </span><span class="nb">test</span>
 </code></pre></div>
 <p>Head over to <a href="https://github.com/princeton-nlp/SWE-bench/">SWE-bench</a> for details.</p>
+<div class="admonition note">
+<p class="admonition-title">Default split</p>
+<p>When running <code>swe-agent</code> it uses the SWE-bench lite <code>dev</code> split by default (i.e., when not specifying <code>--data_path</code> or <code>--split</code>).
+However, <code>swe-bench</code> assumes the SWE-bench lite <code>test</code> split by default.
+When you get warnings from <code>swe-bench</code> about missing instances, make sure you specify <code>--split test</code> or <code>--split dev</code> appropriately.</p>
+</div>
 <!-- BEGIN INCLUDE ../_footer.md -->
 <div class="grid cards">
 <ul>
