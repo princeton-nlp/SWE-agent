@@ -28,6 +28,7 @@ Here, we can simply create an empty folder (outside of the SWE-agent repository)
 mkdir empty
 git init
 touch main.py
+echo "*.pyc" > .gitignore  # to avoid binary files in patches
 ```
 
 and potentially populate it with the problem stub
@@ -59,7 +60,8 @@ python run.py \
     --repo_path /path/to/empty \
     --config_file config/coding_challenge.yaml \
     --model gpt4 \
-    --per_instance_cost_limit 3.0
+    --per_instance_cost_limit 3.0 \
+    --apply_patch_locally
 ```
 
 <details>
@@ -146,6 +148,9 @@ index 1e7f08f..beabaa7 100644
 +    print("All test cases passed successfully.")
 ```
 </details>
+
+Because of the `--apply_patch_locally` flag, the patch has also already been applied to the repository,
+so you can also retrieve the final solution from there.
 
 ### Improving SWE-agent for coding challenges
 
