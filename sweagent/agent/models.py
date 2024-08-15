@@ -9,8 +9,8 @@ from pathlib import Path
 
 import together
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
-from openai import AzureOpenAI, BadRequestError, OpenAI
 from groq import Groq
+from openai import AzureOpenAI, BadRequestError, OpenAI
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
 from tenacity import (
     retry,
@@ -385,7 +385,6 @@ class GroqModel(OpenAIModel):
         "groq/gemma7it": "gemma-7b-it",
         "groq/mixtral8x7": "mixtral-8x7b-32768",
     }
-
 
     def _setup_client(self) -> None:
         self.client = Groq(
