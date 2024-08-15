@@ -1381,6 +1381,7 @@ Here, we can simply create an empty folder (outside of the SWE-agent repository)
 <div class="highlight"><pre><span></span><code>mkdir<span class="w"> </span>empty
 git<span class="w"> </span>init
 touch<span class="w"> </span>main.py
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;*.pyc&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>.gitignore<span class="w">  </span><span class="c1"># to avoid binary files in patches</span>
 </code></pre></div>
 <p>and potentially populate it with the problem stub</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
@@ -1404,7 +1405,8 @@ additional step, so it's best to directly specify them.</p>
 <span class="w">    </span>--repo_path<span class="w"> </span>/path/to/empty<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--config_file<span class="w"> </span>config/coding_challenge.yaml<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--model<span class="w"> </span>gpt4<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--per_instance_cost_limit<span class="w"> </span><span class="m">3</span>.0
+<span class="w">    </span>--per_instance_cost_limit<span class="w"> </span><span class="m">3</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--apply_patch_locally
 </code></pre></div>
 <details>
 <summary>Output</summary>
@@ -2424,6 +2426,8 @@ index 1e7f08f..beabaa7 100644
 </code></pre></div>
 </details>
 
+<p>Because of the <code>--apply_patch_locally</code> flag, the patch has also already been applied to the repository,
+so you can also retrieve the final solution from there.</p>
 <h3 id="improving-swe-agent-for-coding-challenges">Improving SWE-agent for coding challenges</h3>
 <p>By default, the demonstration trajectory the agent uses while solving a coding challenge is one in which it needs to solve a small bug in a short piece of code (from the HumanEvalFix dataset). Since that process is not too similar to solving a coding challenge, performance would probably substantially improve if the agent was given a demonstration trajectory in which it has to solve an actual programming challenge. To learn how to do that, read <a href="../../config/demonstrations/">this</a>.</p>
 
