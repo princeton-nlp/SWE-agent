@@ -419,10 +419,7 @@ def image_exists(image_name: str) -> bool:
         if docker_not_running:
             msg = (
                 "Probably the Docker daemon is not running. Please start the Docker daemon and try again. "
-                "You might need to allow the use of the docker socket "
-                "(https://github.com/princeton-nlp/SWE-agent/issues/159) or symlink the socket "
-                "if it's at a non-standard location "
-                "(https://github.com/princeton-nlp/SWE-agent/issues/20#issuecomment-2047506005)."
+                "If Docker issues persist, please check out https://princeton-nlp.github.io/SWE-agent/installation/tips/"
             )
             raise RuntimeError(msg) from e
         raise
