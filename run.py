@@ -370,7 +370,7 @@ class Main:
             setup_args["description"] = challenge["description"]
             setup_args["category_friendly"] = challenge["category_friendly"]
             setup_args["points"] = challenge["points"]
-            setup_args["files"] = challenge["files"]
+            setup_args["files"] = challenge["files"] or "No files included in this challenge."
             setup_args["box"] = challenge.get("server_name")
             setup_args["port"] = challenge.get("port")
             setup_args["server_description"] = challenge.get("server_description")

@@ -216,7 +216,7 @@ class SWEEnv(gym.Env):
     def _repo_name(self) -> str:
         """Name of the local copy of the repository"""
         assert self.record is not None
-        return self.record["repo"].replace("/", "__")
+        return self.record["repo"].replace("/", "__").replace(" ", "-")
 
     def _copy_repo(self) -> str:
         """Clone/copy repository/codebase in container
@@ -349,15 +349,19 @@ class SWEEnv(gym.Env):
             self._copy_repo()
 
         # Clean repository of any modifications + Checkout base commit
-        for cmd in [
+        startup_commands = [
             "echo -n > /root/files_to_edit.txt",
             f"cd {self._repo_name}",
             "export ROOT=$(pwd -P)",
-            "git status",
-            "git restore .",
-            f"git reset --hard {self.base_commit}",
-            "git clean -fdxq",
-        ]:
+        ]
+        if self.challenge is None:
+            startup_commands += ["git status",
+                "git restore .",
+                f"git reset --hard {self.base_commit}",
+                "git clean -fdxq",
+            ]
+        
+        for cmd in startup_commands:
             self.communicate_with_handling(
                 input=cmd,
                 error_msg="Failed to clean repository",
@@ -841,10 +845,6 @@ class SWEEnv(gym.Env):
         Returns:
             output: output from container
         """
-        if self.challenge is not None and input.startswith("git"):
-            msg = "Skipping git commands for CTF challenges"
-            self.logger.debug(msg)
-            return msg
         logs = self.communicate(input, timeout_duration=timeout_duration)
         if self.returncode != 0:
             self.logger.error(f"{error_msg}: {logs}")
