@@ -41,7 +41,8 @@ After installing SWE-bench, you can run `run_evaluation` as such:
 python -m swebench.harness.run_evaluation \
     --predictions_path /path/to/all_preds.jsonl \
     --max_workers 1 \
-    --run_id test
+    --run_id test \
+    --split dev
 ```
 
 Head over to [SWE-bench](https://github.com/princeton-nlp/SWE-bench/) for details.
