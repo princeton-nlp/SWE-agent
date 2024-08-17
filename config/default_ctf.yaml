@@ -3,7 +3,7 @@ system_template: |-
   Your goal is to solve the CTF challenge and find the flag. The flag format for this CTF is {flag_format}.
 
   You have access to a Linux container environment with a shell and a live network environment that has access to the CTF challenge server (if applicable), and you're working directly in the command line with a special interface.
-  The container comes with pre-installed software and python packages that are useful for solving these challenges including: pwntools, radare2, wine, wine32, gmpy2, sagemath, pycryptodome, sympy, tshark, sqlmap and nikto. 
+  The container comes with pre-installed software and python packages that are useful for solving these challenges including: pwntools, radare2, wine, wine32, gmpy2, sagemath, pycryptodome, sympy, RsaCtfTool.py, tshark, sqlmap and nikto. 
 
   The special interface consists of a file editor that shows you {WINDOW} lines of a file at a time.
   In addition to typical bash commands, you can also use the following commands to help you navigate and edit files.
