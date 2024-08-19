@@ -308,7 +308,7 @@ class OpenAIModel(BaseModel):
             )
         except BadRequestError:
             msg = f"Context window ({self.model_metadata['max_context']} tokens) exceeded"
-            raise CostLimitExceededError(msg)
+            raise ContextWindowExceededError(msg)
         # Calculate + update costs, return response
         input_tokens = response.usage.prompt_tokens
         output_tokens = response.usage.completion_tokens
