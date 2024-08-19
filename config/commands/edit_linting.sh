@@ -46,6 +46,9 @@ edit() {
         return
     fi
 
+    local linter_cmd="flake8 --isolated --select=F821,F822,F831,E111,E112,E113,E999,E902"
+    local linter_before_edit=$($linter_cmd "$CURRENT_FILE" 2>&1)
+
     # Bash array starts at 0, so let's adjust
     local start_line=$((start_line - 1))
     local end_line=$((end_line))
@@ -66,10 +69,11 @@ edit() {
     local new_lines=("${lines[@]:0:$start_line}" "${replacement[@]}" "${lines[@]:$((end_line))}")
     # Write the new stuff directly back into the original file
     printf "%s\n" "${new_lines[@]}" >| "$CURRENT_FILE"
-    
+
     # Run linter
     if [[ $CURRENT_FILE == *.py ]]; then
-        lint_output=$(flake8 --select=F821,F822,F831,E111,E112,E113,E999,E902 "$CURRENT_FILE" 2>&1)
+        _lint_output=$($linter_cmd "$CURRENT_FILE" 2>&1)
+        lint_output=$(_split_string "$_lint_output" "$linter_before_edit" "$((start_line+1))" "$end_line" "$line_count")
     else
         # do nothing
         lint_output=""
@@ -83,10 +87,10 @@ edit() {
 
         echo "File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary."
     else
-        echo "Your proposed edit has introduced new syntax error(s). Please understand the fixes and retry your edit commmand."
+        echo "Your proposed edit has introduced new syntax error(s). Please read this error message carefully and then retry editing the file."
         echo ""
         echo "ERRORS:"
-        _split_string "$lint_output"
+        echo "$lint_output"
         echo ""
 
         # Save original values

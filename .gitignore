@@ -132,7 +132,7 @@ dmypy.json
 *.DS_Store
 
 # Custom
-keys.cfg
+keys*.cfg
 
 # iPython Notebooks
 *.ipynb
@@ -186,4 +186,10 @@ website/frontend/build
 *.demo.yaml
 
 # trajectory files
-trajectories/*
+trajectories/**
+!trajectories/demonstrations/**
+data/**
+.vscode/**
+
+# PyCharm
+.idea/

@@ -37,7 +37,7 @@ edit() {
     printf "%s\n" "${new_lines[@]}" >| "$CURRENT_FILE"
     # Run linter
     if [[ $CURRENT_FILE == *.py ]]; then
-        lint_output=$(flake8 --select=F821,F822,F831,E111,E112,E113,E999,E902 "$CURRENT_FILE" 2>&1)
+        lint_output=$(flake8 --isolated --select=F821,F822,F831,E111,E112,E113,E999,E902 "$CURRENT_FILE" 2>&1)
     else
         # do nothing
         lint_output=""
@@ -51,7 +51,7 @@ edit() {
         _print
         echo "File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary."
     else
-        echo "Your proposed edit has introduced new syntax error(s). Please understand the fixes and retry your edit commmand."
+        echo "Your proposed edit has introduced new syntax error(s). Please read this error message carefully and then retry editing the file."
         echo ""
         echo "ERRORS:"
         _split_string "$lint_output"
@@ -91,7 +91,7 @@ edit() {
         export CURRENT_LINE=$original_current_line
         export WINDOW=$original_window
         export END_CURSOR=$original_end_cursor
-        
+
         echo "Your changes have NOT been applied. Please fix your edit command and try again."
         echo "You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code."
         echo "DO NOT re-run the same failed edit command. Running it again will lead to the same error."

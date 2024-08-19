@@ -3,7 +3,7 @@ ci:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: "v4.5.0"
+    rev: "v4.6.0"
     hooks:
       - id: check-added-large-files
       - id: check-case-conflict
@@ -12,9 +12,26 @@ repos:
       - id: mixed-line-ending
       - id: detect-private-key
       - id: check-ast
+      - id: trailing-whitespace
 
-  - repo: https://github.com/pycqa/flake8
-    rev: '4.0.1'  # Use the latest flake8 version or the one you prefer
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.23.6
     hooks:
-      - id: flake8
-        args: ['--select=F821,F822,F831,E111,E112,E113,E999,E902']
+      - id: typos
+        files: \.(py|md|rst|yaml|toml)
+        exclude: pyproject.toml
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.7
+    hooks:
+      # Run the linter.
+      - id: ruff
+        args: ["--fix"]
+      # Run the formatter.
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: "v4.0.0-alpha.8" # Use the sha or tag you want to point at
+    hooks:
+      - id: prettier
+        types_or: ["javascript", "css"]

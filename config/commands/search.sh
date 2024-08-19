@@ -27,7 +27,7 @@ search_dir() {
         return
     fi
     dir=$(realpath "$dir")
-    local matches=$(find "$dir" -type f ! -path '*/.*' -exec grep -nIH "$search_term" {} + | cut -d: -f1 | sort | uniq -c)
+    local matches=$(find "$dir" -type f ! -path '*/.*' -exec grep -nIH -- "$search_term" {} + | cut -d: -f1 | sort | uniq -c)
     # if no matches, return
     if [ -z "$matches" ]; then
         echo "No matches found for \"$search_term\" in $dir"
@@ -42,7 +42,7 @@ search_dir() {
         echo "More than $num_files files matched for \"$search_term\" in $dir. Please narrow your search."
         return
     fi
-    
+
     echo "Found $num_matches matches for \"$search_term\" in $dir:"
     echo "$matches" | awk '{$2=$2; gsub(/^\.+\/+/, "./", $2); print $2 " ("$1" matches)"}'
     echo "End of matches for \"$search_term\" in $dir"
@@ -87,7 +87,7 @@ search_file() {
     local search_term="$1"
     file=$(realpath "$file")
     # Use grep to directly get the desired formatted output
-    local matches=$(grep -nH "$search_term" "$file")
+    local matches=$(grep -nH -- "$search_term" "$file")
     # Check if no matches were found
     if [ -z "$matches" ]; then
         echo "No matches found for \"$search_term\" in $file"
@@ -95,7 +95,7 @@ search_file() {
     fi
     # Calculate total number of matches
     local num_matches=$(echo "$matches" | wc -l | awk '{$1=$1; print $0}')
-    
+
     # calculate total number of lines matched
     local num_lines=$(echo "$matches" | cut -d: -f1 | sort | uniq | wc -l | awk '{$1=$1; print $0}')
     # if num_lines is > 100, print an error

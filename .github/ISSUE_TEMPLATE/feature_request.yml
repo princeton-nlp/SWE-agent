@@ -1,0 +1,20 @@
+name: Feature Request
+description: Suggest a new feature or enhancement to the project
+labels: ['feature']
+
+body:
+  - type: textarea
+    attributes:
+      label: Describe the feature
+      description: >
+        Please describe the feature as best as you can.
+        If applicable, it would help to know how you currently manage without it.
+        What improvements would you expect with its implementation?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Potential Solutions
+      description: Links to similar features in other projects, diagrams, or any other references that could help us understand your vision are highly appreciated.
+    validations:
+      required: true

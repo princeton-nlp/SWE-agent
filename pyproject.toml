@@ -1,3 +1,212 @@
+# Guide (user-friendly):
+# https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
+# Specification (technical, formal):
+# https://packaging.python.org/en/latest/specifications/pyproject-toml/
+
+
+# Choosing a build backend:
 [build-system]
-requires = ['setuptools>=42']
-build-backend = 'setuptools.build_meta'
+requires = ["setuptools"]  # REQUIRED if [build-system] table is used
+build-backend = "setuptools.build_meta"  # If not defined, then legacy behavior can happen.
+
+
+[project]
+name = "sweagent"
+dynamic = ["version", "dependencies"]
+description = "The official SWE-agent package - an open source Agent Computer Interface for running language models as software engineers."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {file = "LICENSE"}
+keywords = ["nlp", "agents", "code"]
+authors = [
+  {name = "Carlos E. Jimenez", email = "carlosej@princeton.edu" },
+  {name = "John Yang", email = "byjohnyang@gmail.com" }
+]
+
+# Classifiers help users find your project by categorizing it.
+classifiers = [
+  # How mature is this project? Common values are
+  #   3 - Alpha, 4 - Beta, 5 - Production/Stable
+  "Operating System :: OS Independent",
+  # Indicate who your project is intended for
+  "Intended Audience :: Developers",
+  # Pick your license as you wish
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3 :: Only",
+]
+
+[project.optional-dependencies]
+dev = [
+    "mkdocs-material",
+    "mkdocs-glightbox",
+    "mkdocs-include-markdown-plugin",
+    "mkdocstrings[python]>=0.18",
+    "pytest",
+    "pytest-cov",
+    "pipx",
+    "pre-commit",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "sweagent.__version__"}
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools.packages.find]
+where = ["."]
+namespaces = false
+
+[project.urls]
+"Homepage" = "https://swe-agent.com"
+"Bug Reports" = "http://github.com/princeton-nlp/SWE-agent/issues"
+"Documentation" = "https://github.com/princeton-nlp/SWE-agent"
+"Source" = "http://github.com/princeton-nlp/SWE-agent"
+
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+testpaths = [
+    "tests"
+]
+xfail_strict = true
+
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+    # ---- project specific ----
+    "tests/test_data",
+    # Exclude commands so they don't get the __future__ imports
+    "config/commands",
+]
+
+line-length = 120
+indent-width = 4
+
+target-version = "py39"
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
+# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
+# McCabe complexity (`C901`) by default.
+# I001: Isort, I002: required import
+select = [
+    # Error (E)
+    "E",
+    # Error (PLE)
+    "PLE",
+    # pycodestyle
+    "E713",  # not in
+    "E714",  # is not
+    "E711",  # comparison with None
+    # pyflakes
+    "F821",
+    "F822",
+    "F401",  # unused-import
+    "F841",  # unused var
+    "F541",  # f-string without args
+    "F901",  # raise NotImplemented should be raise NotImplementedError
+    # isort
+    "I001",  # isort
+    "I002",  # required import
+    # pyupgrade and related
+    "UP",    # pyupgrade
+    "C401",  # flake8-comprehensions: unnecessary-generator-set
+    "C402",  # flake8-comprehensions: unnecessary-generator-dict
+    "C403",  # flake8-comprehensions: unnecessary-list-comprehension-set
+    "C404",  # flake8-comprehensions: unnecessary-list-comprehension-dict
+    "C405",  # flake8-comprehensions: unnecessary-literal-set
+    "F632",  # pyflakes: is-literal
+    "W605",  # pycodestyle: invalid-escape-sequence
+    # bugbear
+    "B006",  # mutable default
+    "B007",  # unused loop var
+    "B009",  # getattr with constant
+    # flake8-errmsg
+    "EM",
+    # flake8-future-annotations
+    "FA102",
+    # flake8-return
+    "RET",
+    # RUF
+    "RUF019",  # unneded key in dict check
+    # pytest
+    "PT",
+    # flake8-simplify (SIM)
+    "SIM201",
+]
+ignore = [
+    # flake8-return
+    "RET505",  # can't autofix
+    "RET506",  # can't autofix
+    "RET507",  # can't autofix
+    # error (E)
+    "E501",    # line too long
+    "E402",    # import not on top of file
+    "E722",    # bare except
+    "E741",    # ambiguous symbol
+    # pytest
+    "PT011",
+    "PT018",
+]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+[tool.typos.default.extend-identifiers]
+# *sigh* this just isn't worth the cost of fixing
+ACI = "ACI"
+
+[tool.typos.default.extend-words]
+# Don't correct the surname "Teh"
+aci = "aci"
+
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]

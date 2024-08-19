@@ -1,0 +1,22 @@
+{
+    "name": "SWE-Agent Codespace",
+    "image": "mcr.microsoft.com/vscode/devcontainers/miniconda:0-3",
+    "customizations":{
+        "vscode":{
+            "extensions": [
+                "ms-python.python",
+                "ms-azuretools.vscode-docker",
+                "ms-toolsai.jupyter"
+            ]
+        }
+    },
+    "onCreateCommand": "./.devcontainer/oncreate.sh",
+    "postCreateCommand": "./.devcontainer/postcreate.sh",
+    "features": {
+        "docker-in-docker": "latest"
+    },
+    "mounts": [
+        "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+    ],
+    "remoteUser": "vscode"
+}

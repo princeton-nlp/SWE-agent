@@ -1,6 +1,6 @@
 FROM ubuntu:jammy
 
-ARG MINICONDA_URL
+ARG TARGETARCH
 
 # Install third party tools
 RUN apt-get update && \
@@ -27,13 +27,19 @@ RUN echo "alias ls='ls -F'" >> /root/.bashrc
 # Install miniconda
 ENV PATH="/root/miniconda3/bin:${PATH}"
 ARG PATH="/root/miniconda3/bin:${PATH}"
-RUN wget ${MINICONDA_URL} -O miniconda.sh \
+COPY docker/getconda.sh .
+RUN bash getconda.sh ${TARGETARCH} \
+    && rm getconda.sh \
     && mkdir /root/.conda \
     && bash miniconda.sh -b \
     && rm -f miniconda.sh
 RUN conda --version \
     && conda init bash \
     && conda config --append channels conda-forge
+
+# Cache python versions
+RUN conda create -y -n python3.9 python=3.9
+RUN conda create -y -n python3.10 python=3.10
 
 # Install python packages
 COPY docker/requirements.txt /root/requirements.txt

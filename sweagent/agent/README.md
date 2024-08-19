@@ -2,7 +2,7 @@
 The `agent` folder contains the logic for handling model inference and facilitating their interaction with `SWEEnv`.
 The following documentation describing the purpose and classes of each file.
 
-#### `agents.py` 
+#### `agents.py`
 This file defines the `Agent` class, which facilitates the interaction between an agent and the environment. The `AgentConfig` and `AgentArguments` data classes compile all arguments into a single file.
 - `Agent`: Main class for handling model behavior + interaction with environment
     - `__init__`: Sets up model, assistant, configurations, and arguments
@@ -24,9 +24,10 @@ This file defines the abstraction for custom commands (non-native functions that
 #### `models.py`
 This file defines the abstraction for running inference on API models. In addition, the `BaseModel` abstraction also defines a set of cost-related fields for tracking instance-level and total expenses accumulated across a single model run.
 - `AnthropicModel`: Handles inference + cost logging for Anthropic Models
+- `BedrockModel`: handles inference + cost logging for Amazon Bedrock-provided models (Anthropic Claude only)
 - `APIStats`: Cost tracking fields that are updated per model inference
 - `BaseModel`: Abstract class that defines the common logic for updating cost stats
-- `get_model`: Returns initialized `[Anthropic|Human|OpenAI]Model` based on given arguments + commands
+- `get_model`: Returns initialized `[Anthropic|Bedrock|Human|OpenAI]Model` based on given arguments + commands
 - `HumanModel`: Handles inference for human task worker
 - `ModelArguments`: Model name, hyperparameter, and cost limit arguments
 - `OpenAIModel`: Handles inference + cost logging for OpenAI models

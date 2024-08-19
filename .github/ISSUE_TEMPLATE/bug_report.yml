@@ -1,0 +1,72 @@
+name: Bug Report
+description: Create a report to help us reproduce and correct the bug
+labels: ['bug']
+
+body:
+- type: markdown
+  attributes:
+    value: >
+      #### Before submitting a bug, please make sure the issue hasn't been already
+      addressed by searching through [the past issues](https://github.com/princeton-nlp/SWE-agent/issues).
+- type: textarea
+  attributes:
+    label: Describe the bug
+    description: >
+      A clear and concise description of what the bug is.
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Steps/commands/code to Reproduce
+    description: >
+      **Please add the FULL COMMAND that you were running as well as how you set up the software (docker, conda, etc.)**
+      Please always copy code as text and not as a screenshot.
+      Enclose code/commands/log output in [triple backticks](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#quoting-code).
+    placeholder: |
+      Sample code/commands to reproduce the problem.
+
+      ```
+      PLEASE INCLUDE THE FULL COMMAND HERE.
+      ```
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Error message/results
+    description: >
+      Please paste or describe the expected results.
+      Use [triple backticks](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#quoting-code) around log/error messages.
+      You should fine the full log in your `trajectory` folder (look for `*.log` files).
+    placeholder: >
+      ```
+      Full log file here
+      ```
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: System Information
+    description: |
+      Please tell us what OS and processor architecture you are using, your Python version, and the `swebench` package version if applicable.
+    placeholder: >
+      e.g. MacOS M1, Python 3.9, swebench 1.0.1
+  validations:
+    required: true
+- type: checkboxes
+  id: checks
+  attributes:
+    label: Checklist
+    description: We can only help you if you have done the following
+    options:
+      - label: I'm running with the latest docker container/on the latest development version (this means running both `git pull` and `docker pull sweagent/swe-agent:latest`)
+        required: true
+      - label: I have copied the full command/code that I ran (as text, not as screenshot!)
+        required: true
+      - label: "If applicable: I have copied the **full** log file/error message that was the result (as text, not as screenshot!)"
+        required: true
+      - label: I have enclosed code/log messages in triple backticks ([docs](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#quoting-code)) and clicked "Preview" to make sure it's displayed correctly.
+        required: true
+- type: markdown
+  attributes:
+    value: >
+      Thanks for contributing 🎉!

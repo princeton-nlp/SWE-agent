@@ -1,0 +1,59 @@
+
+name: Pytest
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - 'mkdocs.yml'
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - 'mkdocs.yml'
+
+# Not possible to test windows capability:
+# https://github.com/orgs/community/discussions/25491
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: Pull swe-agent docker container
+        run: |
+          docker pull sweagent/swe-agent:latest
+      - name: Create keys.cfg
+        run: |
+          touch keys.cfg
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install dependencies
+        run: |
+            uv pip install --python ${Python_ROOT_DIR} '.[dev]'
+      - name: Run pytest
+        uses: sjvrijn/pytest-last-failed@v2
+        with:
+          pytest-args: '--exitfirst --cov'
+      - name: Explicitly convert coverage to xml
+        run: coverage xml
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: princeton-nlp/SWE-agent

@@ -1,19 +1,18 @@
-__version__ = "0.0.1"
+from __future__ import annotations
 
-from sweagent.agent.agents import (
-    Agent,
-    AgentArguments,
-)
+__version__ = "0.6.1"
 
-from sweagent.agent.models import (
-    ModelArguments,
-)
+from pathlib import Path
 
-from sweagent.environment.swe_env import (
-    EnvironmentArguments,
-    SWEEnv,
-)
+PACKAGE_DIR = Path(__file__).resolve().parent
+assert PACKAGE_DIR.is_dir()
+REPO_ROOT = PACKAGE_DIR.parent
+assert REPO_ROOT.is_dir()
+CONFIG_DIR = PACKAGE_DIR.parent / "config"
+assert CONFIG_DIR.is_dir()
 
-from sweagent.environment.utils import (
-    get_data_path_name,
-)
+
+__all__ = [
+    "PACKAGE_DIR",
+    "CONFIG_DIR",
+]

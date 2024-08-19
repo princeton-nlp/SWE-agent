@@ -1,0 +1,98 @@
+site_name: SWE-agent documentation
+theme:
+  name: material
+  custom_dir: docs/overrides
+  icon:
+    repo: fontawesome/brands/github
+  logo: assets/swe-agent.svg
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - scheme: default
+      primary: black
+      accent: deep orange
+      media: "(prefers-color-scheme: light)"
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: black
+      accent: deep orange
+      media: "(prefers-color-scheme: dark)"
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.indexes
+    - content.action.edit
+    - navigation.footer
+    - content.code.copy
+    - content.footnote.tooltips
+    - header.autohide
+    - announce.dismiss
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.magiclink
+  - footnotes
+  - attr_list
+  - md_in_html
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+nav:
+  - Home: index.md
+  - Background:
+    - "background/index.md"
+    - "Agent-Computer Interface": "background/aci.md"
+    - "Architecture": "background/architecture.md"
+  - Installation:
+    - "installation/index.md"
+    - "Use in-browser": "installation/codespaces.md"
+    - "Install from source": "installation/source.md"
+    - "Docker": "installation/docker.md"
+    - "API keys": "installation/keys.md"
+    - "Installation tips": "installation/tips.md"
+    - "Changelog": "installation/changelog.md"
+  - Usage:
+    - "usage/index.md"
+    - "Command line usage": "usage/cl_tutorial.md"
+    - "Solving coding challenges": "usage/coding_challenges.md"
+    - "Using the web UI": "usage/web_ui.md"
+    - "Trajectories": "usage/trajectories.md"
+    - "Trajectory inspector": "usage/inspector.md"
+    - "FAQ": "usage/usage_faq.md"
+    - "Benchmarking": "usage/benchmarking.md"
+  - Configuration:
+    - "Config files": "config/config.md"
+    - "Command definitions": "config/commands.md"
+    - "Demonstrations": "config/demonstrations.md"
+    - "Environment variables": "config/env.md"
+    - "Docker images": "config/docker.md"
+  - Development:
+    - "Contribution guide": "dev/contribute.md"
+    - "Formatting conflicts": "dev/formatting_conflicts.md"
+  - Reference:
+    - "reference/index.md"
+    - "Agent": "reference/agent.md"
+    - "Models": "reference/models.md"
+    - "Environment": "reference/env.md"
+    - "Environment utils": "reference/env_utils.md"
+  - "FAQ": "faq.md"
+plugins:
+   - glightbox
+   - search
+   - include-markdown
+   - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [sweagent]
+repo_url: https://github.com/princeton-nlp/SWE-agent
+repo_name: princeton-nlp/SWE-agent
+edit_uri: edit/main/docs/
