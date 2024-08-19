@@ -225,7 +225,7 @@ class SaveApplyPatchHook(MainHook):
         patch_output_dir = self._traj_dir / "patches"
         patch_output_dir.mkdir(exist_ok=True, parents=True)
         patch_output_file = patch_output_dir / f"{instance_id}.patch"
-        if not info.get("submission"):
+        if info.get("submission") is None:
             logger.info("No patch to save.")
             return None
         model_patch = info["submission"]
