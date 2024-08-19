@@ -21,6 +21,7 @@ from sweagent.agent.models import (
     get_model,
 )
 from sweagent.agent.parsing import FormatError, ParseFunction
+from sweagent.agent.summarizer import SummarizeFunction
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.utils.config import convert_paths_to_abspath
 from sweagent.utils.log import get_logger
@@ -61,6 +62,7 @@ class AgentConfig(FrozenSerializable):
     util_functions: list[str] = field(default_factory=list)
     submit_command: str = "submit"
     parse_function: str = "ThoughtActionParser"
+    summarizer_function: str = "SimpleSummarizer"
     parse_command: str = "ParseCommandBash"
     history_processor: str = "DefaultHistoryProcessor"
     history_processor_args: dict[str, Any] = field(default_factory=dict)
@@ -166,6 +168,7 @@ class AgentConfig(FrozenSerializable):
             "history_processor",
             HistoryProcessor.get(self.history_processor, **self.history_processor_args),
         )
+        object.__setattr__(self, "summarizer_function", SummarizeFunction.get(self.summarizer_function))
 
 
 @dataclass(frozen=True)
@@ -819,6 +822,7 @@ class Agent:
                     for hook in self.hooks:
                         hook.on_sub_action_started(sub_action=sub_action)
                     obs, _, done, info = env.step(sub_action["action"])
+                    obs = self.config.summarizer_function(obs, env)
                     for hook in self.hooks:
                         hook.on_sub_action_executed(obs=obs, done=done)
                     observations.append(obs)
