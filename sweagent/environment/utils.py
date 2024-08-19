@@ -699,24 +699,6 @@ def get_instances(
             # Raised by load_from_disk if the directory is not a dataset directory
             pass
 
-    # The next if statement is very brittle logic to determine if we're processing a single instance
-    if (
-        (Path(file_path).is_file() and Path(file_path).suffix in [".md", ".txt"])
-        or is_github_issue_url(file_path)
-        or file_path.startswith("text://")
-    ):
-        ib = InstanceBuilder(token=token)
-        ib.set_problem_statement(file_path)
-        if repo_path:
-            ib.set_repo_info(repo_path, base_commit=base_commit)
-        elif is_github_repo_url(file_path):
-            ib.set_repo_info_from_gh_url(file_path)
-        else:
-            msg = f"Could not determine repo path from {file_path=}, {repo_path=}"
-            raise ValueError(msg)
-
-        return [ib.build()]
-
     if base_commit is not None:
         msg = "base_commit must be None if data_path is not a github issue url"
         raise ValueError(msg)
