@@ -169,6 +169,8 @@ class AgentConfig(FrozenSerializable):
             "history_processor",
             HistoryProcessor.get(self.history_processor, **self.history_processor_args),
         )
+        if "WINDOW" in self.env_variables:
+            assert self.summarizer_window_length >= int(self.env_variables["WINDOW"]), AssertionError(f"Summarizer window length is set to {self.summarizer_window_length} which is less then the defined window length {self.env_variables['WINDOW']}") 
         object.__setattr__(self, "summarizer_function", SummarizeFunction.get(self.summarizer_function, self.summarizer_window_length))
 
 
