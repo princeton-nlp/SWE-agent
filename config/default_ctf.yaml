@@ -86,7 +86,8 @@ state_command:
       fi
     };
 parse_function: ThoughtActionParser
-summarizer_function: Identity
+summarizer_function: SimpleSummarizer
+summarizer_window_length: 105
 env_variables:
   WINDOW: 100
   OVERLAP: 2

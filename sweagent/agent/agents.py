@@ -63,6 +63,7 @@ class AgentConfig(FrozenSerializable):
     submit_command: str = "submit"
     parse_function: str = "ThoughtActionParser"
     summarizer_function: str = "SimpleSummarizer"
+    summarizer_window_length: int = 105
     parse_command: str = "ParseCommandBash"
     history_processor: str = "DefaultHistoryProcessor"
     history_processor_args: dict[str, Any] = field(default_factory=dict)
@@ -168,7 +169,7 @@ class AgentConfig(FrozenSerializable):
             "history_processor",
             HistoryProcessor.get(self.history_processor, **self.history_processor_args),
         )
-        object.__setattr__(self, "summarizer_function", SummarizeFunction.get(self.summarizer_function))
+        object.__setattr__(self, "summarizer_function", SummarizeFunction.get(self.summarizer_function, self.summarizer_window_length))
 
 
 @dataclass(frozen=True)
@@ -822,7 +823,7 @@ class Agent:
                     for hook in self.hooks:
                         hook.on_sub_action_started(sub_action=sub_action)
                     obs, _, done, info = env.step(sub_action["action"])
-                    obs = self.config.summarizer_function(obs, env)
+                    obs = self.config.summarizer_function(sub_action["action"], obs, env)
                     for hook in self.hooks:
                         hook.on_sub_action_executed(obs=obs, done=done)
                     observations.append(obs)
