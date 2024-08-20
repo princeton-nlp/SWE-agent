@@ -381,7 +381,7 @@ class Main:
             traj_dir=self.traj_dir,
             return_type="info_trajectory",
         )
-        self._save_predictions(instance_id, info)
+        self._save_predictions(instance_id, info, challenge)
         for hook in self.hooks:
             hook.on_instance_completed(info=info, trajectory=trajectory)
 
@@ -467,7 +467,7 @@ class Main:
         logger.info(f"⏭️ Skipping existing trajectory: {log_path}")
         return True
 
-    def _save_predictions(self, instance_id: str, info):
+    def _save_predictions(self, instance_id: str, info, challenge: dict[str, str] | None):
         output_file = self.traj_dir / "all_preds.jsonl"
         model_patch = info["submission"] if "submission" in info else None
         datum = {
@@ -475,6 +475,13 @@ class Main:
             KEY_INSTANCE_ID: instance_id,
             KEY_PREDICTION: model_patch,
         }
+        if challenge is not None:
+            challenge_datum = {
+                "challenge_name": challenge["name"],
+                "challenge_category": challenge["category"],
+                "challenge_path": challenge["file_path"],
+            }
+            datum.update(challenge_datum)
         with open(output_file, "a+") as fp:
             print(json.dumps(datum), file=fp, flush=True)
         logger.info(f"Saved predictions to {output_file}")

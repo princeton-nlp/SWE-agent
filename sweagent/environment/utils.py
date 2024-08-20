@@ -629,6 +629,7 @@ class InstanceBuilder:
             self.args["challenge"]["docker_compose"] = (Path(file_path).parent / "docker-compose.yml")
         self.args["challenge"]["port"] = challenge.get("internal_port")
         self.args["challenge"]["server_name"] = challenge.get("box")
+        self.args["challenge"]["file_path"] = file_path
         self.set_server_description(self.args["challenge"]["server_name"], self.args["challenge"]["port"])
         self.set_problem_statement_from_text(f"{challenge['name']} {challenge['description']}")
 
