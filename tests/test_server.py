@@ -6,14 +6,14 @@ from flask_socketio import SocketIOTestClient
 from sweagent.api.server import app, socketio
 
 
-@pytest.fixture()
+@pytest.fixture
 def client():
     with app.test_client() as client:
         with app.app_context():
             yield client
 
 
-@pytest.fixture()
+@pytest.fixture
 def socket_client():
     client = SocketIOTestClient(app, socketio)
     yield client

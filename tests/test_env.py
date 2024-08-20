@@ -58,27 +58,27 @@ def swe_env_context(env_args):
         env.close()
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_init_swe_env(test_env_args):
     with swe_env_context(test_env_args) as env:
         env.reset()
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_init_swe_env_conservative_clone(test_env_args):
     with mock.patch.dict("os.environ", {"SWE_AGENT_CLONE_METHOD": "full"}):
         with swe_env_context(test_env_args) as env:
             env.reset()
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_init_swe_env_non_persistent(test_env_args):
     test_env_args = dataclasses.replace(test_env_args, container_name=None)
     with swe_env_context(test_env_args) as env:
         env.reset()
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_init_swe_env_cached_task_image(test_env_args):
     test_env_args = dataclasses.replace(test_env_args, cache_task_images=True, container_name=None)
     start = time.perf_counter()
@@ -105,7 +105,7 @@ def test_init_swe_env_cached_task_image(test_env_args):
         client.images.remove(image.id)
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_execute_setup_script(tmp_path, test_env_args):
     test_script = "echo 'hello world'"
     script_path = Path(tmp_path / "test_script.sh")
@@ -115,7 +115,7 @@ def test_execute_setup_script(tmp_path, test_env_args):
         env.reset()
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_execute_environment(tmp_path, test_env_args, capsys):
     test_env = {
         "python": "3.6",
@@ -134,7 +134,7 @@ def test_execute_environment(tmp_path, test_env_args, capsys):
     assert "Cloned python conda environment" not in out
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_execute_environment_default(test_env_args):
     env_config_paths = (CONFIG_DIR / "environment_setup").iterdir()
     assert env_config_paths
@@ -151,7 +151,7 @@ def test_execute_environment_default(test_env_args):
             env.reset()
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_execute_environment_clone_python(tmp_path, test_env_args, capsys):
     """This should clone the existing python 3.10 conda environment for speedup"""
     test_env = {
@@ -171,7 +171,7 @@ def test_execute_environment_clone_python(tmp_path, test_env_args, capsys):
     assert "Cloned python conda environment" in out
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_open_pr(test_env_args):
     test_env_args = dataclasses.replace(
         test_env_args,
@@ -183,21 +183,21 @@ def test_open_pr(test_env_args):
         env.open_pr(_dry_run=True, trajectory=[])
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_interrupt_close(test_env_args):
     with swe_env_context(test_env_args) as env:
         env.reset()
         env.interrupt()
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_communicate_old(test_env_args):
     with mock.patch.dict("os.environ", {"SWE_AGENT_COMMUNICATE_METHOD": "processes"}):
         with swe_env_context(test_env_args) as env:
             env.reset()
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_env_with_hook(test_env_args):
     with swe_env_context(test_env_args) as env:
         env.add_hook(EnvHook())
