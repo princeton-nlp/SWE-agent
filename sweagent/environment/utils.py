@@ -217,7 +217,6 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
             return True
         return bool(select.select([fd], [], [], 0.01)[0])
 
-    n_decode_failures = 0
     while time.time() < end_time:
         if ready_to_read(fd):
             try:
@@ -227,17 +226,9 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
                 break
             if data:
                 buffer += data
-                try:
-                    decoded = buffer.decode()
-                except UnicodeDecodeError:
-                    # Should we reset the buffer to skip the byte that causes the error?
-                    n_decode_failures += 1
-                    if n_decode_failures > 30:
-                        msg = "Too many decode failures while reading from subprocess."
-                        raise RuntimeError(msg)
-                else:
-                    if PROCESS_DONE_MARKER_START in decoded:
-                        break
+                decoded = buffer.decode("utf-8", errors="backslashreplace")
+                if PROCESS_DONE_MARKER_START in decoded:
+                    break
         time.sleep(0.01)  # Prevents CPU hogging
 
     if container.poll() is not None:
@@ -246,7 +237,8 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
     if time.time() >= end_time:
         msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}"
         raise TimeoutError(msg)
-    decoded = buffer.decode()
+
+    decoded = buffer.decode("utf-8", errors="backslashreplace")
     body = "\n".join(line for line in decoded.splitlines() if not line.startswith(PROCESS_DONE_MARKER_START))
     _results = PROCESS_DONE_REGEX.search(decoded)
     if _results is None:
