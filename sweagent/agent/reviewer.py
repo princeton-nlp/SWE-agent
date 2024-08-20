@@ -535,4 +535,12 @@ def get_review_loop_from_config(
     if config is None:
         logger.debug("Running without review loop")
         return None
+    if not isinstance(config, ReviewLoopConfig):
+        msg = (
+            f"Expected a `ReviewLoopConfig`, got {config!r} of type {type(config)}. "
+            "This usually happens for misconfiguration issues: Make sure that all validation "
+            "conditions are satisfied (e.g., min draws <= max draws etc.) and that all "
+            "required keys are there."
+        )
+        raise ValueError(msg)
     return globals()[config.review_loop_classname](config, instance, model)
