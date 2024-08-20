@@ -232,6 +232,6 @@ review_loop_config:
       - scroll_down
     traj_item_template: 'Step {i_step} thought:\n{response}\n\Step {i_step} output:\n{observation}'
   max_samples: 10
-  min_draws: 100
+  min_draws: 10
   max_accepted_draws: 2
   gtc_classname: GraveToCradle

@@ -140,6 +140,6 @@ review_loop_config:
       {edited_files70}
       ```
   max_samples: 10
-  min_draws: 100
+  min_draws: 10
   max_accepted_draws: 2
   gtc_classname: GraveToCradle
