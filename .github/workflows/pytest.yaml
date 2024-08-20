@@ -9,6 +9,7 @@ on:
     branches:
       - main
       - reviewer
+      - talor-branch
     paths-ignore:
       - 'docs/**'
       - 'README.md'
@@ -17,6 +18,7 @@ on:
     branches:
       - main
       - reviewer
+      - talor-branch
     paths-ignore:
       - 'docs/**'
       - 'README.md'

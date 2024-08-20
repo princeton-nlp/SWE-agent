@@ -27,8 +27,19 @@ from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
 DOCKER_START_UP_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 1))
+DOCKER_COMPOSE_TERMINATION_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 100))
+DOCKER_COMPOSE_STARTUP_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 600))
 GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
 GITHUB_REPO_URL_PATTERN = re.compile(r".*[/@]?github\.com\/([^/]+)\/([^/]+)")
+
+CTF_CHALLENGES_CATEGORIES = {
+    "rev": "reverse engineering",
+    "pwn": "binary exploitation",
+    "web": "web security",
+    "crypto": "cryptography",
+    "misc": "miscellaneous",
+    "forensics": "forensics",
+}
 
 logger = get_logger("env_utils")
 
@@ -228,14 +239,7 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
                 break
             if data:
                 buffer += data
-                try:
-                    decoded = buffer.decode()
-                except UnicodeDecodeError:
-                    n_decode_failures += 1
-                    if n_decode_failures > 30:
-                        msg = "Too many decode failures while reading from subprocess."
-                        raise RuntimeError(msg)
-                if PROCESS_DONE_MARKER_START in decoded:
+                if PROCESS_DONE_MARKER_START in buffer.decode('utf-8', errors='backslashreplace').replace('\r\n', '\n'):
                     break
         time.sleep(0.01)  # Prevents CPU hogging
 
@@ -262,6 +266,76 @@ def get_background_pids(container_obj: Container):
     bash_pids = [x for x in pids if x[1] == "bash"]
     other_pids = [x for x in pids if x[1] not in {"bash"}]
     return bash_pids, other_pids
+
+
+def terminate_docker_compose(docker_compose_path: Path) -> None:
+    terminate_cmd = [
+        "docker",
+        "compose",
+        "-f",
+        str(docker_compose_path),
+        "down",
+    ]
+    logger.debug("Terminating docker-compose with command: %s", shlex.join(terminate_cmd))
+    compose = subprocess.Popen(
+        terminate_cmd,
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=STDOUT,
+        text=True,
+        bufsize=1,  # line buffered
+    )
+    _, error = compose.communicate(timeout=DOCKER_COMPOSE_TERMINATION_DELAY)
+    if error:
+        logger.error(f"Unexpected compose termination error: {error}")
+
+
+def attach_network_interface_to_container(container_name: str) -> None:
+    cmd = [
+        "docker",
+        "network",
+        "connect",
+        "ctfnet",
+        container_name,
+    ]
+    logger.debug("Attaching NIC to container with command: %s", shlex.join(cmd))
+    compose = subprocess.Popen(
+        cmd,
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=STDOUT,
+        text=True,
+        bufsize=1,  # line buffered
+    )
+    _, error = compose.communicate(timeout=DOCKER_START_UP_DELAY)
+    if error:
+        logger.error(f"Unexpected compose setup error: {error}")
+        raise RuntimeError(error)
+
+
+def get_docker_compose(docker_compose_path: Path) -> Path:
+    startup_cmd = [
+        "docker",
+        "compose",
+        "-f",
+        str(docker_compose_path),
+        "up",
+        "-d",
+        "--force-recreate",
+    ]
+    logger.debug("Starting docker-compose with command: %s", shlex.join(startup_cmd))
+    compose = subprocess.Popen(
+        startup_cmd,
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=STDOUT,
+        text=True,
+        bufsize=1,  # line buffered
+    )
+    _, error = compose.communicate(timeout=DOCKER_COMPOSE_STARTUP_DELAY)
+    if error:
+        logger.error(f"Unexpected compose setup error: {error}")
+    return docker_compose_path
 
 
 def _get_non_persistent_container(ctr_name: str, image_name: str) -> tuple[subprocess.Popen, set[str]]:
@@ -537,8 +611,35 @@ class InstanceBuilder:
         self.args["instance_id"] = f"{owner}__{repo}-i{issue_number}"
         self.args["problem_statement_source"] = "online"
 
+    def set_server_description(self, server_name: str | None, port: int | None) -> None:
+        if server_name is None or port is None:
+            self.args["challenge"]["server_description"] = ""
+            return
+        if self.args["challenge"]["category"] in {"web", "misc"} and self.args["challenge"].get("proto") != "nc":
+            self.args["challenge"]["server_description"] = f"The challenge web server is running on `{server_name}` port `{port}` and you can access it from within the container environment using `curl http://{server_name}:{port}`."
+        else:
+            self.args["challenge"]["server_description"] = f"The challenge web server is running on `{server_name}` port `{port}` and you can access it from within the container environment using `nc {server_name}:{port}`."
+    
+    def set_problem_statement_from_challenge_json(self, file_path: str) -> str:
+        challenge = json.loads(Path(file_path).read_text())
+        self.args["challenge"] = challenge
+        self.args["challenge"]["files"] = challenge.get("files", "No files are provided in this challenge.")
+        self.args["challenge"]["points"] = challenge.get("points", 10)
+        self.args["challenge"]["category_friendly"] = CTF_CHALLENGES_CATEGORIES.get(challenge["category"])
+        if (Path(file_path).parent / "docker-compose.yml").is_file():
+            logger.debug(f"Found docker_compose file in {Path(file_path).parent}")
+            self.args["challenge"]["docker_compose"] = (Path(file_path).parent / "docker-compose.yml")
+        self.args["challenge"]["port"] = challenge.get("internal_port")
+        self.args["challenge"]["server_name"] = challenge.get("box")
+        self.args["challenge"]["file_path"] = file_path
+        self.set_server_description(self.args["challenge"]["server_name"], self.args["challenge"]["port"])
+        self.set_problem_statement_from_text(f"{challenge['name']} {challenge['description']}")
+
     def set_problem_statement_from_file(self, file_path: str):
-        self.set_problem_statement_from_text(Path(file_path).read_text())
+        if Path(file_path).name == "challenge.json":
+            self.set_problem_statement_from_challenge_json(file_path)
+        else:
+            self.set_problem_statement_from_text(Path(file_path).read_text())
 
     def set_problem_statement_from_text(self, text: str):
         self.args["problem_statement"] = text
@@ -667,7 +768,7 @@ def get_instances(
     # The next if statement is very brittle logic to determine if we're processing a single instance
     if (
         file_path.startswith("text://")
-        or (Path(file_path).is_file() and Path(file_path).suffix in [".md", ".txt"])
+        or (Path(file_path).is_file() and (Path(file_path).suffix in [".md", ".txt"] or Path(file_path).name == "challenge.json"))
         or is_github_issue_url(file_path)
     ):
         ib = InstanceBuilder(token=token)
@@ -930,3 +1031,6 @@ class PatchFormatter:
         return self.concat_files_strings(
             {path: self.format_file(text, *hunk_lines[path], linenos=linenos) for path, text in sources.items()}
         )
+def extract_flag_format(flag: str) -> str:
+    flag_format = re.sub(r"{.*}$", "{...}", flag)
+    return flag_format if flag_format != flag else "..."

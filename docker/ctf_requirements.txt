@@ -1,0 +1,7 @@
+pwntools
+ipython
+gmpy2
+pycryptodome
+mpmath
+sympy
+ruff

@@ -32,9 +32,11 @@ from sweagent.environment.utils import (
     PROCESS_DONE_MARKER_START,
     InvalidGithubURL,
     PatchFormatter,
+    attach_network_interface_to_container,
     copy_anything_to_container,
     copy_file_to_container,
     format_trajectory_markdown,
+    get_docker_compose,
     get_container,
     get_gh_issue_data,
     get_instances,
@@ -42,6 +44,7 @@ from sweagent.environment.utils import (
     parse_gh_issue_url,
     read_with_timeout,
     read_with_timeout_experimental,
+    terminate_docker_compose,
 )
 from sweagent.types import AgentInfo
 from sweagent.utils.config import keys_config
@@ -184,6 +187,8 @@ class SWEEnv(gym.Env):
         self.image_name = args.image_name
         self.container_obj: docker.models.containers.Container | None = None
         self.container: subprocess.Popen | None = None
+        self.docker_compose: Path | None = None
+        self.challenge: dict[str, Any] | None = None
         self._reset_container()
 
         self.idx = 0
@@ -215,7 +220,7 @@ class SWEEnv(gym.Env):
     def _repo_name(self) -> str:
         """Name of the local copy of the repository"""
         assert self.record is not None
-        return self.record["repo"].replace("/", "__")
+        return self.record["repo"].replace("/", "__").replace(" ", "-")
 
     def _copy_repo(self) -> str:
         """Clone/copy repository/codebase in container
@@ -228,11 +233,22 @@ class SWEEnv(gym.Env):
         for hook in self.hooks:
             hook.on_copy_repo_started(repo_type=self.record["repo_type"], repo_path=self.record["repo"])
         if self.record["repo_type"] == "local":
-            copy_anything_to_container(
-                self.container_obj,
-                self.record["repo"].removeprefix("local://"),
-                "/" + self._repo_name,
-            )
+            if "challenge" in self.record:
+                self.communicate_with_handling(input=f"mkdir {self._repo_name}", 
+                                               error_msg=f"Failed to create {self._repo_name} in container")
+                for file_name in self.record["challenge"]["files"]:
+                    self.logger.debug(f"Copying file {file_name} to container")
+                    copy_anything_to_container(
+                        self.container_obj,
+                        str(Path(self.record["repo"].removeprefix("local://")) / file_name),
+                        "/" + self._repo_name
+                    )
+            else:
+                copy_anything_to_container(
+                    self.container_obj,
+                    self.record["repo"].removeprefix("local://"),
+                    "/" + self._repo_name,
+                )
             self.communicate_with_handling(
                 input=f"chown -R root:root {self._repo_name}",
                 error_msg="Failed to change permissions on copied repository",
@@ -306,9 +322,11 @@ class SWEEnv(gym.Env):
         # Set query, gold command
         self.base_commit = self.record["base_commit"]
         self.query = self.record["problem_statement"]
+        self.challenge = self.record.get("challenge")
         self.reward = None
 
         ### Reset Container ###
+        self._init_docker_compose()
 
         if self.args.cache_task_images:
             cached_image = self._get_cached_task_image_name()
@@ -324,6 +342,9 @@ class SWEEnv(gym.Env):
                 return None, info
             else:
                 self.logger.info(f"Cached image {cached_image} not found, rebuilding task environment...")
+
+        # Init docker network
+        self._init_docker_network()
 
         # Clone repository if not already cloned
         self.communicate(input="cd /")
@@ -370,17 +391,19 @@ class SWEEnv(gym.Env):
 
     def _reset_repository(self) -> None:
         """Clean repository of any modifications + Checkout base commit"""
-        cmds = [
+        startup_commands = [
             "echo -n > /root/files_to_edit.txt",
             f"cd /{self._repo_name}",
             "export ROOT=$(pwd -P)",
-            "git status",
-            "git restore .",
-            f"git reset --hard {self.base_commit}",
-            "git clean -fdxq",
         ]
+        if self.challenge is None:
+            startup_commands += ["git status",
+                "git restore .",
+                f"git reset --hard {self.base_commit}",
+                "git clean -fdxq",
+            ]
         self.communicate_with_handling(
-            input=" && ".join(cmds),
+            input=" && ".join(startup_commands),
             error_msg="Failed to clean repository",
         )
 
@@ -512,12 +535,17 @@ class SWEEnv(gym.Env):
         # Record submission and end episode if `submit` keyword found
         submission = self.get_submission(observation)
         if submission is not None:
-            self.logger.info(f"Found submission: {submission}")
-            info["exit_status"] = "submitted"
-            info["submission"] = submission if submission.strip() != "" else None
-            info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
-            observation = submission if submission.strip() != "" else None
-            return observation, 0, True, info
+            if self.validate_submission(submission):
+                self.logger.info(f"Found submission: {submission}")
+                info["exit_status"] = "submitted"
+                info["submission"] = submission if submission.strip() != "" else None
+                info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
+                observation = submission if submission.strip() != "" else None
+                return observation, 0, True, info
+            else:
+                self.logger.warning(f"Wrong submission found: {submission}")
+                observation = "Wrong flag!"
+                return observation, 0, False, info
         return observation, 0, False, info
 
     def close(self) -> None:
@@ -533,6 +561,8 @@ class SWEEnv(gym.Env):
             self.logger.warning("Errors when exiting container", exc_info=True)
         assert self.container is not None  # mypy
         self.container.terminate()
+        if self.docker_compose is not None:
+            terminate_docker_compose(self.docker_compose)
         if self.container_obj is None:
             pass
         elif self.persistent:
@@ -585,6 +615,15 @@ class SWEEnv(gym.Env):
                 self.logger.warning("Failed to terminate container", exc_info=True)
             else:
                 self.logger.debug("Terminated container")
+        if self.docker_compose is not None:
+            try:
+                terminate_docker_compose(self.docker_compose)
+            except KeyboardInterrupt:
+                raise
+            except:
+                self.logger.warning("Failed to terminate docker compose", exc_info=True)
+            else:
+                self.logger.debug("Terminated docker compose")
         self._init_container()
         self._init_scripts()
 
@@ -604,6 +643,22 @@ class SWEEnv(gym.Env):
         image_name_sanitized = image_name.replace("/", "-")
         image_name_sanitized = image_name_sanitized.replace(":", "-")
         return f"{image_name_sanitized}-{hash_object.hexdigest()[:10]}"
+    
+    def _init_docker_network(self) -> None:
+        """
+        Add the "ctfnet" network interface for all the containers used for CTF challenges
+        """
+        assert self.container_name is not None
+        if self.challenge is not None:
+            attach_network_interface_to_container(self.container_name)
+    
+    def _init_docker_compose(self) -> None:
+        """
+        Handles docker compose initialization for challenge with docker compose file.
+        """
+        if self.challenge is not None and self.challenge.get("docker_compose") is not None:
+            self.docker_compose = get_docker_compose(self.challenge.get("docker_compose"))
+            self.logger.info("🌱 Initialized docker compose for challenge")
 
     def _init_container(self, cached_image: str | None = None) -> None:
         """
@@ -852,6 +907,21 @@ class SWEEnv(gym.Env):
         if not all_pids:
             pids = [x for x in pids if x[1] != "ps" and x[0] not in self.parent_pids]
         return pids
+    
+    def validate_submission(self, submission: str) -> bool:
+        """
+        Function for validating submission for CTF challegnes.
+
+        Args:
+            submission: extracted submission
+
+        Returns:
+            validation of the submission found against known flag
+        """
+        if self.challenge is not None:
+            assert "flag" in self.challenge
+            return submission.strip() == self.challenge["flag"]
+        return True
 
     def get_submission(self, output: str) -> str | None:
         """

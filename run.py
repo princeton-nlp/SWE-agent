@@ -49,6 +49,7 @@ from sweagent.environment.utils import (
     get_associated_commit_urls,
     get_data_path_name,
     get_gh_issue_data,
+    extract_flag_format,
     parse_gh_issue_url,
 )
 
@@ -360,8 +361,19 @@ class Main:
         tests = ""
         if "FAIL_endTO_PASS" in self.env.record:
             tests = "\n".join([f"- {x}" for x in self.env.record["FAIL_TO_PASS"]])
-
+        
         setup_args = {"issue": issue, "files": files, "test_files": test_files, "tests": tests}
+        challenge = getattr(self.env, "challenge", None)
+        if challenge is not None:
+            setup_args["flag_format"] = extract_flag_format(challenge["flag"])
+            setup_args["name"] = challenge["name"]
+            setup_args["description"] = challenge["description"]
+            setup_args["category_friendly"] = challenge["category_friendly"]
+            setup_args["points"] = challenge["points"]
+            setup_args["files"] = challenge["files"] or "No files included in this challenge."
+            setup_args["box"] = challenge.get("server_name")
+            setup_args["port"] = challenge.get("port")
+            setup_args["server_description"] = challenge.get("server_description")
         info, trajectory = self.agent.run(
             setup_args=setup_args,
             env=self.env,
@@ -369,7 +381,7 @@ class Main:
             traj_dir=self.traj_dir,
             return_type="info_trajectory",
         )
-        self._save_predictions(instance_id, info)
+        self._save_predictions(instance_id, info, challenge)
         for hook in self.hooks:
             hook.on_instance_completed(info=info, trajectory=trajectory)
 
@@ -401,6 +413,7 @@ class Main:
                     logger.warning("❌ Failed on unknown instance")
                 self.env.reset_container()
                 continue
+        self.env.close()
         for hook in self.hooks:
             hook.on_end()
 
@@ -454,7 +467,7 @@ class Main:
         logger.info(f"⏭️ Skipping existing trajectory: {log_path}")
         return True
 
-    def _save_predictions(self, instance_id: str, info):
+    def _save_predictions(self, instance_id: str, info, challenge: dict[str, str] | None):
         output_file = self.traj_dir / "all_preds.jsonl"
         model_patch = info["submission"] if "submission" in info else None
         datum = {
@@ -462,6 +475,13 @@ class Main:
             KEY_INSTANCE_ID: instance_id,
             KEY_PREDICTION: model_patch,
         }
+        if challenge is not None:
+            challenge_datum = {
+                "challenge_name": challenge["name"],
+                "challenge_category": challenge["category"],
+                "challenge_path": challenge["file_path"],
+            }
+            datum.update(challenge_datum)
         with open(output_file, "a+") as fp:
             print(json.dumps(datum), file=fp, flush=True)
         logger.info(f"Saved predictions to {output_file}")
