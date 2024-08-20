@@ -62,12 +62,16 @@ class AgentConfig(FrozenSerializable):
     util_functions: list[str] = field(default_factory=list)
     submit_command: str = "submit"
     parse_function: str = "ThoughtActionParser"
-    summarizer_function: str = "SimpleSummarizer"
-    summarizer_window_length: int = 105
     parse_command: str = "ParseCommandBash"
     history_processor: str = "DefaultHistoryProcessor"
     history_processor_args: dict[str, Any] = field(default_factory=dict)
     command_docs: str = None  # type: ignore
+    summarizer_function: str | None = "SimpleSummarizer"
+    summarizer_window_length: int | None = 105
+    summarizer_template: str | None = None
+    summarizer_model: ModelArguments | None = None
+    summarizer_system_template: str | None = None
+    summarizer_instance_template: str | None = None
     blocklist_error_template: str = "Interactive operation '{name}' is not supported by this environment"
     blocklist: tuple[str, ...] = (
         "vim",
@@ -169,9 +173,13 @@ class AgentConfig(FrozenSerializable):
             "history_processor",
             HistoryProcessor.get(self.history_processor, **self.history_processor_args),
         )
-        if "WINDOW" in self.env_variables:
+        if self.summarizer_function is None:
+            self.summarizer_function = "Identity"
+        if "WINDOW" in self.env_variables and self.summarizer_window_length is not None:
             assert self.summarizer_window_length >= int(self.env_variables["WINDOW"]), AssertionError(f"Summarizer window length is set to {self.summarizer_window_length} which is less then the defined window length {self.env_variables['WINDOW']}") 
         object.__setattr__(self, "summarizer_function", SummarizeFunction.get(self.summarizer_function, self.summarizer_window_length))
+        if isinstance(self.summarizer_model, dict):
+            self.summarizer_model = ModelArguments.from_dict(self.summarizer_model)
 
 
 @dataclass(frozen=True)
@@ -248,6 +256,7 @@ class Agent:
     def __init__(self, name: str, args: AgentArguments):
         self.name = name
         self.model = get_model(args.model, args.config._commands + args.config.subroutine_types)
+        self.summarizer_model = get_model(args.config.summarizer_model if args.config.summarizer_model is not None else args.model) 
         self.config = args.config
         assert self.config is not None  # mypy
         self.system_args = {
@@ -802,6 +811,7 @@ class Agent:
             self.last_container_id = env.container_obj.id
         # Re-initialize primary
         self.setup(setup_args, init_model_stats)
+        self.config.summarizer_function.setup(setup_args, self.config)
 
         for hook in self.hooks:
             hook.on_run_start()
@@ -825,7 +835,8 @@ class Agent:
                     for hook in self.hooks:
                         hook.on_sub_action_started(sub_action=sub_action)
                     obs, _, done, info = env.step(sub_action["action"])
-                    obs = self.config.summarizer_function(sub_action["action"], obs, env)
+                    obs, additional_cost = self.config.summarizer_function(sub_action["action"], obs, env, self.summarizer_model)
+                    self.model.stats += additional_cost
                     for hook in self.hooks:
                         hook.on_sub_action_executed(obs=obs, done=done)
                     observations.append(obs)
