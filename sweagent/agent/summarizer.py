@@ -6,10 +6,27 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
-from sweagent.agent.models import APIStats, BaseModel, ContextWindowExceededError
+from simple_parsing.helpers.serialization.serializable import FrozenSerializable
+
+from sweagent.agent.models import APIStats, BaseModel, ModelArguments, ContextWindowExceededError
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.utils.log import get_logger
 
+
+@dataclass(frozen=True)
+class SummarizerConfig(FrozenSerializable):
+    """The configuration for the summarizer"""
+    function: str = "Identity"
+    window_length: int | None = 105
+    template: str | None = None
+    model: ModelArguments | None = None
+    system_template: str | None = None
+    instance_template: str | None = None
+
+    def __post_init__(self):
+        object.__setattr__(self, "function", SummarizeFunction.get(self.function, self.window_length))
+        if isinstance(self.model, dict):
+            object.__setattr__(self, "model", ModelArguments.from_dict(self.summarizer_model))
 
 # ABSTRACT BASE CLASSES
 
@@ -146,12 +163,13 @@ class LMSummarizer(SummarizeFunction):
 
     def setup(self, instance_args: dict[str, Any], config):
         self.name = "ctf_summarizer"
-        system_msg = config.summarizer_system_template.format(**config.__dict__)
+        self.system_args = config.__dict__
+        self.system_args.update({f"summarizer_{k}": v for k, v in config.summarizer_config.__dict__.items()})
+        system_msg = config.summarizer_config.system_template.format(**self.system_args)
         self.history.append({"role": "system", "content": system_msg, "agent": self.name})
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
-        self.instance_template = config.summarizer_instance_template
+        self.instance_template = config.summarizer_config.instance_template
         self.instance_args = instance_args
-        self.system_args = config.__dict__
 
     @staticmethod 
     def _slugify_action(action: str) -> str:

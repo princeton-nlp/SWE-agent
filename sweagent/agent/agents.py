@@ -24,7 +24,7 @@ from sweagent.agent.models import (
 )
 from sweagent.agent.parsing import FormatError, ParseFunction
 from sweagent.agent.reviewer import AbstractReviewLoop, ReviewLoopConfig, get_review_loop_from_config
-from sweagent.agent.summarizer import SummarizeFunction
+from sweagent.agent.summarizer import SummarizerConfig
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.types import AgentInfo, History, HistoryItem, ReviewSubmission, Trajectory, TrajectoryStep
 from sweagent.utils.config import convert_paths_to_abspath
@@ -70,12 +70,7 @@ class AgentConfig(FrozenSerializable):
     history_processor: str = "DefaultHistoryProcessor"
     history_processor_args: dict[str, Any] = field(default_factory=dict)
     command_docs: str = None  # type: ignore
-    summarizer_function: str | None = "SimpleSummarizer"
-    summarizer_window_length: int | None = 105
-    summarizer_template: str | None = None
-    summarizer_model: ModelArguments | None = None
-    summarizer_system_template: str | None = None
-    summarizer_instance_template: str | None = None
+    summarizer_config: SummarizerConfig = field(default_factory=SummarizerConfig)
     blocklist_error_template: str = "Interactive operation '{name}' is not supported by this environment"
     blocklist: tuple[str, ...] = (
         "vim",
@@ -178,13 +173,9 @@ class AgentConfig(FrozenSerializable):
             "history_processor",
             HistoryProcessor.get(self.history_processor, **self.history_processor_args),
         )
-        if self.summarizer_function is None:
-            self.summarizer_function = "Identity"
-        if "WINDOW" in self.env_variables and self.summarizer_window_length is not None:
-            assert self.summarizer_window_length >= int(self.env_variables["WINDOW"]), AssertionError(f"Summarizer window length is set to {self.summarizer_window_length} which is less then the defined window length {self.env_variables['WINDOW']}") 
-        object.__setattr__(self, "summarizer_function", SummarizeFunction.get(self.summarizer_function, self.summarizer_window_length))
-        if isinstance(self.summarizer_model, dict):
-            self.summarizer_model = ModelArguments.from_dict(self.summarizer_model)
+        if "WINDOW" in self.env_variables and self.summarizer_config.window_length is not None:
+            if self.summarizer_config.window_length < int(self.env_variables["WINDOW"]):
+                raise ValueError(f"Summarizer window length is set to {self.summarizer_config.window_length} which is less then the defined window length {self.env_variables['WINDOW']}") 
 
 
 @dataclass(frozen=True)
@@ -269,7 +260,7 @@ class Agent:
         #: Model used by the agent. Note: Will initialize a separate model together with the reviewer
         #: (if any) to disentangle costs.
         self.model = get_model(args.model, args.config._commands + args.config.subroutine_types)
-        self.summarizer_model = get_model(args.config.summarizer_model if args.config.summarizer_model is not None else args.model) 
+        self.summarizer_model = get_model(args.config.summarizer_config.model if args.config.summarizer_config.model is not None else args.model) 
         self.config = args.config
         assert self.config is not None  # mypy
         self.system_args = {
@@ -935,7 +926,7 @@ class Agent:
             for hook in self.hooks:
                 hook.on_sub_action_started(sub_action=sub_action)
             observation, _, done, _info = self._env.step(sub_action["action"])
-            observation, additional_cost = self.config.summarizer_function(sub_action["action"], observation, self._env, self.summarizer_model)
+            observation, additional_cost = self.config.summarizer_config.function(sub_action["action"], observation, self._env, self.summarizer_model)
             self.model.stats += additional_cost
             self.info.update(_info)
             for hook in self.hooks:
@@ -1034,7 +1025,7 @@ class Agent:
             self.last_container_id = env.container_obj.id
         # Re-initialize primary
         self.setup(setup_args, init_model_stats)
-        self.config.summarizer_function.setup(setup_args, self.config)
+        self.config.summarizer_config.function.setup(setup_args, self.config)
 
         # Save/reset some attributes
         self.trajectory = Trajectory()
