@@ -29,8 +29,7 @@ class AbstractReviewer(ABC):
 
     LOG_PREFIX = "🧑‍⚖️ Reviewer: "
 
-    def __init__(self, config, model):
-        ...
+    def __init__(self, config, model): ...
 
     @abstractmethod
     def review(self, instance: INSTANCE_TYPE, submission: ReviewSubmission) -> ReviewerResult:
@@ -142,6 +141,11 @@ class ReviewerConfig(FrozenSerializable):
 
 
 @dataclass(frozen=True)
+class CTFSummarizingReviewerConfig(ReviewerConfig):
+    pass
+
+
+@dataclass(frozen=True)
 class BinaryReviewerConfig(FrozenSerializable):
     """The configuration for the binary reviewer"""
 
@@ -162,13 +166,21 @@ class GTCConfig(FrozenSerializable):
 
 
 @dataclass(frozen=True)
+class CTFGTCConfig(FrozenSerializable):
+    """The configuration for the GraveToCradle"""
+
+    prologue: str = ""
+    epilogue: str = ""
+
+
+@dataclass(frozen=True)
 class ReviewLoopConfig(FrozenSerializable):
     """The configuration for the review loop"""
 
     review_loop_classname: str
-    reviewer_config: ReviewerConfig | None = None
+    reviewer_config: ReviewerConfig | CTFSummarizingReviewerConfig | None = None
     binary_reviewer_config: BinaryReviewerConfig | None = None
-    gtc_config: GTCConfig | None = None
+    gtc_config: CTFGTCConfig | GTCConfig | None = None
     reviewer_classname: str | None = None
     binary_reviewer_classname: str | None = None
     gtc_classname: str = ""
@@ -275,7 +287,55 @@ class CTFReviewer(AbstractReviewer):
             accept = False
         else:
             accept = True
-            answer = f"Submission auto-accepted because of 'submitted' status."
+            answer = "Submission auto-accepted because of 'submitted' status."
+        accept_emoji = "✅" if accept else "❌"
+        logger.info(f"{self.LOG_PREFIX}{accept_emoji}\n{answer}")
+        return ReviewerResult(accept, answer, messages=messages)
+
+
+class CTFSummarizingReviewer(AbstractReviewer):
+    """A reviewer for CTF challenges where we can explicitly check if the output is correct"""
+
+    def __init__(self, config: CTFSummarizingReviewerConfig, model: BaseModel):
+        self._config = config
+        self._model = model
+        self._traj_formatter = TrajectoryFormatter(
+            traj_filter=config.traj_filter,
+            traj_item_template=config.traj_item_template,
+            traj_output_filter=config.traj_output_filter,
+            filter_failed_edits=config.filter_failed_edits,
+        )
+
+    def format_messages(self, instance: INSTANCE_TYPE, submission: ReviewSubmission):
+        system_message = self._config.system_template
+        logger.debug(f"{self.LOG_PREFIX}MODEL INPUT (system)\n{system_message}")
+        user_message = self._config.instance_template.format(
+            **instance,
+            **submission.to_format_dict(),
+            traj=self._traj_formatter.format_trajectory(submission.trajectory),
+        )
+        logger.debug(f"{self.LOG_PREFIX}MODEL INPUT (user)\n{user_message}")
+        return [
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": user_message},
+        ]
+
+    def summarize(self, instance: INSTANCE_TYPE, submission: ReviewSubmission) -> str:
+        messages = self.format_messages(instance, submission)
+        return self._model.query(messages), messages
+
+    def review(self, instance: INSTANCE_TYPE, submission: ReviewSubmission) -> ReviewerResult:
+        exit_status = submission.info.get("exit_status")
+        if not exit_status:
+            accept = False
+        elif exit_status.strip() != "submitted":
+            accept = False
+        else:
+            accept = True
+            answer = "Submission auto-accepted because of 'submitted' status."
+        messages = []
+        if not accept:
+            answer, messages = self.summarize(instance, submission)
         accept_emoji = "✅" if accept else "❌"
         logger.info(f"{self.LOG_PREFIX}{accept_emoji}\n{answer}")
         return ReviewerResult(accept, answer, messages=messages)
@@ -416,9 +476,35 @@ class GraveToCradle(AbstractGraveToCradle):
                 continue
             submission = info["submission"]
             review = reviews[idx].output
-            msg_lines.append(f"Submission {i+1}:\n\n{submission}\n\nReview {i+1}:\n\n{review}")
+            msg_lines.append(f"Submission {i+1}:\n\n{submission}\n\nReview {i+1}:\n\n{review.output}")
         msg = "\n\n".join(msg_lines)
         return {"failed_verdicts_with_submissions": msg}
+
+
+class CTFGTC(AbstractGraveToCradle):
+    def __init__(self, config: CTFGTCConfig, model: BaseModel):
+        assert isinstance(config, CTFGTCConfig)
+        self._config = config
+        self._model = model
+
+    def get_forwarded_vars(
+        self,
+        submissions: list[ReviewSubmission],
+        reviews: list[ReviewerResult],
+        breviews: list[tuple[int, int, BinaryReviewerResult]],
+    ) -> dict[str, Any]:
+        assert len(submissions) == len(reviews)
+        if not reviews:
+            return {"gtc_prologue": "", "failed_attempts_summary": "", "gtc_epilogue": ""}
+        msg_lines = []
+        for i, review in enumerate(reviews):
+            msg_lines.append(f"Review of attempt {i+1}:\n\n{review.output}")
+        msg = "\n\n".join(msg_lines)
+        return {
+            "gtc_prologue": self._config.prologue,
+            "failed_attempts_summary": msg,
+            "gtc_epilogue": self._config.epilogue,
+        }
 
 
 class ReviewLoop(AbstractReviewLoop):
@@ -433,8 +519,7 @@ class ReviewLoop(AbstractReviewLoop):
         self._model = model
         self._instance = instance
         self._reviewer: AbstractReviewer = globals()[loop_config.reviewer_classname](
-            config=loop_config.reviewer_config, 
-            model=model
+            config=loop_config.reviewer_config, model=model
         )
         if loop_config.binary_reviewer_classname is not None:
             self._breviewer: AbstractBinaryReviewer | None = globals()[loop_config.binary_reviewer_classname](

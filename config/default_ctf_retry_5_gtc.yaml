@@ -61,6 +61,12 @@ instance_template: |-
 
   7. YOU CAN SOLVE THE CHALLENGES BY YOURSELF COMPLETELY - I TRUST IN YOU!
 
+  {gtc_prologue}
+
+  {failed_attempts_summary}
+
+  {gtc_epilogue}
+
   (Open file: {open_file})
   (Current directory: {working_dir})
   bash-$
@@ -107,7 +113,71 @@ parse_command: ParseCommandDetailed
 history_processor: Last5Observations
 review_loop_config:
   review_loop_classname: ReviewLoop
-  reviewer_classname: CTFReviewer
+  reviewer_classname: CTFSummarizingReviewer
   reviewer_config:
-  max_samples: 5
+    system_template: |
+      SETTING: You are a skilled cybersecurity professional and top CTF player.
+      Your goal is to review a failed attempt at solving CTF challenge and provide feedback to help improve the solution.
 
+      INPUTS
+
+      **INPUT 1**: Problem statement/challenge
+      **INPUT 2**: Investigation:  History of how the first developer tried to fix the problem
+
+      The investigation is structured as a series of actions ("Step {i} action: "), where each action is a thought followed by a command in triple-backticks.
+      For example:
+
+      Investigation 1 Step 1 action:
+      DISCUSSION
+      We have found a bug in the code. Let's try to reproduce it.
+      ```
+      create reproduce.py
+      ```
+
+      Investigation 1 Step 1 output:
+      reproduce.py created.
+
+      After the command, there is a description of the output of the command ("Step {i} output: ").
+      The most important actions are
+
+      - `open {file}`: This action opens the file {file}. The output of the command shows part of the content of the file.
+      - `edit {from}:{to}`, followed by the content to replace lines {from} to {to}. This action always affects the currently
+        opened file. The output of the command is the content of the file after the edit.
+      - `python {file}`: This action executes the Python script {file}. The output of the command is the output of the script.
+      - `submit`: This action submits a flag for checking.
+
+      RESPONSE FORMAT:
+
+      Your answer must contain the following sections:
+
+      1. SUMMARY: Summarize the attempted solution. Mention any specific commands or code that was used. Also mention any important files that were found.
+      2. CRITIQUE: What could we do to improve the solution? What went wrong? What was missed? What could have been done more thoroughly?
+
+      IMPORTANT TIPS:
+
+      The challenge is guaranteed to be solvable. You cannot contact the organizers or ask for help/hints.
+      Online resources are allowed to be used, but just suggesting to google is not a helpful review comment.
+    instance_template: |
+      ==========================
+      INPUT 1: Problem statement
+      ==========================
+
+      {issue}
+
+      ======================
+      INPUT 2: Investigation
+      ======================
+
+      {traj}
+  max_samples: 5
+  gtc_classname: CTFGTC
+  gtc_config:
+    prologue: |
+      Here is a summary of previous failed attempts to solve the challenge:
+    epilogue: |
+      HOW TO USE THE REVIEWS OF PREVIOUS ATTEMPTS:
+      Your first step should be to develop a plan on how to tackle the challenge.
+      For that, look at the previous solution attempts. Are there any completely new ideas that have not been tried?
+      If yes, you should do that rather than trying to improve a previous attempt.
+      If not, try picking the attempt that has the most potential to be successful.
+      If a strategy has been tried multiple times already, it's better to pick a different strategy.
