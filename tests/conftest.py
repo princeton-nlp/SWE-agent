@@ -64,7 +64,7 @@ def test_env_args(
 ) -> Generator[EnvironmentArguments]:
     """This will use a persistent container"""
     local_repo_path = tmpdir_factory.getbasetemp() / "test-repo"
-    clone_cmd = ["git", "clone", "https://github.com/swe-agent/test-repo", local_repo_path]
+    clone_cmd = ["git", "clone", "https://github.com/swe-agent/test-repo", str(local_repo_path)]
     subprocess.run(clone_cmd, check=True)
     data_path = local_repo_path / "problem_statements" / "1.md"
     test_env_args = EnvironmentArguments(
