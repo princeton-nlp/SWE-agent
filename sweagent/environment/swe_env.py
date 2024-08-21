@@ -471,7 +471,7 @@ class SWEEnv(gym.Env):
 
         Returns:
             observation:  output from container
-            reward: value between 0 and 1 quantifying correctness of output + environment state
+            reward: Always set to 0
             done: whether task is over
             info: additional information (e.g. debugging information)
         """
@@ -481,9 +481,14 @@ class SWEEnv(gym.Env):
 
         observation = ""
         # Handle special actions
-        if action.strip() == "skip":
+        action = action.strip()
+        if action == "skip":
             observation = "Skipped"
             info["exit_status"] = "skipped"
+            return observation, 0, True, info
+        if action == "exit_forfeit":
+            observation = "Exited"
+            info["exit_status"] = action
             return observation, 0, True, info
         if action in {"exit_context", "exit_cost", "exit_error", "exit_format", "exit_api"}:
             try:

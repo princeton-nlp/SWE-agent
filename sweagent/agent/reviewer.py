@@ -27,6 +27,11 @@ class AbstractReviewer(ABC):
     if it successfully solves the issue.
     """
 
+    LOG_PREFIX = "🧑‍⚖️ Reviewer: "
+
+    def __init__(self, config, model):
+        ...
+
     @abstractmethod
     def review(self, instance: INSTANCE_TYPE, submission: ReviewSubmission) -> ReviewerResult:
         """Returns True if the submission is believed to be correct"""
@@ -202,8 +207,6 @@ class ReviewLoopConfig(FrozenSerializable):
 
 
 class Reviewer(AbstractReviewer):
-    LOG_PREFIX = "🧑‍⚖️ Reviewer: "
-
     def __init__(self, config: ReviewerConfig, model: BaseModel):
         self._config = config
         self._model = model
@@ -250,6 +253,29 @@ class Reviewer(AbstractReviewer):
             messages = self.format_messages(instance, submission)
             answer = self._model.query(messages)
             accept = self.interpret(answer)
+        accept_emoji = "✅" if accept else "❌"
+        logger.info(f"{self.LOG_PREFIX}{accept_emoji}\n{answer}")
+        return ReviewerResult(accept, answer, messages=messages)
+
+
+class CTFReviewer(AbstractReviewer):
+    """A reviewer for CTF challenges where we can explicitly check if the output is correct"""
+
+    def __init__(self, **kwargs):
+        pass
+
+    def review(self, instance: dict[str, Any], submission: ReviewSubmission) -> ReviewerResult:
+        exit_status = submission.info.get("exit_status")
+        messages = []
+        if not exit_status:
+            answer = "No exit status in submission, will reject."
+            accept = False
+        elif exit_status.strip() != "submitted":
+            answer = f"Submission desk-rejected because of exit status {exit_status!r}."
+            accept = False
+        else:
+            accept = True
+            answer = f"Submission auto-accepted because of 'submitted' status."
         accept_emoji = "✅" if accept else "❌"
         logger.info(f"{self.LOG_PREFIX}{accept_emoji}\n{answer}")
         return ReviewerResult(accept, answer, messages=messages)
@@ -406,7 +432,10 @@ class ReviewLoop(AbstractReviewLoop):
     ):
         self._model = model
         self._instance = instance
-        self._reviewer: AbstractReviewer = globals()[loop_config.reviewer_classname](loop_config.reviewer_config, model)
+        self._reviewer: AbstractReviewer = globals()[loop_config.reviewer_classname](
+            config=loop_config.reviewer_config, 
+            model=model
+        )
         if loop_config.binary_reviewer_classname is not None:
             self._breviewer: AbstractBinaryReviewer | None = globals()[loop_config.binary_reviewer_classname](
                 loop_config.binary_reviewer_config, model
