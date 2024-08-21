@@ -157,7 +157,7 @@ class LMSummarizer(SummarizeFunction):
     def _slugify_action(action: str) -> str:
         return "".join(c if c.isalnum() else "_" for c in action)[:30]
 
-    def __call__(self, input: str, observation: str, env: SWEEnv, model: type[BaseModel]) -> tuple[str, APIStats]:
+    def __call__(self, input: str, observation: str, env: SWEEnv, model: BaseModel) -> tuple[str, APIStats]:
         try:
             if any(input.startswith(s) for s in self.block_list_input) or len(observation.splitlines()) <= self._window_length:
                 return observation, APIStats()
@@ -166,14 +166,13 @@ class LMSummarizer(SummarizeFunction):
             env.communicate("mkdir -p /output")
             env.communicate(f"printf {shlex.quote(observation)} > {command_file_name}")
             self.history.append({"role": "user", "content": self.instance_template.format(**self.instance_args, **self.system_args, command=input, observation=observation), "agent": self.name})
-            try:
-                response = model.query(history=self.history)
-                stats = model.stats
-                model.reset_stats(APIStats())
-                self.history.pop()
-                return textwrap.dedent(self._warning_message.format(command_file_name=command_file_name)) + response, stats
-            except ContextWindowExceededError:
-                return textwrap.dedent(self._warning_message_summarization_failed.format(command_file_name=command_file_name)), APIStats()
+            response = model.query(history=self.history)
+            stats = model.stats
+            model.reset_stats(APIStats())
+            self.history.pop()
+            return textwrap.dedent(self._warning_message.format(command_file_name=command_file_name)) + response, stats
+        except ContextWindowExceededError:
+            return textwrap.dedent(self._warning_message_summarization_failed.format(command_file_name=command_file_name)), APIStats()
         except Exception as e:
             self.logger.warning(f"Unhandled exception occured when trying to summarize observation for input {input}: {e}")
             return observation, APIStats()
