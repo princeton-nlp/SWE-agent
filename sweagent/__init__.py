@@ -2,7 +2,12 @@ from __future__ import annotations
 
 __version__ = "0.6.1"
 
+from logging import WARNING, getLogger
 from pathlib import Path
+
+# See https://github.com/princeton-nlp/SWE-agent/issues/585
+getLogger("datasets").setLevel(WARNING)
+getLogger("numexpr.utils").setLevel(WARNING)
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 assert PACKAGE_DIR.is_dir()

@@ -21,28 +21,28 @@ sys.path.insert(0, str(root_dir))
 sys.path.insert(1, str(package_dir))
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_data_path() -> Path:
     p = _this_dir / "test_data"
     assert p.is_dir()
     return p
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_trajectories_path(test_data_path) -> Path:
     p = test_data_path / "trajectories"
     assert p.is_dir()
     return p
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_data_sources_path(test_data_path) -> Path:
     p = test_data_path / "data_sources"
     assert p.is_dir()
     return p
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_trajectory_path(test_trajectories_path) -> Path:
     traj = (
         test_trajectories_path
@@ -53,7 +53,7 @@ def test_trajectory_path(test_trajectories_path) -> Path:
     return traj
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_trajectory(test_trajectory_path):
     return json.loads(test_trajectory_path.read_text())
 

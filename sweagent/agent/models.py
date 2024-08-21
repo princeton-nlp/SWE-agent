@@ -10,6 +10,7 @@ from pathlib import Path
 
 import together
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
+from groq import Groq
 from openai import AzureOpenAI, BadRequestError, OpenAI
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
 from tenacity import (
@@ -114,6 +115,9 @@ class BaseModel:
             self.model_metadata = MODELS[azure_model]
         elif args.model_name.startswith("bedrock:"):
             self.api_model = args.model_name.split("bedrock:", 1)[1]
+            self.model_metadata = MODELS[self.api_model]
+        elif args.model_name.startswith("groq:"):
+            self.api_model = args.model_name.split("groq:", 1)[1]
             self.model_metadata = MODELS[self.api_model]
         else:
             msg = f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}"
@@ -229,8 +233,8 @@ class OpenAIModel(BaseModel):
         },
         "gpt-4o-mini-2024-07-18": {
             "max_context": 128_000,
-            "cost_per_input_token": 5e-06,
-            "cost_per_output_token": 15e-06,
+            "cost_per_input_token": 1.5e-07,
+            "cost_per_output_token": 6e-07,
         },
     }
 
@@ -306,7 +310,7 @@ class OpenAIModel(BaseModel):
             )
         except BadRequestError:
             msg = f"Context window ({self.model_metadata['max_context']} tokens) exceeded"
-            raise CostLimitExceededError(msg)
+            raise ContextWindowExceededError(msg)
         # Calculate + update costs, return response
         input_tokens = response.usage.prompt_tokens
         output_tokens = response.usage.completion_tokens
@@ -327,6 +331,67 @@ class DeepSeekModel(OpenAIModel):
     def _setup_client(self) -> None:
         api_base_url: str = keys_config["DEEPSEEK_API_BASE_URL"]
         self.client = OpenAI(api_key=keys_config["DEEPSEEK_API_KEY"], base_url=api_base_url)
+
+
+class GroqModel(OpenAIModel):
+    MODELS = {
+        "llama3-8b-8192": {
+            "max_context": 8192,
+            "cost_per_input_token": 5e-08,
+            "cost_per_output_token": 8e-08,
+        },
+        "llama3-70b-8192": {
+            "max_context": 8192,
+            "cost_per_input_token": 5.9e-07,
+            "cost_per_output_token": 7.9e-07,
+        },
+        "llama-guard-3-8b": {
+            "max_context": 8192,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        },
+        "llama-3.1-8b-instant": {
+            "max_context": 131_072,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        },
+        "llama-3.1-70b-versatile": {
+            "max_context": 131_072,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        },
+        "gemma2-9b-it": {
+            "max_context": 8192,
+            "cost_per_input_token": 2e-07,
+            "cost_per_output_token": 2e-07,
+        },
+        "gemma-7b-it": {
+            "max_context": 8192,
+            "cost_per_input_token": 5e-08,
+            "cost_per_output_token": 5e-08,
+        },
+        "mixtral-8x7b-32768": {
+            "max_context": 32_768,
+            "cost_per_input_token": 2.4e-07,
+            "cost_per_output_token": 2.8e-07,
+        },
+    }
+
+    SHORTCUTS = {
+        "groq/llama8": "llama3-8b-8192",
+        "groq/llama70": "llama3-70b-8192",
+        "groq/llamaguard8": "llama-guard-3-8b",
+        "groq/llamainstant8": "llama-3.1-8b-instant",
+        "groq/llamaversatile70": "llama-3.1-70b-versatile",
+        "groq/gemma9it": "gemma2-9b-it",
+        "groq/gemma7it": "gemma-7b-it",
+        "groq/mixtral8x7": "mixtral-8x7b-32768",
+    }
+
+    def _setup_client(self) -> None:
+        self.client = Groq(
+            api_key=keys_config["GROQ_API_KEY"],
+        )
 
 
 class AnthropicModel(BaseModel):
@@ -937,6 +1002,8 @@ def get_model(args: ModelArguments, commands: list[Command] | None = None):
         return DeepSeekModel(args, commands)
     elif args.model_name in TogetherModel.SHORTCUTS:
         return TogetherModel(args, commands)
+    elif args.model_name in GroqModel.SHORTCUTS:
+        return GroqModel(args, commands)
     elif args.model_name == "instant_empty_submit":
         return InstantEmptySubmitTestModel(args, commands)
     else:

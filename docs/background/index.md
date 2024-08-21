@@ -13,7 +13,13 @@ Read more about the ACI [here](aci.md).
 
 SWE-agent is built and maintained by researchers from Princeton University.
 
+For a quick introduction, watch the following video:
+
 <iframe width="560" height="315" src="https://www.youtube.com/embed/CeMtJ4XObAM?si=W2tyY9EpEe-v12EU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+A longer lecture touching on the project's motivation, research findings, as well as providing a hands-on tutorial on how to install, use, and configure SWE-agent is provided here:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/d9gcXpiiDao" title="NeurIPS Hacker Cup AI: SWEAgent" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 If you found this work helpful, please consider using the following citation:
 
