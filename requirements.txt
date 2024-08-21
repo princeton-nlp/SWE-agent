@@ -8,7 +8,7 @@ openai>=1.0
 pandas
 rich
 ruamel.yaml
-swebench>=1.0.1,<2.0.0
+swebench>=2.0.0
 tenacity
 unidiff
 simple-parsing
@@ -19,3 +19,4 @@ rich-argparse
 flask
 flask-cors
 flask-socketio
+groq

@@ -22,11 +22,13 @@ This is the <a href="https://leetcode.com/problems/first-missing-positive/">firs
 </details>
 
 Second, we need to specify a repository wherein SWE-agent will work.
-Here, we can simply create an empty folder, and add a `main.py` file
+Here, we can simply create an empty folder (outside of the SWE-agent repository), and add a `main.py` file
 
 ```bash
 mkdir empty
+git init
 touch main.py
+echo "*.pyc" > .gitignore  # to avoid binary files in patches
 ```
 
 and potentially populate it with the problem stub
@@ -58,7 +60,8 @@ python run.py \
     --repo_path /path/to/empty \
     --config_file config/coding_challenge.yaml \
     --model gpt4 \
-    --cost_limit 3.0
+    --per_instance_cost_limit 3.0 \
+    --apply_patch_locally
 ```
 
 <details>
@@ -145,3 +148,10 @@ index 1e7f08f..beabaa7 100644
 +    print("All test cases passed successfully.")
 ```
 </details>
+
+Because of the `--apply_patch_locally` flag, the patch has also already been applied to the repository,
+so you can also retrieve the final solution from there.
+
+### Improving SWE-agent for coding challenges
+
+By default, the demonstration trajectory the agent uses while solving a coding challenge is one in which it needs to solve a small bug in a short piece of code (from the HumanEvalFix dataset). Since that process is not too similar to solving a coding challenge, performance would probably substantially improve if the agent was given a demonstration trajectory in which it has to solve an actual programming challenge. To learn how to do that, read [this](../config/demonstrations.md).

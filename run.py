@@ -38,7 +38,7 @@ from rich.markdown import Markdown
 from simple_parsing import parse
 from simple_parsing.helpers.flatten import FlattenedAccess
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
-from swebench import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
+from swebench.harness.constants import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
 from unidiff import PatchSet
 
 from sweagent.agent.agents import Agent, AgentArguments
@@ -226,7 +226,7 @@ class SaveApplyPatchHook(MainHook):
         patch_output_dir = self._traj_dir / "patches"
         patch_output_dir.mkdir(exist_ok=True, parents=True)
         patch_output_file = patch_output_dir / f"{instance_id}.patch"
-        if not info.get("submission"):
+        if info.get("submission") is None:
             logger.info("No patch to save.")
             return None
         model_patch = info["submission"]
@@ -331,7 +331,7 @@ class Main:
         hook.on_init(args=self.args, agent=self.agent, env=self.env, traj_dir=self.traj_dir)
         self.hooks.append(hook)
 
-    def run(self, index):
+    def run(self, index: int) -> None:
         # Reset environment
         instance_id = self.env.data[index]["instance_id"]
         for hook in self.hooks:
@@ -403,7 +403,7 @@ class Main:
                 logger.info("Container closed")
                 raise
             except Exception as e:
-                traceback.print_exc()
+                logger.warning(traceback.format_exc())
                 if self.args.raise_exceptions:
                     self.env.close()
                     raise e

@@ -19,6 +19,7 @@ from typing import Any, Callable
 from datasets import load_dataset, load_from_disk
 from ghapi.all import GhApi
 from git import InvalidGitRepositoryError, Repo
+from unidiff import PatchSet
 
 import docker
 from docker.models.containers import Container
@@ -131,7 +132,7 @@ def copy_anything_to_container(container: Container, host_path: str, container_p
         raise RuntimeError(msg) from e
 
 
-def read_with_timeout(container: subprocess.Popen, pid_func: Callable, timeout_duration: int) -> str:
+def read_with_timeout(container: subprocess.Popen, pid_func: Callable, timeout_duration: int | float) -> str:
     """
     Read data from a subprocess with a timeout.
     This function uses a file descriptor to read data from the subprocess in a non-blocking way.
@@ -193,7 +194,7 @@ PROCESS_DONE_MARKER_END = ":PROCESS-DONE///"
 PROCESS_DONE_REGEX = re.compile(rf"{PROCESS_DONE_MARKER_START}(.+?){PROCESS_DONE_MARKER_END}")
 
 
-def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration: int) -> tuple[str, str]:
+def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration: int | float) -> tuple[str, str]:
     """
     Read data from a subprocess with a timeout.
     This function uses a file descriptor to read data from the subprocess in a non-blocking way.
@@ -247,7 +248,8 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
     if time.time() >= end_time:
         msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}"
         raise TimeoutError(msg)
-    decoded = buffer.decode()
+
+    decoded = buffer.decode("utf-8", errors="backslashreplace").replace('\r\n', '\n')
     body = "\n".join(line for line in decoded.splitlines() if not line.startswith(PROCESS_DONE_MARKER_START))
     _results = PROCESS_DONE_REGEX.search(decoded)
     if _results is None:
@@ -490,10 +492,7 @@ def image_exists(image_name: str) -> bool:
         if docker_not_running:
             msg = (
                 "Probably the Docker daemon is not running. Please start the Docker daemon and try again. "
-                "You might need to allow the use of the docker socket "
-                "(https://github.com/princeton-nlp/SWE-agent/issues/159) or symlink the socket "
-                "if it's at a non-standard location "
-                "(https://github.com/princeton-nlp/SWE-agent/issues/20#issuecomment-2047506005)."
+                "If Docker issues persist, please check out https://princeton-nlp.github.io/SWE-agent/installation/tips/"
             )
             raise RuntimeError(msg) from e
         raise
@@ -800,24 +799,6 @@ def get_instances(
             # Raised by load_from_disk if the directory is not a dataset directory
             pass
 
-    # The next if statement is very brittle logic to determine if we're processing a single instance
-    if (
-        (Path(file_path).is_file() and Path(file_path).suffix in [".md", ".txt"])
-        or is_github_issue_url(file_path)
-        or file_path.startswith("text://")
-    ):
-        ib = InstanceBuilder(token=token)
-        ib.set_problem_statement(file_path)
-        if repo_path:
-            ib.set_repo_info(repo_path, base_commit=base_commit)
-        elif is_github_repo_url(file_path):
-            ib.set_repo_info_from_gh_url(file_path)
-        else:
-            msg = f"Could not determine repo path from {file_path=}, {repo_path=}"
-            raise ValueError(msg)
-
-        return [ib.build()]
-
     if base_commit is not None:
         msg = "base_commit must be None if data_path is not a github issue url"
         raise ValueError(msg)
@@ -889,6 +870,146 @@ def format_trajectory_markdown(trajectory: list[dict[str, str]]):
     return "\n".join(prefix) + "\n\n---\n\n".join(steps) + "\n".join(suffix)
 
 
+class PatchFormatter:
+    def __init__(
+        self,
+        patch: str,
+        read_method: Callable[[str], str],
+    ):
+        """Given the final patch and access to the container that contains the repository,
+        extract relevant lines from the modified file.
+
+        Args:
+            patch: The patch as a string.
+            read_method: Callable with path to file (relative to repository root) as argument
+                that returns the file content as a string.
+        """
+        self._patch = PatchSet(patch)
+        self._patched_files: dict[str, str] = {}
+        self._original_files: dict[str, str] = {}
+        self._patch_applied = True
+        self._read_file = read_method
+        self._read_files(original=False)
+
+    @staticmethod
+    def _merge_intervals(starts: list[int], stops: list[int]) -> tuple[list[int], list[int]]:
+        """Given two lists of integers, starts and stops, merges all overlapping intervals.
+
+        For example `starts=[1, 5, 18]`, `stops=[10, 13, 20]`
+        should return `starts=[1, 18]`, `stops=[13, 20]`
+        """
+
+        intervals = sorted(zip(starts, stops))
+        merged = []
+        for start, stop in intervals:
+            if not merged or merged[-1][1] < start:
+                # No overlap
+                merged.append([start, stop])
+            else:
+                # Overlap
+                merged[-1][1] = max(merged[-1][1], stop)
+        # Unzip again
+        merged_starts, merged_stops = zip(*merged)
+        return list(merged_starts), list(merged_stops)
+
+    def format_file(self, text: str, starts: list[int], stops: list[int], *, linenos: bool = True) -> str:
+        """Reads file and returns string representation of the relevant lines.
+
+        Args:
+            path: The path to the file within the repo location
+            starts: The starting line numbers of the relevant lines. The first line is line 1.
+            stops: The stopping line numbers of the relevant lines. The stop is not inclusive.
+                The first line is line 1.
+            linenos: Whether to include line numbers
+        """
+        assert len(starts) == len(stops)
+        assert all(start >= 1 for start in starts)
+        assert all(start < stop for start, stop in zip(starts, stops))
+        starts, stops = self._merge_intervals(starts, stops)
+        assert all(hunk1_start < hunk2_start for hunk1_start, hunk2_start in zip(starts, starts[1:]))
+        out: list[str] = []
+        if starts[0] > 1:
+            # Count from 1
+            out.append(f"[{starts[0]-1} lines above omitted]")
+        last_stop: int | None = None
+        lines = text.splitlines()
+        for start, stop in zip(starts, stops):
+            assert start >= 1
+            if last_stop is not None:
+                n_omitted = start - last_stop
+                # Check that we have non-overlapping hunks
+                assert n_omitted >= 0
+                if n_omitted:
+                    out.append(f"\n[{n_omitted} lines omitted]\n")
+            # Count from 1
+            these_lines = lines[start - 1 : stop - 1]
+            if linenos:
+                out.append("\n".join([f"{i:6d}: {l}" for i, l in enumerate(these_lines, start=start)]))
+            else:
+                out.append("\n".join(these_lines))
+            last_stop = stop
+        if last_stop < len(lines):
+            # Stop is not inclusive
+            omitted = len(lines) - last_stop
+            assert omitted > 0
+            out.append(f"[{omitted} lines below omitted]")
+        return "\n".join(out)
+
+    def _get_hunk_lines(self, original: bool, *, context_length: int) -> dict[str, tuple[list[int], list[int]]]:
+        """Get the starts and stops for all files in the patch.
+
+        Args:
+            original: Whether to read the original file or the patched file
+            context_length: The number of lines to include above and below the hunk
+
+        Returns:
+            A dictionary with the file path as key and a tuple of lists of starts and stops as value.
+        """
+        out: dict[str, tuple[list[int], list[int]]] = {}
+        for patch in self._patch:
+            if not patch.is_modified_file:
+                continue
+            starts: list[int] = []
+            stops: list[int] = []
+            for hunk in patch:
+                if original:
+                    # 1 is the lowest line number
+                    start = max(1, hunk.source_start - context_length)
+                    stop = hunk.source_start + hunk.source_length + context_length
+                else:
+                    start = max(1, hunk.target_start - context_length)
+                    stop = hunk.target_start + hunk.target_length + context_length
+                starts.append(start)
+                stops.append(stop)
+            out[patch.path] = (starts, stops)
+        return out
+
+    def _read_files(self, original: bool) -> None:
+        for patch in self._patch:
+            path = patch.path
+            if not patch.is_modified_file:
+                continue
+            if original:
+                msg = "Original file reading not implemented"
+                raise NotImplementedError(msg)
+            else:
+                assert self._patch_applied
+                self._patched_files[path] = self._read_file(path)
+
+    @staticmethod
+    def concat_files_strings(files: dict[str, str]) -> str:
+        """Concatenate multiple `read_files` outputs into a single string."""
+        out = []
+        for path, content in files.items():
+            out.append(f"[File: {path}]\n{content}")
+        return "\n\n".join(out)
+
+    def get_files_str(self, *, original: bool, context_length: int | None = 50, linenos: bool = True) -> str:
+        hunk_lines = self._get_hunk_lines(original=original, context_length=context_length)
+        sources = self._original_files if original else self._patched_files
+        return self.concat_files_strings(
+            {path: self.format_file(text, *hunk_lines[path], linenos=linenos) for path, text in sources.items()}
+        )
 def extract_flag_format(flag: str) -> str:
     flag_format = re.sub(r"{.*}$", "{...}", flag)
     return flag_format if flag_format != flag else "..."

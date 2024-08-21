@@ -49,7 +49,6 @@ nav:
   - Home: index.md
   - Background:
     - "background/index.md"
-    - "Overview": "background/overview.md"
     - "Agent-Computer Interface": "background/aci.md"
     - "Architecture": "background/architecture.md"
   - Installation:

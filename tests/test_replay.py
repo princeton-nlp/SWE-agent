@@ -9,15 +9,15 @@ from run_replay import get_args, main
 from sweagent import CONFIG_DIR
 
 
-@pytest.fixture()
+@pytest.fixture
 def swe_agent_test_repo_clone(tmp_path):
-    local_repo_path = tmp_path / "swe-agent-test-repo"
-    clone_cmd = ["git", "clone", "https://github.com/klieret/swe-agent-test-repo", local_repo_path]
+    local_repo_path = tmp_path / "test-repo"
+    clone_cmd = ["git", "clone", "https://github.com/swe-agent/test-repo", local_repo_path]
     subprocess.run(clone_cmd, check=True)
     return local_repo_path
 
 
-@pytest.fixture()
+@pytest.fixture
 def swe_agent_test_repo_traj(test_trajectories_path) -> Path:
     p = (
         test_trajectories_path
@@ -28,14 +28,14 @@ def swe_agent_test_repo_traj(test_trajectories_path) -> Path:
     return p
 
 
-@pytest.fixture()
+@pytest.fixture
 def swe_agent_test_repo_local_problem_stmt(swe_agent_test_repo_clone) -> Path:
     problem_stmt = swe_agent_test_repo_clone / "problem_statements" / "1.md"
     assert problem_stmt.is_file()
     return problem_stmt
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 @pytest.mark.parametrize("problem_statement_source", ["github", "local"])
 def test_model_replay_github_repo(
     tmpdir,
@@ -44,7 +44,7 @@ def test_model_replay_github_repo(
     swe_agent_test_repo_local_problem_stmt,
 ):
     if problem_statement_source == "github":
-        data_path = "https://github.com/klieret/swe-agent-test-repo/issues/1"
+        data_path = "https://github.com/swe-agent/test-repo/issues/1"
     elif problem_statement_source == "local":
         data_path = str(swe_agent_test_repo_local_problem_stmt)
     args = [
@@ -57,14 +57,14 @@ def test_model_replay_github_repo(
         "--raise_exceptions",
     ]
     if problem_statement_source == "local":
-        args.extend(["--repo_path", "https://github.com/klieret/swe-agent-test-repo/"])
+        args.extend(["--repo_path", "https://github.com/swe-agent/test-repo/"])
     args, remaining_args = get_args(args)
     with tmpdir.as_cwd():
         # Test that we can run run.py also independently from repo dir
         main(**vars(args), forward_args=remaining_args)
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_model_replay_from_json(test_trajectories_path, test_data_sources_path):
     traj_path = (
         test_trajectories_path
@@ -96,12 +96,12 @@ def test_run_cli_help():
     subprocess.run(args, check=True)
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 @pytest.mark.parametrize("problem_statement_source", ["github", "local"])
 def test_model_replay_local_repo(swe_agent_test_repo_clone, swe_agent_test_repo_traj, problem_statement_source):
     local_repo_path = swe_agent_test_repo_clone
     if problem_statement_source == "github":
-        problem_statement_path = "https://github.com/klieret/swe-agent-test-repo/issues/1"
+        problem_statement_path = "https://github.com/swe-agent/test-repo/issues/1"
     elif problem_statement_source == "local":
         problem_statement_path = local_repo_path / "problem_statements" / "1.md"
         assert problem_statement_path.is_file()

@@ -12,7 +12,7 @@ import subprocess
 import time
 import traceback
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any
 
 import gymnasium as gym
@@ -20,7 +20,8 @@ import yaml
 from ghapi.all import GhApi
 from git import Repo
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
-from swebench import MAP_VERSION_TO_INSTALL, get_environment_yml, get_requirements
+from swebench.harness.constants import MAP_REPO_VERSION_TO_SPECS
+from swebench.harness.utils import get_environment_yml, get_requirements
 
 import docker
 import docker.errors
@@ -30,6 +31,7 @@ from sweagent.environment.utils import (
     PROCESS_DONE_MARKER_END,
     PROCESS_DONE_MARKER_START,
     InvalidGithubURL,
+    PatchFormatter,
     attach_network_interface_to_container,
     copy_anything_to_container,
     copy_file_to_container,
@@ -44,10 +46,12 @@ from sweagent.environment.utils import (
     read_with_timeout_experimental,
     terminate_docker_compose,
 )
+from sweagent.types import AgentInfo
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import default_logger, get_logger
 
 LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500))
+AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
 PATH_TO_REQS = "/root/requirements.txt"
 PATH_TO_ENV_YML = "/root/environment.yml"
 
@@ -348,37 +352,8 @@ class SWEEnv(gym.Env):
         if self._repo_name not in folders:
             self._copy_repo()
 
-        # Clean repository of any modifications + Checkout base commit
-        startup_commands = [
-            "echo -n > /root/files_to_edit.txt",
-            f"cd {self._repo_name}",
-            "export ROOT=$(pwd -P)",
-        ]
-        if self.challenge is None:
-            startup_commands += ["git status",
-                "git restore .",
-                f"git reset --hard {self.base_commit}",
-                "git clean -fdxq",
-            ]
-        
-        for cmd in startup_commands:
-            self.communicate_with_handling(
-                input=cmd,
-                error_msg="Failed to clean repository",
-            )
-
-        # Reset environment variables
-        for cmd in [
-            'export CURRENT_FILE=""',
-            "export CURRENT_LINE=0",
-            "export SEARCH_RESULTS=()",
-            "export SEARCH_FILES=()",
-            "export SEARCH_INDEX=0",
-        ]:
-            self.communicate_with_handling(
-                input=cmd,
-                error_msg="Failed to reset environment variables",
-            )
+        self._reset_repository()
+        self._reset_environment_variables()
 
         # Set up environment
         self.communicate_with_handling(
@@ -414,6 +389,47 @@ class SWEEnv(gym.Env):
         # Write any metadata to info if necessary
         return None, info
 
+    def _reset_repository(self) -> None:
+        """Clean repository of any modifications + Checkout base commit"""
+        startup_commands = [
+            "echo -n > /root/files_to_edit.txt",
+            f"cd /{self._repo_name}",
+            "export ROOT=$(pwd -P)",
+        ]
+        if self.challenge is None:
+            startup_commands += ["git status",
+                "git restore .",
+                f"git reset --hard {self.base_commit}",
+                "git clean -fdxq",
+            ]
+        self.communicate_with_handling(
+            input=" && ".join(startup_commands),
+            error_msg="Failed to clean repository",
+        )
+
+    def _reset_environment_variables(self) -> None:
+        """Reset environment variables (`CURRENT_FILE`) etc. within container"""
+        cmd = [
+            'export CURRENT_FILE=""',
+            "export CURRENT_LINE=0",
+            "export SEARCH_RESULTS=()",
+            "export SEARCH_FILES=()",
+            "export SEARCH_INDEX=0",
+        ]
+        self.communicate_with_handling(
+            input=" && ".join(cmd),
+            error_msg="Failed to reset environment variables",
+        )
+
+    def reset_for_new_attempt(
+        self,
+    ) -> None:
+        """Compared to `reset`, which prepares the container for a new instance,
+        this prepares the container for taking another shot at the same instance.
+        """
+        self._reset_repository()
+        self._reset_environment_variables()
+
     def _apply_test_patch(self):
         """
         Apply test patch for oracle setting
@@ -433,7 +449,18 @@ class SWEEnv(gym.Env):
         )
         os.remove(path_to_patch)
 
-    def step(self, action: str) -> tuple[str | None, int, bool, dict]:
+    def _get_edited_files_with_context(self, patch: str) -> dict[str, str]:
+        """Get the edited files with context from the patch"""
+        pf = PatchFormatter(patch, read_method=self.read_file) if patch else None
+        out = {}
+        for context_length in [30, 50, 70]:
+            value = "Empty. No edited files found."
+            if pf is not None:
+                value = pf.get_files_str(original=False, context_length=context_length)
+            out[f"edited_files{context_length}"] = value
+        return out
+
+    def step(self, action: str) -> tuple[str | None, int, bool, AgentInfo]:
         """
         Runs an action proposed by the agent in the environment and returns the corresponding output.
 
@@ -446,7 +473,9 @@ class SWEEnv(gym.Env):
             done: whether task is over
             info: additional information (e.g. debugging information)
         """
-        info = {}
+        info: AgentInfo = {}
+        # Make sure to have the right keys even if the submission is missing/empty
+        info.update(self._get_edited_files_with_context(patch=""))  # type: ignore
 
         observation = ""
         # Handle special actions
@@ -462,6 +491,7 @@ class SWEEnv(gym.Env):
                 self.logger.info(f"Found submission: {submission}")
                 info["exit_status"] = f"submitted ({action})"
                 info["submission"] = submission
+                info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
                 observation = "Exited (autosubmitted)"
                 self.logger.info("Exiting with autosubmission")
                 return observation, 0, True, info
@@ -475,7 +505,7 @@ class SWEEnv(gym.Env):
         # Attempt to run action in container
         observation = ""
         try:
-            observation = self.communicate(input=action, timeout_duration=25, set_last_action=True)
+            observation = self.communicate(input=action, timeout_duration=AGENT_ACTION_TIMEOUT, set_last_action=True)
         except TimeoutError:
             try:
                 self.interrupt()
@@ -509,13 +539,13 @@ class SWEEnv(gym.Env):
                 self.logger.info(f"Found submission: {submission}")
                 info["exit_status"] = "submitted"
                 info["submission"] = submission if submission.strip() != "" else None
+                info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
                 observation = submission if submission.strip() != "" else None
                 return observation, 0, True, info
             else:
-                self.logger.error(f"Wrong submission found: {submission}")
+                self.logger.warning(f"Wrong submission found: {submission}")
                 observation = "Wrong flag!"
                 return observation, 0, False, info
-            
         return observation, 0, False, info
 
     def close(self) -> None:
@@ -697,7 +727,7 @@ class SWEEnv(gym.Env):
     def _communicate_experimental(
         self,
         input: str,
-        timeout_duration=25,
+        timeout_duration: int | float = 25,
     ) -> str:
         """Experimental version of `_communicate`"""
         assert self.container is not None
@@ -746,7 +776,7 @@ class SWEEnv(gym.Env):
     def _communicate(
         self,
         input: str,
-        timeout_duration=25,
+        timeout_duration: int | float = 25,
     ) -> str:
         """Runs command in container and returns output
 
@@ -797,7 +827,7 @@ class SWEEnv(gym.Env):
         output = self._communicate(f"/bin/bash -n <<'EOF'\n{input}\nEOF\n")
         return output, self.returncode == 0
 
-    def communicate(self, input: str, timeout_duration: int = 25, *, set_last_action: bool = False) -> str:
+    def communicate(self, input: str, timeout_duration: int | float = 25, *, set_last_action: bool = False) -> str:
         """
         Sends input to container and returns output
 
@@ -833,7 +863,7 @@ class SWEEnv(gym.Env):
             self.communicate_output = ""
             return ""
 
-    def communicate_with_handling(self, input: str, error_msg: str, timeout_duration: int = 25) -> str:
+    def communicate_with_handling(self, input: str, error_msg: str, timeout_duration: int | float = 25) -> str:
         """
         Wrapper for communicate function that raises error if return code is non-zero
 
@@ -965,7 +995,7 @@ class SWEEnv(gym.Env):
                 raise ValueError(msg)
         else:
             try:
-                return MAP_VERSION_TO_INSTALL[self.record["repo"]][str(self.record["version"])]
+                return MAP_REPO_VERSION_TO_SPECS[self.record["repo"]][str(self.record["version"])]
             except KeyError as e:
                 msg = (
                     "Tried to look up install configs in swe-bench, but failed. "
@@ -1022,14 +1052,10 @@ class SWEEnv(gym.Env):
                 self.communicate(f"rm {PATH_TO_REQS}")
             elif packages == "environment.yml":
                 # Write environment.yml to file
-                if install_configs.get("no_use_env"):
-                    content_env_yml = get_environment_yml(self.record, env_name)
-                else:
-                    content_env_yml = get_environment_yml(
-                        self.record,
-                        env_name,
-                        python_version=install_configs["python"],
-                    )
+                content_env_yml = get_environment_yml(self.record, env_name)
+                # Hotfix for
+                if not install_configs.get("no_use_env"):
+                    content_env_yml += f'\n  - python={install_configs["python"]}\n'
                 copy_file_to_container(self.container_obj, content_env_yml, PATH_TO_ENV_YML)
                 if install_configs.get("no_use_env"):
                     # Create conda environment
@@ -1101,6 +1127,7 @@ class SWEEnv(gym.Env):
                 self.communicate_with_handling(
                     pre_install_cmd,
                     error_msg="Pre-install commands failed to execute successfully",
+                    timeout_duration=LONG_TIMEOUT,
                 )
             self.logger.debug("Ran pre-install commands")
         self.logger.info(f"Installing {self._repo_name} at base commit...")
@@ -1271,3 +1298,15 @@ class SWEEnv(gym.Env):
                 "any required changes onto the branch and then click "
                 "'Ready for Review' to bring it to the attention of the maintainers.",
             )
+
+    def read_file(self, path: str | PurePath) -> str:
+        """Read file contents from container
+
+        Args:
+            path: Path to file relative to repository root
+
+        Returns:
+            file_contents: Contents of file as string
+        """
+        path_in_container = f"/{self._repo_name}/{path}"
+        return self.communicate(f"cat {str(path_in_container)}")

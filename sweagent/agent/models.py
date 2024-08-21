@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -9,6 +10,7 @@ from pathlib import Path
 
 import together
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
+from groq import Groq
 from openai import AzureOpenAI, BadRequestError, OpenAI
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
 from tenacity import (
@@ -114,6 +116,9 @@ class BaseModel:
         elif args.model_name.startswith("bedrock:"):
             self.api_model = args.model_name.split("bedrock:", 1)[1]
             self.model_metadata = MODELS[self.api_model]
+        elif args.model_name.startswith("groq:"):
+            self.api_model = args.model_name.split("groq:", 1)[1]
+            self.model_metadata = MODELS[self.api_model]
         else:
             msg = f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}"
             raise ValueError(msg)
@@ -123,7 +128,8 @@ class BaseModel:
             self.stats = APIStats(total_cost=self.stats.total_cost)
             logger.info("Resetting model stats")
         else:
-            self.stats = other
+            # Make sure to copy the stats to avoid modifying the original
+            self.stats = copy.deepcopy(other)
 
     def update_stats(self, input_tokens: int, output_tokens: int) -> float:
         """
@@ -147,14 +153,14 @@ class BaseModel:
         self.stats.tokens_received += output_tokens
         self.stats.api_calls += 1
 
-        # Log updated cost values to std. out.
-        logger.info(
+        # Log updated cost values to std. err
+        logger.debug(
             f"input_tokens={input_tokens:,}, "
             f"output_tokens={output_tokens:,}, "
             f"instance_cost={self.stats.instance_cost:.2f}, "
             f"cost={cost:.2f}",
         )
-        logger.info(
+        logger.debug(
             f"total_tokens_sent={self.stats.tokens_sent:,}, "
             f"total_tokens_received={self.stats.tokens_received:,}, "
             f"total_cost={self.stats.total_cost:.2f}, "
@@ -225,6 +231,11 @@ class OpenAIModel(BaseModel):
             "cost_per_input_token": 5e-06,
             "cost_per_output_token": 15e-06,
         },
+        "gpt-4o-mini-2024-07-18": {
+            "max_context": 128_000,
+            "cost_per_input_token": 1.5e-07,
+            "cost_per_output_token": 6e-07,
+        },
     }
 
     SHORTCUTS = {
@@ -236,6 +247,7 @@ class OpenAIModel(BaseModel):
         "gpt3-0125": "gpt-3.5-turbo-0125",
         "gpt4-turbo": "gpt-4-turbo-2024-04-09",
         "gpt4o": "gpt-4o-2024-05-13",
+        "gpt-4o-mini": "gpt-4o-mini-2024-07-18",
     }
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
@@ -298,7 +310,7 @@ class OpenAIModel(BaseModel):
             )
         except BadRequestError:
             msg = f"Context window ({self.model_metadata['max_context']} tokens) exceeded"
-            raise CostLimitExceededError(msg)
+            raise ContextWindowExceededError(msg)
         # Calculate + update costs, return response
         input_tokens = response.usage.prompt_tokens
         output_tokens = response.usage.completion_tokens
@@ -319,6 +331,67 @@ class DeepSeekModel(OpenAIModel):
     def _setup_client(self) -> None:
         api_base_url: str = keys_config["DEEPSEEK_API_BASE_URL"]
         self.client = OpenAI(api_key=keys_config["DEEPSEEK_API_KEY"], base_url=api_base_url)
+
+
+class GroqModel(OpenAIModel):
+    MODELS = {
+        "llama3-8b-8192": {
+            "max_context": 8192,
+            "cost_per_input_token": 5e-08,
+            "cost_per_output_token": 8e-08,
+        },
+        "llama3-70b-8192": {
+            "max_context": 8192,
+            "cost_per_input_token": 5.9e-07,
+            "cost_per_output_token": 7.9e-07,
+        },
+        "llama-guard-3-8b": {
+            "max_context": 8192,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        },
+        "llama-3.1-8b-instant": {
+            "max_context": 131_072,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        },
+        "llama-3.1-70b-versatile": {
+            "max_context": 131_072,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        },
+        "gemma2-9b-it": {
+            "max_context": 8192,
+            "cost_per_input_token": 2e-07,
+            "cost_per_output_token": 2e-07,
+        },
+        "gemma-7b-it": {
+            "max_context": 8192,
+            "cost_per_input_token": 5e-08,
+            "cost_per_output_token": 5e-08,
+        },
+        "mixtral-8x7b-32768": {
+            "max_context": 32_768,
+            "cost_per_input_token": 2.4e-07,
+            "cost_per_output_token": 2.8e-07,
+        },
+    }
+
+    SHORTCUTS = {
+        "groq/llama8": "llama3-8b-8192",
+        "groq/llama70": "llama3-70b-8192",
+        "groq/llamaguard8": "llama-guard-3-8b",
+        "groq/llamainstant8": "llama-3.1-8b-instant",
+        "groq/llamaversatile70": "llama-3.1-70b-versatile",
+        "groq/gemma9it": "gemma2-9b-it",
+        "groq/gemma7it": "gemma-7b-it",
+        "groq/mixtral8x7": "mixtral-8x7b-32768",
+    }
+
+    def _setup_client(self) -> None:
+        self.client = Groq(
+            api_key=keys_config["GROQ_API_KEY"],
+        )
 
 
 class AnthropicModel(BaseModel):
@@ -872,7 +945,14 @@ class ReplayModel(BaseModel):
 
 
 class InstantEmptySubmitTestModel(BaseModel):
-    MODELS = {"instant_empty_submit": {}}
+    MODELS = {
+        "instant_empty_submit": {
+            "max_context": 100_000,
+            "max_tokens_to_sample": 4096,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        }
+    }
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
         """This model immediately submits. Useful for testing purposes"""
@@ -887,6 +967,7 @@ class InstantEmptySubmitTestModel(BaseModel):
         elif self._action_idx == 1:
             self._action_idx = 0
             action = "DISCUSSION\nThe task should be resolved, so let's submit the patch.\n\n```\nsubmit\n```\n"
+        self.update_stats(0, 0)
         return action
 
 
@@ -921,6 +1002,8 @@ def get_model(args: ModelArguments, commands: list[Command] | None = None):
         return DeepSeekModel(args, commands)
     elif args.model_name in TogetherModel.SHORTCUTS:
         return TogetherModel(args, commands)
+    elif args.model_name in GroqModel.SHORTCUTS:
+        return GroqModel(args, commands)
     elif args.model_name == "instant_empty_submit":
         return InstantEmptySubmitTestModel(args, commands)
     else:

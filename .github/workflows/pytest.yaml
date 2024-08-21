@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - main
+      - reviewer
       - talor-branch
     paths-ignore:
       - 'docs/**'
@@ -16,6 +17,7 @@ on:
   pull_request:
     branches:
       - main
+      - reviewer
       - talor-branch
     paths-ignore:
       - 'docs/**'
@@ -52,3 +54,10 @@ jobs:
         uses: sjvrijn/pytest-last-failed@v2
         with:
           pytest-args: '--exitfirst --cov'
+      - name: Explicitly convert coverage to xml
+        run: coverage xml
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: princeton-nlp/SWE-agent

@@ -20,4 +20,5 @@ jobs:
         - name: Checkout code
           uses: actions/checkout@v2
         - name: Run release script
+          if: (github.ref == 'refs/heads/main') && (github.repository == 'princeton-nlp/SWE-agent')
           run: ./release_dockerhub.sh sweagent latest
