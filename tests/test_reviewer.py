@@ -22,17 +22,17 @@ from sweagent.agent.reviewer import (
 from sweagent.types import ReviewerResult, ReviewSubmission
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_reviewer_config() -> ReviewerConfig:
     return ReviewerConfig("system_template", "instance_template")
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_binary_reviewer_config() -> BinaryReviewerConfig:
     return BinaryReviewerConfig("system_template", "instance_template")
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_review_loop_config(dummy_reviewer_config, dummy_binary_reviewer_config) -> ReviewLoopConfig:
     return ReviewLoopConfig(
         review_loop_classname="ReviewLoop",
@@ -222,7 +222,7 @@ def get_agent_arguments(review_loop_config) -> AgentArguments:
     return args
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_agent_with_reviewer(dummy_reviewer_config, dummy_binary_reviewer_config, test_env_args):
     rl_config = ReviewLoopConfig(
         review_loop_classname="ReviewLoop",

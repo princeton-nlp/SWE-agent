@@ -46,10 +46,10 @@ from sweagent.agent.models import ModelArguments
 from sweagent.environment.swe_env import EnvironmentArguments, SWEEnv
 from sweagent.environment.utils import (
     InvalidGithubURL,
+    extract_flag_format,
     get_associated_commit_urls,
     get_data_path_name,
     get_gh_issue_data,
-    extract_flag_format,
     parse_gh_issue_url,
 )
 
@@ -361,7 +361,7 @@ class Main:
         tests = ""
         if "FAIL_endTO_PASS" in self.env.record:
             tests = "\n".join([f"- {x}" for x in self.env.record["FAIL_TO_PASS"]])
-        
+
         setup_args = {"issue": issue, "files": files, "test_files": test_files, "tests": tests}
         challenge = getattr(self.env, "challenge", None)
         if challenge is not None:

@@ -238,7 +238,7 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
                 break
             if data:
                 buffer += data
-                if PROCESS_DONE_MARKER_START in buffer.decode('utf-8', errors='backslashreplace').replace('\r\n', '\n'):
+                if PROCESS_DONE_MARKER_START in buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n"):
                     break
         time.sleep(0.01)  # Prevents CPU hogging
 
@@ -249,7 +249,7 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
         msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}"
         raise TimeoutError(msg)
 
-    decoded = buffer.decode("utf-8", errors="backslashreplace").replace('\r\n', '\n')
+    decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
     body = "\n".join(line for line in decoded.splitlines() if not line.startswith(PROCESS_DONE_MARKER_START))
     _results = PROCESS_DONE_REGEX.search(decoded)
     if _results is None:
@@ -613,10 +613,14 @@ class InstanceBuilder:
             self.args["challenge"]["server_description"] = ""
             return
         if self.args["challenge"]["category"] in {"web", "misc"} and self.args["challenge"].get("proto") != "nc":
-            self.args["challenge"]["server_description"] = f"The challenge web server is running on `{server_name}` port `{port}` and you can access it from within the container environment using `curl http://{server_name}:{port}`."
+            self.args["challenge"]["server_description"] = (
+                f"The challenge web server is running on `{server_name}` port `{port}` and you can access it from within the container environment using `curl http://{server_name}:{port}`."
+            )
         else:
-            self.args["challenge"]["server_description"] = f"The challenge web server is running on `{server_name}` port `{port}` and you can access it from within the container environment using `nc {server_name}:{port}`."
-    
+            self.args["challenge"]["server_description"] = (
+                f"The challenge web server is running on `{server_name}` port `{port}` and you can access it from within the container environment using `nc {server_name}:{port}`."
+            )
+
     def set_problem_statement_from_challenge_json(self, file_path: str) -> str:
         challenge = json.loads(Path(file_path).read_text())
         self.args["challenge"] = challenge
@@ -625,7 +629,7 @@ class InstanceBuilder:
         self.args["challenge"]["category_friendly"] = CTF_CHALLENGES_CATEGORIES.get(challenge["category"])
         if (Path(file_path).parent / "docker-compose.yml").is_file():
             logger.debug(f"Found docker_compose file in {Path(file_path).parent}")
-            self.args["challenge"]["docker_compose"] = (Path(file_path).parent / "docker-compose.yml")
+            self.args["challenge"]["docker_compose"] = Path(file_path).parent / "docker-compose.yml"
         self.args["challenge"]["port"] = challenge.get("internal_port")
         self.args["challenge"]["server_name"] = challenge.get("box")
         self.args["challenge"]["file_path"] = file_path
@@ -765,7 +769,10 @@ def get_instances(
     # The next if statement is very brittle logic to determine if we're processing a single instance
     if (
         file_path.startswith("text://")
-        or (Path(file_path).is_file() and (Path(file_path).suffix in [".md", ".txt"] or Path(file_path).name == "challenge.json"))
+        or (
+            Path(file_path).is_file()
+            and (Path(file_path).suffix in [".md", ".txt"] or Path(file_path).name == "challenge.json")
+        )
         or is_github_issue_url(file_path)
     ):
         ib = InstanceBuilder(token=token)
@@ -1010,6 +1017,8 @@ class PatchFormatter:
         return self.concat_files_strings(
             {path: self.format_file(text, *hunk_lines[path], linenos=linenos) for path, text in sources.items()}
         )
+
+
 def extract_flag_format(flag: str) -> str:
     flag_format = re.sub(r"{.*}$", "{...}", flag)
     return flag_format if flag_format != flag else "..."

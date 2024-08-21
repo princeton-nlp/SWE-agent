@@ -36,8 +36,8 @@ from sweagent.environment.utils import (
     copy_anything_to_container,
     copy_file_to_container,
     format_trajectory_markdown,
-    get_docker_compose,
     get_container,
+    get_docker_compose,
     get_gh_issue_data,
     get_instances,
     image_exists,
@@ -234,14 +234,15 @@ class SWEEnv(gym.Env):
             hook.on_copy_repo_started(repo_type=self.record["repo_type"], repo_path=self.record["repo"])
         if self.record["repo_type"] == "local":
             if "challenge" in self.record:
-                self.communicate_with_handling(input=f"mkdir {self._repo_name}", 
-                                               error_msg=f"Failed to create {self._repo_name} in container")
+                self.communicate_with_handling(
+                    input=f"mkdir {self._repo_name}", error_msg=f"Failed to create {self._repo_name} in container"
+                )
                 for file_name in self.record["challenge"]["files"]:
                     self.logger.debug(f"Copying file {file_name} to container")
                     copy_anything_to_container(
                         self.container_obj,
                         str(Path(self.record["repo"].removeprefix("local://")) / file_name),
-                        "/" + self._repo_name
+                        "/" + self._repo_name,
                     )
             else:
                 copy_anything_to_container(
@@ -397,7 +398,8 @@ class SWEEnv(gym.Env):
             "export ROOT=$(pwd -P)",
         ]
         if self.challenge is None:
-            startup_commands += ["git status",
+            startup_commands += [
+                "git status",
                 "git restore .",
                 f"git reset --hard {self.base_commit}",
                 "git clean -fdxq",
@@ -643,7 +645,7 @@ class SWEEnv(gym.Env):
         image_name_sanitized = image_name.replace("/", "-")
         image_name_sanitized = image_name_sanitized.replace(":", "-")
         return f"{image_name_sanitized}-{hash_object.hexdigest()[:10]}"
-    
+
     def _init_docker_network(self) -> None:
         """
         Add the "ctfnet" network interface for all the containers used for CTF challenges
@@ -651,7 +653,7 @@ class SWEEnv(gym.Env):
         assert self.container_name is not None
         if self.challenge is not None:
             attach_network_interface_to_container(self.container_name)
-    
+
     def _init_docker_compose(self) -> None:
         """
         Handles docker compose initialization for challenge with docker compose file.
@@ -907,7 +909,7 @@ class SWEEnv(gym.Env):
         if not all_pids:
             pids = [x for x in pids if x[1] != "ps" and x[0] not in self.parent_pids]
         return pids
-    
+
     def validate_submission(self, submission: str) -> bool:
         """
         Function for validating submission for CTF challegnes.

@@ -8,7 +8,7 @@ from typing import Any
 
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 
-from sweagent.agent.models import APIStats, BaseModel, ModelArguments, ContextWindowExceededError
+from sweagent.agent.models import APIStats, BaseModel, ContextWindowExceededError, ModelArguments
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.utils.log import get_logger
 
@@ -16,6 +16,7 @@ from sweagent.utils.log import get_logger
 @dataclass(frozen=True)
 class SummarizerConfig(FrozenSerializable):
     """The configuration for the summarizer"""
+
     function: str = "Identity"
     window_length: int | None = 105
     template: str | None = None
@@ -27,6 +28,7 @@ class SummarizerConfig(FrozenSerializable):
         object.__setattr__(self, "function", SummarizeFunction.get(self.function, self.window_length))
         if isinstance(self.model, dict):
             object.__setattr__(self, "model", ModelArguments.from_dict(self.summarizer_model))
+
 
 # ABSTRACT BASE CLASSES
 
@@ -67,7 +69,7 @@ class SummarizeFunction(metaclass=SummarizeFunctionMeta):
     @abstractmethod
     def __call__(self, input: str, observation, env: SWEEnv, model: type[BaseModel]) -> tuple[str, APIStats]:
         """
-        Abstract method for getting an observation and summarize it. 
+        Abstract method for getting an observation and summarize it.
         The returned value should be a summation of the given observation.
         """
         raise NotImplementedError
@@ -86,12 +88,12 @@ class SummarizeFunction(metaclass=SummarizeFunctionMeta):
 
 class SimpleSummarizer(SummarizeFunction):
     """
-    Saves the output of the command to a file and uses the open command to show the output. 
+    Saves the output of the command to a file and uses the open command to show the output.
     """
 
     _warning_message = """\
         Warning: Command output exceeded window, saved command to a file {command_file_name} and opened the file at line 1.
-        
+
 
     """
 
@@ -108,17 +110,24 @@ class SimpleSummarizer(SummarizeFunction):
 
     def __call__(self, input: str, observation: str, env: SWEEnv, model: type[BaseModel]) -> tuple[str, APIStats]:
         try:
-            if any(input.startswith(s) for s in self.block_list_input) or len(observation.splitlines()) <= self._window_length:
+            if (
+                any(input.startswith(s) for s in self.block_list_input)
+                or len(observation.splitlines()) <= self._window_length
+            ):
                 return observation, APIStats()
             self.logger.debug(f"Summarizing current observation for input {input}")
             command_file_name = "/output/" + input.replace(" ", "_").replace("/", "__")
             env.communicate("mkdir -p /output")
             env.communicate(f"printf {shlex.quote(observation)} > {command_file_name}")
-            return textwrap.dedent(self._warning_message.format(command_file_name=command_file_name)) + env.communicate(f"open {command_file_name}"), APIStats()
+            return textwrap.dedent(self._warning_message.format(command_file_name=command_file_name)) + env.communicate(
+                f"open {command_file_name}"
+            ), APIStats()
         except Exception as e:
-            self.logger.warning(f"Unhandled exception occured when trying to summarize observation for input {input}: {e}")
+            self.logger.warning(
+                f"Unhandled exception occurred when trying to summarize observation for input {input}: {e}"
+            )
             return observation, APIStats()
-    
+
 
 class Identity(SummarizeFunction):
     """
@@ -136,8 +145,8 @@ class LMSummarizer(SummarizeFunction):
     _warning_message = """\
     Warning: Command output exceeded window size, saved command to a file {command_file_name} and summarized the command output for you.
     If you still want to view the output of the command, use the following command `open {command_file_name}`.
-    
-    
+
+
     SUMMARY:
     """
 
@@ -156,7 +165,7 @@ class LMSummarizer(SummarizeFunction):
         "search_file",
         "search_dir",
     ]
-    
+
     def __init__(self, window_length: int):
         super().__init__(window_length)
         self.history = []
@@ -171,27 +180,41 @@ class LMSummarizer(SummarizeFunction):
         self.instance_template = config.summarizer_config.instance_template
         self.instance_args = instance_args
 
-    @staticmethod 
+    @staticmethod
     def _slugify_action(action: str) -> str:
         return "".join(c if c.isalnum() else "_" for c in action)[:30]
 
     def __call__(self, input: str, observation: str, env: SWEEnv, model: BaseModel) -> tuple[str, APIStats]:
         try:
-            if any(input.startswith(s) for s in self.block_list_input) or len(observation.splitlines()) <= self._window_length:
+            if (
+                any(input.startswith(s) for s in self.block_list_input)
+                or len(observation.splitlines()) <= self._window_length
+            ):
                 return observation, APIStats()
             self.logger.debug(f"Summarizing current observation for input {input}")
             command_file_name = "/output/" + self._slugify_action(input)
             env.communicate("mkdir -p /output")
             env.communicate(f"printf {shlex.quote(observation)} > {command_file_name}")
-            self.history.append({"role": "user", "content": self.instance_template.format(**self.instance_args, **self.system_args, command=input, observation=observation), "agent": self.name})
+            self.history.append(
+                {
+                    "role": "user",
+                    "content": self.instance_template.format(
+                        **self.instance_args, **self.system_args, command=input, observation=observation
+                    ),
+                    "agent": self.name,
+                }
+            )
             response = model.query(history=self.history)
             stats = model.stats
             model.reset_stats(APIStats())
             self.history.pop()
             return textwrap.dedent(self._warning_message.format(command_file_name=command_file_name)) + response, stats
         except ContextWindowExceededError:
-            return textwrap.dedent(self._warning_message_summarization_failed.format(command_file_name=command_file_name)), APIStats()
+            return textwrap.dedent(
+                self._warning_message_summarization_failed.format(command_file_name=command_file_name)
+            ), APIStats()
         except Exception as e:
-            self.logger.warning(f"Unhandled exception occured when trying to summarize observation for input {input}: {e}")
+            self.logger.warning(
+                f"Unhandled exception occurred when trying to summarize observation for input {input}: {e}"
+            )
             return observation, APIStats()
-        

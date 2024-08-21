@@ -174,8 +174,10 @@ class AgentConfig(FrozenSerializable):
             HistoryProcessor.get(self.history_processor, **self.history_processor_args),
         )
         if "WINDOW" in self.env_variables and self.summarizer_config.window_length is not None:
-            if self.summarizer_config.window_length < int(self.env_variables["WINDOW"]):
-                raise ValueError(f"Summarizer window length is set to {self.summarizer_config.window_length} which is less then the defined window length {self.env_variables['WINDOW']}") 
+            window_size = self.env_variables["WINDOW"]
+            if self.summarizer_config.window_length < int(window_size):
+                msg = f"Summarizer window length is set to {self.summarizer_config.window_length} which is less then the defined window length {window_size}"
+                raise ValueError(msg)
 
 
 @dataclass(frozen=True)
@@ -260,7 +262,9 @@ class Agent:
         #: Model used by the agent. Note: Will initialize a separate model together with the reviewer
         #: (if any) to disentangle costs.
         self.model = get_model(args.model, args.config._commands + args.config.subroutine_types)
-        self.summarizer_model = get_model(args.config.summarizer_config.model if args.config.summarizer_config.model is not None else args.model) 
+        self.summarizer_model = get_model(
+            args.config.summarizer_config.model if args.config.summarizer_config.model is not None else args.model
+        )
         self.config = args.config
         assert self.config is not None  # mypy
         self.system_args = {
@@ -926,7 +930,9 @@ class Agent:
             for hook in self.hooks:
                 hook.on_sub_action_started(sub_action=sub_action)
             observation, _, done, _info = self._env.step(sub_action["action"])
-            observation, additional_cost = self.config.summarizer_config.function(sub_action["action"], observation, self._env, self.summarizer_model)
+            observation, additional_cost = self.config.summarizer_config.function(
+                sub_action["action"], observation, self._env, self.summarizer_model
+            )
             self.model.stats += additional_cost
             self.info.update(_info)
             for hook in self.hooks:
