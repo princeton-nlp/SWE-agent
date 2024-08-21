@@ -112,7 +112,8 @@ demonstration_template: |
   {demonstration}
   --- END OF DEMONSTRATION ---
 demonstrations:
-- trajectories/demonstrations/ctf/web/i_got_id_demo.traj
+- trajectories/demonstrations/ctf/crypto/katy.traj
+- trajectories/demonstrations/ctf/crypto/eps.traj
 summarizer_config:
   function: LMSummarizer
   window_length: 105
