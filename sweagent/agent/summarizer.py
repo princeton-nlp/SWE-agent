@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import shlex
+import tempfile
 import textwrap
 from abc import abstractmethod
 from dataclasses import dataclass
@@ -10,6 +10,7 @@ from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 
 from sweagent.agent.models import APIStats, BaseModel, ContextWindowExceededError, ModelArguments
 from sweagent.environment.swe_env import SWEEnv
+from sweagent.environment.utils import copy_anything_to_container
 from sweagent.utils.log import get_logger
 
 
@@ -66,6 +67,17 @@ class SummarizeFunction(metaclass=SummarizeFunctionMeta):
         """
         pass
 
+    @staticmethod
+    def _slugify_action(action: str) -> str:
+        return "".join(c if c.isalnum() else "_" for c in action)[:30]
+
+    @staticmethod
+    def _upload_file_to_container(file_content: bytes, file_path_on_container: str, env: SWEEnv):
+        with tempfile.NamedTemporaryFile() as fp:
+            fp.write(file_content.encode("utf-8"))
+            fp.flush()
+            copy_anything_to_container(env.container_obj, fp.name, file_path_on_container)
+
     @abstractmethod
     def __call__(self, input: str, observation, env: SWEEnv, model: type[BaseModel]) -> tuple[str, APIStats]:
         """
@@ -116,9 +128,9 @@ class SimpleSummarizer(SummarizeFunction):
             ):
                 return observation, APIStats()
             self.logger.debug(f"Summarizing current observation for input {input}")
-            command_file_name = "/output/" + input.replace(" ", "_").replace("/", "__")
+            command_file_name = "/output/" + self._slugify_action(input)
             env.communicate("mkdir -p /output")
-            env.communicate(f"printf {shlex.quote(observation)} > {command_file_name}")
+            self._upload_file_to_container(observation, command_file_name, env)
             return textwrap.dedent(self._warning_message.format(command_file_name=command_file_name)) + env.communicate(
                 f"open {command_file_name}"
             ), APIStats()
@@ -180,10 +192,6 @@ class LMSummarizer(SummarizeFunction):
         self.instance_template = config.summarizer_config.instance_template
         self.instance_args = instance_args
 
-    @staticmethod
-    def _slugify_action(action: str) -> str:
-        return "".join(c if c.isalnum() else "_" for c in action)[:30]
-
     def __call__(self, input: str, observation: str, env: SWEEnv, model: BaseModel) -> tuple[str, APIStats]:
         try:
             if (
@@ -194,7 +202,7 @@ class LMSummarizer(SummarizeFunction):
             self.logger.debug(f"Summarizing current observation for input {input}")
             command_file_name = "/output/" + self._slugify_action(input)
             env.communicate("mkdir -p /output")
-            env.communicate(f"printf {shlex.quote(observation)} > {command_file_name}")
+            self._upload_file_to_container(observation, command_file_name, env)
             self.history.append(
                 {
                     "role": "user",
