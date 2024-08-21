@@ -6,7 +6,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
-from sweagent.agent.models import APIStats, BaseModel
+from sweagent.agent.models import APIStats, BaseModel, ContextWindowExceededError
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.utils.log import get_logger
 
@@ -124,6 +124,11 @@ class LMSummarizer(SummarizeFunction):
     SUMMARY:
     """
 
+    _warning_message_summarization_failed = """\
+    Warning: Command output exceeded window size, saved command to a file {command_file_name}.
+    If you still want to view the output of the command, use the following command `open {command_file_name}`.
+    """
+
     block_list_input = [
         "create",
         "open",
@@ -148,12 +153,16 @@ class LMSummarizer(SummarizeFunction):
         self.instance_args = instance_args
         self.system_args = config.__dict__
 
-    def __call__(self, input: str, observation: str, env: SWEEnv, model: type[BaseModel]) -> tuple[str, APIStats]:
+    @staticmethod 
+    def _slugify_action(action: str) -> str:
+        return "".join(c if c.isalnum() else "_" for c in action)[:30]
+
+    def __call__(self, input: str, observation: str, env: SWEEnv, model: BaseModel) -> tuple[str, APIStats]:
         try:
             if any(input.startswith(s) for s in self.block_list_input) or len(observation.splitlines()) <= self._window_length:
                 return observation, APIStats()
             self.logger.debug(f"Summarizing current observation for input {input}")
-            command_file_name = "/output/" + input.replace(" ", "_").replace("/", "__")
+            command_file_name = "/output/" + self._slugify_action(input)
             env.communicate("mkdir -p /output")
             env.communicate(f"printf {shlex.quote(observation)} > {command_file_name}")
             self.history.append({"role": "user", "content": self.instance_template.format(**self.instance_args, **self.system_args, command=input, observation=observation), "agent": self.name})
@@ -162,6 +171,8 @@ class LMSummarizer(SummarizeFunction):
             model.reset_stats(APIStats())
             self.history.pop()
             return textwrap.dedent(self._warning_message.format(command_file_name=command_file_name)) + response, stats
+        except ContextWindowExceededError:
+            return textwrap.dedent(self._warning_message_summarization_failed.format(command_file_name=command_file_name)), APIStats()
         except Exception as e:
             self.logger.warning(f"Unhandled exception occured when trying to summarize observation for input {input}: {e}")
             return observation, APIStats()
