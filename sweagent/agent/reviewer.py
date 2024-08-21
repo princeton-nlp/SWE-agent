@@ -54,11 +54,13 @@ class AbstractBinaryReviewer(ABC):
 
 
 class AbstractGraveToCradle(ABC):
+    LOG_PREFIX = "️👶 Grave to cradle: "
     """Forward messages from past attempts to the next one"""
 
     @abstractmethod
     def get_forwarded_vars(
         self,
+        instance: INSTANCE_TYPE,
         submissions: list[ReviewSubmission],
         reviews: list[ReviewerResult],
         breviews: list[tuple[int, int, BinaryReviewerResult]],
@@ -174,13 +176,22 @@ class CTFGTCConfig(FrozenSerializable):
 
 
 @dataclass(frozen=True)
+class CTFPlanningGTCConfig(FrozenSerializable):
+    """The configuration for the GraveToCradle"""
+
+    system_template: str
+    instance_template: str
+    answer_template: str = "{answer}"
+
+
+@dataclass(frozen=True)
 class ReviewLoopConfig(FrozenSerializable):
     """The configuration for the review loop"""
 
     review_loop_classname: str
     reviewer_config: ReviewerConfig | CTFSummarizingReviewerConfig | None = None
     binary_reviewer_config: BinaryReviewerConfig | None = None
-    gtc_config: CTFGTCConfig | GTCConfig | None = None
+    gtc_config: dict | None = None
     reviewer_classname: str | None = None
     binary_reviewer_classname: str | None = None
     gtc_classname: str = ""
@@ -210,9 +221,6 @@ class ReviewLoopConfig(FrozenSerializable):
         if self.max_accepted_draws > self.min_draws:
             msg = "`max_accepted_draws` must be less than or equal to `min_draws`, else it has no effect"
             raise ValueError(msg)
-
-    def __post_init__(self):
-        self.validate()
 
 
 # --- IMPLEMENTATIONS ---
@@ -455,12 +463,15 @@ class BinaryReviewer(AbstractBinaryReviewer):
 
 
 class GraveToCradle(AbstractGraveToCradle):
-    def __init__(self, config: GTCConfig, model: BaseModel):
-        self._config = config
+    def __init__(self, config: GTCConfig | dict, model: BaseModel):
+        if isinstance(config, dict):
+            config = GTCConfig(**config)
+        self._config: GTCConfig = config
         self._model = model
 
     def get_forwarded_vars(
         self,
+        instance: INSTANCE_TYPE,
         submissions: list[ReviewSubmission],
         reviews: list[ReviewerResult],
         breviews: list[tuple[int, int, BinaryReviewerResult]],
@@ -482,13 +493,16 @@ class GraveToCradle(AbstractGraveToCradle):
 
 
 class CTFGTC(AbstractGraveToCradle):
-    def __init__(self, config: CTFGTCConfig, model: BaseModel):
-        assert isinstance(config, CTFGTCConfig)
-        self._config = config
+    def __init__(self, config: CTFGTCConfig | dict, model: BaseModel):
+        """GTC for CTF challenges that simply concatenates all of the reviews"""
+        if isinstance(config, dict):
+            config = CTFGTCConfig(**config)
+        self._config: CTFGTCConfig = config
         self._model = model
 
     def get_forwarded_vars(
         self,
+        instance: INSTANCE_TYPE,
         submissions: list[ReviewSubmission],
         reviews: list[ReviewerResult],
         breviews: list[tuple[int, int, BinaryReviewerResult]],
@@ -498,12 +512,50 @@ class CTFGTC(AbstractGraveToCradle):
             return {"gtc_prologue": "", "failed_attempts_summary": "", "gtc_epilogue": ""}
         msg_lines = []
         for i, review in enumerate(reviews):
-            msg_lines.append(f"Review of attempt {i+1}:\n\n{review.output}")
+            msg_lines.append(f"Review of FAILED attempt {i+1}:\n\n{review.output}")
         msg = "\n\n".join(msg_lines)
         return {
             "gtc_prologue": self._config.prologue,
             "failed_attempts_summary": msg,
             "gtc_epilogue": self._config.epilogue,
+        }
+
+
+class CTFPlanningGTC(AbstractGraveToCradle):
+    def __init__(self, config: CTFPlanningGTCConfig, model: BaseModel):
+        """GTC for CTF challenges that summarizes previous attempts and creates a new plan"""
+        if isinstance(config, dict):
+            config = CTFPlanningGTCConfig(**config)
+        self._config: CTFPlanningGTCConfig = config
+        self._model = model
+
+    def format_messages(self, instance: INSTANCE_TYPE, reviews: list[ReviewerResult]):
+        system_message = self._config.system_template
+        logger.debug(f"{self.LOG_PREFIX}MODEL INPUT (system)\n{system_message}")
+        msg_lines = []
+        for i, review in enumerate(reviews):
+            msg_lines.append(f"Review of FAILED attempt {i+1}:\n\n{review.output}")
+        user_message = self._config.instance_template.format(reviews="\n\n".join(msg_lines), **instance)
+        logger.debug(f"{self.LOG_PREFIX}MODEL INPUT (user)\n{user_message}")
+        return [
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": user_message},
+        ]
+
+    def get_forwarded_vars(
+        self,
+        instance: INSTANCE_TYPE,
+        submissions: list[ReviewSubmission],
+        reviews: list[ReviewerResult],
+        breviews: list[tuple[int, int, BinaryReviewerResult]],
+    ) -> dict[str, Any]:
+        assert len(submissions) == len(reviews)
+        if not reviews:
+            return {"gtc": ""}
+        msgs = self.format_messages(instance, reviews)
+        answer = self._config.answer_template.format(answer=self._model.query(msgs))
+        return {
+            "gtc": answer,
         }
 
 
@@ -640,7 +692,7 @@ class ReviewLoop(AbstractReviewLoop):
     def get_forwarded_vars(self) -> dict[str, Any]:
         if self._gtc is None:
             return {}
-        return self._gtc.get_forwarded_vars(self._submissions, self._reviews, self._comparisons)
+        return self._gtc.get_forwarded_vars(self._instance, self._submissions, self._reviews, self._comparisons)
 
 
 def get_review_loop_from_config(

@@ -61,11 +61,7 @@ instance_template: |-
 
   7. YOU CAN SOLVE THE CHALLENGES BY YOURSELF COMPLETELY - I TRUST IN YOU!
 
-  {gtc_prologue}
-
-  {failed_attempts_summary}
-
-  {gtc_epilogue}
+  {gtc}
 
   (Open file: {open_file})
   (Current directory: {working_dir})
@@ -172,16 +168,35 @@ review_loop_config:
     traj_item_template: |
       Step {i_step}: {response}
   max_samples: 5
-  gtc_classname: CTFGTC
+  gtc_classname: CTFPlanningGTC
   gtc_config:
-    prologue: |
-      Here is a summary of previous FAILED attempts to solve the challenge:
-    epilogue: |
-      HOW TO USE THE REVIEWS OF PREVIOUS ATTEMPTS:
+    system_template: |
+      Setting: You are an expert at CTF challenges.
+      Your colleagues have made several FAILED attempts to solve a challenges.
+      You will be presented with individual reviews of all these attempts.
 
-      Your first step should be to develop a plan on how to tackle the challenge.
-      For that, look at the previous solution attempts. Are there any completely new ideas that have not been tried?
-      If yes, you should do that rather than trying to improve a previous attempt.
-      If not, try picking the attempt that has the most potential to be successful.
+      BASED ON THEM, COME UP WITH A NEW PLAN FOR AN ATTEMPT.
+
+      For that, look at the previous solution attempts. Are there any completely new strategies that have not been tried?
+      If there are unexplored strategies, suggest ONE such strategy. Do not try to list all possible new strategies.
+      Instead focus on ONE strategy that hasn't been tried and outline how to proceed.
+
+      If there are no completely new strategies, try picking the strategy that has the most potential to be successful.
       If a strategy has been tried multiple times already, it's better to pick a different strategy.
-      All previous attempts have FAILED, so trying to run the same commands again is not going to help you.
+      Suggest a new plan based on this strategy and provide detailed hints on how to make it succeed.
+    instance_template: |
+      ==================
+      INPUT 1: Challenge
+      ==================
+
+      {issue}
+
+      ===================================
+      INPUT 2: Reviews of failed attempts
+      ===================================
+
+      {reviews}
+    answer_template: |
+      PLEASE FOLLOW THE FOLLOWING PLAN AND HINTS FROM AN EXPORT CTF PLAYER WHO REVIEWED PREVIOUS FAILED ATTEMPTS:
+
+      {answer}
