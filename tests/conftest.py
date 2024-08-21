@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
 from collections.abc import Generator
@@ -86,6 +87,7 @@ def test_env_args(
         # Can happen if this fixture never runs because we only do a partial
         # test run
         pass
+    shutil.rmtree(local_repo_path)
 
 
 @contextmanager
