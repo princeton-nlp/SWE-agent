@@ -29,10 +29,11 @@ RUN apt-get update && apt-get install -y \
 # Install radare2
 WORKDIR /tmp
 RUN apt-get update && apt-get install -y curl netcat qemu-user qemu-user-static
-RUN curl -Ls https://github.com/radareorg/radare2/releases/download/5.8.8/radare2-5.8.8.tar.xz | tar xJv radare2-5.8.8/sys/install.sh
+RUN curl -LO https://github.com/radareorg/radare2/releases/download/5.9.4/radare2_5.9.4_amd64.deb
+RUN dpkg -i radare2_5.9.4_amd64.deb
 
 # Sagemath
-RUN apt-get install -y sagemath
+RUN apt-get update && apt-get install -y sagemath
 
 # sqlmap and nikto
 RUN apt-get install -y sqlmap nikto
