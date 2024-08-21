@@ -153,12 +153,16 @@ class LMSummarizer(SummarizeFunction):
         self.instance_args = instance_args
         self.system_args = config.__dict__
 
+    @staticmethod 
+    def _slugify_action(action: str) -> str:
+        return "".join(c if c.isalnum() else "_" for c in action)[:30]
+
     def __call__(self, input: str, observation: str, env: SWEEnv, model: type[BaseModel]) -> tuple[str, APIStats]:
         try:
             if any(input.startswith(s) for s in self.block_list_input) or len(observation.splitlines()) <= self._window_length:
                 return observation, APIStats()
             self.logger.debug(f"Summarizing current observation for input {input}")
-            command_file_name = "/output/" + input.replace(" ", "_").replace("/", "__")
+            command_file_name = "/output/" + self._slugify_action(input)
             env.communicate("mkdir -p /output")
             env.communicate(f"printf {shlex.quote(observation)} > {command_file_name}")
             self.history.append({"role": "user", "content": self.instance_template.format(**self.instance_args, **self.system_args, command=input, observation=observation), "agent": self.name})
