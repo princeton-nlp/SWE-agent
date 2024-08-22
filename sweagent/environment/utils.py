@@ -596,8 +596,6 @@ def get_problem_statement_from_github_issue(owner: str, repo: str, issue_number:
 
 def get_problem_statement_from_gitlab_issue(owner: str, repo: str, issue_number: str, *, token: str | None = "") -> str:
     """Return problem statement from github issue"""
-    assert GITLAB_URL == "https://gitlab.devops.telekom.de"
-    assert token == "glpat-Ljs9Ao1zsY-j2yCoYV4Z"
     api = Gitlab(url=GITLAB_URL, private_token=token)
     project = api.projects.get(f"{owner}/{repo}")
     issue = project.issues.get(issue_number)
