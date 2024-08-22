@@ -1,6 +1,6 @@
 # @yaml
-# signature: submit
-# docstring: submits your current flag and terminates the session
+# signature: submit '<flag>'
+# docstring: submits your current flag and terminates the session, you should be aware to properly escape the flag as this is a bash command and to put your flag under single quotes.
 # arguments:
 #   flag:
 #     type: string
