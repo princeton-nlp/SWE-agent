@@ -62,7 +62,7 @@ class Disassemble:
     def disassemble(self, binary, function):
         # Look for the disassembly output in "disas"
         basename = Path(binary).name
-        disas_output = Path(f"ghidra_out/{basename}.disas.json")
+        disas_output = Path(f"/ghidra_out/{basename}.disas.json")
         if not disas_output.exists():
             if not self.run_ghidra(basename, disas_output):
                 return f"Error: Disassembly for {binary} not available"
