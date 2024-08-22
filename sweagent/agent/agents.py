@@ -79,6 +79,7 @@ class AgentConfig(FrozenSerializable):
         "nano",
         "nohup",
         "git",
+        "gdb",
     )
     blocklist_standalone: tuple[str, ...] = (
         "python",
@@ -95,6 +96,7 @@ class AgentConfig(FrozenSerializable):
         "emacs",
         "nano",
     )
+    block_unless_regex: dict[str, str] = field(default_factory=dict)
     # Should extract environment state in a json readable form
     state_command: Command = Command(
         name="state",
@@ -178,6 +180,11 @@ class AgentConfig(FrozenSerializable):
             if self.summarizer_config.window_length < int(window_size):
                 msg = f"Summarizer window length is set to {self.summarizer_config.window_length} which is less then the defined window length {window_size}"
                 raise ValueError(msg)
+        object.__setattr__(
+            self,
+            "block_unless_regex",
+            {"radare2": r"\b(?:radare2)\b.*\s+-c\s+.*", "r2": r"\b(?:radare2)\b.*\s+-c\s+.*"},
+        )
 
 
 @dataclass(frozen=True)
@@ -740,6 +747,8 @@ class Agent:
         if name in self.config.blocklist:
             return True
         if name in self.config.blocklist_standalone and name == action.strip():
+            return True
+        if name in self.config.block_unless_regex and not re.search(self.config.block_unless_regex[name], action):
             return True
         return False
 
