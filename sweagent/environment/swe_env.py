@@ -531,7 +531,7 @@ class SWEEnv(gym.Env):
             self.reset_container()
             return observation, 0, True, info
         except UnicodeError as e:
-            observation += "\nCOMMAND PRODUCED TOO MANY NON-UNICODE CHARACTERS. PLEASE TRY ANOTHER COMMAND."
+            observation += "\nCOMMAND PRODUCED TOO MANY NON-UNICODE CHARACTERS. PLEASE TRY ANOTHER COMMAND.\nIF YOU WANT TO VIEW BINARY FILES, PLEASE USE `xxd` OR `hexdump` INSTEAD.\n"
             self.logger.error(f"Unicode error: {e}")
         except Exception:
             observation += "\nEXECUTION FAILED OR COMMAND MALFORMED"
