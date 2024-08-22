@@ -178,9 +178,12 @@ class LMSummarizer(SummarizeFunction):
         "search_dir",
     ]
 
+    lm_summarizer_char_limit = 200000
+
     def __init__(self, window_length: int):
         super().__init__(window_length)
         self.history = []
+        self._simple_summarizer = SimpleSummarizer(window_length=window_length)
 
     def setup(self, instance_args: dict[str, Any], config):
         self.name = "ctf_summarizer"
@@ -199,10 +202,13 @@ class LMSummarizer(SummarizeFunction):
                 or len(observation.splitlines()) <= self._window_length
             ):
                 return observation, APIStats()
+            if len(observation) > self.lm_summarizer_char_limit:
+                self.logger.warning("Observation is too long for LMSummarizer, using SimpleSummarizer instead")
+                return self._simple_summarizer(input, observation, env, model)
             self.logger.debug(f"Summarizing current observation for input {input}")
             command_file_name = "/output/" + self._slugify_action(input)
-            env.communicate("mkdir -p /output")
             self._upload_file_to_container(observation, command_file_name, env)
+            env.communicate("mkdir -p /output")
             self.history.append(
                 {
                     "role": "user",
