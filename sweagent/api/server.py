@@ -172,7 +172,7 @@ def run():
             ),
             config_file=CONFIG_DIR / "default_from_url.yaml",
         ),
-        actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
+        actions=ActionsArguments(open_pr=run.extra.open_pr, skip_if_commits_reference_issue=True),
         raise_exceptions=True,
     )
     thread = MainThread(defaults, wu)

@@ -42,6 +42,7 @@ function Run() {
     },
     extra: {
       test_run: false,
+      open_pr: true,
     },
   };
   const [runConfig, setRunConfig] = useImmer(runConfigDefault);

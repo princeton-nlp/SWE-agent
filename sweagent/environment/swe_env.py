@@ -1176,8 +1176,8 @@ class SWEEnv(gym.Env):
         dry_run_flag = "--allow-empty" if _dry_run else ""
         issue_number = issue.number if "github.com" in issue_url else issue.iid
         commit_msg = [
-            shlex.quote("Fix: {issue.title}"),
-            shlex.quote("Closes #{issue_number}"),
+            shlex.quote(f"Fix: {issue.title}"),
+            shlex.quote(f"Closes #{issue_number}"),
         ]
         self.communicate_with_handling(
             input=f"git commit -m {commit_msg[0]} -m  {commit_msg[1]} {dry_run_flag}",

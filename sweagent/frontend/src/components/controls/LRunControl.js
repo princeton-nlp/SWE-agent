@@ -330,6 +330,19 @@ function LRunControl({
               }
             />
           </div>
+          <div className="p-3">
+            <Form.Check
+              type="switch"
+              id="custom-switch"
+              label="Open PR"
+              checked={runConfig.extra.open_pr}
+              onChange={(e) =>
+                setRunConfig((draft) => {
+                  draft.extra.open_pr = e.target.checked;
+                })
+              }
+            />
+          </div>
         </Tab>
       </Tabs>
       <div className="runControl p-3">
