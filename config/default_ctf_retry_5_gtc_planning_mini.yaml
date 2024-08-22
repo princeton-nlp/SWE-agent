@@ -231,6 +231,6 @@ summarizer_config:
     You need to give a short summary of the output so that your team member who run this command and is solving the challenge will have insights on how to solve the challenge using your summary.
     Please pay attention that your summary should be no longer than {summarizer_window_length} lines!
   model:
-    model_name: azure:gpt4o
-    per_instance_cost_limit: 2
-    total_cost_limit: 2
+    model_name: gpt-4o-mini
+    per_instance_cost_limit: 0.05
+    total_cost_limit: 0.0

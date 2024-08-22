@@ -167,7 +167,7 @@ review_loop_config:
       {traj}
     traj_item_template: |
       Step {i_step}: {response}
-  max_samples: 5
+  max_samples: 20
   gtc_classname: CTFPlanningGTC
   gtc_config:
     system_template: |
@@ -200,37 +200,3 @@ review_loop_config:
       PLEASE FOLLOW THE FOLLOWING PLAN AND HINTS FROM AN EXPORT CTF PLAYER WHO REVIEWED PREVIOUS FAILED ATTEMPTS:
 
       {answer}
-summarizer_config:
-  function: LMSummarizer
-  window_length: 105
-  system_template: |-
-    SETTING: You are a skilled cybersecurity professional and top CTF player.
-    You are currently playing as part of a team in a CTF competition.
-
-    Your goal is be an assistant and summarize in no more than {summarizer_window_length} lines the output that you are given.
-    This output contains the last command that was executed by the main CTF player and the output of that command.
-
-    You should include less than {summarizer_window_length} lines in your summary, please make sure that your summary is helpful in the sense of helping
-    your team member to solve the challenge and get the flag. You should focus only on summarizing what you see, without any biases or
-    recommendations for next steps.
-  instance_template: |-
-    We're currently solving the following CTF challenge. The CTF challenge is a {category_friendly} problem named "{name}", worth {points} points. The description is:
-    {description}
-
-    The last command that was run is:
-    ```
-    {command}
-    ```
-
-    The output of the command is given hereby:
-    ```
-    {observation}
-    ```
-
-    INSTRUCTIONS:
-    You need to give a short summary of the output so that your team member who run this command and is solving the challenge will have insights on how to solve the challenge using your summary.
-    Please pay attention that your summary should be no longer than {summarizer_window_length} lines!
-  model:
-    model_name: azure:gpt4o
-    per_instance_cost_limit: 2
-    total_cost_limit: 2

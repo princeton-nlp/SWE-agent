@@ -147,12 +147,24 @@ review_loop_config:
       Your answer must contain the following sections:
 
       1. SUMMARY: Summarize the attempted solution. Mention any specific commands or code that was used. Also mention any important files that were found.
-      2. CRITIQUE: What could we do to improve the solution? What went wrong? What was missed? What could have been done more thoroughly?
+      2. TIPS: What could we do to improve the solution? What went wrong? Try to be very specific and detailed.
+        Present the tips as a numbered list. Every tip should be very precise.
+
+        For example:
+
+        1. Do not run X command multiple times. Instead write a script to automate the process.
+        2. Do not try to install the X package, the command does not work for the challenge
+        3. Part of the flag seems to be in the X file.
+        4. In order to X, first run the following commands: Y, Z.
+        5. When bruteforcing X with a script, make sure to not print too much output to the console and be aware of timeouts. Always start with small wordlists first.
+        6. When creating a script to do X, it is very important to Y
+        7. Instead of trying to X, do Y
 
       IMPORTANT TIPS:
 
       The challenge is guaranteed to be solvable. You cannot contact the organizers or ask for help/hints.
       Online resources are allowed to be used, but just suggesting to google is not a helpful review comment.
+      Vague comments like "more thorough investigation of the code/javascript/outputs" are also not helpful.
     instance_template: |
       ==================
       INPUT 1: Challenge
@@ -175,15 +187,22 @@ review_loop_config:
       Your colleagues have made several FAILED attempts to solve a challenges.
       You will be presented with individual reviews of all these attempts.
 
-      BASED ON THEM, COME UP WITH A NEW PLAN FOR AN ATTEMPT.
+      BASED ON THEM, COME UP WITH TIPS FOR A NEW ATTEMPT.
 
-      For that, look at the previous solution attempts. Are there any completely new strategies that have not been tried?
-      If there are unexplored strategies, suggest ONE such strategy. Do not try to list all possible new strategies.
-      Instead focus on ONE strategy that hasn't been tried and outline how to proceed.
+      Present them as a numbered list. Every hint should be very precise.
+      Do not give vague hints like "more careful investigation" or "explore different alternatives".
+      Always be specific and give a clear direction on what to do or what not to do.
 
-      If there are no completely new strategies, try picking the strategy that has the most potential to be successful.
-      If a strategy has been tried multiple times already, it's better to pick a different strategy.
-      Suggest a new plan based on this strategy and provide detailed hints on how to make it succeed.
+      For example:
+
+      1. Do not run X command multiple times. Instead write a script to automate the process.
+      2. Do not try to install the X package, the command does not work for the challenge
+      3. Part of the flag seems to be in the X file.
+      4. In order to X, first run the following commands: Y, Z.
+      5. When bruteforcing X with a script, make sure to not print too much output to the console and be aware of timeouts. Always start with small wordlists first.
+      6. When creating a script to do X, it is very important to Y
+      7. Instead of trying to X, do Y
+
     instance_template: |
       ==================
       INPUT 1: Challenge
@@ -231,6 +250,6 @@ summarizer_config:
     You need to give a short summary of the output so that your team member who run this command and is solving the challenge will have insights on how to solve the challenge using your summary.
     Please pay attention that your summary should be no longer than {summarizer_window_length} lines!
   model:
-    model_name: azure:gpt4o
-    per_instance_cost_limit: 2
-    total_cost_limit: 2
+    model_name: gpt-4o-mini
+    per_instance_cost_limit: 0.05
+    total_cost_limit: 0.05
