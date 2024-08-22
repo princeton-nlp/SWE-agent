@@ -530,6 +530,9 @@ class SWEEnv(gym.Env):
             self.logger.error(f"Broken pipe error: {e}\nRESTARTING PROCESS.")
             self.reset_container()
             return observation, 0, True, info
+        except UnicodeError as e:
+            observation += "\nCOMMAND PRODUCED TOO MANY NON-UNICODE CHARACTERS. PLEASE TRY ANOTHER COMMAND."
+            self.logger.error(f"Unicode error: {e}")
         except Exception:
             observation += "\nEXECUTION FAILED OR COMMAND MALFORMED"
             self.logger.exception("Unknown exception")

@@ -192,6 +192,20 @@ def read_with_timeout(container: subprocess.Popen, pid_func: Callable, timeout_d
 PROCESS_DONE_MARKER_START = "///PROCESS-DONE:"
 PROCESS_DONE_MARKER_END = ":PROCESS-DONE///"
 PROCESS_DONE_REGEX = re.compile(rf"{PROCESS_DONE_MARKER_START}(.+?){PROCESS_DONE_MARKER_END}")
+DECODED_BUFFER_FAILURE_THRESHOLD = 0.1
+
+
+def _check_for_too_many_non_unicode_bytes(buffer: bytes):
+    number_of_failures = int(DECODED_BUFFER_FAILURE_THRESHOLD * len(buffer))
+    start_byte = 0
+    for _ in range(number_of_failures):
+        try:
+            buffer[start_byte:].decode()
+            return
+        except UnicodeDecodeError as e:
+            start_byte = e.start + 1
+    msg = "Too many non-unicode characters in output of command."
+    raise UnicodeError(msg)
 
 
 def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration: int | float) -> tuple[str, str]:
@@ -249,6 +263,7 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
         msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}"
         raise TimeoutError(msg)
 
+    _check_for_too_many_non_unicode_bytes(buffer=buffer)
     decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
     body = "\n".join(line for line in decoded.splitlines() if not line.startswith(PROCESS_DONE_MARKER_START))
     _results = PROCESS_DONE_REGEX.search(decoded)
