@@ -20,14 +20,23 @@ from datasets import load_dataset, load_from_disk
 from ghapi.all import GhApi
 from git import InvalidGitRepositoryError, Repo
 
+# import gitlab
+from gitlab import Gitlab
+from gitlab.v4.objects.issues import Issue
+
 import docker
 from docker.models.containers import Container
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
 DOCKER_START_UP_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 1))
+GITLAB_URL = keys_config.get("GITLAB_URL", "https://gitlab.com")
 GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
 GITHUB_REPO_URL_PATTERN = re.compile(r".*[/@]?github\.com\/([^/]+)\/([^/]+)")
+GITLAB_URL_REGEX = GITLAB_URL.replace(".", r"\.")
+GITLAB_ISSUE_URL_PATTERN = re.compile(GITLAB_URL_REGEX + r"\/(.+?)\/(.+?)\/-\/issues\/(\d+)")
+GITLAB_REPO_URL_PATTERN = re.compile(r".*[/@]?" + GITLAB_URL_REGEX + r"\/(.+?)\/([^/]+)$")
+
 
 logger = get_logger("env_utils")
 
@@ -55,6 +64,18 @@ def is_github_repo_url(data_path: str) -> bool:
     Paths to issues or PRs will also match this pattern.
     """
     return GITHUB_REPO_URL_PATTERN.search(data_path) is not None
+
+
+def is_gitlab_issue_url(data_path: str) -> bool:
+    """Check if data_path is an URL pointing to a gitlab issue"""
+    return GITLAB_ISSUE_URL_PATTERN.search(data_path) is not None
+
+
+def is_gitlab_repo_url(data_path: str) -> bool:
+    """Check if data_path is an URL pointing to a gitlab repository.
+    Paths to issues or PRs will also match this pattern.
+    """
+    return GITLAB_REPO_URL_PATTERN.search(data_path) is not None
 
 
 # TODO: Why not just use copy_anything_to_container?
@@ -446,7 +467,28 @@ def get_commit(api: GhApi, owner: str, repo: str, ref: str | None = None):
     return api.repos.list_commits(owner, repo)[0]
 
 
+def get_commit_gitlab(api: Gitlab, owner: str, repo: str, ref: str | None = None):
+    """Get commit object from gitlab api
+
+    Args:
+        api (Gitlab):
+        owner (str): Repo owner, e.g., "princeton-nlp"
+        repo (str): Repo, e.g., "SWE-agent"
+        ref (str, optional): Branch, tag or commit hash
+
+    Returns:
+        _type_: _description_
+    """
+    project = api.projects.get(f"{owner}/{repo}")
+    if ref:
+        return project.commits.list(ref_name=ref)[0]
+    return project.commits.list()[0]
+
+
 class InvalidGithubURL(ValueError): ...
+
+
+class InvalidGitlabURL(ValueError): ...
 
 
 def parse_gh_issue_url(issue_url: str) -> tuple[str, str, str]:
@@ -468,6 +510,27 @@ def parse_gh_issue_url(issue_url: str) -> tuple[str, str, str]:
     return tuple(res)  # type: ignore
 
 
+def parse_gl_issue_url(issue_url: str) -> tuple[str, str, str]:
+    """
+    Parses a GitLab issue URL and extracts the owner, repo, and issue number.
+
+    Args:
+        issue_url (str): The GitLab issue URL to be parsed.
+
+    Returns:
+        tuple: A tuple containing the owner (str), repo (str), and issue number (str).
+
+    Raises:
+        ValueError: If the URL is not a valid GitLab issue URL.
+    """
+    match = GITLAB_ISSUE_URL_PATTERN.search(issue_url)
+    if not match:
+        msg = f"Invalid GitLab issue URL: {issue_url}"
+        raise InvalidGithubURL(msg)
+    owner, repo, issue_number = match.groups()
+    return owner, repo, issue_number
+
+
 def parse_gh_repo_url(repo_url: str) -> tuple[str, str]:
     """
     Returns:
@@ -486,6 +549,24 @@ def parse_gh_repo_url(repo_url: str) -> tuple[str, str]:
     return tuple(res)  # type: ignore
 
 
+def parse_gl_repo_url(repo_url: str) -> tuple[str, str]:
+    """
+    Returns:
+        owner: Repo owner/org
+        repo: Repo name
+
+    Raises:
+        InvalidGithubURL: If the URL is not a valid github repo URL
+    """
+    match = GITLAB_REPO_URL_PATTERN.search(repo_url)
+    if not match:
+        msg = f"Invalid GitLab issue URL: {repo_url}"
+        raise InvalidGithubURL(msg)
+    res = match.groups()
+    assert len(res) == 2
+    return tuple(res)  # type: ignore
+
+
 def get_gh_issue_data(issue_url: str, *, token: str = ""):
     """Returns github issue data in the form of a dictionary.
     See https://docs.github.com/en/rest/issues/issues?apiVersion=2022-11-28#get-an-issue
@@ -496,12 +577,33 @@ def get_gh_issue_data(issue_url: str, *, token: str = ""):
     return api.issues.get(owner, repo, issue_number)
 
 
+def get_gl_issue_data(issue_url: str, *, token: str = "") -> Issue:
+    """Returns gitlab issue data in the form of a dictionary."""
+    owner, repo, issue_number = parse_gl_issue_url(issue_url)
+    api = Gitlab(url=GITLAB_URL, private_token=token)
+    project = api.projects.get(f"{owner}/{repo}", lazy=True)
+    return project.issues.get(issue_number)
+
+
 def get_problem_statement_from_github_issue(owner: str, repo: str, issue_number: str, *, token: str | None = "") -> str:
     """Return problem statement from github issue"""
     api = GhApi(token=token)
     issue = api.issues.get(owner, repo, issue_number)
     title = issue.title if issue.title else ""
     body = issue.body if issue.body else ""
+    return f"{title}\n{body}\n"
+
+
+def get_problem_statement_from_gitlab_issue(owner: str, repo: str, issue_number: str, *, token: str | None = "") -> str:
+    """Return problem statement from github issue"""
+    assert GITLAB_URL == "https://gitlab.devops.telekom.de"
+    assert token == "glpat-Ljs9Ao1zsY-j2yCoYV4Z"
+    api = Gitlab(url=GITLAB_URL, private_token=token)
+    project = api.projects.get(f"{owner}/{repo}")
+    issue = project.issues.get(issue_number)
+
+    title = issue.title if issue.title else ""
+    body = issue.description if issue.description else ""
     return f"{title}\n{body}\n"
 
 
@@ -527,6 +629,17 @@ class InstanceBuilder:
         self.args["instance_id"] = f"{owner}__{repo}-i{issue_number}"
         self.args["problem_statement_source"] = "online"
 
+    def set_problem_statement_from_gl_issue(self, issue_url: str):
+        owner, repo, issue_number = parse_gl_issue_url(issue_url)
+        self.args["problem_statement"] = get_problem_statement_from_gitlab_issue(
+            owner,
+            repo,
+            issue_number,
+            token=self.token,
+        )
+        self.args["instance_id"] = f"{owner.replace('/', '_')}__{repo.replace('/', '_')}-i{issue_number}"
+        self.args["problem_statement_source"] = "online"
+
     def set_problem_statement_from_file(self, file_path: str):
         self.set_problem_statement_from_text(Path(file_path).read_text())
 
@@ -543,6 +656,8 @@ class InstanceBuilder:
             return self.set_problem_statement_from_text(data_path.removeprefix("text://"))
         if is_github_issue_url(data_path):
             return self.set_problem_statement_from_gh_issue(data_path)
+        if is_gitlab_issue_url(data_path):
+            return self.set_problem_statement_from_gl_issue(data_path)
         if Path(data_path).is_file():
             return self.set_problem_statement_from_file(data_path)
         msg = f"Not sure how to get problem statement from {data_path=}."
@@ -555,6 +670,16 @@ class InstanceBuilder:
         # Always get commit hash, because base_commit can also be branch or tag
         api = GhApi(token=self.token)
         self.args["base_commit"] = get_commit(api, owner, repo, ref=base_commit).sha
+        if base_commit != self.args["base_commit"]:
+            logger.info(f"Base commit reference {base_commit} resolved to commit hash {self.args['base_commit']}")
+        self.args["version"] = self.args["base_commit"][:7]
+
+    def set_repo_info_from_gl_url(self, url: str, base_commit: str | None = None):
+        owner, repo = parse_gl_repo_url(url)
+        self.args["repo"] = f"{owner}/{repo}"
+        self.args["repo_type"] = "gitlab"
+        api = Gitlab(url=GITLAB_URL, private_token=self.token)
+        self.args["base_commit"] = get_commit_gitlab(api, owner, repo, ref=base_commit).id
         if base_commit != self.args["base_commit"]:
             logger.info(f"Base commit reference {base_commit} resolved to commit hash {self.args['base_commit']}")
         self.args["version"] = self.args["base_commit"][:7]
@@ -579,6 +704,8 @@ class InstanceBuilder:
     def set_repo_info(self, repo: str, base_commit: str | None = None):
         if is_github_repo_url(repo):
             self.set_repo_info_from_gh_url(repo, base_commit=base_commit)
+        elif is_gitlab_repo_url(repo):
+            self.set_repo_info_from_gl_url(repo, base_commit=base_commit)
         elif Path(repo).is_dir():
             self.set_repo_info_from_local_path(repo, base_commit=base_commit)
         else:
@@ -612,12 +739,16 @@ class InstanceBuilder:
             missing = set(required_fields) - set(self.args.keys())
             msg = f"Missing required fields: {missing=}"
             raise ValueError(msg)
-        if self.args["repo_type"] not in {"github", "local"}:
+        if self.args["repo_type"] not in {"github", "local", "gitlab"}:
             msg = f"Invalid repo type: {self.args['repo_type']=}"
             raise ValueError(msg)
         if self.args["repo_type"] == "github" and self.args["repo"].count("/") != 1:
-            msg = f"Invalid repo format for {self.args['repo_type']=}: {self.args['repo']=}"
+            msg = f"Invalid GitHub repo format for {self.args['repo_type']=}: {self.args['repo']=}"
             raise ValueError(msg)
+        if self.args["repo_type"] == "gitlab":
+            # msg = f"Invalid GitLab repo format for {self.args['repo_type']=}: {self.args['repo']=}"
+            # raise ValueError(msg)
+            pass  # Future validation logic
 
     def build(self) -> dict[str, Any]:
         self.set_missing_fields()
@@ -659,6 +790,7 @@ def get_instances(
         file_path.startswith("text://")
         or (Path(file_path).is_file() and Path(file_path).suffix in [".md", ".txt"])
         or is_github_issue_url(file_path)
+        or is_gitlab_issue_url(file_path)
     ):
         ib = InstanceBuilder(token=token)
         ib.set_problem_statement(file_path)
@@ -666,6 +798,8 @@ def get_instances(
             ib.set_repo_info(repo_path, base_commit=base_commit)
         elif is_github_repo_url(file_path):
             ib.set_repo_info_from_gh_url(file_path, base_commit=base_commit)
+        elif is_gitlab_repo_url(file_path):
+            ib.set_repo_info_from_gl_url(file_path, base_commit=base_commit)
         else:
             msg = f"Could not determine repo path from {file_path=}, {repo_path=}"
             raise ValueError(msg)
@@ -729,6 +863,29 @@ def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token:
         message = commit.commit.message
         if f"fixes #{issue_number}" in message.lower() or f"closes #{issue_number}" in message.lower():
             commit_urls.append(commit.html_url)
+    return commit_urls
+
+
+def get_associated_commit_urls_gitlab(org: str, repo: str, issue_number: str, *, token: str = "") -> list[str]:
+    """Return the URLs of commits that would close an issue."""
+    gl = Gitlab(url=GITLAB_URL, private_token=token)
+    project = gl.projects.get(f"{org}/{repo}")
+    issue = project.issues.get(issue_number)
+
+    commit_urls = []
+    for event in issue.resourcemilestoneevents.list():
+        if event.action_name != "mentioned in commit":
+            continue
+
+        commit_id = event.commit_id
+        if not commit_id:
+            continue
+
+        commit = project.commits.get(commit_id)
+        message = commit.message
+        if f"fixes #{issue_number}" in message.lower() or f"closes #{issue_number}" in message.lower():
+            commit_urls.append(commit.web_url)
+
     return commit_urls
 
 

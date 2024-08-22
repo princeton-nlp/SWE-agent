@@ -46,10 +46,14 @@ from sweagent.agent.models import ModelArguments
 from sweagent.environment.swe_env import EnvironmentArguments, SWEEnv
 from sweagent.environment.utils import (
     InvalidGithubURL,
+    InvalidGitlabURL,
     get_associated_commit_urls,
+    get_associated_commit_urls_gitlab,
     get_data_path_name,
     get_gh_issue_data,
+    get_gl_issue_data,
     parse_gh_issue_url,
+    parse_gl_issue_url,
 )
 
 __doc__: str = """ Run inference. Usage examples:
@@ -257,8 +261,8 @@ class OpenPRHook(MainHook):
 
     def on_init(self, *, args: ScriptArguments, agent: Agent, env: SWEEnv, traj_dir: Path):
         self._env = env
-        self._token: str = env._github_token
         self._data_path = args.environment.data_path
+        self._token: str = env._github_token if "github.com" in self._data_path else env._gitlab_token
         self._open_pr = args.actions.open_pr
         self._skip_if_commits_reference_issue = args.actions.skip_if_commits_reference_issue
 
@@ -272,24 +276,37 @@ class OpenPRHook(MainHook):
             logger.info("Not opening PR because no submission was made.")
             return False
         if info["exit_status"] != "submitted":
-            logger.info("Not opening PR because exit status was %s and not submitted.", info["exit_status"])
+            logger.info(
+                "Not opening PR because exit status was %s and not submitted.",
+                info["exit_status"],
+            )
             return False
         try:
-            issue = get_gh_issue_data(self._data_path, token=self._token)
-        except InvalidGithubURL:
-            logger.info("Currently only GitHub is supported to open PRs to. Skipping PR creation.")
+            issue = (
+                get_gh_issue_data(self._data_path, token=self._token)
+                if "github.com" in self._data_path
+                else get_gl_issue_data(self._data_path, token=self._token)
+            )
+        except (InvalidGithubURL, InvalidGitlabURL):
+            logger.info("Currently only GitHub/GitLab is supported to open PRs to. Skipping PR creation.")
             return False
-        if issue.state != "open":
+        if issue.state not in ["open", "opened"]:
             logger.info(f"Issue is not open (state={issue.state}. Skipping PR creation.")
             return False
         if issue.assignee:
             logger.info("Issue is already assigned. Skipping PR creation. Be nice :)")
             return False
-        if issue.locked:
+        if "github.com" in self._data_path and issue.locked:
             logger.info("Issue is locked. Skipping PR creation.")
             return False
-        org, repo, issue_number = parse_gh_issue_url(self._data_path)
-        associated_commits = get_associated_commit_urls(org, repo, issue_number, token=self._token)
+        org, repo, issue_number = (
+            parse_gh_issue_url(self._data_path) if "github" in self._data_path else parse_gl_issue_url(self._data_path)
+        )
+        if "github.com" in self._data_path:
+            associated_commits = get_associated_commit_urls(org, repo, issue_number, token=self._token)
+        else:
+            associated_commits = get_associated_commit_urls_gitlab(org, repo, issue_number, token=self._token)
+
         if associated_commits:
             commit_url_strs = ", ".join(associated_commits)
             if self._skip_if_commits_reference_issue:
@@ -361,7 +378,12 @@ class Main:
         if "FAIL_endTO_PASS" in self.env.record:
             tests = "\n".join([f"- {x}" for x in self.env.record["FAIL_TO_PASS"]])
 
-        setup_args = {"issue": issue, "files": files, "test_files": test_files, "tests": tests}
+        setup_args = {
+            "issue": issue,
+            "files": files,
+            "test_files": test_files,
+            "tests": tests,
+        }
         info, trajectory = self.agent.run(
             setup_args=setup_args,
             env=self.env,

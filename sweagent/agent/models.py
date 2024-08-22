@@ -11,7 +11,10 @@ import together
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
 from groq import Groq
 from openai import AzureOpenAI, BadRequestError, OpenAI
-from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
+from simple_parsing.helpers.serialization.serializable import (
+    FrozenSerializable,
+    Serializable,
+)
 from tenacity import (
     retry,
     retry_if_not_exception_type,
@@ -511,6 +514,12 @@ class BedrockModel(BaseModel):
             "cost_per_input_token": 2.5e-07,
             "cost_per_output_token": 1.25e-06,
         },
+        "anthropic.claude-3-5-sonnet-20240620-v1:0": {
+            "max_context": 200_000,
+            "max_tokens": 4096,
+            "cost_per_input_token": 3e-06,
+            "cost_per_output_token": 1.5e-05,
+        },
     }
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
@@ -522,7 +531,11 @@ class BedrockModel(BaseModel):
         if self.model_provider == "anthropic":
             # Note: this assumes AWS credentials are already configured.
             # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
-            self.api = AnthropicBedrock()
+            self.api = AnthropicBedrock(
+                aws_access_key=keys_config.get("AWS_ACCESS_KEY"),
+                aws_secret_key=keys_config.get("AWS_SECRET_KEY"),
+                aws_region=keys_config.get("AWS_REGION"),
+            )
         elif self.model_provider in ["ai21", "amazon", "cohere", "meta", "mistral"]:
             msg = f"{self.api_model} is not supported!"
             raise NotImplementedError(msg)
@@ -632,9 +645,11 @@ def anthropic_query(model: AnthropicModel | BedrockModel, history: list[dict[str
         completion = model.api.completions.create(
             model=model.api_model,
             prompt=prompt,
-            max_tokens_to_sample=model.model_metadata["max_context"] - input_tokens
-            if isinstance(model, Anthropic)
-            else model.model_metadata["max_tokens_to_sample"],
+            max_tokens_to_sample=(
+                model.model_metadata["max_context"] - input_tokens
+                if isinstance(model, Anthropic)
+                else model.model_metadata["max_tokens_to_sample"]
+            ),
             temperature=model.args.temperature,
             top_p=model.args.top_p,
         )

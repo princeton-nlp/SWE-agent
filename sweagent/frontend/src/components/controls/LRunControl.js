@@ -228,7 +228,7 @@ function LRunControl({
                 aria-label="Select problem statement type"
                 onChange={handlePsTypeChange}
               >
-                <option value="gh">GitHub issue URL</option>
+                <option value="gh">GitHub / GitLab issue URL</option>
                 <option value="local">Local file</option>
                 <option value="write">Write here</option>
               </select>
