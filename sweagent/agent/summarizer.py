@@ -4,6 +4,7 @@ import tempfile
 import textwrap
 from abc import abstractmethod
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
@@ -69,10 +70,11 @@ class SummarizeFunction(metaclass=SummarizeFunctionMeta):
 
     @staticmethod
     def _slugify_action(action: str) -> str:
-        return "".join(c if c.isalnum() else "_" for c in action)[:30]
+        return "".join(c if c.isalnum() else "_" for c in action)[:50]
 
     @staticmethod
     def _upload_file_to_container(file_content: bytes, file_path_on_container: str, env: SWEEnv):
+        env.communicate(f'mkdir -p "{Path(file_path_on_container).parent}"')
         with tempfile.NamedTemporaryFile() as fp:
             fp.write(file_content.encode("utf-8"))
             fp.flush()
@@ -129,7 +131,6 @@ class SimpleSummarizer(SummarizeFunction):
                 return observation, APIStats()
             self.logger.debug(f"Summarizing current observation for input {input}")
             command_file_name = "/output/" + self._slugify_action(input)
-            env.communicate("mkdir -p /output")
             self._upload_file_to_container(observation, command_file_name, env)
             return textwrap.dedent(self._warning_message.format(command_file_name=command_file_name)) + env.communicate(
                 f"open {command_file_name}"
@@ -208,7 +209,6 @@ class LMSummarizer(SummarizeFunction):
             self.logger.debug(f"Summarizing current observation for input {input}")
             command_file_name = "/output/" + self._slugify_action(input)
             self._upload_file_to_container(observation, command_file_name, env)
-            env.communicate("mkdir -p /output")
             self.history.append(
                 {
                     "role": "user",
