@@ -32,7 +32,7 @@ def trajectory_dir():
 
 def run_python_cmd(cmd: str, args: dict[str, str]):
     # convert args to a string
-    args_str = " ".join([f"--{k}" if v is True else f"--{k} {v}" for k, v in args.items()])
+    args_str = " ".join([f"--{k} {v}" for k, v in args.items()])
     # execute the command
     print(f"Running command: python {cmd} {args_str}")
     os.system(f"python {cmd} {args_str}")
@@ -46,7 +46,7 @@ def run_inference():
         "data_path": dataset_name,
         "split": split,
         "instance_filter": f"\"{'|'.join(instance_id_list)}\"", # make sure we quote this because it contains a | symbol which the shell will want to interpret.
-        "noskip_existing": True, # causes inference to be re-run.  do we need this?
+        "skip_existing": False, # causes inference to be re-run.  do we need/want this?
     })
 
 def run_evaluation(predictions_path):
