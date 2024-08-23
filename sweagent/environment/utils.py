@@ -674,7 +674,7 @@ class InstanceBuilder:
         self.set_problem_statement_from_text(f"{challenge['name']} {challenge['description']}")
         self.args["instance_id"] = (
             # sanitize 'name' to only alphanumeric characters
-            challenge.get("category", "misc") + "_" + "".join(a for a in self.args["name"] if a.isalnum())
+            challenge.get("category", "misc") + "_" + "".join(a for a in self.args["challenge"]["name"] if a.isalnum())
         )
 
     def set_problem_statement_from_file(self, file_path: str):
