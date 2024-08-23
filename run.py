@@ -106,7 +106,7 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
     # Raise unhandled exceptions during the run (useful for debugging)
     raise_exceptions: bool = False
     # Dump the entire config to the log
-    print_config: bool = True
+    print_config: bool = False
 
     @property
     def run_name(self) -> str:
@@ -425,7 +425,7 @@ class Main:
         """Check if we should skip this instance based on the instance filter and skip_existing flag."""
         # Skip instances that don't match the instance filter
         if re.match(self.args.instance_filter, instance_id) is None:
-            logger.info(f"⏭️ Instance filter not matched. Skipping instance {instance_id}")
+            # logger.info(f"⏭️ Instance filter not matched. Skipping instance {instance_id}")
             return True
 
         # If flag is set to False, don't skip

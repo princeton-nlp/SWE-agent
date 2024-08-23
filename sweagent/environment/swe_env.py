@@ -198,6 +198,7 @@ class SWEEnv(gym.Env):
             self.args.environment_setup or "no_setup",
         ]
         tag = hashlib.sha256("".join(inputs).encode()).hexdigest()[:50]
+        self.logger.info(f"CACHED_IMAGE={self.cached_image_prefix}{tag} with inputs={json.dumps(inputs)}")
         return f"{self.cached_image_prefix}{tag}"
 
     def add_hook(self, hook: EnvHook):
@@ -988,7 +989,7 @@ class SWEEnv(gym.Env):
                         error_msg="Failed to clone conda environment",
                         timeout_duration=LONG_TIMEOUT,
                     )
-                    self.logger.debug("Cloned python conda environment")
+                    self.logger.debug(f"Cloned python conda environment: {python_env}")
                 else:
                     self.logger.debug(f"Could not find {python_env}, creating new environment")
                     self.communicate_with_handling(
