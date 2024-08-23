@@ -487,7 +487,7 @@ class GraveToCradle(AbstractGraveToCradle):
                 continue
             submission = info["submission"]
             review = reviews[idx].output
-            msg_lines.append(f"Submission {i+1}:\n\n{submission}\n\nReview {i+1}:\n\n{review.output}")
+            msg_lines.append(f"Submission {i+1}:\n\n{submission}\n\nReview {i+1}:\n\n{review}")
         msg = "\n\n".join(msg_lines)
         return {"failed_verdicts_with_submissions": msg}
 
