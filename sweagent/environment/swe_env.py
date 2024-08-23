@@ -11,7 +11,7 @@ import shlex
 import subprocess
 import time
 import traceback
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path, PurePath
 from typing import Any
 
@@ -95,6 +95,8 @@ class EnvironmentArguments(FrozenSerializable):
     environment_setup: str | None = None
     # Only used when running on single issue. Path to local repository or github repository.
     repo_path: str = ""
+    # Container mounts - additional folders to mount into the environment (useful for caching)
+    container_mounts: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         if self.timeout is not None:
@@ -153,6 +155,7 @@ class SWEEnv(gym.Env):
         self.install_environment = args.install_environment
         self.logger = get_logger("SWEEnv")
         self.persistent = args.container_name is not None
+        self.container_mounts = args.container_mounts
         self.returncode: None | int = None
         if not self.args.verbose:
             # fixme: This creates problems if we have multiple instances of this class
@@ -680,7 +683,9 @@ class SWEEnv(gym.Env):
             # Make sure that we get a new container name just in case removing didn't work.
             # Might be a fix for https://github.com/princeton-nlp/SWE-agent/issues/451
             self.container_name = self._get_container_name(image_name)
-        self.container, self.parent_pids = get_container(self.container_name, image_name, persistent=self.persistent)
+        self.container, self.parent_pids = get_container(
+            self.container_name, image_name, persistent=self.persistent, container_mounts=self.container_mounts
+        )
         try:
             client = docker.from_env(timeout=600)
         except docker.errors.DockerException as e:
