@@ -548,7 +548,7 @@ class SWEEnv(gym.Env):
                 observation = submission if submission.strip() != "" else None
                 return observation, 0, True, info
             else:
-                self.logger.warning(f"Wrong submission found: {submission}")
+                self.logger.warning(f"Wrong submission found: {submission} (real flag is {self.challenge['flag']})")
                 observation = "Wrong flag!"
                 return observation, 0, False, info
         return observation, 0, False, info
@@ -923,9 +923,22 @@ class SWEEnv(gym.Env):
         Returns:
             validation of the submission found against known flag
         """
+        submission = submission.strip()
+
+        def wrap(s: str) -> str:
+            return f"flag{{{s}}}"
+
         if self.challenge is not None:
             assert "flag" in self.challenge
-            return submission.strip() == self.challenge["flag"]
+            solution = self.challenge["flag"]
+            return any(
+                (
+                    submission == solution,
+                    wrap(submission) == solution,
+                    submission == wrap(solution),
+                )
+            )
+
         return True
 
     def get_submission(self, output: str) -> str | None:
