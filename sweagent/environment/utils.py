@@ -624,6 +624,7 @@ class InstanceBuilder:
         self.args["problem_statement_source"] = "online"
 
     def set_server_description(self, server_name: str | None, port: int | None) -> None:
+        """For CTF challenges"""
         if server_name is None or port is None:
             self.args["challenge"]["server_description"] = ""
             return
@@ -636,7 +637,8 @@ class InstanceBuilder:
                 f"The challenge web server is running on `{server_name}` port `{port}` and you can access it from within the container environment using `nc {server_name}:{port}`."
             )
 
-    def set_problem_statement_from_challenge_json(self, file_path: str) -> str:
+    def set_problem_statement_from_challenge_json(self, file_path: str) -> None:
+        """For CTF challenges"""
         challenge = json.loads(Path(file_path).read_text())
         self.args["challenge"] = challenge
         self.args["challenge"]["files"] = challenge.get("files", "No files are provided in this challenge.")
@@ -650,6 +652,10 @@ class InstanceBuilder:
         self.args["challenge"]["file_path"] = file_path
         self.set_server_description(self.args["challenge"]["server_name"], self.args["challenge"]["port"])
         self.set_problem_statement_from_text(f"{challenge['name']} {challenge['description']}")
+        self.args["instance_id"] = (
+            # sanitize 'name' to only alphanumeric characters
+            challenge.get("category", "misc") + "_" + "".join(a for a in self.args["name"] if a.isalnum())
+        )
 
     def set_problem_statement_from_file(self, file_path: str):
         if Path(file_path).name == "challenge.json":

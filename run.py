@@ -363,7 +363,7 @@ class Main:
             tests = "\n".join([f"- {x}" for x in self.env.record["FAIL_TO_PASS"]])
 
         setup_args = {"issue": issue, "files": files, "test_files": test_files, "tests": tests}
-        challenge = getattr(self.env, "challenge", None)
+        challenge = self.env.challenge
         if challenge is not None:
             setup_args["flag_format"] = extract_flag_format(challenge["flag"])
             setup_args["name"] = challenge["name"]
