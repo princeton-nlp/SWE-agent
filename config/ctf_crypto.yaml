@@ -118,7 +118,7 @@ demonstration_template: |
   --- END OF DEMONSTRATION ---
 demonstrations:
 - trajectories/demonstrations/ctf/crypto/katy.traj
-- trajectories/demonstrations/ctf/crypto/eps.traj
+- trajectories/demonstrations/ctf/crypto/BabyTimeCapsule.traj
 summarizer_config:
   function: LMSummarizer
   window_length: 105
