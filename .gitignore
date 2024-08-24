@@ -193,3 +193,7 @@ data/**
 
 # PyCharm
 .idea/
+
+# Disasm / Decomp output
+*.decomp.json
+*.disas.json

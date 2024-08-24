@@ -12,7 +12,7 @@ submit() {
         return
     fi
 
-    echo "<<SUBMISSION||"
-    echo "$1"
+    echo -n "<<SUBMISSION||"
+    echo -n "$@"
     echo "||SUBMISSION>>"
 }

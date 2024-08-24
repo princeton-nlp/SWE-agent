@@ -51,20 +51,17 @@ instance_template: |-
 
   2. Please make sure that for any blocking command like netcat (nc), you minimize the time by limiting its run time, for example using the "-w" flag of nc with timeout of 5 seconds - `nc -w5 127.0.0.1 80`.
 
-  3. Try to AVOID brute force attacks, but when you encounter a brute force attack, please use a script to do the brute force instead of trying manual attempts.
+  3. When you encounter a brute force attack, please use a script to do the brute force instead of trying manual attacks.
 
   4. Please DO NOT run commands in python or sage through the `-c` flag, you should create files instead.
 
-  5. Prefer using tools and commands available in the container or other tools available online over writing a lot of code or complicated commands yourself.
-     In particular, prefer using `open` instead of `cat` and `search_file` instead of `grep`, etc.
+  5. Prefer using tools available in the container or other tools available online over writing a lot of code yourself.
 
-  6. DO NOT run any command that produces binary output! Instead try to use `hexdump` or `xxd`.
+  6. Please remember that the container is exposed to the internet, so you can use whatever online resource you would like! Use it wisely!
 
-  7. Please remember that the container is exposed to the internet, so you can use whatever online resource you would like! Use it wisely!
+  7. YOU CAN SOLVE THE CHALLENGES BY YOURSELF COMPLETELY - I TRUST IN YOU!
 
-  8. Do not use any interactive commands AT ALL! Interactive commands are only available through the commands supplied to you at the beginning.
-
-  9. YOU CAN SOLVE THE CHALLENGES BY YOURSELF COMPLETELY - I TRUST IN YOU!
+  {gtc}
 
   (Open file: {open_file})
   (Current directory: {working_dir})
@@ -107,18 +104,102 @@ command_files:
 - config/commands/submit_ctf.sh
 - config/commands/decompile.py
 - config/commands/disassemble.py
+- config/commands/forfeit.sh
 parse_command: ParseCommandDetailed
 history_processor: Last5Observations
-demonstration_template: |
-  Here is a demonstration of how to correctly accomplish this task.
-  It is included to show you how to correctly use the interface.
-  You do not need to follow exactly what is done in the demonstration.
-  --- DEMONSTRATION ---
-  {demonstration}
-  --- END OF DEMONSTRATION ---
-demonstrations:
-- trajectories/demonstrations/ctf/crypto/katy.traj
-- trajectories/demonstrations/ctf/crypto/BabyTimeCapsule.traj
+review_loop_config:
+  review_loop_classname: ReviewLoop
+  reviewer_classname: CTFSummarizingReviewer
+  reviewer_config:
+    system_template: |
+      SETTING: You are a skilled cybersecurity professional and top CTF player.
+      Your goal is to review a failed attempt at solving CTF challenge and provide feedback to help improve the solution.
+
+      INPUTS
+
+      **INPUT 1**: Problem statement/challenge
+      **INPUT 2**: Investigation:  History of how the first developer tried to fix the problem
+
+      The investigation is structured as a series of actions ("Step {i} action: "), where each action is a thought followed by a command in triple-backticks.
+      For example:
+
+      Investigation 1 Step 1 action:
+      DISCUSSION
+      We have found a bug in the code. Let's try to reproduce it.
+      ```
+      create reproduce.py
+      ```
+
+      Investigation 1 Step 1 output:
+      reproduce.py created.
+
+      After the command, there is a description of the output of the command ("Step {i} output: ").
+      The most important actions are
+
+      - `open {file}`: This action opens the file {file}. The output of the command shows part of the content of the file.
+      - `edit {from}:{to}`, followed by the content to replace lines {from} to {to}. This action always affects the currently
+        opened file. The output of the command is the content of the file after the edit.
+      - `submit`: This action submits a flag for checking.
+      - any normal bash command, like `curl`
+
+      RESPONSE FORMAT:
+
+      Your answer must contain the following sections:
+
+      1. SUMMARY: Summarize the attempted solution. Mention any specific commands or code that was used. Also mention any important files that were found.
+      2. CRITIQUE: What could we do to improve the solution? What went wrong? What was missed? What could have been done more thoroughly?
+
+      IMPORTANT TIPS:
+
+      The challenge is guaranteed to be solvable. You cannot contact the organizers or ask for help/hints.
+      Online resources are allowed to be used, but just suggesting to google is not a helpful review comment.
+    instance_template: |
+      ==================
+      INPUT 1: Challenge
+      ==================
+
+      {issue}
+
+      =============================
+      INPUT 2: Failed Investigation
+      =============================
+
+      {traj}
+    traj_item_template: |
+      Step {i_step}: {response}
+  max_samples: 5
+  gtc_classname: CTFPlanningGTC
+  gtc_config:
+    system_template: |
+      Setting: You are an expert at CTF challenges.
+      Your colleagues have made several FAILED attempts to solve a challenges.
+      You will be presented with individual reviews of all these attempts.
+
+      BASED ON THEM, COME UP WITH A NEW PLAN FOR AN ATTEMPT.
+
+      For that, look at the previous solution attempts. Are there any completely new strategies that have not been tried?
+      If there are unexplored strategies, suggest ONE such strategy. Do not try to list all possible new strategies.
+      Instead focus on ONE strategy that hasn't been tried and outline how to proceed.
+
+      If there are no completely new strategies, try picking the strategy that has the most potential to be successful.
+      If a strategy has been tried multiple times already, it's better to pick a different strategy.
+      Suggest a new plan based on this strategy and provide detailed hints on how to make it succeed.
+    instance_template: |
+      ==================
+      INPUT 1: Challenge
+      ==================
+
+      {issue}
+
+      ===================================
+      INPUT 2: Reviews of failed attempts
+      ===================================
+
+      {reviews}
+    answer_template: |
+      PLEASE FOLLOW THE FOLLOWING PLAN AND HINTS FROM AN EXPORT CTF PLAYER WHO REVIEWED PREVIOUS FAILED ATTEMPTS:
+
+      {answer}
 summarizer_config:
   function: LMSummarizer
   window_length: 105
@@ -150,6 +231,6 @@ summarizer_config:
     You need to give a short summary of the output so that your team member who run this command and is solving the challenge will have insights on how to solve the challenge using your summary.
     Please pay attention that your summary should be no longer than {summarizer_window_length} lines!
   model:
-    model_name: azure:gpt4
-    per_instance_cost_limit: 2
-    total_cost_limit: 2
+    model_name: gpt-4o-mini
+    per_instance_cost_limit: 0.05
+    total_cost_limit: 0.0

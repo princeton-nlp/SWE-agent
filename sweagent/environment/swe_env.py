@@ -11,7 +11,7 @@ import shlex
 import subprocess
 import time
 import traceback
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path, PurePath
 from typing import Any
 
@@ -95,6 +95,8 @@ class EnvironmentArguments(FrozenSerializable):
     environment_setup: str | None = None
     # Only used when running on single issue. Path to local repository or github repository.
     repo_path: str = ""
+    # Container mounts - additional folders to mount into the environment (useful for caching)
+    container_mounts: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         if self.timeout is not None:
@@ -153,6 +155,7 @@ class SWEEnv(gym.Env):
         self.install_environment = args.install_environment
         self.logger = get_logger("SWEEnv")
         self.persistent = args.container_name is not None
+        self.container_mounts = args.container_mounts
         self.returncode: None | int = None
         if not self.args.verbose:
             # fixme: This creates problems if we have multiple instances of this class
@@ -471,7 +474,7 @@ class SWEEnv(gym.Env):
 
         Returns:
             observation:  output from container
-            reward: value between 0 and 1 quantifying correctness of output + environment state
+            reward: Always set to 0
             done: whether task is over
             info: additional information (e.g. debugging information)
         """
@@ -481,9 +484,14 @@ class SWEEnv(gym.Env):
 
         observation = ""
         # Handle special actions
-        if action.strip() == "skip":
+        action = action.strip()
+        if action == "skip":
             observation = "Skipped"
             info["exit_status"] = "skipped"
+            return observation, 0, True, info
+        if action == "exit_forfeit":
+            observation = "Exited"
+            info["exit_status"] = action
             return observation, 0, True, info
         if action in {"exit_context", "exit_cost", "exit_error", "exit_format", "exit_api"}:
             try:
@@ -548,7 +556,7 @@ class SWEEnv(gym.Env):
                 observation = submission if submission.strip() != "" else None
                 return observation, 0, True, info
             else:
-                self.logger.warning(f"Wrong submission found: {submission}")
+                self.logger.warning(f"Wrong submission found: {submission} (real flag is {self.challenge['flag']})")
                 observation = "Wrong flag!"
                 return observation, 0, False, info
         return observation, 0, False, info
@@ -680,7 +688,9 @@ class SWEEnv(gym.Env):
             # Make sure that we get a new container name just in case removing didn't work.
             # Might be a fix for https://github.com/princeton-nlp/SWE-agent/issues/451
             self.container_name = self._get_container_name(image_name)
-        self.container, self.parent_pids = get_container(self.container_name, image_name, persistent=self.persistent)
+        self.container, self.parent_pids = get_container(
+            self.container_name, image_name, persistent=self.persistent, container_mounts=self.container_mounts
+        )
         try:
             client = docker.from_env(timeout=600)
         except docker.errors.DockerException as e:
@@ -923,9 +933,22 @@ class SWEEnv(gym.Env):
         Returns:
             validation of the submission found against known flag
         """
+        submission = submission.strip()
+
+        def wrap(s: str) -> str:
+            return f"flag{{{s}}}"
+
         if self.challenge is not None:
             assert "flag" in self.challenge
-            return submission.strip() == self.challenge["flag"]
+            solution = self.challenge["flag"]
+            return any(
+                (
+                    submission == solution,
+                    wrap(submission) == solution,
+                    submission == wrap(solution),
+                )
+            )
+
         return True
 
     def get_submission(self, output: str) -> str | None:

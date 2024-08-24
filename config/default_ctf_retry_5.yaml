@@ -51,20 +51,15 @@ instance_template: |-
 
   2. Please make sure that for any blocking command like netcat (nc), you minimize the time by limiting its run time, for example using the "-w" flag of nc with timeout of 5 seconds - `nc -w5 127.0.0.1 80`.
 
-  3. Try to AVOID brute force attacks, but when you encounter a brute force attack, please use a script to do the brute force instead of trying manual attempts.
+  3. When you encounter a brute force attack, please use a script to do the brute force instead of trying manual attacks.
 
   4. Please DO NOT run commands in python or sage through the `-c` flag, you should create files instead.
 
-  5. Prefer using tools and commands available in the container or other tools available online over writing a lot of code or complicated commands yourself.
-     In particular, prefer using `open` instead of `cat` and `search_file` instead of `grep`, etc.
+  5. Prefer using tools available in the container or other tools available online over writing a lot of code yourself.
 
-  6. DO NOT run any command that produces binary output! Instead try to use `hexdump` or `xxd`.
+  6. Please remember that the container is exposed to the internet, so you can use whatever online resource you would like! Use it wisely!
 
-  7. Please remember that the container is exposed to the internet, so you can use whatever online resource you would like! Use it wisely!
-
-  8. Do not use any interactive commands AT ALL! Interactive commands are only available through the commands supplied to you at the beginning.
-
-  9. YOU CAN SOLVE THE CHALLENGES BY YOURSELF COMPLETELY - I TRUST IN YOU!
+  7. YOU CAN SOLVE THE CHALLENGES BY YOURSELF COMPLETELY - I TRUST IN YOU!
 
   (Open file: {open_file})
   (Current directory: {working_dir})
@@ -110,3 +105,9 @@ command_files:
 - config/commands/forfeit.sh
 parse_command: ParseCommandDetailed
 history_processor: Last5Observations
+review_loop_config:
+  review_loop_classname: ReviewLoop
+  reviewer_classname: CTFReviewer
+  reviewer_config:
+  max_samples: 5
+
