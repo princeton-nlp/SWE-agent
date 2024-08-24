@@ -182,6 +182,7 @@ class LMSummarizer(SummarizeFunction):
     fail_back_to_simple_summarizer_input = [
         "xxd",
         "hexdump",
+        "strings",
     ]
 
     lm_summarizer_char_limit = 200000
