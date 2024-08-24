@@ -273,6 +273,54 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
     exit_code = _results.group(1)
     return body, exit_code
 
+def read_session_with_timeout(session: subprocess.Popen, terminal_pattern: str, timeout_duration: int | float) -> str:
+    """
+    Read data from a subprocess with a timeout.
+    This function uses a file descriptor to read data from the subprocess in a non-blocking way.
+
+    Args:
+        session: The session subprocess.
+        terminal_pattern: the terminal pattern to indicate end of output.
+        timeout_duration: The timeout duration in seconds.
+
+    Returns:
+        Output
+
+    Raises:
+        TimeoutError: If the timeout duration is reached while reading from the subprocess.
+    """
+    buffer = b""
+    fd = session.stdout.fileno()
+    end_time = time.time() + timeout_duration
+
+    # Select is not available on windows
+    import select
+    def ready_to_read(fd) -> bool:
+        return bool(select.select([fd], [], [], 0.01)[0])
+
+    while time.time() < end_time:
+        if ready_to_read(fd):
+            try:
+                data = os.read(fd, 4096)
+            except BlockingIOError:
+                logger.error("BlockingIOError while reading from subprocess.", exc_info=True)
+                break
+            if data:
+                buffer += data
+                if terminal_pattern in buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n"):
+                    break
+        time.sleep(0.01)  # Prevents CPU hogging
+
+    if session.poll() is not None:
+        msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {buffer.decode()}"
+        raise RuntimeError(msg)
+    if time.time() >= end_time:
+        msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}"
+        raise TimeoutError(msg)
+
+    decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
+    body = "\n".join(line for line in decoded.splitlines() if not line.startswith(terminal_pattern))
+    return body
 
 def get_background_pids(container_obj: Container):
     pids = container_obj.exec_run("ps -eo pid,comm --no-headers").output.decode().split("\n")
@@ -352,6 +400,15 @@ def get_docker_compose(docker_compose_path: Path) -> Path:
         logger.error(f"Unexpected compose setup error: {error}")
     return docker_compose_path
 
+def get_interactive_gdb_session(ctr_name: str) -> subprocess.Popen:
+    startup_cmd = ["docker", "exec", "-i", ctr_name, "gdb"]
+    logger.debug("Starting interactive gdb session with command: %s", shlex.join(startup_cmd))
+    session = subprocess.Popen(startup_cmd, stdin=PIPE, stdout=PIPE, stderr=STDOUT, text=True, bufsize=1)
+    time.sleep(DOCKER_START_UP_DELAY)
+    output = read_with_timeout(session, lambda: list(), timeout_duration=1)
+    logger.debug(f"gdb session initial output: {output}")
+
+    return session
 
 def _get_non_persistent_container(ctr_name: str, image_name: str) -> tuple[subprocess.Popen, set[str]]:
     startup_cmd = [

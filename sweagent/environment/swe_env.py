@@ -37,6 +37,7 @@ from sweagent.environment.utils import (
     copy_file_to_container,
     format_trajectory_markdown,
     get_container,
+    get_interactive_gdb_session,
     get_docker_compose,
     get_gh_issue_data,
     get_instances,
@@ -44,6 +45,7 @@ from sweagent.environment.utils import (
     parse_gh_issue_url,
     read_with_timeout,
     read_with_timeout_experimental,
+    read_session_with_timeout,
     terminate_docker_compose,
 )
 from sweagent.types import AgentInfo
@@ -54,6 +56,7 @@ LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500))
 AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
 PATH_TO_REQS = "/root/requirements.txt"
 PATH_TO_ENV_YML = "/root/environment.yml"
+GDB_TERMINAL_PATTERN = "(gdb) "
 
 
 @dataclass(frozen=True)
@@ -190,6 +193,8 @@ class SWEEnv(gym.Env):
         self.docker_compose: Path | None = None
         self.challenge: dict[str, Any] | None = None
         self._reset_container()
+
+        self.interactive_session: subprocess.Popen | None = None
 
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
@@ -551,6 +556,30 @@ class SWEEnv(gym.Env):
                 self.logger.warning(f"Wrong submission found: {submission}")
                 observation = "Wrong flag!"
                 return observation, 0, False, info
+
+        session_name, interactive_commands = self.get_interactive_commands(observation)
+        if session_name is not None:
+            observation = ""
+            self.logger.debug(f"Interactive session: {session_name}\nCommands: {', '.join(interactive_commands)}")
+            for command in interactive_commands:
+                if command == "START":
+                    # Start the session
+                    self.interactive_session = get_interactive_gdb_session(self.container_name)
+                elif command == "STOP":
+                    if self.interactive_session.poll() is not None:
+                        self.logger.warning("gdb did not quit successfully")
+                        observation = "Could not quit"
+                    else:
+                        observation = "Debug session stopped successfully"
+                        self.interactive_session = None
+                else:
+                    if self.interactive_session is None:
+                        self.logger.warning("Tried to run gdb commands without starting session")
+                        observation = "Debug session is not running! please start it first using `debug_start`"
+                    else:
+                        observation += self.communicate_session(command, GDB_TERMINAL_PATTERN)
+                        observation += "\n"
+                    
         return observation, 0, False, info
 
     def close(self) -> None:
@@ -888,6 +917,44 @@ class SWEEnv(gym.Env):
             raise RuntimeError(msg)
         return logs
 
+    def communicate_session(self, input: str, terminal_pattern: str, timeout_duration: int | float = 25) -> str:
+        """
+        Sends input to interactive_session and returns output
+
+        Args:
+            input: input to send to session
+            terminal_pattern: pattern indicating the session's output termination (e.g., "(gdb) " in gdb)
+            timeout_duration: duration to wait for output
+
+        Returns:
+            output: output from session
+        """
+        assert self.interactive_session is not None
+        self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
+
+        try:
+            cmd = input if input.endswith("\n") else input + "\n"
+            os.write(self.interactive_session.stdin.fileno(), cmd.encode())
+            time.sleep(0.03)
+            self.interactive_session.stdin.flush()
+        except BrokenPipeError:
+            traceback.print_exc()
+            self.logger.error("Failed to communicate with session. Check docker logs for more information.")
+            msg = "Failed to communicate with session"
+            raise RuntimeError(msg)
+
+        if input.strip() != "quit":
+            try:
+                buffer = read_session_with_timeout(self.interactive_session, terminal_pattern, timeout_duration)
+            except Exception:
+                msg = f"Read with timeout failed on input:\n---\n{input}\n---"
+                self.logger.error(msg)
+                raise
+            self.logger.log(logging.TRACE, "Output:\n%s", buffer)  # type: ignore
+            return buffer
+        else:
+            return ""
+
     def get_available_actions(self) -> list[str]:
         """
         Returns list of available actions in current environment state
@@ -927,6 +994,30 @@ class SWEEnv(gym.Env):
             assert "flag" in self.challenge
             return submission.strip() == self.challenge["flag"]
         return True
+
+    def get_interactive_commands(self, output: str):
+        """
+        Function for extracting interactive session commands.
+
+        Args:
+            output: observation
+
+        Returns:
+            session: session name for the commands or None if no commands found.
+            commands: list of commands extracted from observation.
+        """
+        # TODO: dont hardcode GDB
+        pattern = r"\<\<INTERACTIVE_GDB\|\|(.*)\|\|INTERACTIVE_GDB\>\>"
+        commands = []
+        for line in output.split("\n"):
+            match = re.search(pattern, line, re.DOTALL)
+            if match is None:
+                continue
+            commands.append(match.group(1))
+        if len(commands) > 0:
+            return "GDB", commands
+        else:
+            return None, []
 
     def get_submission(self, output: str) -> str | None:
         """
