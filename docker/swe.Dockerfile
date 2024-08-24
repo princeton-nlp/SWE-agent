@@ -2,6 +2,9 @@ FROM ubuntu:jammy
 
 ARG TARGETARCH
 
+# Replay Dev Stuff
+EXPOSE 8080
+
 # Install third party tools
 RUN apt-get update && \
     apt-get install -y bash gcc git jq wget g++ make && \

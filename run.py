@@ -107,6 +107,9 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
     raise_exceptions: bool = False
     # Dump the entire config to the log
     print_config: bool = False
+    # Only create docker images and exit.
+    # Usually used in combination with --cache_task_images.
+    init_only: bool = False
 
     @property
     def run_name(self) -> str:
@@ -344,6 +347,10 @@ class Main:
 
         observation, info = self.env.reset(index)
         if info is None:
+            raise _ContinueLoop
+        
+        if self.args.init_only:
+            # Only create the environment and exit.
             raise _ContinueLoop
 
         # Get info, patch information
