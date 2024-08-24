@@ -179,6 +179,11 @@ class LMSummarizer(SummarizeFunction):
         "search_dir",
     ]
 
+    fail_back_to_simple_summarizer_input = [
+        "xxd",
+        "hexdump",
+    ]
+
     lm_summarizer_char_limit = 200000
 
     def __init__(self, window_length: int):
@@ -203,7 +208,9 @@ class LMSummarizer(SummarizeFunction):
                 or len(observation.splitlines()) <= self._window_length
             ):
                 return observation, APIStats()
-            if len(observation) > self.lm_summarizer_char_limit:
+            if len(observation) > self.lm_summarizer_char_limit or any(
+                input.startswith(s) for s in self.fail_back_to_simple_summarizer_input
+            ):
                 self.logger.warning("Observation is too long for LMSummarizer, using SimpleSummarizer instead")
                 return self._simple_summarizer(input, observation, env, model)
             self.logger.debug(f"Summarizing current observation for input {input}")
