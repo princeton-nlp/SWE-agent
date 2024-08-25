@@ -37,7 +37,7 @@ from sweagent.environment.utils import (
     copy_file_to_container,
     format_trajectory_markdown,
     get_container,
-    get_interactive_gdb_session,
+    get_interactive_session_gdb,
     get_docker_compose,
     get_gh_issue_data,
     get_instances,
@@ -560,18 +560,16 @@ class SWEEnv(gym.Env):
         session_name, interactive_commands = self.get_interactive_commands(observation)
         if session_name is not None:
             observation = ""
-            self.logger.debug(f"Interactive session: {session_name}\nCommands: {', '.join(interactive_commands)}")
             for command in interactive_commands:
                 if command == "START":
                     # Start the session
-                    self.interactive_session = get_interactive_gdb_session(self.container_name)
+                    self.interactive_session = get_interactive_session_gdb(self.container_name, "/" + self._repo_name)
                 elif command == "STOP":
-                    if self.interactive_session.poll() is not None:
-                        self.logger.warning("gdb did not quit successfully")
-                        observation = "Could not quit"
-                    else:
-                        observation = "Debug session stopped successfully"
-                        self.interactive_session = None
+                    if self.interactive_session.poll() is None:
+                        self.logger.warning("Session did not quit successfully, terminating.")
+                        self.interactive_session.terminate()
+                    observation = "Debug session stopped successfully"
+                    self.interactive_session = None
                 else:
                     if self.interactive_session is None:
                         self.logger.warning("Tried to run gdb commands without starting session")
@@ -597,6 +595,15 @@ class SWEEnv(gym.Env):
         self.container.terminate()
         if self.docker_compose is not None:
             terminate_docker_compose(self.docker_compose)
+        if self.interactive_session is not None:
+            try:
+                self.interactive_session.terminate()
+            except KeyboardInterrupt:
+                raise
+            except:
+                self.logger.warning("Failed to stop interactive session")
+            else:
+                self.logger.info("Interactive session stopped")
         if self.container_obj is None:
             pass
         elif self.persistent:
@@ -943,17 +950,20 @@ class SWEEnv(gym.Env):
             msg = "Failed to communicate with session"
             raise RuntimeError(msg)
 
-        if input.strip() != "quit":
-            try:
-                buffer = read_session_with_timeout(self.interactive_session, terminal_pattern, timeout_duration)
-            except Exception:
-                msg = f"Read with timeout failed on input:\n---\n{input}\n---"
-                self.logger.error(msg)
-                raise
-            self.logger.log(logging.TRACE, "Output:\n%s", buffer)  # type: ignore
-            return buffer
-        else:
+        self.logger.debug(f"Command: {input}")
+        if input.strip() == "quit":
+            # Give some time for gdb to stop
+            time.sleep(1)
             return ""
+
+        try:
+            buffer = read_session_with_timeout(self.interactive_session, terminal_pattern, timeout_duration)
+        except Exception:
+            msg = f"Read with timeout failed on input:\n---\n{input}\n---"
+            self.logger.error(msg)
+            raise
+        self.logger.log(logging.TRACE, "Output:\n%s", buffer)  # type: ignore
+        return buffer
 
     def get_available_actions(self) -> list[str]:
         """

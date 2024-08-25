@@ -28,6 +28,10 @@ debug_start() {
     fp=$(realpath $1)
     _debug_command "START"
     _debug_command "file $fp"
+    if [ ! -z "$2" ]
+    then
+        _debug_command "set args $2"
+    fi
     _debug_command "starti"
 }
 
@@ -82,7 +86,7 @@ debug_step() {
 # arguments:
 #   command:
 #     type: string
-#     description: command to execute
+#     description: command to execute (wrap in single quotes to avoid shell escaping and substitution)
 #     required: true
 debug_exec() {
     if [ -z "$1" ]

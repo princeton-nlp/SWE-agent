@@ -400,14 +400,12 @@ def get_docker_compose(docker_compose_path: Path) -> Path:
         logger.error(f"Unexpected compose setup error: {error}")
     return docker_compose_path
 
-def get_interactive_gdb_session(ctr_name: str) -> subprocess.Popen:
-    startup_cmd = ["docker", "exec", "-i", ctr_name, "gdb"]
+def get_interactive_session_gdb(ctr_name: str, cwd: str) -> subprocess.Popen:
+    startup_cmd = ["docker", "exec", "-i", "-w", cwd, ctr_name, "gdb"]
     logger.debug("Starting interactive gdb session with command: %s", shlex.join(startup_cmd))
     session = subprocess.Popen(startup_cmd, stdin=PIPE, stdout=PIPE, stderr=STDOUT, text=True, bufsize=1)
     time.sleep(DOCKER_START_UP_DELAY)
     output = read_with_timeout(session, lambda: list(), timeout_duration=1)
-    logger.debug(f"gdb session initial output: {output}")
-
     return session
 
 def _get_non_persistent_container(ctr_name: str, image_name: str) -> tuple[subprocess.Popen, set[str]]:
