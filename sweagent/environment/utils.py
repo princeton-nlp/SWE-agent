@@ -187,7 +187,9 @@ def read_with_timeout(container: subprocess.Popen, pid_func: Callable, timeout_d
     if time.time() >= end_time:
         msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}\nRunning PIDs: {pids}"
         raise TimeoutError(msg)
-    return buffer.decode()
+
+    decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
+    return "\n".join(line for line in decoded.splitlines())
 
 
 PROCESS_DONE_MARKER_START = "///PROCESS-DONE:"
@@ -257,16 +259,17 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
                     break
         time.sleep(0.01)  # Prevents CPU hogging
 
+    decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
+    body = "\n".join(line for line in decoded.splitlines() if not line.startswith(PROCESS_DONE_MARKER_START))
+
     if container.poll() is not None:
         msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {buffer.decode()}"
         raise RuntimeError(msg)
     if time.time() >= end_time:
         msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}"
-        raise TimeoutError(msg)
+        raise TimeoutError(msg, body)
 
     _check_for_too_many_non_unicode_bytes(buffer=buffer)
-    decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
-    body = "\n".join(line for line in decoded.splitlines() if not line.startswith(PROCESS_DONE_MARKER_START))
     _results = PROCESS_DONE_REGEX.search(decoded)
     if _results is None:
         msg = f"Could not find process done marker in last line: {decoded=}, {body=}"

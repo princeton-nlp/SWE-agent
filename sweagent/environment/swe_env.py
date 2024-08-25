@@ -593,9 +593,10 @@ class SWEEnv(gym.Env):
         observation = ""
         try:
             observation = self.communicate(input=action, timeout_duration=AGENT_ACTION_TIMEOUT, set_last_action=True)
-        except TimeoutError:
+        except TimeoutError as e:
             try:
-                self.interrupt()
+                observation += e.args[1] if len(e.args) > 1 else ""
+                observation += self.interrupt()
                 observation += "\nEXECUTION TIMED OUT"
             except RuntimeError as e:
                 observation += "\nEXECUTION TIMED OUT AND INTERRUPT FAILED. RESTARTING PROCESS."
@@ -1050,10 +1051,18 @@ class SWEEnv(gym.Env):
         Returns:
             list of PIDs
         """
-        pids = self.container_obj.exec_run("ps -eo pid,comm --no-headers").output.decode().split("\n")
+        pids = self.container_obj.exec_run("ps -eo pid,comm,ppid --no-headers").output.decode().split("\n")
         pids = [x.split() for x in pids if x]
         if not all_pids:
-            pids = [x for x in pids if x[1] != "ps" and x[0] not in self.parent_pids]
+            # Get just the PIDs of processes that are descendants of parent_pids and not others
+            pids = [
+                (x[0], x[1])
+                for x in pids
+                if x[1] != "ps"
+                and x[0] not in self.parent_pids
+                and x[1] != getattr(self.interactive_session, "name", None)
+                and x[2] in self.parent_pids
+            ]
         return pids
 
     def validate_submission(self, submission: str) -> bool:
@@ -1368,18 +1377,17 @@ class SWEEnv(gym.Env):
             timeout_duration=self.args.interactive_sessions_config[session_name].timeout_duration_on_interrupt,
         )
 
-    def interrupt(self) -> None:
+    def interrupt(self) -> str:
         """
         Send interrupt signal to container and exhaust stdout buffer with a communicate call
         """
         assert self.container is not None
         assert self.container_obj is not None
         pids = self.get_pids()
-        for pid, cmd in pids:
-            if pid not in self.parent_pids and cmd != "ps" and cmd != getattr(self.interactive_session, "name", None):
-                self.container_obj.exec_run(f"kill -9 {pid}")
+        for pid, _ in pids:
+            self.container_obj.exec_run(f"kill -9 {pid}")
         try:
-            _ = read_with_timeout(self.container, self.get_pids, 20)
+            observation = read_with_timeout(self.container, self.get_pids, 20)
         except TimeoutError:
             pass
         try:
@@ -1388,6 +1396,7 @@ class SWEEnv(gym.Env):
         except TimeoutError:
             msg = "Failed to interrupt container"
             raise RuntimeError(msg)
+        return observation
 
     def open_pr(self, *, trajectory, _dry_run: bool = False) -> None:
         """Create PR to repository
