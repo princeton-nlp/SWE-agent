@@ -28,6 +28,7 @@ debug_start() {
     fp=$(realpath $1)
     _debug_command "SESSION=gdb"
     _debug_command "START"
+    _debug_command "set confirm off"
     _debug_command "file $fp"
     if [ ! -z "$2" ]
     then
