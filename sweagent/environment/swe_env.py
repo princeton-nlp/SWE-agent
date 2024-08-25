@@ -1376,7 +1376,7 @@ class SWEEnv(gym.Env):
         assert self.container_obj is not None
         pids = self.get_pids()
         for pid, cmd in pids:
-            if pid not in self.parent_pids and cmd != "ps":
+            if pid not in self.parent_pids and cmd != "ps" and cmd != getattr(self.interactive_session, "name", None):
                 self.container_obj.exec_run(f"kill -9 {pid}")
         try:
             _ = read_with_timeout(self.container, self.get_pids, 20)
