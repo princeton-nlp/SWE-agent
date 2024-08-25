@@ -481,43 +481,70 @@ class SWEEnv(gym.Env):
 
     def _handle_interactive_commands(self, observation):
         session_name, interactive_commands = self.get_interactive_commands(observation)
+        if session_name is None:
+            return observation
         if (
             session_name is not None
             and self.interactive_session is not None
             and self.interactive_session.name != session_name
         ):
             return self._get_only_one_interactive_error_message_observation()
-        if session_name is not None:
-            observation = ""
-            for command in interactive_commands:
-                if command == "START":
-                    # Start the session if previous session does not exist
-                    if self.interactive_session is not None:
-                        return self._get_only_one_interactive_error_message_observation()
-                    self.interactive_session = get_interactive_session(
-                        self.container_name, "/" + self._repo_name, session_name
-                    )
-                elif command == "STOP":
-                    if self.interactive_session.session_process.poll() is None:
-                        self.logger.warning("Session did not quit successfully, terminating.")
-                        self.interactive_session.session_process.terminate()
-                    observation = f"Interactive session {session_name} stopped successfully"
+
+        observation = ""
+        for command in interactive_commands:
+            if command == "START":
+                # Start the session if previous session does not exist
+                if self.interactive_session is not None:
+                    return self._get_only_one_interactive_error_message_observation()
+                self.interactive_session = get_interactive_session(
+                    self.container_name, "/" + self._repo_name, session_name
+                )
+            elif command == "STOP":
+                if self.interactive_session.session_process.poll() is None:
+                    self.logger.warning("Session did not quit successfully, terminating.")
+                    self.interactive_session.session_process.terminate()
+                observation = f"Interactive session {session_name} stopped successfully"
+                self.interactive_session = None
+            else:
+                if self.interactive_session is None:
+                    self.logger.warning("Tried to run interactive commands without starting session")
+                    start_command = self.args.interactive_sessions_config[session_name].start_command
+                    observation = f"Interactive session {session_name} is not running! please start it first using `{start_command}`"
+                elif self.interactive_session and self.interactive_session.session_process.poll() is not None:
+                    start_command = self.args.interactive_sessions_config[session_name].start_command
+                    observation = f"Interactive session {session_name} was unexpectedly closed! Please start it again using `{start_command}`"
+                    self.communicate(self.args.interactive_sessions_config[session_name].exit_command)
                     self.interactive_session = None
                 else:
-                    if self.interactive_session is None:
-                        self.logger.warning("Tried to run interactive commands without starting session")
-                        start_command = self.args.interactive_sessions_config[session_name].start_command
-                        observation = f"Interactive session {session_name} is not running! please start it first using `{start_command}`"
-                    elif self.interactive_session and self.interactive_session.session_process.poll() is not None:
-                        start_command = self.args.interactive_sessions_config[session_name].start_command
-                        observation = f"Interactive session {session_name} was unexpectedly closed! Please start it again using `{start_command}`"
-                        self.communicate(self.args.interactive_sessions_config[session_name].exit_command)
-                        self.interactive_session = None
-                    else:
+                    try:
                         observation += self.communicate_session(
                             command, self.args.interactive_sessions_config[session_name].terminal_prompt_pattern
                         )
-                        observation += "\n"
+                    except TimeoutError:
+                        try:
+                            observation = self.interrupt_interactive(session_name=session_name)
+                            observation += "\nEXECUTION TIMED OUT"
+                        except Exception as e:
+                            observation += (
+                                "\nEXECUTION TIMED OUT AND INTERRUPT FAILED. TERMINATING INTERACTIVE SESSION."
+                            )
+                            self.logger.warning(f"Failed to interrupt container: {e}\nTERMINATING INTERACTIVE SESSION.")
+                            self.interactive_session.session_process.terminate()
+                            return observation
+                    except RuntimeError as e:
+                        observation += "\nCOMMAND FAILED TO EXECUTE. TERMINATING INTERACTIVE SESSION."
+                        self.logger.warning(f"Failed to execute command: {e}\nTERMINATING INTERACTIVE SESSION.")
+                        self.interactive_session.session_process.terminate()
+                        return observation
+                    except BrokenPipeError as e:
+                        observation += "\nBROKEN PIPE ERROR. TERMINATING INTERACTIVE SESSION."
+                        self.logger.error(f"Broken pipe error: {e}\nTERMINATING INTERACTIVE SESSION.")
+                        self.interactive_session.session_process.terminate()
+                        return observation
+                    except Exception:
+                        observation += "\nEXECUTION FAILED OR COMMAND MALFORMED"
+                        self.logger.exception("Unknown exception")
+                    observation += "\n"
         return observation
 
     def step(self, action: str) -> tuple[str | None, int, bool, AgentInfo]:
@@ -631,7 +658,7 @@ class SWEEnv(gym.Env):
             terminate_docker_compose(self.docker_compose)
         if self.interactive_session is not None:
             try:
-                self.interactive_session.terminate()
+                self.interactive_session.session_process.terminate()
             except KeyboardInterrupt:
                 raise
             except Exception as e:
@@ -1328,6 +1355,18 @@ class SWEEnv(gym.Env):
             else:
                 msg = f"Invalid command type: {command['type']}"
                 raise ValueError(msg)
+
+    def interrupt_interactive(self, session_name: str) -> None:
+        """
+        Send interrupt signal to interactive session several times to see if we can communicate with the process again.
+        """
+        for _ in range(3):
+            self.container_obj.exec_run(f"pkill -SIGINT {session_name}")
+        return read_session_with_timeout(
+            self.interactive_session.session_process,
+            terminal_pattern=self.args.interactive_sessions_config[session_name].terminal_prompt_pattern,
+            timeout_duration=5,
+        )
 
     def interrupt(self) -> None:
         """
