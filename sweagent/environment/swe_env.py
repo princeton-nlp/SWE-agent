@@ -634,8 +634,8 @@ class SWEEnv(gym.Env):
                 self.interactive_session.terminate()
             except KeyboardInterrupt:
                 raise
-            except:
-                self.logger.warning("Failed to stop interactive session")
+            except Exception as e:
+                self.logger.warning("Failed to stop interactive session: %s", str(e))
             else:
                 self.logger.info("Interactive session stopped")
         if self.container_obj is None:
