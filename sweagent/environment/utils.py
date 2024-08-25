@@ -23,6 +23,7 @@ from unidiff import PatchSet
 
 import docker
 from docker.models.containers import Container
+from sweagent.agent.interactive_commands import InteractiveSession
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
@@ -403,17 +404,17 @@ def get_docker_compose(docker_compose_path: Path) -> Path:
     return docker_compose_path
 
 
-def get_interactive_session(ctr_name: str, cwd: str, *args) -> subprocess.Popen:
+def get_interactive_session(ctr_name: str, cwd: str, session_name: str, *args) -> InteractiveSession:
     """
     Starts a new interacitve session on the given container name.
     Returns a subprocess.Popen object that is available for further read/writes for submitting commands and reading output.
     """
-    startup_cmd = ["docker", "exec", "-i", "-w", cwd, ctr_name, *args]
-    logger.debug("Starting interactive gdb session with command: %s", shlex.join(startup_cmd))
+    startup_cmd = ["docker", "exec", "-i", "-w", cwd, ctr_name, session_name, *args]
+    logger.debug(f"Starting interactive session {session_name} with command: {shlex.join(startup_cmd)}")
     session = subprocess.Popen(startup_cmd, stdin=PIPE, stdout=PIPE, stderr=STDOUT, text=True, bufsize=1)
     time.sleep(DOCKER_START_UP_DELAY)
     _ = read_with_timeout(session, lambda: list(), timeout_duration=1)
-    return session
+    return InteractiveSession(name=session_name, session_process=session)
 
 
 def _get_non_persistent_container(ctr_name: str, image_name: str) -> tuple[subprocess.Popen, set[str]]:

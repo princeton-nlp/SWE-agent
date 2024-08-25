@@ -11,7 +11,7 @@ import shlex
 import subprocess
 import time
 import traceback
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path, PurePath
 from typing import Any
 
@@ -27,6 +27,11 @@ import docker
 import docker.errors
 import docker.models.containers
 from sweagent import REPO_ROOT
+from sweagent.agent.interactive_commands import (
+    INTERACTIVE_SESSIONS_CONFIG,
+    InteractiveSession,
+    InteractiveSessionConfig,
+)
 from sweagent.environment.utils import (
     PROCESS_DONE_MARKER_END,
     PROCESS_DONE_MARKER_START,
@@ -56,7 +61,6 @@ LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500))
 AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
 PATH_TO_REQS = "/root/requirements.txt"
 PATH_TO_ENV_YML = "/root/environment.yml"
-GDB_TERMINAL_PATTERN = "(gdb) "
 
 
 @dataclass(frozen=True)
@@ -98,6 +102,10 @@ class EnvironmentArguments(FrozenSerializable):
     environment_setup: str | None = None
     # Only used when running on single issue. Path to local repository or github repository.
     repo_path: str = ""
+    # Interactive command configuration
+    interactive_sessions_config: dict[str, InteractiveSessionConfig] = field(
+        default_factory=lambda: INTERACTIVE_SESSIONS_CONFIG
+    )
 
     def __post_init__(self):
         if self.timeout is not None:
@@ -194,7 +202,7 @@ class SWEEnv(gym.Env):
         self.challenge: dict[str, Any] | None = None
         self._reset_container()
 
-        self.interactive_session: subprocess.Popen | None = None
+        self.interactive_session: InteractiveSession | None = None
 
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
@@ -467,6 +475,51 @@ class SWEEnv(gym.Env):
             out[f"edited_files{context_length}"] = value
         return out
 
+    def _get_only_one_interactive_error_message_observation(self):
+        exit_command = self.args.interactive_sessions_config[self.interactive_session.name].exit_command
+        return f"Interactive session already open. Please close the current interactive session: {self.interactive_session.name} with the command: `{exit_command}`"
+
+    def _handle_interactive_commands(self, observation):
+        session_name, interactive_commands = self.get_interactive_commands(observation)
+        if (
+            session_name is not None
+            and self.interactive_session is not None
+            and self.interactive_session.name != session_name
+        ):
+            return self._get_only_one_interactive_error_message_observation()
+        if session_name is not None:
+            observation = ""
+            for command in interactive_commands:
+                if command == "START":
+                    # Start the session if previous session does not exist
+                    if self.interactive_session is not None:
+                        return self._get_only_one_interactive_error_message_observation()
+                    self.interactive_session = get_interactive_session(
+                        self.container_name, "/" + self._repo_name, session_name
+                    )
+                elif command == "STOP":
+                    if self.interactive_session.session_process.poll() is None:
+                        self.logger.warning("Session did not quit successfully, terminating.")
+                        self.interactive_session.session_process.terminate()
+                    observation = f"Interactive session {session_name} stopped successfully"
+                    self.interactive_session = None
+                else:
+                    if self.interactive_session is None:
+                        self.logger.warning("Tried to run interactive commands without starting session")
+                        start_command = self.args.interactive_sessions_config[session_name].start_command
+                        observation = f"Interactive session {session_name} is not running! please start it first using `{start_command}`"
+                    elif self.interactive_session and self.interactive_session.session_process.poll() is not None:
+                        start_command = self.args.interactive_sessions_config[session_name].start_command
+                        observation = f"Interactive session {session_name} was unexpectedly closed! Please start it again using `{start_command}`"
+                        self.communicate(self.args.interactive_sessions_config[session_name].exit_command)
+                        self.interactive_session = None
+                    else:
+                        observation += self.communicate_session(
+                            command, self.args.interactive_sessions_config[session_name].terminal_prompt_pattern
+                        )
+                        observation += "\n"
+        return observation
+
     def step(self, action: str) -> tuple[str | None, int, bool, AgentInfo]:
         """
         Runs an action proposed by the agent in the environment and returns the corresponding output.
@@ -557,28 +610,7 @@ class SWEEnv(gym.Env):
                 observation = "Wrong flag!"
                 return observation, 0, False, info
 
-        session_name, interactive_commands = self.get_interactive_commands(observation)
-        if session_name is not None:
-            observation = ""
-            for command in interactive_commands:
-                if command == "START":
-                    # Start the session
-                    self.interactive_session = get_interactive_session(
-                        self.container_name, "/" + self._repo_name, "gdb"
-                    )
-                elif command == "STOP":
-                    if self.interactive_session.poll() is None:
-                        self.logger.warning("Session did not quit successfully, terminating.")
-                        self.interactive_session.terminate()
-                    observation = "Debug session stopped successfully"
-                    self.interactive_session = None
-                else:
-                    if self.interactive_session is None:
-                        self.logger.warning("Tried to run gdb commands without starting session")
-                        observation = "Debug session is not running! please start it first using `debug_start`"
-                    else:
-                        observation += self.communicate_session(command, GDB_TERMINAL_PATTERN)
-                        observation += "\n"
+        observation = self._handle_interactive_commands(observation)
 
         return observation, 0, False, info
 
@@ -943,9 +975,9 @@ class SWEEnv(gym.Env):
 
         try:
             cmd = input if input.endswith("\n") else input + "\n"
-            os.write(self.interactive_session.stdin.fileno(), cmd.encode())
+            os.write(self.interactive_session.session_process.stdin.fileno(), cmd.encode())
             time.sleep(0.03)
-            self.interactive_session.stdin.flush()
+            self.interactive_session.session_process.stdin.flush()
         except BrokenPipeError:
             traceback.print_exc()
             self.logger.error("Failed to communicate with session. Check docker logs for more information.")
@@ -953,13 +985,18 @@ class SWEEnv(gym.Env):
             raise RuntimeError(msg)
 
         self.logger.debug(f"Command: {input}")
-        if input.strip() == "quit":
-            # Give some time for gdb to stop
+        # if command is to quit the current interactive session, sleep for termination then exit with no observation
+        if (
+            input.strip()
+            in self.args.interactive_sessions_config[self.interactive_session.name].quit_commands_in_session
+        ):
             time.sleep(1)
             return ""
 
         try:
-            buffer = read_session_with_timeout(self.interactive_session, terminal_pattern, timeout_duration)
+            buffer = read_session_with_timeout(
+                self.interactive_session.session_process, terminal_pattern, timeout_duration
+            )
         except Exception:
             msg = f"Read with timeout failed on input:\n---\n{input}\n---"
             self.logger.error(msg)
@@ -1018,18 +1055,24 @@ class SWEEnv(gym.Env):
             session: session name for the commands or None if no commands found.
             commands: list of commands extracted from observation.
         """
-        # TODO: dont hardcode GDB
-        pattern = r"\<\<INTERACTIVE_GDB\|\|(.*)\|\|INTERACTIVE_GDB\>\>"
+        pattern = r"\<\<INTERACTIVE\|\|(.*)\|\|INTERACTIVE\>\>"
+        session_pattern = r"SESSION=(.*)"
+        session_name = ""
         commands = []
         for line in output.split("\n"):
             match = re.search(pattern, line, re.DOTALL)
             if match is None:
                 continue
-            commands.append(match.group(1))
-        if len(commands) > 0:
-            return "GDB", commands
-        else:
+            command = match.group(1)
+            match = re.search(session_pattern, command, re.DOTALL)
+            if match is None:
+                commands.append(command)
+            else:
+                session_name = match.group(1)
+        if not session_name:
             return None, []
+        else:
+            return session_name, commands
 
     def get_submission(self, output: str) -> str | None:
         """

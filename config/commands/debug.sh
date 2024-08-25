@@ -1,5 +1,5 @@
 _debug_command() {
-    echo "<<INTERACTIVE_GDB||$@||INTERACTIVE_GDB>>"
+    echo "<<INTERACTIVE||$@||INTERACTIVE>>"
 }
 
 # @yaml
@@ -26,6 +26,7 @@ debug_start() {
         return
     fi
     fp=$(realpath $1)
+    _debug_command "SESSION=gdb"
     _debug_command "START"
     _debug_command "file $fp"
     if [ ! -z "$2" ]
@@ -50,6 +51,7 @@ debug_add_breakpoint() {
         echo "Usage: debug_add_breakpoint <breakpoint>"
         return
     fi
+    _debug_command "SESSION=gdb"
     _debug_command 'break '$1
 }
 
@@ -57,6 +59,7 @@ debug_add_breakpoint() {
 # signature: debug_continue
 # docstring: Continues the program execution in the debug session.
 debug_continue() {
+    _debug_command "SESSION=gdb"
     _debug_command 'continue'
 }
 
@@ -71,9 +74,11 @@ debug_continue() {
 debug_step() {
     if [ -z "$1" ]
     then
+        _debug_command "SESSION=gdb"
         _debug_command 'stepi'
     elif [[ (("$1" -eq "$1") && ("$1" -gt "0")) ]] # Check if integer and positive
     then
+        _debug_command "SESSION=gdb"
         _debug_command 'stepi '$1
     else
         echo "Please provide a positive integer for number of instructions."
@@ -95,6 +100,7 @@ debug_exec() {
         echo "Usage: debug_exec <command>"
         return
     fi
+    _debug_command "SESSION=gdb"
     _debug_command "$1"
 }
 
@@ -102,6 +108,7 @@ debug_exec() {
 # signature: debug_stop
 # docstring: Stops the current debug session.
 debug_stop() {
+    _debug_command "SESSION=gdb"
     _debug_command "quit"
     _debug_command "STOP"
     unset INTERACTIVE_SESSION
