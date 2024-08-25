@@ -1360,12 +1360,12 @@ class SWEEnv(gym.Env):
         """
         Send interrupt signal to interactive session several times to see if we can communicate with the process again.
         """
-        for _ in range(3):
+        for _ in range(self.args.interactive_sessions_config[session_name].signal_for_interrupt_limit):
             self.container_obj.exec_run(f"pkill -SIGINT {session_name}")
         return read_session_with_timeout(
             self.interactive_session.session_process,
             terminal_pattern=self.args.interactive_sessions_config[session_name].terminal_prompt_pattern,
-            timeout_duration=5,
+            timeout_duration=self.args.interactive_sessions_config[session_name].timeout_duration_on_interrupt,
         )
 
     def interrupt(self) -> None:

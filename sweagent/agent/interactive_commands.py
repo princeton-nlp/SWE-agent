@@ -12,6 +12,8 @@ class InteractiveSessionConfig(FrozenSerializable):
     start_command: str
     exit_command: str
     quit_commands_in_session: list = field(default_factory=list)
+    signal_for_interrupt_limit: int = 3
+    timeout_duration_on_interrupt: int = 5
 
 
 @dataclass
