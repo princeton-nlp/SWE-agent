@@ -37,15 +37,15 @@ from sweagent.environment.utils import (
     copy_file_to_container,
     format_trajectory_markdown,
     get_container,
-    get_interactive_session_gdb,
     get_docker_compose,
     get_gh_issue_data,
     get_instances,
+    get_interactive_session,
     image_exists,
     parse_gh_issue_url,
+    read_session_with_timeout,
     read_with_timeout,
     read_with_timeout_experimental,
-    read_session_with_timeout,
     terminate_docker_compose,
 )
 from sweagent.types import AgentInfo
@@ -563,7 +563,9 @@ class SWEEnv(gym.Env):
             for command in interactive_commands:
                 if command == "START":
                     # Start the session
-                    self.interactive_session = get_interactive_session_gdb(self.container_name, "/" + self._repo_name)
+                    self.interactive_session = get_interactive_session(
+                        self.container_name, "/" + self._repo_name, "gdb"
+                    )
                 elif command == "STOP":
                     if self.interactive_session.poll() is None:
                         self.logger.warning("Session did not quit successfully, terminating.")
@@ -577,7 +579,7 @@ class SWEEnv(gym.Env):
                     else:
                         observation += self.communicate_session(command, GDB_TERMINAL_PATTERN)
                         observation += "\n"
-                    
+
         return observation, 0, False, info
 
     def close(self) -> None:
