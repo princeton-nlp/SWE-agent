@@ -30,9 +30,10 @@ debug_start() {
     _debug_command "file $fp"
     if [ ! -z "$2" ]
     then
-        _debug_command "set args $2"
+        _debug_command "set args ${@:2:$#}" # Set arguments from 2 until the end
     fi
     _debug_command "starti"
+    export INTERACTIVE_SESSION="gdb $@"
 }
 
 # @yaml
@@ -103,4 +104,5 @@ debug_exec() {
 debug_stop() {
     _debug_command "quit"
     _debug_command "STOP"
+    unset INTERACTIVE_SESSION
 }
