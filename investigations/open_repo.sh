@@ -19,6 +19,7 @@ fi
 echo "Preparing Docker image..."
 image_id=$($thisDir/instance_image.sh $instance_id)
 container_name=$instance_id
+repo_folder="/sympy__sympy"
 
 # Check if the container is already running
 existing_container=$(docker ps -q -f name=$instance_id)
@@ -43,7 +44,7 @@ else
         # Start code-server.
         # TODO: "sudo: systemctl: command not found"
         # TODO: Instead, check what the VSCode's Attach command does when it asks to auto-install code-server!
-        docker exec $container_name /bin/sh -c "TODO sudo systemctl enable --now code-server@\$USER"
+        docker exec $container_name /bin/sh -c "sudo systemctl enable --now code-server@\$USER"
     fi
 fi
 
@@ -56,4 +57,6 @@ docker ps
 # NOTE: You can stop the container like this -
 # docker stop $INSTANCE_ID
 
-code --remote container+$container_name:/sympy__sympy
+# TODO: This won't work. Always errors with:
+#           "Failed to connect to the remote extension host server (Error: No remote extension installed to resolve container.)"
+code --remote container+$container_name:$repo_folder
