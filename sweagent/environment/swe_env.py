@@ -36,6 +36,7 @@ from sweagent.environment.utils import (
     PROCESS_DONE_MARKER_END,
     PROCESS_DONE_MARKER_START,
     InvalidGithubURL,
+    NoOutputTimeoutError,
     PatchFormatter,
     attach_network_interface_to_container,
     copy_anything_to_container,
@@ -59,6 +60,7 @@ from sweagent.utils.log import default_logger, get_logger
 
 LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500))
 AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
+AGENT_ACTION_NO_OUTPUT_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_NO_OUTPUT_TIMEOUT", AGENT_ACTION_TIMEOUT))
 PATH_TO_REQS = "/root/requirements.txt"
 PATH_TO_ENV_YML = "/root/environment.yml"
 
@@ -521,12 +523,20 @@ class SWEEnv(gym.Env):
                 else:
                     try:
                         observation += self.communicate_session(
-                            command, self.args.interactive_sessions_config[session_name].terminal_prompt_pattern
+                            command,
+                            self.args.interactive_sessions_config[session_name].terminal_prompt_pattern,
+                            AGENT_ACTION_TIMEOUT,
+                            AGENT_ACTION_NO_OUTPUT_TIMEOUT,
                         )
-                    except TimeoutError:
+                    except TimeoutError as e:
                         try:
                             observation = self.interrupt_interactive(session_name=session_name)
                             observation += "\nEXECUTION TIMED OUT"
+                            observation += (
+                                f" BECAUSE NO OUTPUT WAS PRODUCED FOR MORE THAN {AGENT_ACTION_NO_OUTPUT_TIMEOUT} SECONDS"
+                                if isinstance(e, NoOutputTimeoutError)
+                                else f" BECAUSE THE COMMAND WAS RUNNING FOR MORE THAN {AGENT_ACTION_TIMEOUT} SECONDS"
+                            )
                         except Exception as e:
                             observation += (
                                 "\nEXECUTION TIMED OUT AND INTERRUPT FAILED. TERMINATING INTERACTIVE SESSION."
@@ -600,12 +610,22 @@ class SWEEnv(gym.Env):
         # Attempt to run action in container
         observation = ""
         try:
-            observation = self.communicate(input=action, timeout_duration=AGENT_ACTION_TIMEOUT, set_last_action=True)
+            observation = self.communicate(
+                input=action,
+                timeout_duration=AGENT_ACTION_TIMEOUT,
+                no_output_timeout_duration=AGENT_ACTION_NO_OUTPUT_TIMEOUT,
+                set_last_action=True,
+            )
         except TimeoutError as e:
             try:
                 observation += e.args[1] if len(e.args) > 1 else ""
                 observation += self.interrupt()
                 observation += "\nEXECUTION TIMED OUT"
+                observation += (
+                    f" BECAUSE NO OUTPUT WAS PRODUCED FOR MORE THAN {AGENT_ACTION_NO_OUTPUT_TIMEOUT} SECONDS"
+                    if isinstance(e, NoOutputTimeoutError)
+                    else f" BECAUSE THE COMMAND WAS RUNNING FOR MORE THAN {AGENT_ACTION_TIMEOUT} SECONDS"
+                )
             except RuntimeError as e:
                 observation += "\nEXECUTION TIMED OUT AND INTERRUPT FAILED. RESTARTING PROCESS."
                 info["exit_status"] = "early_exit"
@@ -841,6 +861,7 @@ class SWEEnv(gym.Env):
         self,
         input: str,
         timeout_duration: int | float = 25,
+        no_output_timeout_duration: int | float = 25,
     ) -> str:
         """Experimental version of `_communicate`"""
         assert self.container is not None
@@ -863,7 +884,9 @@ class SWEEnv(gym.Env):
             raise RuntimeError(msg)
 
         try:
-            buffer, exit_code = read_with_timeout_experimental(self.container, timeout_duration)
+            buffer, exit_code = read_with_timeout_experimental(
+                self.container, timeout_duration, no_output_timeout_duration
+            )
         except Exception:
             msg = f"Read with timeout failed on input:\n---\n{input}\n---"
             self.logger.error(msg)
@@ -890,19 +913,21 @@ class SWEEnv(gym.Env):
         self,
         input: str,
         timeout_duration: int | float = 25,
+        no_output_timeout_duration: int | float = 25,
     ) -> str:
         """Runs command in container and returns output
 
         Args:
             input: command to run in container
             timeout_duration: duration to wait for output
+            no_output_timeout_duration: duration to wait when the process stopped produce any output
         """
         assert self.container is not None
         communicate_method = keys_config.get(
             "SWE_AGENT_COMMUNICATE_METHOD", default="end-marker", choices=["end-marker", "processes"]
         )
         if communicate_method == "end-marker":
-            return self._communicate_experimental(input, timeout_duration)
+            return self._communicate_experimental(input, timeout_duration, no_output_timeout_duration)
         try:
             self.returncode = None
             cmd = input if input.endswith("\n") else input + "\n"
@@ -940,7 +965,14 @@ class SWEEnv(gym.Env):
         output = self._communicate(f"/bin/bash -n <<'EOF'\n{input}\nEOF\n")
         return output, self.returncode == 0
 
-    def communicate(self, input: str, timeout_duration: int | float = 25, *, set_last_action: bool = False) -> str:
+    def communicate(
+        self,
+        input: str,
+        timeout_duration: int | float = 25,
+        no_output_timeout_duration: int | float | None = None,
+        *,
+        set_last_action: bool = False,
+    ) -> str:
         """
         Sends input to container and returns output
 
@@ -952,6 +984,8 @@ class SWEEnv(gym.Env):
         Returns:
             output: output from container
         """
+        if no_output_timeout_duration is None:
+            no_output_timeout_duration = timeout_duration
         if input.strip() != "exit":
             self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
             output, valid = self._check_syntax(input)
@@ -960,6 +994,7 @@ class SWEEnv(gym.Env):
             output = self._communicate(
                 input,
                 timeout_duration=timeout_duration,
+                no_output_timeout_duration=no_output_timeout_duration,
             )
             self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
             self.communicate_output = output
@@ -968,7 +1003,7 @@ class SWEEnv(gym.Env):
                 # handling.
                 last_action_string = shlex.quote(input.strip())
                 input = f"export LAST_ACTION={last_action_string}"
-                self._communicate(input, timeout_duration=5)
+                self._communicate(input, timeout_duration=5, no_output_timeout_duration=5)
             return output
         else:
             self.container.terminate()
@@ -996,7 +1031,13 @@ class SWEEnv(gym.Env):
             raise RuntimeError(msg)
         return logs
 
-    def communicate_session(self, input: str, terminal_pattern: str, timeout_duration: int | float = 25) -> str:
+    def communicate_session(
+        self,
+        input: str,
+        terminal_pattern: str,
+        timeout_duration: int | float = 25,
+        no_output_timeout_duration: int | float = 25,
+    ) -> str:
         """
         Sends input to interactive_session and returns output
 
@@ -1033,7 +1074,7 @@ class SWEEnv(gym.Env):
 
         try:
             buffer = read_session_with_timeout(
-                self.interactive_session.session_process, terminal_pattern, timeout_duration
+                self.interactive_session.session_process, terminal_pattern, timeout_duration, no_output_timeout_duration
             )
         except Exception:
             msg = f"Read with timeout failed on input:\n---\n{input}\n---"
@@ -1398,6 +1439,9 @@ class SWEEnv(gym.Env):
             self.interactive_session.session_process,
             terminal_pattern=self.args.interactive_sessions_config[session_name].terminal_prompt_pattern,
             timeout_duration=self.args.interactive_sessions_config[session_name].timeout_duration_on_interrupt,
+            no_output_timeout_duration=self.args.interactive_sessions_config[
+                session_name
+            ].timeout_duration_on_interrupt,
         )
 
     def interrupt(self) -> str:
@@ -1408,7 +1452,9 @@ class SWEEnv(gym.Env):
         assert self.container_obj is not None
         pids = self.get_pids()
         for pid, _ in pids:
-            self.container_obj.exec_run(f"kill -9 {pid}")
+            # Sending signal several times ensures that the process is dead
+            for _ in range(3):
+                self.container_obj.exec_run(f"kill -9 {pid}")
         try:
             observation = read_with_timeout(self.container, self.get_pids, 20)
         except TimeoutError:

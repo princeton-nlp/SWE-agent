@@ -46,6 +46,9 @@ CTF_CHALLENGES_CATEGORIES = {
 logger = get_logger("env_utils")
 
 
+class NoOutputTimeoutError(TimeoutError): ...
+
+
 def get_data_path_name(data_path: str) -> str:
     """if data_path is a file, return the file stem
     elif it's a github url, return the owner__repo_name
@@ -212,7 +215,9 @@ def _check_for_too_many_non_unicode_bytes(buffer: bytes):
     raise UnicodeError(msg)
 
 
-def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration: int | float) -> tuple[str, str]:
+def read_with_timeout_experimental(
+    container: subprocess.Popen, timeout_duration: int | float, no_output_timeout_duration: int | float
+) -> tuple[str, str]:
     """
     Read data from a subprocess with a timeout.
     This function uses a file descriptor to read data from the subprocess in a non-blocking way.
@@ -223,6 +228,7 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
     Args:
         container: The subprocess container.
         timeout_duration: The timeout duration in seconds.
+        no_output_timeout_duration: The timeout duration to wait if no output is produced, in seconds.
 
     Returns:
         Output and exit code, both as strings (!)
@@ -232,7 +238,9 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
     """
     buffer = b""
     fd = container.stdout.fileno()
-    end_time = time.time() + timeout_duration
+    start_time = time.time()
+    end_time = start_time + timeout_duration
+    end_time_no_output = start_time + no_output_timeout_duration
 
     # Select is not available on windows
     is_windows = platform.system() == "Windows"
@@ -247,7 +255,9 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
             return True
         return bool(select.select([fd], [], [], 0.01)[0])
 
-    while time.time() < end_time:
+    process_done = False
+
+    while time.time() < min(end_time, end_time_no_output):
         if ready_to_read(fd):
             try:
                 data = os.read(fd, 4096)
@@ -255,8 +265,10 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
                 logger.error("BlockingIOError while reading from subprocess.", exc_info=True)
                 break
             if data:
+                end_time_no_output = time.time() + no_output_timeout_duration
                 buffer += data
                 if PROCESS_DONE_MARKER_START in buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n"):
+                    process_done = True
                     break
         time.sleep(0.01)  # Prevents CPU hogging
 
@@ -264,11 +276,17 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
     body = "\n".join(line for line in decoded.splitlines() if not line.startswith(PROCESS_DONE_MARKER_START))
 
     if container.poll() is not None:
-        msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {buffer.decode()}"
+        msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {decoded}"
         raise RuntimeError(msg)
-    if time.time() >= end_time:
-        msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}"
-        raise TimeoutError(msg, body)
+
+    current_time = time.time()
+    if not process_done and current_time >= min(end_time, end_time_no_output):
+        if current_time >= end_time:
+            msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {decoded}"
+            raise TimeoutError(msg, body)
+        else:
+            msg = f"No output timeout reached while reading from subprocess.\nCurrent buffer: {decoded}"
+            raise NoOutputTimeoutError(msg, body)
 
     _check_for_too_many_non_unicode_bytes(buffer=buffer)
     _results = PROCESS_DONE_REGEX.search(decoded)
@@ -276,10 +294,15 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
         msg = f"Could not find process done marker in last line: {decoded=}, {body=}"
         raise ValueError(msg)
     exit_code = _results.group(1)
-    return body, exit_code
+    return body.replace(f"{PROCESS_DONE_MARKER_START}{exit_code}{PROCESS_DONE_MARKER_END}", ""), exit_code
 
 
-def read_session_with_timeout(session: subprocess.Popen, terminal_pattern: str, timeout_duration: int | float) -> str:
+def read_session_with_timeout(
+    session: subprocess.Popen,
+    terminal_pattern: str,
+    timeout_duration: int | float,
+    no_output_timeout_duration: int | float,
+) -> str:
     """
     Read data from a subprocess with a timeout.
     This function uses a file descriptor to read data from the subprocess in a non-blocking way.
@@ -297,7 +320,9 @@ def read_session_with_timeout(session: subprocess.Popen, terminal_pattern: str, 
     """
     buffer = b""
     fd = session.stdout.fileno()
-    end_time = time.time() + timeout_duration
+    start_time = time.time()
+    end_time = start_time + timeout_duration
+    end_time_no_output = start_time + no_output_timeout_duration
 
     # Select is not available on windows
     import select
@@ -305,7 +330,8 @@ def read_session_with_timeout(session: subprocess.Popen, terminal_pattern: str, 
     def ready_to_read(fd) -> bool:
         return bool(select.select([fd], [], [], 0.01)[0])
 
-    while time.time() < end_time:
+    command_done = False
+    while time.time() < min(end_time, end_time_no_output):
         if ready_to_read(fd):
             try:
                 data = os.read(fd, 4096)
@@ -313,20 +339,29 @@ def read_session_with_timeout(session: subprocess.Popen, terminal_pattern: str, 
                 logger.error("BlockingIOError while reading from subprocess.", exc_info=True)
                 break
             if data:
+                end_time_no_output = time.time() + no_output_timeout_duration
                 buffer += data
                 if terminal_pattern in buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n"):
+                    command_done = True
                     break
         time.sleep(0.01)  # Prevents CPU hogging
 
-    if session.poll() is not None:
-        msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {buffer.decode()}"
-        raise RuntimeError(msg)
-    if time.time() >= end_time:
-        msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}"
-        raise TimeoutError(msg)
-
     decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
-    return "\n".join(line for line in decoded.splitlines() if not line.startswith(terminal_pattern))
+    body = "\n".join(line for line in decoded.splitlines() if not line.startswith(terminal_pattern))
+
+    if session.poll() is not None:
+        msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {decoded}"
+        raise RuntimeError(msg)
+    current_time = time.time()
+    if not command_done and current_time >= min(end_time, end_time_no_output):
+        if current_time >= end_time:
+            msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {decoded}"
+            raise TimeoutError(msg, body)
+        else:
+            msg = f"No output timeout reached while reading from subprocess.\nCurrent buffer: {decoded}"
+            raise NoOutputTimeoutError(msg, body)
+
+    return body
 
 
 def get_background_pids(container_obj: Container):
