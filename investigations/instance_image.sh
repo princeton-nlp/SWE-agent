@@ -22,7 +22,6 @@ image_exists=$(docker images -q $image_id)
 
 if [[ -z $image_exists ]]; then
   # Create image.
-  echo -e "Creating Docker image..."
   cd $thisDir/..
   python3 run.py \
     --model_name "claude-sonnet-3.5" \
@@ -35,7 +34,4 @@ if [[ -z $image_exists ]]; then
   # Install extra dependencies.
   $thisDir/setup_repo_image.sh $image_id
 fi
-
-# Print image_id.
-echo "$image_id"
 

@@ -15,11 +15,16 @@ if [[ -z $instance_id ]]; then
   exit 1
 fi
 
+# Get ready...
+image_id=$(python3 $thisDir/instance_data.py $instance_id)
+container_name=$instance_id
+# TODO: Get correct repo folder from instance_id.
+repo_folder="/sympy__sympy"
+
 # Get or create image and image_id from instance_id.
 echo "Preparing Docker image..."
-image_id=$($thisDir/instance_image.sh $instance_id)
-container_name=$instance_id
-repo_folder="/sympy__sympy"
+$thisDir/instance_image.sh $instance_id
+
 
 # Check if the container is already running
 existing_container=$(docker ps -q -f name=$instance_id)
@@ -34,22 +39,17 @@ else
     else
         echo "Creating and starting a new container with name $instance_id."
 
-        # Start the container and let it run indefinitely:
+        # Start the container and let it run indefinitely (in detached mode):
         docker run -d --name $container_name $image_id sleep infinity
+
+        # Give it a sec.
         sleep 2
 
-        # Install things.
-        $thisDir/setup_repo_image.sh $container_name
-        
-        # Start code-server.
-        # TODO: "sudo: systemctl: command not found"
-        # TODO: Instead, check what the VSCode's Attach command does when it asks to auto-install code-server!
-        docker exec $container_name /bin/sh -c "sudo systemctl enable --now code-server@\$USER"
+        # NOTE: We don't need to install anything.
+        # # Install things.
+        # $thisDir/setup_repo_image.sh $container_name
     fi
 fi
-
-# Give it a sec.
-sleep 1
 
 # Check that its running:
 docker ps
@@ -57,6 +57,7 @@ docker ps
 # NOTE: You can stop the container like this -
 # docker stop $INSTANCE_ID
 
-# TODO: This won't work. Always errors with:
-#           "Failed to connect to the remote extension host server (Error: No remote extension installed to resolve container.)"
-code --remote container+$container_name:$repo_folder
+# TODO: Need to figure out in-developmen VSCode CLI features:
+# see: https://github.com/microsoft/vscode-remote-release/issues/5278#issuecomment-1408712695
+# code --remote container+$container_name:$repo_folder
+code --folder-uri vscode-remote://attached-container+$(printf "$container_name" | xxd -p)$repo_folder
