@@ -118,3 +118,13 @@ command_files:
 - config/commands/forfeit.sh
 parse_command: ParseCommandDetailed
 history_processor: Last5Observations
+blocklist:
+- vim
+- vi
+- emacs
+- nano
+- nohup
+- gdb
+blocklist_error_template: |
+  Interactive operation '{name}' is not supported by this environment.
+  Please consider using one of the interactive commands available to you in this environment.
