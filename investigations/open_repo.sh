@@ -18,8 +18,7 @@ fi
 # Get ready...
 image_id=$(python3 $thisDir/instance_data.py $instance_id)
 container_name=$instance_id
-# TODO: Get correct repo folder from instance_id.
-repo_folder="/sympy__sympy"
+repo_folder="/${instance_id%-*}"
 
 # Get or create image and image_id from instance_id.
 echo "Preparing Docker image..."
