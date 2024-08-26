@@ -318,8 +318,6 @@ class SWEEnv(gym.Env):
                 self.communicate("export $(xargs </.env)")
                 envs = self.communicate("env")
                 self.logger.debug(f"Environment variables restored from the image:\n{envs}\n")
-                if apply_test_patch:
-                    self._apply_test_patch()
                 return None, info
             else:
                 self.logger.info(f"Cached image {cached_image} not found, rebuilding task environment...")
@@ -378,6 +376,10 @@ class SWEEnv(gym.Env):
             self.install_env()
         # Install mypy for linting purposes
         self.communicate_with_handling("pip install flake8", error_msg="Failed to install flake8 (lint library)")
+        
+        # Apply patch before committing.
+        if apply_test_patch:
+            self._apply_test_patch()
 
         if self.args.cache_task_images:
             envs = self.communicate("env")
@@ -387,8 +389,6 @@ class SWEEnv(gym.Env):
             self.container_obj.commit(cached_image)
             self.logger.info(f"Container with environment {self.container_obj.id} cached as image {cached_image}")
 
-        if apply_test_patch:
-            self._apply_test_patch()
         # Write any metadata to info if necessary
         return None, info
 
