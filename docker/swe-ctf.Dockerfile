@@ -65,6 +65,7 @@ RUN cd /opt && git clone https://github.com/RsaCtfTool/RsaCtfTool.git && apt-get
 COPY docker/number_theory__fixed /opt/RsaCtfTool/lib/number_theory.py
 ENV PATH=$PATH:/opt/RsaCtfTool
 ENV PYTHONUNBUFFERED=1
+ENV PWNLIB_NOTERM=1
 
 WORKDIR /
 

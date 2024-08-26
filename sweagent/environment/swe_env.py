@@ -502,7 +502,10 @@ class SWEEnv(gym.Env):
                 if self.interactive_session is not None:
                     return self._get_only_one_interactive_error_message_observation()
                 self.interactive_session = get_interactive_session(
-                    self.container_name, "/" + self._repo_name, session_name
+                    self.container_name,
+                    "/" + self._repo_name,
+                    session_name,
+                    self.args.interactive_sessions_config[session_name].cmdline,
                 )
             elif command == "STOP":
                 if self.interactive_session.session_process.poll() is None:

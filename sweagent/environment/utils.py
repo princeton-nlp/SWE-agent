@@ -443,12 +443,12 @@ def get_docker_compose(docker_compose_path: Path) -> Path:
     return docker_compose_path
 
 
-def get_interactive_session(ctr_name: str, cwd: str, session_name: str, *args) -> InteractiveSession:
+def get_interactive_session(ctr_name: str, cwd: str, session_name: str, cmdline: str, *args) -> InteractiveSession:
     """
     Starts a new interacitve session on the given container name.
     Returns a subprocess.Popen object that is available for further read/writes for submitting commands and reading output.
     """
-    startup_cmd = ["docker", "exec", "-i", "-w", cwd, ctr_name, session_name, *args]
+    startup_cmd = ["docker", "exec", "-i", "-w", cwd, ctr_name, cmdline, *args]
     logger.debug(f"Starting interactive session {session_name} with command: {shlex.join(startup_cmd)}")
     session = subprocess.Popen(startup_cmd, stdin=PIPE, stdout=PIPE, stderr=STDOUT, text=True, bufsize=1)
     time.sleep(DOCKER_START_UP_DELAY)
