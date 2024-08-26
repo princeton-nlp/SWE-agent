@@ -398,6 +398,7 @@ class SWEEnv(gym.Env):
         """
         assert self.record is not None
         path_to_patch = "test.patch"
+        self.logger.info("Applying test patch...")
         with open(path_to_patch, "w") as f:
             f.write(self.record["test_patch"])
         subprocess.run(
@@ -405,8 +406,10 @@ class SWEEnv(gym.Env):
             shell=True,
             check=False,
         )
+        instance_id = self.record["instance_id"]
+        repo_path = instance_id.rsplit('-', 1)[0]
         self.communicate_with_handling(
-            input="git apply /root/test.patch",
+            input=f"cd {repo_path} && git apply /root/test.patch",
             error_msg="Failed to apply test patch correctly",
         )
         os.remove(path_to_patch)

@@ -345,7 +345,9 @@ class Main:
             raise _ContinueLoop
         logger.info("▶️  Beginning task " + str(index))
 
-        observation, info = self.env.reset(index)
+        # NOTE: We always start from knowing the test patch first.
+        apply_test_patch = True
+        observation, info = self.env.reset(index, apply_test_patch)
         if info is None:
             raise _ContinueLoop
         
