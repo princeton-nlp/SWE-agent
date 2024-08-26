@@ -16,7 +16,7 @@ total_cost_limit_usd = 40 * 3
 install_env="install"
 
 def trajectory_dir():
-    return f"trajectories/{os.getlogin()}/{model_name}__{Path(dataset_name).stem}__{config}__t-{temperature:.2f}__p-{top_p:.2f}__c-{per_instance_cost_limit:.2f}__{install_env}-1"
+    return f"trajectories/{os.getlogin()}/{model_name}__{Path(dataset_name).stem}__{config}__t-{temperature:.2f}__p-{top_p:.2f}__c-{per_instance_cost_limit_usd:.2f}__{install_env}-1"
 
 def run_python_cmd(cmd: str, args: dict[str, str]):
     # convert args to a string
