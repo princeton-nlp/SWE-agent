@@ -24,6 +24,7 @@ from unidiff import PatchSet
 import docker
 import docker.types
 from docker.models.containers import Container
+from sweagent.agent.interactive_commands import InteractiveSession
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
@@ -187,7 +188,9 @@ def read_with_timeout(container: subprocess.Popen, pid_func: Callable, timeout_d
     if time.time() >= end_time:
         msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}\nRunning PIDs: {pids}"
         raise TimeoutError(msg)
-    return buffer.decode()
+
+    decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
+    return "\n".join(line for line in decoded.splitlines())
 
 
 PROCESS_DONE_MARKER_START = "///PROCESS-DONE:"
@@ -257,22 +260,73 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
                     break
         time.sleep(0.01)  # Prevents CPU hogging
 
+    decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
+    body = "\n".join(line for line in decoded.splitlines() if not line.startswith(PROCESS_DONE_MARKER_START))
+
     if container.poll() is not None:
         msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {buffer.decode()}"
         raise RuntimeError(msg)
     if time.time() >= end_time:
         msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}"
-        raise TimeoutError(msg)
+        raise TimeoutError(msg, body)
 
     _check_for_too_many_non_unicode_bytes(buffer=buffer)
-    decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
-    body = "\n".join(line for line in decoded.splitlines() if not line.startswith(PROCESS_DONE_MARKER_START))
     _results = PROCESS_DONE_REGEX.search(decoded)
     if _results is None:
         msg = f"Could not find process done marker in last line: {decoded=}, {body=}"
         raise ValueError(msg)
     exit_code = _results.group(1)
     return body, exit_code
+
+
+def read_session_with_timeout(session: subprocess.Popen, terminal_pattern: str, timeout_duration: int | float) -> str:
+    """
+    Read data from a subprocess with a timeout.
+    This function uses a file descriptor to read data from the subprocess in a non-blocking way.
+
+    Args:
+        session: The session subprocess.
+        terminal_pattern: the terminal pattern to indicate end of output.
+        timeout_duration: The timeout duration in seconds.
+
+    Returns:
+        Output
+
+    Raises:
+        TimeoutError: If the timeout duration is reached while reading from the subprocess.
+    """
+    buffer = b""
+    fd = session.stdout.fileno()
+    end_time = time.time() + timeout_duration
+
+    # Select is not available on windows
+    import select
+
+    def ready_to_read(fd) -> bool:
+        return bool(select.select([fd], [], [], 0.01)[0])
+
+    while time.time() < end_time:
+        if ready_to_read(fd):
+            try:
+                data = os.read(fd, 4096)
+            except BlockingIOError:
+                logger.error("BlockingIOError while reading from subprocess.", exc_info=True)
+                break
+            if data:
+                buffer += data
+                if terminal_pattern in buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n"):
+                    break
+        time.sleep(0.01)  # Prevents CPU hogging
+
+    if session.poll() is not None:
+        msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {buffer.decode()}"
+        raise RuntimeError(msg)
+    if time.time() >= end_time:
+        msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}"
+        raise TimeoutError(msg)
+
+    decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
+    return "\n".join(line for line in decoded.splitlines() if not line.startswith(terminal_pattern))
 
 
 def get_background_pids(container_obj: Container):
@@ -352,6 +406,19 @@ def get_docker_compose(docker_compose_path: Path) -> Path:
     if error:
         logger.error(f"Unexpected compose setup error: {error}")
     return docker_compose_path
+
+
+def get_interactive_session(ctr_name: str, cwd: str, session_name: str, *args) -> InteractiveSession:
+    """
+    Starts a new interacitve session on the given container name.
+    Returns a subprocess.Popen object that is available for further read/writes for submitting commands and reading output.
+    """
+    startup_cmd = ["docker", "exec", "-i", "-w", cwd, ctr_name, session_name, *args]
+    logger.debug(f"Starting interactive session {session_name} with command: {shlex.join(startup_cmd)}")
+    session = subprocess.Popen(startup_cmd, stdin=PIPE, stdout=PIPE, stderr=STDOUT, text=True, bufsize=1)
+    time.sleep(DOCKER_START_UP_DELAY)
+    _ = read_with_timeout(session, lambda: list(), timeout_duration=1)
+    return InteractiveSession(name=session_name, session_process=session)
 
 
 def _get_container_mounts_list(container_mounts: list[str]) -> list[docker.types.Mount]:
