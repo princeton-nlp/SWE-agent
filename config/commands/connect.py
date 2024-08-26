@@ -4,6 +4,9 @@ import ast
 import cmd
 import argparse
 from pwn import *
+import setproctitle
+
+setproctitle.setproctitle("connect")
 
 BUFFER_SIZE = 1024
 SERVER_TIMEOUT = 10
