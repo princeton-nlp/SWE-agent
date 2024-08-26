@@ -27,17 +27,16 @@ def generate_cached_image_id(instance_id: str, environment_setup: str = "no_setu
     repo = row["repo"].iloc[0]
     base_commit = row["base_commit"].iloc[0]
 
-    # Create inputs list
+    # Create inputs list and generate final label
     inputs: list[str] = [
         repo,
         base_commit,
         environment_setup,
     ]
-
-    # Generate tag
     tag = hashlib.sha256("".join(inputs).encode()).hexdigest()[:50]
+    image_id = f"{cached_image_prefix}{tag}"
 
-    return f"{cached_image_prefix}{tag}"
+    return image_id
 
 
 if __name__ == "__main__":

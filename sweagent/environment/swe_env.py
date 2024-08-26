@@ -198,8 +198,9 @@ class SWEEnv(gym.Env):
             self.args.environment_setup or "no_setup",
         ]
         tag = hashlib.sha256("".join(inputs).encode()).hexdigest()[:50]
-        self.logger.info(f"CACHED_IMAGE={self.cached_image_prefix}{tag} with inputs={json.dumps(inputs)}")
-        return f"{self.cached_image_prefix}{tag}"
+        image_id = f"{self.cached_image_prefix}{tag}"
+        self.logger.info(f"CACHED_IMAGE={image_id} with inputs={json.dumps(inputs)}")
+        return image_id
 
     def add_hook(self, hook: EnvHook):
         """Add `EnvHook` to the environment.
