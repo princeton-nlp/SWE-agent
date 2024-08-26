@@ -16,18 +16,17 @@ if [[ -z $instance_id ]]; then
 fi
 
 # Get ready...
-image_id=$(python3 $thisDir/instance_data.py $instance_id)
+image_id=$(python3 $thisDir/investigations/instance_data.py $instance_id)
 container_name=$instance_id
 repo_folder="/${instance_id%-*}"
 
 # Get or create image and image_id from instance_id.
 echo "Preparing Docker image..."
-$thisDir/instance_image.sh $instance_id
+$thisDir/investigations/instance_image.sh $instance_id
 
 
 # Check if the container is already running
 existing_container=$(docker ps -q -f name=$instance_id)
-echo "DDBG $existing_container"
 if [ "$existing_container" ]; then
     echo "Container with name $instance_id is already running."
 else
@@ -46,7 +45,7 @@ else
 
         # NOTE: We don't need to install anything.
         # # Install things.
-        # $thisDir/setup_repo_image.sh $container_name
+        # $thisDir/investigations/setup_repo_image.sh $container_name
     fi
 fi
 
