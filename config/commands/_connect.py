@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
 
+
+"""This helper command is used for interacting with a remote server.
+It opens a shell-like connection to a server, which allows sending and retrieving content from the server.
+
+Usage:
+    python _connect.py
+"""
+
 import ast
 import cmd
-import argparse
 from pwn import *
 import setproctitle
 
@@ -11,37 +18,18 @@ setproctitle.setproctitle("connect")
 BUFFER_SIZE = 1024
 SERVER_TIMEOUT = 10
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(description="Connect to a remote server")
-
-    # Add arguments for IP and port
-    parser.add_argument("server_address", type=str, help="Server address")
-    parser.add_argument("port", type=int, help="Port number")
-
-    # Parse the arguments
-    args = parser.parse_args()
-
-    return args
-
 
 class NetcatShell(cmd.Cmd):
     intro = "Welcome to the netcat shell. Type help or ? to list commands.\n"
     server = None
-
-    def __init__(self, server_address: str, port: int, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.ip_address = server_address
-        self.port = port
-
-    def preloop(self):
-        self.do_connect()
 
     prompt = "(nc) "
     def do_connect(self, arg=""):
         """
         Connecting to the server
         """
-        self.server = remote(self.ip_address, self.port)
+        args = arg.split()
+        self.server = remote(args[0], args[1])
         data_received_from_server = self._recv()
         if data_received_from_server:
             print("\n-------SERVER RESPONSE-------\n\n", data_received_from_server, "\n\n-------END OF RESPONSE-------\n")
@@ -74,5 +62,4 @@ class NetcatShell(cmd.Cmd):
         return True
 
 if __name__ == "__main__":
-    args = parse_arguments()
-    NetcatShell(args.server_address, args.port).cmdloop()
+    NetcatShell().cmdloop()

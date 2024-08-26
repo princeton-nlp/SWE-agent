@@ -63,6 +63,7 @@ RUN pip install -r /root/requirements.txt && rm -f /root/requirements.txt
 
 RUN cd /opt && git clone https://github.com/RsaCtfTool/RsaCtfTool.git && apt-get install -y libgmp3-dev libmpc-dev && cd RsaCtfTool && pip3 install -r "requirements.txt"
 ENV PATH=$PATH:/opt/RsaCtfTool
+ENV PWNLIB_NOTERM=1
 
 WORKDIR /
 

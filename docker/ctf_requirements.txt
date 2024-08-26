@@ -5,3 +5,4 @@ pycryptodome
 mpmath
 sympy
 ruff
+setproctitle
