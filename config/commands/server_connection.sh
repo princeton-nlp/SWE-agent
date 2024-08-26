@@ -4,7 +4,7 @@ _connect_command() {
 
 # @yaml
 # signature: connect_start <server_address> <port>
-# docstring: Starts a
+# docstring: Starts a new interactive connection to the server address and port.
 # arguments:
 #   server_address:
 #     type: string
