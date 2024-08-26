@@ -1458,11 +1458,15 @@ class SWEEnv(gym.Env):
             # Sending signal several times ensures that the process is dead
             for _ in range(3):
                 self.container_obj.exec_run(f"kill -9 {pid}")
+        observation = ""
         try:
-            observation = read_with_timeout(self.container, self.get_pids, 20)
+            observation += read_with_timeout(self.container, self.get_pids, 20)
         except TimeoutError:
             pass
         try:
+            # This is a workaround because of bash behaviour
+            # when sometimes we get the prints of Killed after we press some "Enter" in stdin
+            self.communicate(input="echo 'interrupted'", timeout_duration=5)
             output = self.communicate(input="echo 'interrupted'", timeout_duration=5)
             assert output.strip().endswith("interrupted"), "container health check failed"
         except TimeoutError:
