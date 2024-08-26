@@ -22,6 +22,7 @@ from git import InvalidGitRepositoryError, Repo
 from unidiff import PatchSet
 
 import docker
+import docker.types
 from docker.models.containers import Container
 from sweagent.agent.interactive_commands import InteractiveSession
 from sweagent.utils.config import keys_config
@@ -420,12 +421,27 @@ def get_interactive_session(ctr_name: str, cwd: str, session_name: str, cmdline:
     return InteractiveSession(name=session_name, session_process=session)
 
 
-def _get_non_persistent_container(ctr_name: str, image_name: str) -> tuple[subprocess.Popen, set[str]]:
+def _get_container_mounts_list(container_mounts: list[str]) -> list[docker.types.Mount]:
+    try:
+        for i in range(len(container_mounts)):
+            path = Path(container_mounts[i]).absolute()
+            if path.is_dir():
+                container_mounts[i] = docker.types.Mount(source=str(path), target=f"/{path.name}")
+        return container_mounts
+    except Exception:
+        logger.warning("Failed to process container mounts, skipping mount.")
+        return []
+
+
+def _get_non_persistent_container(
+    ctr_name: str, image_name: str, container_mounts: list[str]
+) -> tuple[subprocess.Popen, set[str]]:
     startup_cmd = [
         "docker",
         "run",
         "-i",
         "--rm",
+        *[item for mount in container_mounts for item in ("-v", f"{Path(mount).absolute()}:/{Path(mount).name}")],
         "--name",
         ctr_name,
         image_name,
@@ -453,7 +469,7 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> tuple[subpr
 
 
 def _get_persistent_container(
-    ctr_name: str, image_name: str, persistent: bool = False
+    ctr_name: str, image_name: str, container_mounts: list[str], persistent: bool = False
 ) -> tuple[subprocess.Popen, set[str]]:
     client = docker.from_env()
     containers = client.containers.list(all=True, filters={"name": ctr_name})
@@ -471,6 +487,7 @@ def _get_persistent_container(
             msg = f"Unexpected container status: {container_obj.status}"
             raise RuntimeError(msg)
     else:
+        container_mounts = _get_container_mounts_list(container_mounts)
         container_obj = client.containers.run(
             image_name,
             command="/bin/bash -l -m",
@@ -479,6 +496,7 @@ def _get_persistent_container(
             tty=True,
             detach=True,
             auto_remove=not persistent,
+            mounts=container_mounts,
         )
         container_obj.start()
     startup_cmd = [
@@ -527,7 +545,9 @@ def _get_persistent_container(
     return container, {str(bash_pid), "1"}
 
 
-def get_container(ctr_name: str, image_name: str, persistent: bool = False) -> tuple[subprocess.Popen, set]:
+def get_container(
+    ctr_name: str, image_name: str, container_mounts: list[str], persistent: bool = False
+) -> tuple[subprocess.Popen, set]:
     """
     Get a container object for a given container name and image name
 
@@ -547,9 +567,9 @@ def get_container(ctr_name: str, image_name: str, persistent: bool = False) -> t
         raise RuntimeError(msg)
 
     if persistent:
-        return _get_persistent_container(ctr_name, image_name)
+        return _get_persistent_container(ctr_name, image_name, container_mounts=container_mounts)
     else:
-        return _get_non_persistent_container(ctr_name, image_name)
+        return _get_non_persistent_container(ctr_name, image_name, container_mounts=container_mounts)
 
 
 def image_exists(image_name: str) -> bool:
@@ -691,6 +711,7 @@ class InstanceBuilder:
         self.args["problem_statement_source"] = "online"
 
     def set_server_description(self, server_name: str | None, port: int | None) -> None:
+        """For CTF challenges"""
         if server_name is None or port is None:
             self.args["challenge"]["server_description"] = ""
             return
@@ -703,7 +724,8 @@ class InstanceBuilder:
                 f"The challenge web server is running on `{server_name}` port `{port}` and you can access it from within the container environment using `nc {server_name}:{port}`."
             )
 
-    def set_problem_statement_from_challenge_json(self, file_path: str) -> str:
+    def set_problem_statement_from_challenge_json(self, file_path: str) -> None:
+        """For CTF challenges"""
         challenge = json.loads(Path(file_path).read_text())
         self.args["challenge"] = challenge
         self.args["challenge"]["files"] = challenge.get("files", "No files are provided in this challenge.")
@@ -717,6 +739,10 @@ class InstanceBuilder:
         self.args["challenge"]["file_path"] = file_path
         self.set_server_description(self.args["challenge"]["server_name"], self.args["challenge"]["port"])
         self.set_problem_statement_from_text(f"{challenge['name']} {challenge['description']}")
+        self.args["instance_id"] = (
+            # sanitize 'name' to only alphanumeric characters
+            challenge.get("category", "misc") + "_" + "".join(a for a in self.args["challenge"]["name"] if a.isalnum())
+        )
 
     def set_problem_statement_from_file(self, file_path: str):
         if Path(file_path).name == "challenge.json":

@@ -51,20 +51,21 @@ instance_template: |-
 
   2. Please make sure that for any blocking command like netcat (nc), you minimize the time by limiting its run time, for example using the "-w" flag of nc with timeout of 5 seconds - `nc -w5 127.0.0.1 80`.
 
-  3. Try to AVOID brute force attacks, but when you encounter a brute force attack, please use a script to do the brute force instead of trying manual attempts.
+  3. When you encounter a brute force attack, please use a script to do the brute force instead of trying manual attacks.
 
   4. Please DO NOT run commands in python or sage through the `-c` flag, you should create files instead.
 
-  5. Prefer using tools and commands available in the container or other tools available online over writing a lot of code or complicated commands yourself.
-     In particular, prefer using `open` instead of `cat` and `search_file` instead of `grep`, etc.
+  5. Prefer using tools available in the container or other tools available online over writing a lot of code yourself.
 
-  6. DO NOT run any command that produces binary output! Instead try to use `hexdump` or `xxd`.
+  6. Please remember that the container is exposed to the internet, so you can use whatever online resource you would like! Use it wisely!
 
-  7. Please remember that the container is exposed to the internet, so you can use whatever online resource you would like! Use it wisely!
+  7. YOU CAN SOLVE THE CHALLENGES BY YOURSELF COMPLETELY - I TRUST IN YOU!
 
-  8. Do not use any interactive commands AT ALL! Interactive commands are only available through the commands supplied to you at the beginning.
+  {gtc_prologue}
 
-  9. YOU CAN SOLVE THE CHALLENGES BY YOURSELF COMPLETELY - I TRUST IN YOU!
+  {failed_attempts_summary}
+
+  {gtc_epilogue}
 
   (Open file: {open_file})
   (Current directory: {working_dir})
@@ -107,49 +108,80 @@ command_files:
 - config/commands/submit_ctf.sh
 - config/commands/decompile.py
 - config/commands/disassemble.py
+- config/commands/forfeit.sh
 parse_command: ParseCommandDetailed
 history_processor: Last5Observations
-demonstration_template: |
-  Here is a demonstration of how to correctly accomplish this task.
-  It is included to show you how to correctly use the interface.
-  You do not need to follow exactly what is done in the demonstration.
-  --- DEMONSTRATION ---
-  {demonstration}
-  --- END OF DEMONSTRATION ---
-demonstrations:
-- trajectories/demonstrations/ctf/crypto/katy.traj
-- trajectories/demonstrations/ctf/crypto/BabyTimeCapsule.traj
-summarizer_config:
-  function: LMSummarizer
-  window_length: 105
-  system_template: |-
-    SETTING: You are a skilled cybersecurity professional and top CTF player.
-    You are currently playing as part of a team in a CTF competition.
+review_loop_config:
+  review_loop_classname: ReviewLoop
+  reviewer_classname: CTFSummarizingReviewer
+  reviewer_config:
+    system_template: |
+      SETTING: You are a skilled cybersecurity professional and top CTF player.
+      Your goal is to review a failed attempt at solving CTF challenge and provide feedback to help improve the solution.
 
-    Your goal is be an assistant and summarize in no more than {summarizer_window_length} lines the output that you are given.
-    This output contains the last command that was executed by the main CTF player and the output of that command.
+      INPUTS
 
-    You should include less than {summarizer_window_length} lines in your summary, please make sure that your summary is helpful in the sense of helping
-    your team member to solve the challenge and get the flag. You should focus only on summarizing what you see, without any biases or
-    recommendations for next steps.
-  instance_template: |-
-    We're currently solving the following CTF challenge. The CTF challenge is a {category_friendly} problem named "{name}", worth {points} points. The description is:
-    {description}
+      **INPUT 1**: Problem statement/challenge
+      **INPUT 2**: Investigation:  History of how the first developer tried to fix the problem
 
-    The last command that was run is:
-    ```
-    {command}
-    ```
+      The investigation is structured as a series of actions ("Step {i} action: "), where each action is a thought followed by a command in triple-backticks.
+      For example:
 
-    The output of the command is given hereby:
-    ```
-    {observation}
-    ```
+      Investigation 1 Step 1 action:
+      DISCUSSION
+      We have found a bug in the code. Let's try to reproduce it.
+      ```
+      create reproduce.py
+      ```
 
-    INSTRUCTIONS:
-    You need to give a short summary of the output so that your team member who run this command and is solving the challenge will have insights on how to solve the challenge using your summary.
-    Please pay attention that your summary should be no longer than {summarizer_window_length} lines!
-  model:
-    model_name: azure:gpt4
-    per_instance_cost_limit: 2
-    total_cost_limit: 2
+      Investigation 1 Step 1 output:
+      reproduce.py created.
+
+      After the command, there is a description of the output of the command ("Step {i} output: ").
+      The most important actions are
+
+      - `open {file}`: This action opens the file {file}. The output of the command shows part of the content of the file.
+      - `edit {from}:{to}`, followed by the content to replace lines {from} to {to}. This action always affects the currently
+        opened file. The output of the command is the content of the file after the edit.
+      - `submit`: This action submits a flag for checking.
+      - any normal bash command, like `curl`
+
+      RESPONSE FORMAT:
+
+      Your answer must contain the following sections:
+
+      1. SUMMARY: Summarize the attempted solution. Mention any specific commands or code that was used. Also mention any important files that were found.
+      2. CRITIQUE: What could we do to improve the solution? What went wrong? What was missed? What could have been done more thoroughly?
+
+      IMPORTANT TIPS:
+
+      The challenge is guaranteed to be solvable. You cannot contact the organizers or ask for help/hints.
+      Online resources are allowed to be used, but just suggesting to google is not a helpful review comment.
+    instance_template: |
+      ==================
+      INPUT 1: Challenge
+      ==================
+
+      {issue}
+
+      =============================
+      INPUT 2: Failed Investigation
+      =============================
+
+      {traj}
+    traj_item_template: |
+      Step {i_step}: {response}
+  max_samples: 5
+  gtc_classname: CTFGTC
+  gtc_config:
+    prologue: |
+      Here is a summary of previous FAILED attempts to solve the challenge:
+    epilogue: |
+      HOW TO USE THE REVIEWS OF PREVIOUS ATTEMPTS:
+
+      Your first step should be to develop a plan on how to tackle the challenge.
+      For that, look at the previous solution attempts. Are there any completely new ideas that have not been tried?
+      If yes, you should do that rather than trying to improve a previous attempt.
+      If not, try picking the attempt that has the most potential to be successful.
+      If a strategy has been tried multiple times already, it's better to pick a different strategy.
+      All previous attempts have FAILED, so trying to run the same commands again is not going to help you.

@@ -62,6 +62,7 @@ COPY docker/ctf_requirements.txt /root/requirements.txt
 RUN pip install -r /root/requirements.txt && rm -f /root/requirements.txt
 
 RUN cd /opt && git clone https://github.com/RsaCtfTool/RsaCtfTool.git && apt-get install -y libgmp3-dev libmpc-dev && cd RsaCtfTool && pip3 install -r "requirements.txt"
+COPY docker/number_theory__fixed /opt/RsaCtfTool/lib/number_theory.py
 ENV PATH=$PATH:/opt/RsaCtfTool
 ENV PWNLIB_NOTERM=1
 
