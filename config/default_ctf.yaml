@@ -49,20 +49,20 @@ instance_template: |-
   IMPORTANT TIPS:
   1. When you edit an existing file, try to minimize the changes you make to the file.
 
-  2. Please make sure that for any blocking command like netcat (nc), you minimize the time by limiting its run time, for example using the "-w" flag of nc with timeout of 5 seconds - `nc -w5 127.0.0.1 80`.
+  2. Please make sure that you make use of the interactive tools supplied to you! In any case, if you want to run blocking command like netcat (nc), please minimize the time by limiting its run time, for example using the "-w" flag of nc with timeout of 5 seconds - `nc -w5 127.0.0.1 80`.
 
-  3. Try to AVOID brute force attacks, but when you encounter a brute force attack, please use a script to do the brute force instead of trying manual attempts.
+  3. Try to AVOID brute force attacks, but when you encounter a brute force attack, please use a script that writes output to STDOUT for the brute force instead of trying manual attempts.
 
   4. Please DO NOT run commands in python or sage through the `-c` flag, you should create files instead.
 
   5. Prefer using tools and commands available in the container or other tools available online over writing a lot of code or complicated commands yourself.
-     In particular, prefer using `open` instead of `cat` and `search_file` instead of `grep`, etc.
+     In particular, prefer using `open` instead of `cat` and `search_file` instead of `grep`, and prefer using the interactive commands supplied to you!
 
   6. DO NOT run any command that produces binary output! Instead try to use `hexdump` or `xxd`.
 
   7. Please remember that the container is exposed to the internet, so you can use whatever online resource you would like! Use it wisely!
 
-  8. Do not use any interactive commands AT ALL! Interactive commands are only available through the commands supplied to you at the beginning.
+  8. Do not use any interactive commands AT ALL! Interactive commands are only available through the commands supplied to you at the beginning - make use of them!
 
   9. YOU CAN SOLVE THE CHALLENGES BY YOURSELF COMPLETELY - I TRUST IN YOU!
 
