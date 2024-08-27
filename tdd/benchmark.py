@@ -14,6 +14,7 @@ top_p = 0.95
 per_instance_cost_limit_usd = 4.00
 total_cost_limit_usd = 40 * 3
 install_env="install"
+skip_existing = True # will cause us to not re-run inference if the predictions already exists for an instance
 
 def trajectory_dir():
     return f"trajectories/{os.getlogin()}/{model_name}__{Path(dataset_name).stem}__{config}__t-{temperature:.2f}__p-{top_p:.2f}__c-{per_instance_cost_limit_usd:.2f}__{install_env}-1"
@@ -35,7 +36,7 @@ def run_inference():
         "data_path": dataset_name,
         "split": split,
         "instance_filter": f"\"{'|'.join(instance_id_list)}\"", # make sure we quote this because it contains a | symbol which the shell will want to interpret.
-        "skip_existing": False, # causes inference to be re-run.  do we need/want this?
+        "skip_existing": skip_existing,
     })
 
 def run_evaluation(predictions_path):
