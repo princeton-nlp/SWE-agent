@@ -277,7 +277,7 @@ def read_with_timeout_experimental(
 
     if container.poll() is not None:
         msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {decoded}"
-        raise RuntimeError(msg)
+        raise RuntimeError(msg, body)
 
     current_time = time.time()
     if not process_done and current_time >= min(end_time, end_time_no_output):
@@ -351,7 +351,7 @@ def read_session_with_timeout(
 
     if session.poll() is not None:
         msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {decoded}"
-        raise RuntimeError(msg)
+        raise RuntimeError(msg, body)
     current_time = time.time()
     if not command_done and current_time >= min(end_time, end_time_no_output):
         if current_time >= end_time:

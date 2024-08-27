@@ -484,6 +484,14 @@ class SWEEnv(gym.Env):
         exit_command = self.args.interactive_sessions_config[self.interactive_session.name].exit_command
         return f"Interactive session already open. Please close the current interactive session: {self.interactive_session.name} with the command: `{exit_command}`"
 
+    def _terminate_interactive_session(self, session_name: str):
+        try:
+            self.interactive_session.session_process.terminate()
+            self.communicate(self.args.interactive_sessions_config[session_name].exit_command)
+        except Exception as e:
+            self.logger.warning(f"Failed to terminate interactive session {session_name}: {e}")
+        self.interactive_session = None
+
     def _handle_interactive_commands(self, observation):
         session_name, interactive_commands = self.get_interactive_commands(observation)
         if session_name is None:
@@ -521,8 +529,7 @@ class SWEEnv(gym.Env):
                 elif self.interactive_session and self.interactive_session.session_process.poll() is not None:
                     start_command = self.args.interactive_sessions_config[session_name].start_command
                     observation = f"Interactive session {session_name} was unexpectedly closed! Please start it again using `{start_command}`"
-                    self.communicate(self.args.interactive_sessions_config[session_name].exit_command)
-                    self.interactive_session = None
+                    self._terminate_interactive_session(session_name=session_name)
                 else:
                     try:
                         observation += self.communicate_session(
@@ -545,20 +552,18 @@ class SWEEnv(gym.Env):
                                 "\nEXECUTION TIMED OUT AND INTERRUPT FAILED. TERMINATING INTERACTIVE SESSION."
                             )
                             self.logger.warning(f"Failed to interrupt container: {e}\nTERMINATING INTERACTIVE SESSION.")
-                            self.interactive_session.session_process.terminate()
-                            self.interactive_session = None
+                            self._terminate_interactive_session(session_name=session_name)
                             return observation
                     except RuntimeError as e:
+                        observation += e.args[1] if len(e.args) > 1 else ""
                         observation += "\nCOMMAND FAILED TO EXECUTE. TERMINATING INTERACTIVE SESSION."
                         self.logger.warning(f"Failed to execute command: {e}\nTERMINATING INTERACTIVE SESSION.")
-                        self.interactive_session.session_process.terminate()
-                        self.interactive_session = None
+                        self._terminate_interactive_session(session_name=session_name)
                         return observation
                     except BrokenPipeError as e:
                         observation += "\nBROKEN PIPE ERROR. TERMINATING INTERACTIVE SESSION."
                         self.logger.error(f"Broken pipe error: {e}\nTERMINATING INTERACTIVE SESSION.")
-                        self.interactive_session.session_process.terminate()
-                        self.interactive_session = None
+                        self._terminate_interactive_session(session_name=session_name)
                         return observation
                     except Exception:
                         observation += "\nEXECUTION FAILED OR COMMAND MALFORMED"
@@ -633,12 +638,14 @@ class SWEEnv(gym.Env):
                     else f" BECAUSE THE COMMAND WAS RUNNING FOR MORE THAN {AGENT_ACTION_TIMEOUT} SECONDS."
                 )
             except RuntimeError as e:
+                observation += e.args[1] if len(e.args) > 1 else ""
                 observation += "\nEXECUTION TIMED OUT AND INTERRUPT FAILED. RESTARTING PROCESS."
                 info["exit_status"] = "early_exit"
                 self.logger.warning(f"Failed to interrupt container: {e}\nRESTARTING PROCESS.")
                 self.reset_container()
                 return observation, 0, True, info
         except RuntimeError as e:
+            observation += e.args[1] if len(e.args) > 1 else ""
             observation += "\nCOMMAND FAILED TO EXECUTE. RESTARTING PROCESS."
             info["exit_status"] = "early_exit"
             self.logger.warning(f"Failed to execute command: {e}\nRESTARTING PROCESS.")
