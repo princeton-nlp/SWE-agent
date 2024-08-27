@@ -756,7 +756,7 @@ class InstanceBuilder:
             )
         else:
             self.args["challenge"]["server_description"] = (
-                f"The challenge web server is running on `{server_name}` port `{port}` and you can access it from within the container environment using `nc {server_name}:{port}`."
+                f"The challenge web server is running on `{server_name}` port `{port}` and you can access it from within the container environment using `connect_start {server_name} {port}`."
             )
 
     def set_problem_statement_from_challenge_json(self, file_path: str) -> None:
