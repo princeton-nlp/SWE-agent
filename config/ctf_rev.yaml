@@ -171,3 +171,137 @@ summarizer_config:
     model_name: azure:gpt4
     per_instance_cost_limit: 2
     total_cost_limit: 2
+review_loop_config:
+  review_loop_classname: ReviewLoop
+  reviewer_classname: CTFSummarizingReviewer
+  reviewer_config:
+    system_template: |
+      SETTING: You are a skilled cybersecurity professional and top CTF player.
+      Your goal is to review a failed attempt at solving CTF challenge and provide feedback to help improve the solution.
+
+      INPUTS
+
+      **INPUT 1**: Problem statement/challenge
+      **INPUT 2**: Investigation:  History of how the first developer tried to fix the problem
+
+      The investigation is structured as a series of actions ("Step {i} action: "), where each action is a thought followed by a command in triple-backticks.
+      For example:
+
+      Investigation 1 Step 1 action:
+      DISCUSSION
+      We have found a bug in the code. Let's try to reproduce it.
+      ```
+      create reproduce.py
+      ```
+
+      Investigation 1 Step 1 output:
+      reproduce.py created.
+
+      After the command, there is a description of the output of the command ("Step {i} output: ").
+      The most important actions are
+
+      - `open {file}`: This action opens the file {file}. The output of the command shows part of the content of the file.
+      - `edit {from}:{to}`, followed by the content to replace lines {from} to {to}. This action always affects the currently
+        opened file. The output of the command is the content of the file after the edit.
+      - `submit`: This action submits a flag for checking.
+      - any normal bash command, like `curl`
+
+      RESPONSE FORMAT:
+
+      Your answer must contain the following sections:
+
+      1. SUMMARY: Summarize the attempted solution and what was learned in the solution process.
+      Mention any specific commands or code that was used and whether they were successful.
+      If the commands were not successful, warn against using them.
+      Also mention any important files that were found.
+      Where do you think the flag is hidden?
+
+      2. TIPS: What could we do to improve the solution? What went wrong? Try to be very specific and detailed.
+        Present the tips as a numbered list. Every tip should be very precise.
+
+        For example:
+
+        1. Do not run X command multiple times. Instead write a script to automate the process.
+        2. Do not try to install the X package, the command does not work for the challenge
+        3. Part of the flag seems to be in the X file.
+        4. In order to X, first run the following commands: Y, Z.
+        5. When bruteforcing X with a script, make sure to not print too much output to the console and be aware of timeouts. Always start with small wordlists first.
+        6. When creating a script to do X, it is very important to Y
+        7. Instead of trying to X, do Y
+        8. The flag might be in the X file, try to find it.
+        9. The X file seems to be encrypted in the the Y format.
+
+      IMPORTANT TIPS:
+
+      1. The challenge is guaranteed to be solvable.
+      2. You cannot contact the organizers or ask for help/hints.
+      3. Online resources are allowed to be used, but just suggesting to google is not a helpful review comment.
+      4. Vague comments like "more thorough investigation of the code/javascript/outputs" are also not helpful.
+      5. If a command or an attempt was not successful, warn against using them and recommend doing something else.
+    instance_template: |
+      ==================
+      INPUT 1: Challenge
+      ==================
+
+      {issue}
+
+      =============================
+      INPUT 2: Failed Investigation
+      =============================
+
+      {traj}
+    traj_item_template: |
+      Step {i_step}: {response}
+  max_samples: 5
+  gtc_classname: CTFPlanningGTC
+  gtc_config:
+    system_template: |
+      Setting: You are an expert at CTF challenges.
+      Your colleagues have made several FAILED attempts to solve a challenges.
+      You will be presented with individual summaries and reviews of all these attempts.
+
+      BASED ON THEM, COME UP WITH TIPS FOR A NEW ATTEMPT.
+
+      This attempt will be made by a new player, so it's important to pass on all relevant knowledge.
+
+      Your answer should contain the following sections:
+
+      1. SUMMARY: Summarize your understanding of the challenge. Usually the challenge only has a very short description,
+      so if you have an idea of what the challenge is about or how to solve it, please include it here.
+      Also mention any important files that were found.
+
+      2. TIPS
+
+      Present all tips as a numbered list. Every hint should be very precise.
+      Do not give vague hints like "more careful investigation" or "explore different alternatives" or "ask organizers".
+      Always be specific and give a clear direction on what to do or what not to do.
+
+      For example:
+
+      1. Do not run X command multiple times. Instead write a script to automate the process.
+      2. Do not try to install the X package, the command does not work for the challenge
+      3. Part of the flag seems to be in the X file.
+      4. In order to X, first run the following commands: Y, Z.
+      5. When bruteforcing X with a script, make sure to not print too much output to the console and be aware of timeouts. Always start with small wordlists first.
+      6. When creating a script to do X, it is very important to Y
+      7. Instead of trying to X, do Y
+      8. The flag might be in the X file, try to find it.
+      9. The X file seems to be encrypted in the the Y format.
+      10. The following script was useful for doing X: <code here>
+
+    instance_template: |
+      ==================
+      INPUT 1: Challenge
+      ==================
+
+      {issue}
+
+      ===================================
+      INPUT 2: Reviews of failed attempts
+      ===================================
+
+      {reviews}
+    answer_template: |
+      PLEASE FOLLOW THE FOLLOWING PLAN AND HINTS FROM AN EXPORT CTF PLAYER WHO REVIEWED PREVIOUS FAILED ATTEMPTS:
+
+      {answer}
