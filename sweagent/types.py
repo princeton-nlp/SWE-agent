@@ -19,6 +19,7 @@ class TrajectoryStep(TypedDict):
     response: str
     state: str | None
     thought: str
+    execution_time: float
 
 
 class _HistoryItem(TypedDict):

@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import json
 import re
+import time
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -962,6 +963,7 @@ class Agent:
         # Loop over sub-actions (if any)
         done = False
         observations: list[str | None] = list()
+        execution_t0 = time.perf_counter()
         for sub_action in self.split_actions(run_action):
             observation, done = self._run_sub_action(sub_action)
             # If the last sub-action is done, the observation is not
@@ -970,6 +972,7 @@ class Agent:
                 break
             observations.append(observation)
         observation = "\n".join([obs for obs in observations if obs is not None])
+        execution_time = time.perf_counter() - execution_t0
 
         trajectory_step = TrajectoryStep(
             {
@@ -978,6 +981,7 @@ class Agent:
                 "response": output,
                 "state": state,
                 "thought": thought,
+                "execution_time": execution_time,
             },
         )
         self.trajectory.append(trajectory_step)
