@@ -546,16 +546,19 @@ class SWEEnv(gym.Env):
                             )
                             self.logger.warning(f"Failed to interrupt container: {e}\nTERMINATING INTERACTIVE SESSION.")
                             self.interactive_session.session_process.terminate()
+                            self.interactive_session = None
                             return observation
                     except RuntimeError as e:
                         observation += "\nCOMMAND FAILED TO EXECUTE. TERMINATING INTERACTIVE SESSION."
                         self.logger.warning(f"Failed to execute command: {e}\nTERMINATING INTERACTIVE SESSION.")
                         self.interactive_session.session_process.terminate()
+                        self.interactive_session = None
                         return observation
                     except BrokenPipeError as e:
                         observation += "\nBROKEN PIPE ERROR. TERMINATING INTERACTIVE SESSION."
                         self.logger.error(f"Broken pipe error: {e}\nTERMINATING INTERACTIVE SESSION.")
                         self.interactive_session.session_process.terminate()
+                        self.interactive_session = None
                         return observation
                     except Exception:
                         observation += "\nEXECUTION FAILED OR COMMAND MALFORMED"
@@ -695,8 +698,10 @@ class SWEEnv(gym.Env):
                 raise
             except Exception as e:
                 self.logger.warning("Failed to stop interactive session: %s", str(e))
+                self.interactive_session = None
             else:
                 self.logger.info("Interactive session stopped")
+                self.interactive_session = None
         if self.container_obj is None:
             pass
         elif self.persistent:
