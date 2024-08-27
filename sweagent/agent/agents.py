@@ -437,6 +437,7 @@ class Agent:
     @property
     def state_command(self) -> str:
         """Return the bash command that will be used to extract the environment state."""
+        assert self.config is not None
         return self.config.state_command.name
 
     @property
@@ -449,7 +450,7 @@ class Agent:
         total_stats = APIStats()
         for stats in self._info_by_attempt.values():
             assert "model_stats" in stats  # mypy
-            attempt_stats = APIStats(**stats["model_stats"])
+            attempt_stats = APIStats(**stats["model_stats"])  # type: ignore
             total_stats += attempt_stats
         if self._rloop is not None:
             total_stats += self._rloop.model_stats
@@ -907,6 +908,19 @@ class Agent:
         self.model.stats.replace(sub_agent.model.stats)
         return sub_agent_output
 
+    def _update_summarizer_stats(self, cost: APIStats):
+        """Update stats for summarizer"""
+        self.model.stats += cost
+        if "summarizer" not in self.info:
+            self.info["summarizer"] = {
+                "model_stats": APIStats().to_dict(),
+                "n_calls": 0,
+            }
+        total_cost = APIStats(**self.info["summarizer"]["model_stats"])
+        total_cost += cost
+        self.info["summarizer"]["model_stats"] = total_cost.to_dict()
+        self.info["summarizer"]["n_calls"] += 1
+
     def _run_sub_action(self, sub_action: SubAction) -> tuple[str | None, bool]:
         """Execute a sub-action. If the sub-action is a command, execute it.
         If it is a subroutine, call the subroutine.
@@ -922,10 +936,10 @@ class Agent:
             for hook in self.hooks:
                 hook.on_sub_action_started(sub_action=sub_action)
             observation, _, done, _info = self._env.step(sub_action["action"])
-            observation, additional_cost = self.config.summarizer_config.function(
+            observation, additional_cost = self.config.summarizer_config.function(  # type: ignore
                 sub_action["action"], observation, self._env, self.summarizer_model
             )
-            self.model.stats += additional_cost
+            self._update_summarizer_stats(additional_cost)
             self.info.update(_info)
             for hook in self.hooks:
                 hook.on_sub_action_executed(obs=observation, done=done)

@@ -49,6 +49,8 @@ class AgentInfo(TypedDict, total=False):
     edited_files30: str
     edited_files50: str
     edited_files70: str
+    # only if summarizer is used
+    summarizer: dict
 
 
 @dataclass
