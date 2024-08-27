@@ -253,7 +253,7 @@ review_loop_config:
       {traj}
     traj_item_template: |
       Step {i_step}: {response}
-  max_samples: 5
+  max_samples: 3
   gtc_classname: CTFPlanningGTC
   gtc_config:
     system_template: |
