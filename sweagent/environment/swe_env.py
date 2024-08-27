@@ -919,8 +919,11 @@ class SWEEnv(gym.Env):
             self.logger.warning("Couldn't get real exit code. Setting it to 999")
             exit_code = 999
         elif not exit_code.isdigit():
+            # this sometimes happens if the command is being killed, for example radare2
+            # we set the error to 998 in that case
             msg = f"Failed to get exit code. Output:\n---\n{buffer}\n---"
-            raise RuntimeError(msg)
+            self.logger.warning("Couldn't get real exit code. Setting it to 998")
+            exit_code = 998
         self.returncode = int(exit_code)
         return buffer
 
