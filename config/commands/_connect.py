@@ -37,7 +37,8 @@ class NetcatShell(cmd.Cmd):
     def _recv(self):
         buffer = recv_data = self.server.recv(BUFFER_SIZE, timeout=SERVER_TIMEOUT)
         while len(recv_data) == BUFFER_SIZE:
-            buffer += self.server.recv(BUFFER_SIZE, timeout=SERVER_TIMEOUT)
+            recv_data = self.server.recv(BUFFER_SIZE, timeout=SERVER_TIMEOUT)
+            buffer += recv_data
 
         return buffer.decode()
 
