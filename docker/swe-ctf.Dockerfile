@@ -67,6 +67,12 @@ ENV PATH=$PATH:/opt/RsaCtfTool
 ENV PYTHONUNBUFFERED=1
 ENV PWNLIB_NOTERM=1
 
+# Install binwalk
+RUN apt-get update && apt-get install -y binwalk
+
+# Install sudo just in case the model still uses it
+RUN apt-get install -y sudo
+
 WORKDIR /
 
 CMD ["/bin/bash"]
