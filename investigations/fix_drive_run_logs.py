@@ -176,9 +176,29 @@ def get_or_create_drive_folder(service: build, parent_folder_id: str, name: str)
     return file.get('id')
 
 def upload_files_to_drive(service: build, run_logs_folder_id: str, file_paths: List[str]) -> None:
+    
     total_size = sum(os.path.getsize(file_path) for file_path in file_paths)
     uploaded_size = 0
+    deleted = 0
     skipped = 0
+    
+    uploaded_files_log = get_run_log_path("uploaded_files.log")
+    
+    with open(uploaded_files_log, 'a+') as log_file:
+        log_file.seek(0)
+        uploaded_files = set(line.strip() for line in log_file)
+    
+    # Batch query all files in the given folder
+    query = f"'{run_logs_folder_id}' in parents"
+    results = service.files().list(q=query, fields="files(id, name)").execute()
+    drive_files = {file['name']: file['id'] for file in results.get('files', [])}
+    
+    # Delete files that exist on drive but not in the local log
+    for file_name, file_id in drive_files.items():
+        if file_name not in uploaded_files:
+            service.files().delete(fileId=file_id).execute()
+            deleted += 1
+            print(f"Deleted: {file_name}")
     
     with tqdm(total=total_size, desc="Uploading files", unit='B', unit_scale=True, dynamic_ncols=True) as pbar:
         for file_path in file_paths:
@@ -188,15 +208,12 @@ def upload_files_to_drive(service: build, run_logs_folder_id: str, file_paths: L
             # Update progress bar description with current file name
             pbar.set_description(f"Uploading {file_name}")
             
-            # Check if file already exists in the run-logs folder
-            query = f"name='{file_name}' and '{run_logs_folder_id}' in parents"
-            results = service.files().list(q=query, fields="files(id, size)").execute()
-            existing_files = results.get('files', [])
-            
-            if existing_files and int(existing_files[0]['size']) == file_size:
-                skipped += 1
+            if file_name in uploaded_files:
+                # Skip if file has been uploaded before
                 uploaded_size += file_size
                 pbar.update(file_size)
+                skipped += 1
+                print(f"Skipped: {file_name}")
                 continue
             
             file_metadata = {
@@ -210,15 +227,39 @@ def upload_files_to_drive(service: build, run_logs_folder_id: str, file_paths: L
             response = None
             
             file_uploaded_size = 0
+            last_status = None
             while response is None:
+                # The status object is defined here: https://github.com/googleapis/google-api-python-client/blob/411c1b802f21def293a84adb16d8d4ad7478643b/googleapiclient/http.py#L232
                 status, response = request.next_chunk()
                 if status:
                     chunk_size = status.resumable_progress - file_uploaded_size
                     file_uploaded_size = status.resumable_progress
-                    uploaded_size += chunk_size
+                    # print(f"Uploaded {file_name}: {chunk_size} ({file_uploaded_size}/{status.total_size})")
+                    if file_uploaded_size > status.total_size:
+                        print(f"\n\n⚠⚠⚠WARNING⚠⚠⚠\nGDrive API tried to upload more than file size for file {file_name}.\nCancelled.\n\n")
+                        break
                     pbar.update(chunk_size)
+                elif last_status:
+                    # print(f"DDBG1 {last_status.total_size - file_uploaded_size}")
+                    pbar.update(last_status.total_size - file_uploaded_size)
+                else:
+                    # print(f"DDBG2 {file_size}")
+                    pbar.update(file_size)
+                last_status = status
+            print(f"Uploaded: {file_name}")
+            
+            # Append the uploaded file name to the log
+            with open(uploaded_files_log, 'a') as log_file:
+                log_file.write(f"{file_name}\n")
     
-    print(f"Upload finished ({skipped} skipped).")
+    print(f"Upload finished ({skipped} skipped, {deleted} existing files deleted and re-uploaded).")
+
+# Example usage:
+# creds = Credentials.from_authorized_user_file('token.json', ['https://www.googleapis.com/auth/drive.file'])
+# service = build('drive', 'v3', credentials=creds)
+# run_logs_folder_id = 'your_folder_id_here'
+# file_paths = ['path/to/log1.txt', 'path/to/log2.txt']
+# upload_files_to_drive(service, run_logs_folder_id, file_paths)
 
 def main():
     service = authenticate_google_drive()
