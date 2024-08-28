@@ -16,29 +16,24 @@ from tqdm import tqdm
 
 # Get folder ID from environment variables
 TRAJECTORY_FOLDER_ID = "1rA9cqZnANg-GDfp4-sWZze-xzMWEOuF2"
+run_logs_folder_name = "run-logs"
 
 def get_absolute_path(relative_path: str) -> str:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(script_dir, relative_path)
 
 def get_run_log_path(filename: str = "") -> str:
-    return get_absolute_path(os.path.join("run-logs", filename))
+    return get_absolute_path(os.path.join(run_logs_folder_name, filename))
 
 def get_download_run_log_path(filename: str = "") -> str:
-    return get_absolute_path(os.path.join("run-logs-downloaded", filename))
+    return get_absolute_path(os.path.join(f"{run_logs_folder_name}-downloaded", filename))
 
 def get_google_drive_href(id: str) -> str:
     return f"https://drive.google.com/drive/u/0/folders/{id} (https://drive.google.com/drive/u/2/folders/{id})";
 
 def authenticate_google_drive() -> build:
-    """
-    Authenticate with Google Drive API using a service account JSON key file.
-    
-    The key file should be named 'service-account-key.json' and located in the same directory as this script.
-    """
     print("Authenticating...")
     key_path = get_absolute_path('service-account-key.json')
-    
     creds = Credentials.from_service_account_file(key_path, scopes=['https://www.googleapis.com/auth/drive'])
     return build('drive', 'v3', credentials=creds)
 
@@ -181,7 +176,6 @@ def get_or_create_drive_folder(service: build, parent_folder_id: str, name: str)
     return file.get('id')
 
 def upload_files_to_drive(service: build, run_logs_folder_id: str, file_paths: List[str]) -> None:
-    
     total_size = sum(os.path.getsize(file_path) for file_path in file_paths)
     uploaded_size = 0
     skipped = 0
@@ -207,7 +201,8 @@ def upload_files_to_drive(service: build, run_logs_folder_id: str, file_paths: L
             
             file_metadata = {
                 'name': file_name,
-                'parents': [run_logs_folder_id]
+                'parents': [run_logs_folder_id],
+                'mimeType': 'application/vnd.google-apps.document'
             }
             media = MediaFileUpload(file_path, resumable=True, chunksize=1024*1024)
             
@@ -232,13 +227,13 @@ def main():
     print(f"Downloaded {len(downloaded_files)} run log files.")
     
     if downloaded_files:
-        run_logs_dir = get_absolute_path("run-logs")
+        run_logs_dir = get_absolute_path(run_logs_folder_name)
         print(f"Using 'run-logs' folder at: {run_logs_dir}")
         
         disentangled_files = process_all_logs(get_download_run_log_path(), run_logs_dir)
         print(f"Disentangled {len(disentangled_files)} instance log files.")
 
-        run_logs_folder_id = get_or_create_drive_folder(service, TRAJECTORY_FOLDER_ID)
+        run_logs_folder_id = get_or_create_drive_folder(service, TRAJECTORY_FOLDER_ID, run_logs_folder_name)
         upload_files_to_drive(service, run_logs_folder_id, disentangled_files)
         print(f"Uploaded {len(disentangled_files)} disentangled log files to Google Drive at {get_google_drive_href(run_logs_folder_id)}")
     else:
