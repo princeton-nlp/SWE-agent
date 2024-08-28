@@ -236,6 +236,8 @@ def upload_files_to_drive(service: build, run_logs_folder_id: str, file_paths: L
                     file_uploaded_size = status.resumable_progress
                     # print(f"Uploaded {file_name}: {chunk_size} ({file_uploaded_size}/{status.total_size})")
                     if file_uploaded_size > status.total_size:
+                        # Note: Saw a weird bug where the upload would sometimes exceed the total file size and then it erroring with a 400.
+                        # Not sure why.
                         print(f"\n\n⚠⚠⚠WARNING⚠⚠⚠\nGDrive API tried to upload more than file size for file {file_name}.\nCancelled.\n\n")
                         break
                     pbar.update(chunk_size)
