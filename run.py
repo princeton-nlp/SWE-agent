@@ -308,11 +308,13 @@ class OpenPRHook(MainHook):
 
 
 class Main:
+    log_path: str
+
     def __init__(self, args: ScriptArguments):
         self.traj_dir = Path("trajectories") / Path(getuser()) / args.run_name
         self.traj_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.datetime.now().strftime("%y%m%d%H%M%S")
-        log_path = self.traj_dir / f"run-{timestamp}.log"
+        self.log_path = log_path = self.traj_dir / f"run-{timestamp}.log"
         logger.info("Logging to %s", log_path)
         add_file_handler(log_path)
         if args.print_config:
@@ -343,7 +345,11 @@ class Main:
             for hook in self.hooks:
                 hook.on_instance_skipped()
             raise _ContinueLoop
-        logger.info("▶️  Beginning task " + str(index))
+        
+        log_path = self.traj_dir / f"run-{timestamp}.log"
+        logger.info("Logging to %s", log_path)
+        add_file_handler(log_path)
+        logger.info(f"▶️  Beginning task {instance_id} ({str(index)})")
 
         # NOTE: We always start from knowing the test patch first.
         apply_test_patch = False
