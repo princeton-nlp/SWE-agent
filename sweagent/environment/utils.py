@@ -769,7 +769,7 @@ class InstanceBuilder:
         if (Path(file_path).parent / "docker-compose.yml").is_file():
             logger.debug(f"Found docker_compose file in {Path(file_path).parent}")
             self.args["challenge"]["docker_compose"] = Path(file_path).parent / "docker-compose.yml"
-        self.args["challenge"]["port"] = challenge.get("internal_port")
+        self.args["challenge"]["port"] = challenge.get("internal_port") or challenge.get("port")
         if "box" in challenge:
             self.args["challenge"]["server_name"] = challenge["box"] or "127.0.0.1"
         else:
