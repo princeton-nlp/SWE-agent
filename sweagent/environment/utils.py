@@ -763,7 +763,7 @@ class InstanceBuilder:
         """For CTF challenges"""
         challenge = json.loads(Path(file_path).read_text())
         self.args["challenge"] = challenge
-        self.args["challenge"]["files"] = challenge.get("files", "No files are provided in this challenge.")
+        self.args["challenge"]["files"] = challenge.get("files", [])
         self.args["challenge"]["points"] = challenge.get("points", 10)
         self.args["challenge"]["category_friendly"] = CTF_CHALLENGES_CATEGORIES.get(challenge["category"])
         if (Path(file_path).parent / "docker-compose.yml").is_file():
