@@ -3056,7 +3056,7 @@ float: The cost of the response.</p>
 <span class="sd">        Logic for handling user input to pass to SWEEnv</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">action</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="n">action_prompt</span><span class="p">)</span>
-        <span class="n">command_name</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">action</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">command_name</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
 
         <span class="c1"># Special handling for multi-line input actions (i.e. edit)</span>
         <span class="k">if</span> <span class="n">command_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">multi_line_command_endings</span><span class="p">:</span>
@@ -3187,7 +3187,7 @@ float: The cost of the response.</p>
 <span class="sd">    Logic for handling user input to pass to SWEEnv</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">action</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="n">action_prompt</span><span class="p">)</span>
-    <span class="n">command_name</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">action</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">command_name</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
 
     <span class="c1"># Special handling for multi-line input actions (i.e. edit)</span>
     <span class="k">if</span> <span class="n">command_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">multi_line_command_endings</span><span class="p">:</span>
