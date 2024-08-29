@@ -17,8 +17,9 @@ from sweagent.environment.utils import (
     parse_gh_repo_url,
     remove_triple_backticks,
 )
+from sweagent.utils.config import keys_config
 
-_TOKEN = {"token": os.environ.get("GITHUB_TOKEN", "")}
+_TOKEN = {"token": keys_config["GITHUB_TOKEN"]}
 
 
 def test_format_trajectory_markdown(test_trajectory):
