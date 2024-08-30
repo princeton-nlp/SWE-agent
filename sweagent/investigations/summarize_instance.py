@@ -45,7 +45,6 @@ def make_bug_href(instance_id: str) -> str:
 def make_relative_path(fpath: str):
     return os.path.relpath(fpath, get_investigation_data_folder())
 
-
 def summarize_instance(instance_id: str):
     print(f"Summarizing Instance {instance_id}...")
     log_files = download_instance_log(instance_id)

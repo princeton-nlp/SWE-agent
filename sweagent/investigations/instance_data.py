@@ -9,6 +9,8 @@ import pandas as pd
 def get_swe_bench_data():
     return pd.read_parquet("hf://datasets/princeton-nlp/SWE-bench_Verified/data/test-00000-of-00001.parquet")
 
+def truncate_string(text, max_length=100):
+    return (text[:max_length] + '...') if len(text) > max_length else text
 
 def get_swe_bench_instance_markdown(instance_id: str):
     # Get the DataFrame
@@ -19,6 +21,10 @@ def get_swe_bench_instance_markdown(instance_id: str):
     
     if specific_row.empty:
         return "No data found for the given instance_id."
+    
+    # Truncation
+    if 'PASS_TO_PASS' in specific_row.columns:
+       specific_row.loc[:, 'PASS_TO_PASS'] = specific_row['PASS_TO_PASS'].apply(truncate_string)
     
     # Transpose the row
     transposed = specific_row.transpose()
