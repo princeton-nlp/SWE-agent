@@ -1,12 +1,19 @@
 #######################################################
 # Get or create docker image for instance.
-# Prints image_id.
 #######################################################
 
 set -e
-# set -x
 
-thisFile=$(readlink -f "$BASH_SOURCE")
+if [ -z "$BASH_SOURCE" ]; then
+  # NOTE: When running the script through Python's subprocess, BASH_SOURCE does not exist.
+  thisFile="$0"
+  if [ -z "$0" ]; then
+    echo "ERROR: Could not deduce path of script"
+    exit 1
+  fi
+else
+  thisFile=$(readlink -f "$BASH_SOURCE")
+fi
 thisDir=$(dirname "$thisFile")
 
 instance_id=$1

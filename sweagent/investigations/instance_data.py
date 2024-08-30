@@ -10,6 +10,28 @@ def get_swe_bench_data():
     return pd.read_parquet("hf://datasets/princeton-nlp/SWE-bench_Verified/data/test-00000-of-00001.parquet")
 
 
+def get_swe_bench_instance_markdown(instance_id: str):
+    # Get the DataFrame
+    df = get_swe_bench_data()
+    
+    # Select the specific row
+    specific_row = df[df['instance_id'] == instance_id]
+    
+    if specific_row.empty:
+        return "No data found for the given instance_id."
+    
+    # Transpose the row
+    transposed = specific_row.transpose()
+    
+    # Reset the index to turn the column names into a regular column
+    transposed = transposed.reset_index()
+    
+    # Rename the columns
+    transposed.columns = ['Field', 'Value']
+    
+    # Convert to Markdown
+    return transposed.to_markdown(index=False)
+
 def generate_cached_image_id(instance_id: str, environment_setup: str = "no_setup") -> str:
     cached_image_prefix = "swe-agent-task-env-"
 
@@ -35,8 +57,7 @@ def generate_cached_image_id(instance_id: str, environment_setup: str = "no_setu
     ]
     tag = hashlib.sha256("".join(inputs).encode()).hexdigest()[:50]
     image_id = f"{cached_image_prefix}{tag}"
-
-    return image_id
+    return image_id  # noqa: RET504
 
 
 if __name__ == "__main__":

@@ -4,25 +4,37 @@
 #######################################################
 
 set -e
-set -x
+# set -x
 
-thisFile=$(readlink -f "$BASH_SOURCE")
+# echo "DDBG open_repo.sh $0 $1"
+
+if [ -z "$BASH_SOURCE" ]; then
+  # NOTE: When running the script through Python's subprocess, BASH_SOURCE does not exist.
+  thisFile="$0"
+  if [ -z "$0" ]; then
+    echo "ERROR: Could not deduce path of script"
+    exit 1
+  fi
+else
+  thisFile=$(readlink -f "$BASH_SOURCE")
+fi
 thisDir=$(dirname "$thisFile")
+investigationDir="$thisDir/sweagent/investigations"
 
 instance_id=$1
-if [[ -z $instance_id ]]; then
+if [ -z $instance_id ]; then
   echo "ERROR: \$1=instance_id missing."
   exit 1
 fi
 
 # Get ready...
-image_id=$(python3 $thisDir/investigations/instance_data.py $instance_id)
+image_id=$(python3 $investigationDir/instance_data.py $instance_id)
 container_name=$instance_id
 repo_folder="/${instance_id%-*}"
 
 # Get or create image and image_id from instance_id.
 echo "Preparing Docker image..."
-$thisDir/investigations/instance_image.sh $instance_id
+$investigationDir/instance_image.sh $instance_id
 
 
 # Check if the container is already running
@@ -45,7 +57,7 @@ else
 
         # NOTE: We don't need to install anything.
         # # Install things.
-        # $thisDir/investigations/setup_repo_image.sh $container_name
+        # $investigationDir/setup_repo_image.sh $container_name
     fi
 fi
 
