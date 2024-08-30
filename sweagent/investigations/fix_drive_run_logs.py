@@ -10,7 +10,9 @@ import os
 import re
 
 from googleapiclient.http import MediaFileUpload
-from investigations.run_logs import (
+from tqdm import tqdm
+
+from sweagent.investigations.run_logs import (
     DEFAULT_TRAJECTORY_FOLDER_ID,
     download_run_logs,
     get_google_drive_href,
@@ -21,7 +23,6 @@ from investigations.run_logs import (
     get_run_log_path,
     run_logs_folder_name,
 )
-from tqdm import tqdm
 
 
 def create_folders() -> str:
