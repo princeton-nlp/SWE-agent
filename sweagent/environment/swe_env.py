@@ -238,7 +238,7 @@ class SWEEnv(gym.Env):
     def _repo_name(self) -> str:
         """Name of the local copy of the repository"""
         assert self.record is not None
-        return self.record["repo"].replace("/", "__").replace(" ", "-")
+        return self.record["repo"].replace("/", "__").replace(" ", "-").replace("'", "")
 
     def _copy_repo(self) -> str:
         """Clone/copy repository/codebase in container
