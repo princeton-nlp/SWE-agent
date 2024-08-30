@@ -50,12 +50,6 @@ def summarize_instance(instance_id: str):
     log_files = download_instance_log(instance_id)
 
     summary_fpath = get_investigation_data_path(instance_id)
-    # TODO:
-    #   1. Project links
-    #   2. Dataset links
-    #   3. Other data
-    #   4. Prediction log
-    #   5. (Maybe) eval log
     with open(summary_fpath, "w", encoding="utf-8") as f:
         contents = f"""
 # {instance_id}
