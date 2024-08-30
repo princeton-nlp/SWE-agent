@@ -346,9 +346,10 @@ class Main:
                 hook.on_instance_skipped()
             raise _ContinueLoop
         
-        log_path = self.traj_dir / f"run-{timestamp}.log"
-        logger.info("Logging to %s", log_path)
-        add_file_handler(log_path)
+        # TODO: Create its own run log file.
+        # log_path = self.traj_dir / f"run-{timestamp}.log"
+        # logger.info("Logging to %s", log_path)
+        # add_file_handler(log_path)
         logger.info(f"▶️  Beginning task {instance_id} ({str(index)})")
 
         # NOTE: We always start from knowing the test patch first.

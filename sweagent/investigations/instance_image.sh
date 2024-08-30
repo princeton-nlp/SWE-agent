@@ -29,7 +29,7 @@ image_exists=$(docker images -q $image_id)
 
 if [[ -z $image_exists ]]; then
   # Create image.
-  cd $thisDir/..
+  cd $thisDir/../..
   python3 run.py \
     --model_name "claude-sonnet-3.5" \
     --data_path="princeton-nlp/SWE-bench_Verified" \
