@@ -8,6 +8,7 @@ from argparse import ArgumentParser
 from sweagent.investigations.instance_data import get_swe_bench_instance_markdown
 from sweagent.investigations.run_logs import (
     download_instance_eval_test_output,
+    download_instance_patch,
     download_instance_prediction_log,
     download_instance_prediction_trajectory_json,
     get_instance_eval_folder_href,
@@ -54,6 +55,7 @@ def summarize_instance(instance_id: str):
     print(f"Summarizing Instance {instance_id}...")
     prediction_logs = download_instance_prediction_log(instance_id)
     prediction_trajectories = download_instance_prediction_trajectory_json(instance_id)
+    result_patches = download_instance_patch(instance_id)
     eval_folder_href = get_instance_eval_folder_href(instance_id)
     eval_test_output = download_instance_eval_test_output(instance_id)
 
@@ -67,6 +69,7 @@ def summarize_instance(instance_id: str):
 * Prediction
   * Run Logs: {", ".join([f"[Run Log]({make_relative_path(fpath)})" for fpath in prediction_logs])}
   * Traj Json: {", ".join([f"[Traj]({make_relative_path(fpath)})" for fpath in prediction_trajectories])}
+  * {", ".join([f"[Patch]({make_relative_path(fpath)})" for fpath in result_patches])}
 * Evaluation
   * [Evaluation Results Folder]({eval_folder_href})
   * Eval Log: {", ".join([f"[Eval Log]({make_relative_path(fpath)})" for fpath in eval_test_output])}

@@ -220,6 +220,13 @@ def download_instance_eval_test_output(instance_id: str):
         return get_local_run_path(f"{instance_id}-eval-output.log")
     return drive_download_files(folder_id, f"name='{file_name}'", local_path_fn)
 
+def download_instance_patch(instance_id: str):
+    folder_id = get_drive_file(DRIVE_REPRO_FOLDER_20240826, ["evaluation_logs", instance_id])
+    file_name = "patch.diff"
+    def local_path_fn(_fname: str) -> str:
+        return get_local_run_path(f"{instance_id}-patch.diff")
+    return drive_download_files(folder_id, f"name='{file_name}'", local_path_fn)
+
 # def get_instance_eval_report_href(instance_id: str):
 #     id = get_drive_file(DRIVE_REPRO_FOLDER_20240826, ["evaluation_logs", instance_id, "report.json"])
 #     return get_google_drive_file_href(id)
