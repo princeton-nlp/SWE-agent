@@ -331,7 +331,7 @@ def read_session_with_timeout(
         return bool(select.select([fd], [], [], 0.01)[0])
 
     command_done = False
-    while time.time() < min(end_time, end_time_no_output):
+    while time.time() < min(end_time, end_time_no_output) and session.poll() is None:
         if ready_to_read(fd):
             try:
                 data = os.read(fd, 4096)
