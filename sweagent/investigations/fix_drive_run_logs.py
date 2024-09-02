@@ -14,19 +14,19 @@ from tqdm import tqdm
 
 from sweagent.investigations.run_logs import (
     DEFAULT_TRAJECTORY_FOLDER_ID,
-    download_run_logs,
-    get_google_drive_href,
+    drive_download_files,
+    get_google_drive_folder_href,
     get_google_drive_service,
     get_instance_run_log_path,
     get_or_create_drive_folder,
     get_raw_run_log_path,
-    get_run_log_path,
-    run_logs_folder_name,
+    get_local_trajectory_json_path,
+    RUN_LOGS_FOLDER_NAME,
 )
 
 
 def create_folders() -> str:
-    os.makedirs(get_run_log_path(), exist_ok=True)
+    os.makedirs(get_local_trajectory_json_path(), exist_ok=True)
     os.makedirs(get_raw_run_log_path(), exist_ok=True)
 
 
@@ -68,7 +68,7 @@ def process_all_logs(input_dir: str) -> list[str]:
 
 
 def get_upload_file_log_path():
-    return get_run_log_path("uploaded_files.log")
+    return get_local_trajectory_json_path("uploaded_files.log")
 
 
 def read_existing_files(run_logs_folder_id: str):
@@ -152,17 +152,17 @@ def upload_files_to_drive(run_logs_folder_id: str, file_paths: list[str]) -> Non
 def main():
     create_folders()  # Ensure the run-logs folder exists before downloading
     drive_download_query = "name contains 'run-' and name contains '.log'"
-    raw_files = download_run_logs(DEFAULT_TRAJECTORY_FOLDER_ID, drive_download_query, get_raw_run_log_path)
+    raw_files = drive_download_files(DEFAULT_TRAJECTORY_FOLDER_ID, drive_download_query, get_raw_run_log_path)
     print(f"Found and downloaded {len(raw_files)} raw run log files.")
 
     if raw_files:
         disentangled_files = process_all_logs(get_raw_run_log_path())
         print(f"Disentangled {len(disentangled_files)} instance log files.")
 
-        run_logs_folder_id = get_or_create_drive_folder(DEFAULT_TRAJECTORY_FOLDER_ID, run_logs_folder_name)
+        run_logs_folder_id = get_or_create_drive_folder(DEFAULT_TRAJECTORY_FOLDER_ID, RUN_LOGS_FOLDER_NAME)
         upload_files_to_drive(run_logs_folder_id, disentangled_files)
         print(
-            f"Uploaded {len(disentangled_files)} disentangled log files to Google Drive at {get_google_drive_href(run_logs_folder_id)}"
+            f"Uploaded {len(disentangled_files)} disentangled log files to Google Drive at {get_google_drive_folder_href(run_logs_folder_id)}"
         )
     else:
         print("No files were downloaded. Please check the folder ID and service account permissions.")

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import os
+from typing import Callable
 
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
@@ -9,10 +10,14 @@ from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
 from tqdm import tqdm
 
-# Get folder ID from environment variables
-DEFAULT_TRAJECTORY_FOLDER_ID = "1rA9cqZnANg-GDfp4-sWZze-xzMWEOuF2"
+# We are focused on this one run (for now).
+DRIVE_REPRO_FOLDER_20240826 = "1ZkyW9o_KlHws3jpgBlgrDBrV31KOisYk"
 
-run_logs_folder_name = "run-logs"
+# 
+DRIVE_DEFAULT_USER_INDEX = "2"
+
+RUN_LOGS_FOLDER_NAME = "run-logs"
+
 google_drive_service: any = None
 
 
@@ -21,22 +26,28 @@ def get_absolute_path(relative_path: str) -> str:
     return os.path.join(script_dir, relative_path)
 
 
-def get_run_log_path(filename: str = "") -> str:
-    return get_absolute_path(os.path.join(run_logs_folder_name, filename))
+def get_local_run_log_path(filename: str = "") -> str:
+    return get_absolute_path(os.path.join(RUN_LOGS_FOLDER_NAME, filename))
+
+def get_local_trajectory_json_path(filename: str = "") -> str:
+    return get_absolute_path(os.path.join(RUN_LOGS_FOLDER_NAME, filename + ".json"))
+
+def get_local_run_path(filename: str = "") -> str:
+    return get_absolute_path(os.path.join(RUN_LOGS_FOLDER_NAME, filename))
 
 def get_run_log_name(instance_id: str) -> str:
     return f"run-{instance_id}.log"
 
 def get_instance_run_log_path(instance_id: str) -> str:
-    return get_absolute_path(os.path.join(run_logs_folder_name, get_run_log_name(instance_id)))
+    return get_absolute_path(os.path.join(RUN_LOGS_FOLDER_NAME, get_run_log_name(instance_id)))
 
 
 def get_raw_run_log_path(filename: str = "") -> str:
-    return get_absolute_path(os.path.join(f"{run_logs_folder_name}-raw", filename))
+    return get_absolute_path(os.path.join(f"{RUN_LOGS_FOLDER_NAME}-raw", filename))
 
 
-def get_google_drive_href(id: str) -> str:
-    return f"https://drive.google.com/drive/u/0/folders/{id} (https://drive.google.com/drive/u/2/folders/{id})"
+def get_google_drive_folder_href(id: str) -> str:
+    return f"https://drive.google.com/drive/u/{DRIVE_DEFAULT_USER_INDEX}/folders/{id}"
 
 
 def list_shared_folders() -> list[str]:
@@ -77,22 +88,89 @@ def get_google_drive_service() -> any:
     google_drive_service = build("drive", "v3", credentials=creds)
     return google_drive_service
 
-def get_or_create_drive_folder(parent_folder_id: str, name: str) -> str:
-    """
-    Create a folder inside the specified parent folder.
-    If the folder already exists, return its ID.
-    """
+# Keep folder ids cached, to save ourselves unnecessary look-ups.
+drive_file_ids_by_path: dict = {}
+
+def get_drive_file(parent_folder_id: str, relative_path: list[str]) -> str | None:
+    global drive_file_ids_by_path
+
+    # Construct the cache key
+    cache_key = f"{parent_folder_id}/{'/'.join(relative_path)}"
+
+    # Check if the result is already in the cache
+    if cache_key in drive_file_ids_by_path:
+        return drive_file_ids_by_path[cache_key]
+
     service = get_google_drive_service()
-    query = f"name='{name}' and '{parent_folder_id}' in parents and mimeType='application/vnd.google-apps.folder'"
+    current_parent_id = parent_folder_id
+    current_path = parent_folder_id
+
+    # Traverse through all but the last item in relative_path (these should be folders)
+    for folder_name in relative_path[:-1]:
+        current_path += f"/{folder_name}"
+        
+        # Check if this intermediate path is in the cache
+        if current_path in drive_file_ids_by_path:
+            current_parent_id = drive_file_ids_by_path[current_path]
+            continue
+
+        query = f"name='{folder_name}' and '{current_parent_id}' in parents and mimeType='application/vnd.google-apps.folder'"
+        results = service.files().list(q=query, fields="files(id)").execute()
+        items = results.get("files", [])
+
+        if items:
+            current_parent_id = items[0]["id"]
+            # Cache the intermediate result
+            drive_file_ids_by_path[current_path] = current_parent_id
+        else:
+            # If any folder in the path is not found, return None and don't cache
+            return None
+
+    # Look up the final item (file or folder)
+    final_name = relative_path[-1]
+    query = f"name='{final_name}' and '{current_parent_id}' in parents"
+    
     results = service.files().list(q=query, fields="files(id)").execute()
     items = results.get("files", [])
 
     if items:
-        return items[0]["id"]
+        file_id = items[0]["id"]
+        # Cache the final result
+        drive_file_ids_by_path[cache_key] = file_id
+        return file_id
+    else:
+        return None
 
-    file_metadata = {"name": name, "mimeType": "application/vnd.google-apps.folder", "parents": [parent_folder_id]}
-    file = service.files().create(body=file_metadata, fields="id").execute()
-    return file.get("id")
+def get_or_create_drive_folder(parent_folder_id: str, relative_path: list[str]) -> str:
+    service = get_google_drive_service()
+    current_parent_id = parent_folder_id
+
+    current_path = []
+    for folder_name in relative_path:
+        current_path.append(folder_name)
+
+        # Try to get the folder using the get_drive_file function
+        folder_id = get_drive_file(current_parent_id, [folder_name])
+        
+        if folder_id is not None:
+            current_parent_id = folder_id
+        else:
+            # If the folder doesn't exist, create it
+            file_metadata = {
+                "name": folder_name,
+                "mimeType": "application/vnd.google-apps.folder",
+                "parents": [current_parent_id]
+            }
+            file = service.files().create(body=file_metadata, fields="id").execute()
+            new_folder_id = file.get("id")
+
+            # Update the cache with the newly created folder
+            global drive_file_ids_by_path
+            cache_key = f"{parent_folder_id}/{'/'.join(current_path)}"
+            drive_file_ids_by_path[cache_key] = new_folder_id
+            current_parent_id = new_folder_id
+
+    return current_parent_id
 
 
 def download_drive_file(dest_path: str, drive_file_id: str, drive_file_size: int = None):
@@ -121,18 +199,39 @@ def download_drive_file(dest_path: str, drive_file_id: str, drive_file_size: int
             raise Exception(msg)
     return skipped
 
-def download_instance_log(instance_id: str):
-    run_logs_folder_id = get_or_create_drive_folder(DEFAULT_TRAJECTORY_FOLDER_ID, run_logs_folder_name)
-    return download_run_logs(run_logs_folder_id, f"name='{get_run_log_name(instance_id)}'", get_run_log_path)
+def download_instance_prediction_log(folder_id: str):
+    run_logs_folder_id = get_drive_file(DRIVE_REPRO_FOLDER_20240826, ["trajectories", RUN_LOGS_FOLDER_NAME])
+    instance_file_name = get_run_log_name(folder_id)
+    return drive_download_files(run_logs_folder_id, f"name='{instance_file_name}'", get_local_run_log_path)
+
+def download_instance_prediction_trajectory_json(instance_id: str):
+    folder_id = get_drive_file(DRIVE_REPRO_FOLDER_20240826, ["trajectories"])
+    instance_file_name = f"{instance_id}.traj"
+    return drive_download_files(folder_id, f"name='{instance_file_name}'", get_local_trajectory_json_path)
+
+def get_instance_eval_folder_href(instance_id: str):
+    folder_id = get_drive_file(DRIVE_REPRO_FOLDER_20240826, ["evaluation_logs", instance_id])
+    return get_google_drive_folder_href(folder_id)
+
+def download_instance_eval_test_output(instance_id: str):
+    folder_id = get_drive_file(DRIVE_REPRO_FOLDER_20240826, ["evaluation_logs", instance_id])
+    file_name = "test_output.txt"
+    def local_path_fn(_fname: str) -> str:
+        return get_local_run_path(f"{instance_id}-eval-output.log")
+    return drive_download_files(folder_id, f"name='{file_name}'", local_path_fn)
+
+# def get_instance_eval_report_href(instance_id: str):
+#     id = get_drive_file(DRIVE_REPRO_FOLDER_20240826, ["evaluation_logs", instance_id, "report.json"])
+#     return get_google_drive_file_href(id)
 
 
-def download_run_logs(folder_id: str, query: str, get_local_file_path: callable[[str], str]) -> list[str]:
+def drive_download_files(folder_id: str, query: str, get_local_file_path: callable[[str], str]) -> list[str]:
     service = get_google_drive_service()
     try:
         # Make sure we can access the folder first.
         service.files().get(fileId=folder_id).execute()
     except HttpError as error:
-        print(f"⚠ Failed to access folder with ID at {get_google_drive_href(folder_id)} ⚠.")
+        print(f"⚠ Failed to access folder with ID at {get_google_drive_folder_href(folder_id)} ⚠.")
         print("Listing all shared folders the service has access to:\n\n")
         list_shared_folders()
         raise error
@@ -142,7 +241,7 @@ def download_run_logs(folder_id: str, query: str, get_local_file_path: callable[
     # print(f"DDBG querying: '{query}'")
     results = service.files().list(q=query, fields="files(id, name, size)").execute()
     items = results.get("files", [])
-    print(f"{len(items)} Files matching query in folder {folder_id}")
+    print(f"Downloading {len(items)} files matching query '{query}'")
 
     if not items:
         print(f"Could not find any log files in folder {folder_id}.")
@@ -152,11 +251,11 @@ def download_run_logs(folder_id: str, query: str, get_local_file_path: callable[
     skipped = 0
     for item in tqdm(items, desc="Processing files", unit="file"):
         file_name = item["name"]
-        file_path = get_local_file_path(file_name)
+        local_file_path = get_local_file_path(file_name)
         file_id = item["id"]
         file_size = int(item["size"])
-        skipped += download_drive_file(file_path, file_id, file_size)
-        downloaded_files.append(file_path)
+        skipped += download_drive_file(local_file_path, file_id, file_size)
+        downloaded_files.append(local_file_path)
 
     print(f"Finished downloading ({skipped} skipped).")
 
