@@ -26,7 +26,7 @@ from sweagent.utils.log import get_logger
 
 logger = get_logger("api_models")
 
-_MAX_RETRIES = keys_config.get("SWE_AGENT_MODEL_MAX_RETRIES", 10)
+_MAX_RETRIES = int(keys_config.get("SWE_AGENT_MODEL_MAX_RETRIES", 10))
 
 
 @dataclass(frozen=True)
