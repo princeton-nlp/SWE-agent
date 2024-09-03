@@ -237,11 +237,12 @@ def drive_download_files(folder_id: str, query: str, get_local_file_path: callab
     try:
         # Make sure we can access the folder first.
         service.files().get(fileId=folder_id).execute()
-    except HttpError as error:
+    except Exception as error:
         print(f"⚠ Failed to access folder with ID at {get_google_drive_folder_href(folder_id)} ⚠.")
         print("Listing all shared folders the service has access to:\n\n")
         list_shared_folders()
-        raise error
+        # raise error
+        return []
 
     # Find matching files.
     query = f"'{folder_id}' in parents and {query}"
