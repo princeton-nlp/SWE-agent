@@ -2,9 +2,12 @@ FROM ubuntu:jammy
 
 ARG TARGETARCH
 
+# Replay Dev Stuff
+EXPOSE 8080
+
 # Install third party tools
 RUN apt-get update && \
-    apt-get install -y bash gcc git jq wget g++ make && \
+    apt-get install -y bash gcc git jq wget g++ gfortran make && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -35,7 +38,8 @@ RUN bash getconda.sh ${TARGETARCH} \
     && rm -f miniconda.sh
 RUN conda --version \
     && conda init bash \
-    && conda config --append channels conda-forge
+    && conda config --append channels conda-forge \
+    && conda config --set remote_read_timeout_secs 600
 
 # Cache python versions
 RUN conda create -y -n python3.9 python=3.9
