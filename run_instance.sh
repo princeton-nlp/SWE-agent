@@ -10,7 +10,6 @@ python3 run.py \
   --per_instance_cost_limit 4.00 \
   --split "test" \
   --instance_filter "$1" \
-  --skip_existing False 
-  # \
-  # --cache_task_images
+  --skip_existing False \
+  --cache_task_images
 

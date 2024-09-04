@@ -64,6 +64,8 @@ edit() {
     # Create a backup of the current file
     cp "$CURRENT_FILE" "/root/$(basename "$CURRENT_FILE")_backup"
 
+    # echo -e "edit(): pwd=$(pwd)\n\n##############\n  git_status=$(git status)\n\n##############\ngit_log=$(git log | head -10)\n\n##############\ngit_diff=$(git diff)\n"
+
     # Read the file line by line into an array
     mapfile -t lines < "$CURRENT_FILE"
     local new_lines=("${lines[@]:0:$start_line}" "${replacement[@]}" "${lines[@]:$((end_line))}")
