@@ -6,8 +6,6 @@
 set -e
 # set -x
 
-# echo "DDBG open_repo.sh $0 $1"
-
 if [ -z "$BASH_SOURCE" ]; then
   # NOTE: When running the script through Python's subprocess, BASH_SOURCE does not exist.
   thisFile="$0"

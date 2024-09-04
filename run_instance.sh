@@ -1,3 +1,6 @@
+set -e
+set -x
+
 # This runs the instance from the official SWE-agent demo video.
 # See: https://www.youtube.com/watch?v=CeMtJ4XObAM
 python3 run.py \

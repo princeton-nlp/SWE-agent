@@ -107,7 +107,7 @@ class ThoughtActionParser(ParseFunction):
     ```
     """
 
-    def __call__(self, model_response, commands: list[Command], strict=False):
+    def __call__(self, model_response: str, commands: list[Command], strict=False):
         """
         Parses the action from the output of the API call.
         We assume that the action is the last code block in the model_response.
@@ -123,6 +123,10 @@ class ThoughtActionParser(ParseFunction):
 
         In this case, only the second code block will be parsed as the action.
         """
+        discussions = model_response.split("\nDISCUSSION\n")
+        if len(discussions) > 2:
+            msg = f"You are not allowed to make up conversations. Your response must have at most one '\\nDISCUSSION\\n' string. Found: {len(discussions)}"
+            raise(FormatError(msg))
         code_block_pat = re.compile(r"^```(\S*)\s*\n|^```\s*$", re.MULTILINE)
         stack = []
         last_valid_block = None

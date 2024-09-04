@@ -56,7 +56,9 @@ instance_template: |-
 
   5. Always make sure to look at the currently open file and the current working directory (which appears right after the currently open file). The currently open file might be in a different directory than the working directory! Note that some commands, such as 'create', open files, so they might change the current  open file.
 
-  6. When editing files, it is easy to accidentally specify a wrong line number or to write code with incorrect indentation. Always check the code after you issue an edit to make sure that it reflects what you wanted to accomplish. If it didn't, issue another command to fix it.
+  6. CWD is the directory of the repo you are supposed to edit. Only modify files inside this directory. Prefer using file paths relative to this dir over abs paths.
+
+  7. When editing files, it is easy to accidentally specify a wrong line number or to write code with incorrect indentation. Always check the code after you issue an edit to make sure that it reflects what you wanted to accomplish. If it didn't, issue another command to fix it.
 
 
   (Open file: {open_file})

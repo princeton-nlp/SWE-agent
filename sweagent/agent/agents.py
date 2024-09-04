@@ -496,7 +496,7 @@ class Agent:
             },
         )
 
-        self.logger.info(f"💭 PROMPT-RESULT: THOUGHT ({self.name})\n{thought}")
+        self.logger.info(f"💭 PROMPT-RESULT: THOUGHT ({self.name}): {len(thought)}\n{thought}")
         self.logger.info(f"🎬 ACTION ({self.name})\n{action}")
 
         return thought, action, output
@@ -670,6 +670,10 @@ class Agent:
         self.set_environment_vars(env, self.config.env_variables)
 
     def set_environment_vars(self, env: SWEEnv, env_variables: dict[str, Any]) -> None:
+        # Init REPO and assure that the bot constrains its works to that folder.        
+        env_vars = self.config.env_variables.copy()
+        env_vars["REPO_ROOT"] = f"/{env._repo_name}"
+
         assert self.config is not None  # mypy
         commands_to_execute = (
             [self.config.state_command.code]

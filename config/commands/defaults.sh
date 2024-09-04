@@ -30,7 +30,7 @@ _constrain_line() {
 # arguments:
 #   path:
 #     type: string
-#     description: the path to the file to open
+#     description: The path to the file to open. Prefer relative paths.
 #     required: true
 #   line_number:
 #     type: integer
@@ -39,14 +39,14 @@ _constrain_line() {
 open() {
     if [ -z "$1" ]
     then
-        echo "Usage: open <file>"
+        echo "Usage: open <file> [<line_number>].\nNOTE: Files must be in $REPO_ROOT. Relative paths preferred."
         return
     fi
     # Check if the second argument is provided
     if [ -n "$2" ]; then
         # Check if the provided argument is a valid number
         if ! [[ $2 =~ ^[0-9]+$ ]]; then
-            echo "Usage: open <file> [<line_number>]"
+            echo "Usage: open <file> [<line_number>].\nNOTE: Files must be in $REPO_ROOT. Relative paths preferred."
             echo "Error: <line_number> must be a number"
             return  # Exit if the line number is not valid
         fi
@@ -67,8 +67,20 @@ open() {
         local line_number=$(jq -n "$WINDOW/2")  # Set default line number if not provided
     fi
 
-    if [ -f "$1" ]; then
-        export CURRENT_FILE=$(realpath $1)
+    if [[ $1 == /* ]]; then
+        # Absolute path: Check if file is in REPO_ROOT
+        FULL_PATH=$1
+        if [[ ! $TARGET_FILE == $REPO_ROOT/* ]]; then
+            echo "Usage: open <file> [<line_number>].\nNOTE: Files must be in $REPO_ROOT. Relative paths preferred."
+            echo "Error: File is not within the repo root directory."
+            return 1
+        fi
+    else
+        # Relative path
+        FULL_PATH="${REPO_ROOT}/${1}"
+    fi
+    if [ -f "$FULL_PATH" ]; then
+        export CURRENT_FILE=$(realpath $FULL_PATH)
         export CURRENT_LINE=$line_number
         _constrain_line
         _print
@@ -208,6 +220,7 @@ submit() {
         git apply -R < "/root/test.patch"
     fi
 
+    # echo -e "submit(): pwd=$(pwd)\n\n##############\n  git_status=$(git status)\n\n##############\ngit_log=$(git log | head -10)\n\n##############\ngit_diff=$(git diff)\n"
     git add -A
     git diff --cached > model.patch
     echo "<<SUBMISSION||"
