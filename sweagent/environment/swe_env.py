@@ -409,10 +409,9 @@ class SWEEnv(gym.Env):
             shell=True,
             check=False,
         )
-        instance_id = self.record["instance_id"]
-        repo_path = instance_id.rsplit('-', 1)[0]
+        # print(f"DDBG apply_test_patch, {self._repo_name}")
         self.communicate_with_handling(
-            input=f"cd {repo_path} && git apply /root/test.patch",
+            input=f"cd /{self._repo_name} && git apply /root/test.patch",
             error_msg="Failed to apply test patch correctly",
         )
         os.remove(path_to_patch)
