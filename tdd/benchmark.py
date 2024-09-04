@@ -14,6 +14,10 @@ config = "default"
 temperature = 0
 top_p = 0.95
 per_instance_cost_limit_usd = 4.00
+
+# Total cost:
+# Our daily limit is roughly 50M tokens, so let's make sure that no single run hits it.
+# Estimate: (40M input tokens) * ($3 / MToken).
 total_cost_limit_usd = 40 * 3
 install_env="install"
 skip_existing = True # will cause us to not re-run inference if the predictions already exists for an instance
