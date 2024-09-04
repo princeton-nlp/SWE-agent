@@ -198,7 +198,9 @@ class SWEEnv(gym.Env):
             self.args.environment_setup or "no_setup",
         ]
         tag = hashlib.sha256("".join(inputs).encode()).hexdigest()[:50]
-        return f"{self.cached_image_prefix}{tag}"
+        image_id = f"{self.cached_image_prefix}{tag}"
+        self.logger.info(f"CACHED_IMAGE={image_id} with inputs={json.dumps(inputs)}")
+        return image_id
 
     def add_hook(self, hook: EnvHook):
         """Add `EnvHook` to the environment.
@@ -317,6 +319,7 @@ class SWEEnv(gym.Env):
                 self.communicate("export $(xargs </.env)")
                 envs = self.communicate("env")
                 self.logger.debug(f"Environment variables restored from the image:\n{envs}\n")
+
                 if apply_test_patch:
                     self._apply_test_patch()
                 return None, info
@@ -388,6 +391,7 @@ class SWEEnv(gym.Env):
 
         if apply_test_patch:
             self._apply_test_patch()
+
         # Write any metadata to info if necessary
         return None, info
 
@@ -397,6 +401,7 @@ class SWEEnv(gym.Env):
         """
         assert self.record is not None
         path_to_patch = "test.patch"
+        self.logger.info("Applying test patch...")
         with open(path_to_patch, "w") as f:
             f.write(self.record["test_patch"])
         subprocess.run(
@@ -404,8 +409,10 @@ class SWEEnv(gym.Env):
             shell=True,
             check=False,
         )
+        instance_id = self.record["instance_id"]
+        repo_path = instance_id.rsplit('-', 1)[0]
         self.communicate_with_handling(
-            input="git apply /root/test.patch",
+            input=f"cd {repo_path} && git apply /root/test.patch",
             error_msg="Failed to apply test patch correctly",
         )
         os.remove(path_to_patch)
@@ -988,7 +995,7 @@ class SWEEnv(gym.Env):
                         error_msg="Failed to clone conda environment",
                         timeout_duration=LONG_TIMEOUT,
                     )
-                    self.logger.debug("Cloned python conda environment")
+                    self.logger.debug(f"Cloned python conda environment: {python_env}")
                 else:
                     self.logger.debug(f"Could not find {python_env}, creating new environment")
                     self.communicate_with_handling(
