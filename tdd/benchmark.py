@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from pathlib import Path
 
@@ -15,6 +17,8 @@ per_instance_cost_limit_usd = 4.00
 total_cost_limit_usd = 40 * 3
 install_env="install"
 skip_existing = True # will cause us to not re-run inference if the predictions already exists for an instance
+
+ROOT_DIR = os.path.join(os.path.dirname(__file__),  "..")
 
 def trajectory_dir():
     return f"trajectories/{os.getlogin()}/{model_name}__{Path(dataset_name).stem}__{config}__t-{temperature:.2f}__p-{top_p:.2f}__c-{per_instance_cost_limit_usd:.2f}__{install_env}-1"
@@ -61,8 +65,8 @@ if __name__ == "__main__":
     parser.add_argument("--predictions_path", type=str)
     args = parser.parse_args()
 
-    # set our directory one level higher so the run.py script works
-    os.chdir("..")
+    # Go to root dir.
+    os.chdir(ROOT_DIR)
 
     if args.inference:
         run_inference()

@@ -71,7 +71,7 @@ def summarize_instance(instance_id: str):
   * Traj Json: {", ".join([f"[Traj]({make_relative_path(fpath)})" for fpath in prediction_trajectories])}
   * {", ".join([f"[Patch]({make_relative_path(fpath)})" for fpath in result_patches])}
 * Evaluation
-  * [Evaluation Results Folder]({eval_folder_href})
+  * {f"[Evaluation Results Folder]({eval_folder_href})" if eval_folder_href else "(no evaluation found)"}
   * Eval Log: {", ".join([f"[Eval Log]({make_relative_path(fpath)})" for fpath in eval_test_output])}
 
 ## Bug Data
