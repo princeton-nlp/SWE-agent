@@ -496,7 +496,7 @@ class Agent:
             },
         )
 
-        self.logger.info(f"💭 THOUGHT ({self.name})\n{thought}")
+        self.logger.info(f"💭 PROMPT-RESULT: THOUGHT ({self.name})\n{thought}")
         self.logger.info(f"🎬 ACTION ({self.name})\n{action}")
 
         return thought, action, output
@@ -550,7 +550,7 @@ class Agent:
         """Ask the model to correct (without committing to persistent history) after a malformatted model output"""
         format_error_template = self.config.format_error_template
 
-        self.logger.warning(f"MALFORMED OUTPUT\n{output}")
+        self.logger.warning(f"PROMPT-RESULT: MALFORMED OUTPUT\n{output}")
         self.logger.warning(f"FORMAT ERROR\n{format_error_template}")
 
         temp_history = self.local_history + [
@@ -564,7 +564,7 @@ class Agent:
         name = action.strip().split()[0]
         blocklist_error_message = self.config.blocklist_error_template.format(name=name)
 
-        self.logger.warning(f"BLOCKLISTED OUTPUT\n{output}")
+        self.logger.warning(f"PROMPT-RESULT: BLOCKLISTED OUTPUT\n{output}")
         self.logger.warning(f"BLOCKLIST ERROR\n{blocklist_error_message}")
 
         temp_history = self.local_history + [

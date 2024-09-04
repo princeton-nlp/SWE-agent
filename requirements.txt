@@ -20,3 +20,11 @@ flask
 flask-cors
 flask-socketio
 groq
+pandas
+
+# Some of our own dependencies
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+python-dotenv
+tqdm

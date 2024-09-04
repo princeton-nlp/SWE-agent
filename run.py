@@ -106,7 +106,10 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
     # Raise unhandled exceptions during the run (useful for debugging)
     raise_exceptions: bool = False
     # Dump the entire config to the log
-    print_config: bool = True
+    print_config: bool = False
+    # Only create docker images and exit.
+    # Usually used in combination with --cache_task_images.
+    init_only: bool = False
 
     @property
     def run_name(self) -> str:
@@ -305,11 +308,13 @@ class OpenPRHook(MainHook):
 
 
 class Main:
+    log_path: str
+
     def __init__(self, args: ScriptArguments):
         self.traj_dir = Path("trajectories") / Path(getuser()) / args.run_name
         self.traj_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.datetime.now().strftime("%y%m%d%H%M%S")
-        log_path = self.traj_dir / f"run-{timestamp}.log"
+        self.log_path = log_path = self.traj_dir / f"run-{timestamp}.log"
         logger.info("Logging to %s", log_path)
         add_file_handler(log_path)
         if args.print_config:
@@ -340,10 +345,21 @@ class Main:
             for hook in self.hooks:
                 hook.on_instance_skipped()
             raise _ContinueLoop
-        logger.info("▶️  Beginning task " + str(index))
+        
+        # TODO: Create its own run log file.
+        # log_path = self.traj_dir / f"run-{timestamp}.log"
+        # logger.info("Logging to %s", log_path)
+        # add_file_handler(log_path)
+        logger.info(f"▶️  Beginning task {instance_id} ({str(index)})")
 
-        observation, info = self.env.reset(index)
+        # NOTE: We always start from knowing the test patch first.
+        apply_test_patch = False
+        observation, info = self.env.reset(index, apply_test_patch)
         if info is None:
+            raise _ContinueLoop
+        
+        if self.args.init_only:
+            # Only create the environment and exit.
             raise _ContinueLoop
 
         # Get info, patch information
@@ -425,7 +441,7 @@ class Main:
         """Check if we should skip this instance based on the instance filter and skip_existing flag."""
         # Skip instances that don't match the instance filter
         if re.match(self.args.instance_filter, instance_id) is None:
-            logger.info(f"⏭️ Instance filter not matched. Skipping instance {instance_id}")
+            # logger.info(f"⏭️ Instance filter not matched. Skipping instance {instance_id}")
             return True
 
         # If flag is set to False, don't skip
