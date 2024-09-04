@@ -246,7 +246,6 @@ def drive_download_files(folder_id: str, query: str, get_local_file_path: callab
 
     # Find matching files.
     query = f"'{folder_id}' in parents and {query}"
-    # print(f"DDBG querying: '{query}'")
     results = service.files().list(q=query, fields="files(id, name, size)").execute()
     items = results.get("files", [])
     print(f"Downloading {len(items)} files matching query '{query}'")

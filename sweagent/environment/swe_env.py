@@ -409,7 +409,6 @@ class SWEEnv(gym.Env):
             shell=True,
             check=False,
         )
-        # print(f"DDBG apply_test_patch, {self._repo_name}")
         self.communicate_with_handling(
             input=f"cd /{self._repo_name} && git apply /root/test.patch",
             error_msg="Failed to apply test patch correctly",

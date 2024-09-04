@@ -124,7 +124,6 @@ class ThoughtActionParser(ParseFunction):
         In this case, only the second code block will be parsed as the action.
         """
         discussions = model_response.split("\nDISCUSSION\n")
-        # print(f"DDBG ThoughtActionParser {len(discussions)}")
         if len(discussions) > 2:
             msg = f"You are not allowed to make up conversations. Your response must have at most one '\\nDISCUSSION\\n' string. Found: {len(discussions)}"
             raise(FormatError(msg))
