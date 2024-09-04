@@ -220,6 +220,7 @@ submit() {
         git apply -R < "/root/test.patch"
     fi
 
+    echo -e "DDBG SUBMITTING, pwd=$(pwd)\n\n##############\n  git_status=$(git status)\n\n##############\ngit_log=$(git log | head -10)\n\n##############\ngit_diff=$(git diff)\n"
     git add -A
     git diff --cached > model.patch
     echo "<<SUBMISSION||"
