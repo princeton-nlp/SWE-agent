@@ -3,12 +3,14 @@ from __future__ import annotations
 import json
 import logging
 import os
+import traceback
 from collections import defaultdict
 from dataclasses import dataclass, fields
 from pathlib import Path
 
 import together
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
+from anthropic.types import ToolParam
 from groq import Groq
 from openai import AzureOpenAI, BadRequestError, OpenAI
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
@@ -84,6 +86,7 @@ class CostLimitExceededError(Exception):
 class BaseModel:
     MODELS = {}
     SHORTCUTS = {}
+    tools: list[any] | None = None
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
         self.args = args
@@ -121,6 +124,9 @@ class BaseModel:
         else:
             msg = f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}"
             raise ValueError(msg)
+
+    def setup(self, other: APIStats | None = None):
+        self.reset_stats(other)
 
     def reset_stats(self, other: APIStats | None = None):
         if other is None:
@@ -391,6 +397,36 @@ class GroqModel(OpenAIModel):
             api_key=keys_config["GROQ_API_KEY"],
         )
 
+def make_anthropic_tools_from_commands(commands: list[Command]) -> list[ToolParam]:
+    anthropic_tools: list[ToolParam] = []
+
+    for command in commands:
+        # Example: https://github.com/replayio/ai-playground/blob/97e455420c7a093360539c6324d85f546d9c8f1b/code-monkey/src/tools/replace_in_file_tool.py#L8
+        input_schema = {
+            "type": "object",
+            "properties": {},
+            "required": []
+        }
+
+        if command.arguments:
+            for arg_name, arg_info in command.arguments.items():
+                input_schema["properties"][arg_name] = {
+                    "type": arg_info["type"],
+                    "description": arg_info["description"]
+                }
+                if arg_info["required"]:
+                    input_schema["required"].append(arg_name)
+
+        tool: ToolParam = {
+            "name": command.name,
+            "description": command.docstring or command.name,
+            "input_schema": input_schema
+        }
+
+        anthropic_tools.append(tool)
+
+    return anthropic_tools
+
 
 class AnthropicModel(BaseModel):
     MODELS = {
@@ -449,6 +485,10 @@ class AnthropicModel(BaseModel):
         # Set Anthropic key
         self.api = Anthropic(api_key=keys_config["ANTHROPIC_API_KEY"])
 
+    def setup(self, other: APIStats | None = None):
+        self.tools = make_anthropic_tools_from_commands(self.commands)
+        super.setup(other)
+
     def history_to_messages(
         self,
         history: list[dict[str, str]],
@@ -471,6 +511,37 @@ class AnthropicModel(BaseModel):
         Query the Anthropic API with the given `history` and return the response.
         """
         return anthropic_query(self, history)
+    
+    def _handle_tool_use(
+        self, response_message: dict
+    ) -> dict:
+        tool_name: str = response_message.name
+        tool = self.agent.get_tool(tool_name)
+        if tool is None:
+            raise Exception(f"Unknown tool: {tool_name}")
+
+        return self.create_claude_tool_call_result(
+            response_message.id,
+            response_message.input,
+            tool,
+        )
+
+    def create_claude_tool_call_result(
+        id: any,
+        input: dict[str, any],
+        tool: Tool,
+    ) -> list[dict[str, Tool]]:
+        result = {"type": "tool_result", "tool_use_id": id}
+        try:
+            # Call the handle_tool_call method on the instance
+            call_result = tool.handle_tool_call(input)
+            result["content"] = call_result
+
+        except Exception as err:
+            logger.error(f"TOOL CALL FAILED: {traceback.format_exc()}")
+            result["is_error"] = True
+            result["content"] = str(err)
+        return result
 
 
 class BedrockModel(BaseModel):
@@ -659,7 +730,25 @@ def anthropic_query(model: AnthropicModel | BedrockModel, history: list[dict[str
         temperature=model.args.temperature,
         top_p=model.args.top_p,
         system=system_message,
+        tools=model.tools
     )
+
+    for response_message in response.content:
+        # print("RAW RESPONSE:")
+        # pprint(response_message)
+        assistant_messages.append(response_message)
+
+        # ContentBlock type: https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/types/content_block.py#L12
+        if response_message.type == "tool_use":
+            user_messages.append(
+                model._handle_tool_use(response_message)
+            )
+        elif response_message.type == "text":
+            final_message_content = response_message.text
+            print(f"A: {final_message_content}")
+        else:
+            msg = f"Unhandled message type: {response_message.type} - {str(response_message)}"
+            raise Exception(msg)
 
     # Calculate + update costs, return response
     model.update_stats(response.usage.input_tokens, response.usage.output_tokens)
@@ -967,6 +1056,10 @@ def get_model(args: ModelArguments, commands: list[Command] | None = None):
     """
     if commands is None:
         commands = []
+    if args.model_name.startswith("claude"):
+        return AnthropicModel(args, commands)
+    
+    logger.warning(f"Using model {args.model_name} is not recommended. We have made modifications only to AnthropicModel. Meaning that all other models are likely going to behave worse.")
     if args.model_name == "instant_empty_submit":
         return InstantEmptySubmitTestModel(args, commands)
     if args.model_name == "human":
@@ -982,8 +1075,6 @@ def get_model(args: ModelArguments, commands: list[Command] | None = None):
         or args.model_name in OpenAIModel.SHORTCUTS
     ):
         return OpenAIModel(args, commands)
-    elif args.model_name.startswith("claude"):
-        return AnthropicModel(args, commands)
     elif args.model_name.startswith("bedrock"):
         return BedrockModel(args, commands)
     elif args.model_name.startswith("ollama"):

@@ -273,7 +273,7 @@ class Agent:
             instance_args: Arguments for the instance
         """
         assert self.config is not None  # mypy
-        self.model.reset_stats(init_model_stats)
+        self.model.setup(init_model_stats)
         self.instance_args = instance_args
 
         system_msg = self.config.system_template.format(**self.system_args)

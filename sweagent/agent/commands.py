@@ -4,6 +4,7 @@ import re
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 import yaml
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
@@ -26,6 +27,11 @@ class ControlMetadata(FrozenSerializable):
     next_step_template: str | None = None
     next_step_action_template: str | None = None
 
+
+class ArgumentInfo:
+    type: Literal["string", "integer", "boolean", "number"]
+    description: str
+    required: bool
 
 @dataclass(frozen=True)
 class Command(FrozenSerializable):

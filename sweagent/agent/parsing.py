@@ -125,7 +125,10 @@ class ThoughtActionParser(ParseFunction):
         """
         discussions = model_response.split("\nDISCUSSION\n")
         if len(discussions) > 2:
-            msg = f"You are not allowed to make up conversations. Your response must have at most one '\\nDISCUSSION\\n' string. Found: {len(discussions)}"
+            msg = f"Don't make up conversations. Your response must have at most one '\\nDISCUSSION\\n' string. Found: {len(discussions)}"
+            raise(FormatError(msg))
+        if "\nbash-$\n" in model_response:
+            msg = f"Don't make up conversations. Your response must not contain the string '\\nbash-$\\n'. Found: {len(discussions)}"
             raise(FormatError(msg))
         code_block_pat = re.compile(r"^```(\S*)\s*\n|^```\s*$", re.MULTILINE)
         stack = []
@@ -145,6 +148,9 @@ class ThoughtActionParser(ParseFunction):
         msg = "No action found in model response."
         raise FormatError(msg)
 
+    
+class ThoughtsWithToolsParser(ParseFunction):
+    TODO
 
 class XMLThoughtActionParser(ParseFunction):
     """
