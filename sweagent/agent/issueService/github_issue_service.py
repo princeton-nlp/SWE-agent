@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from ghapi.all import GhApi
-from sweagent.environment import InvalidGithubURL
 
 from sweagent.agent.issueService.issue_service import (
     GITHUB_ISSUE_URL_PATTERN,
@@ -9,6 +8,7 @@ from sweagent.agent.issueService.issue_service import (
     ProblemStatementResults,
     ProblemStatementSource,
 )
+from sweagent.environment import InvalidGithubURL
 from sweagent.utils.config import keys_config
 
 
