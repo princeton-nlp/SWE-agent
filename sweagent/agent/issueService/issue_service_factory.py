@@ -5,14 +5,14 @@ from sweagent.agent.issueService.github_issue_service import GitHubIssueService
 
 from sweagent.agent.issueService.issue_service import IssueService, GITHUB_ISSUE_URL_PATTERN, JIRA_ISSUE_URL_PATTERN
 
-class JiraInstanceBuilder(IssueService):
+class JiraIssueService(IssueService):
     def __init__(self, data_path):
         super().__init__(data_path)
 
     def get_problem_statement(self):
         default_logger.debug(f'Jira {self.data_path}')
 
-class FileInstanceBuilder(IssueService):
+class FileIssueService(IssueService):
     def __init__(self, data_path):
         super().__init__(data_path)
 
@@ -44,9 +44,9 @@ class IssueServiceFactory:
             case IssueDatabaseType.GITHUB:
                 return GitHubIssueService(data_path)
             case IssueDatabaseType.JIRA:
-                return JiraInstanceBuilder(data_path)
+                return JiraIssueService(data_path)
             case IssueDatabaseType.FILE:
-                return FileInstanceBuilder(data_path)
+                return FileIssueService(data_path)
             case _:
                 raise ValueError("Invalid Issue Source")
 
