@@ -25,6 +25,8 @@ from docker.models.containers import Container
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
+from sweagent.agent.issueService.issue_service import ProblemStatementResults
+
 DOCKER_START_UP_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 1))
 GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
 GITHUB_REPO_URL_PATTERN = re.compile(r".*[/@]?github\.com\/([^/]+)\/([^/]+)")
@@ -516,37 +518,10 @@ class InstanceBuilder:
         self.token = token
         self._instance_id_problem_suffix = ""
 
-    def set_problem_statement_from_gh_issue(self, issue_url: str):
-        owner, repo, issue_number = parse_gh_issue_url(issue_url)
-        self.args["problem_statement"] = get_problem_statement_from_github_issue(
-            owner,
-            repo,
-            issue_number,
-            token=self.token,
-        )
-        self.args["instance_id"] = f"{owner}__{repo}-i{issue_number}"
-        self.args["problem_statement_source"] = "online"
-
-    def set_problem_statement_from_file(self, file_path: str):
-        self.set_problem_statement_from_text(Path(file_path).read_text())
-
-    def set_problem_statement_from_text(self, text: str):
-        self.args["problem_statement"] = text
-        self.args["instance_id"] = hashlib.sha256(self.args["problem_statement"].encode()).hexdigest()[:6]
-        self.args["problem_statement_source"] = "local"
-
-    def set_problem_statement(self, data_path: str):
-        """Get problem statement for a single instance from a github issue url or a
-        path to a markdown or text file.
-        """
-        if data_path.startswith("text://"):
-            return self.set_problem_statement_from_text(data_path.removeprefix("text://"))
-        if is_github_issue_url(data_path):
-            return self.set_problem_statement_from_gh_issue(data_path)
-        if Path(data_path).is_file():
-            return self.set_problem_statement_from_file(data_path)
-        msg = f"Not sure how to get problem statement from {data_path=}."
-        raise ValueError(msg)
+    def set_problem_statement(self, problem_statement_results: ProblemStatementResults):
+        self.args["problem_statement"] = problem_statement_results.problem_statement
+        self.args["instance_id"] = problem_statement_results.instance_id.value
+        self.args["problem_statement_source"] = problem_statement_results.problem_statement_source
 
     def set_repo_info_from_gh_url(self, url: str, base_commit: str | None = None):
         owner, repo = parse_gh_repo_url(url)
@@ -632,6 +607,7 @@ def get_instances(
     token: str | None = None,
     *,
     repo_path: str = "",
+    problem_statement_results: ProblemStatementResults
 ) -> list[dict[str, Any]]:
     """
     Getter function for handling json, jsonl files
@@ -661,7 +637,7 @@ def get_instances(
         or is_github_issue_url(file_path)
     ):
         ib = InstanceBuilder(token=token)
-        ib.set_problem_statement(file_path)
+        ib.set_problem_statement(problem_statement_results)
         if repo_path:
             ib.set_repo_info(repo_path, base_commit=base_commit)
         elif is_github_repo_url(file_path):
