@@ -34,6 +34,7 @@ class IssueServiceFactory:
         else:
             return IssueDatabaseType.FILE
 
+
 def create_issue_factory(self, data_path: str):
     issue_type = self.parse_issue_db_type(data_path)
 
