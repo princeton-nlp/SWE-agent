@@ -34,7 +34,9 @@ class GitHubIssueService(IssueService):
         issue = api.issues.get(owner, repo, issue_number)
         title = issue.title if issue.title else ""
         body = issue.body if issue.body else ""
-        return ProblemStatementResults(f"{title}\n{body}\n", ProblemStatementSource.ONLINE)
+        problem_statement = f"{title}\n{body}\n"
+        instance_id = f"{owner}__{repo}-i{issue_number}"
+        return ProblemStatementResults(problem_statement, instance_id, ProblemStatementSource.ONLINE)
 
     def get_problem_statement(self):
         owner, repo, issue_number = self._parse_gh_issue_url(self.data_path)
