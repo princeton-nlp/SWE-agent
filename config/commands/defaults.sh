@@ -212,20 +212,20 @@ create() {
 }
 
 # @yaml
-# signature: exec <command> [<command_arg1>,...]
+# signature: exec <command> <all_args>
 # docstring: Execute any command in the shell. The environment does NOT support interactive session commands (e.g. python, vim).
 # arguments:
 #  command:
 #     type: string
 #     description: Shell command to execute
 #     required: true
-#  any_args:
+#  all_args:
 #     type: string
-#     description: Any args passed to the shell command as-is.
+#     description: Any args passed to the shell command as-is in one string.
 #     required: false
 exec() {
     if [ -z "$1" ]; then
-        echo "Usage: exec <command> [<command_arg1>, ...]"
+        echo "Usage: exec <command> <all_args>"
         return
     fi
     $@

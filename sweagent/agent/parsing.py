@@ -196,7 +196,8 @@ class AnthropicWithToolsThoughtsParser(ParseFunction):
 
         # Final results:
         text = "\n".join(texts)
-        action = f"{command_name} {" ".join(f"\"{a}\"" for a in inline_args)} {suffix}"
+        # action = f"{command_name} {" ".join(f"\"{a}\"" for a in inline_args)} {suffix}"
+        action = f"{command_name} {" ".join(inline_args)} {suffix}"
 
         logger.info(f"DDBG [Tool Parse Result]\n ## TEXT\n  {text}\n\n ## ACTION\n  {action}")
 

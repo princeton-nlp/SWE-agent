@@ -1,6 +1,6 @@
 # @yaml
 # signature: |-
-#   edit <start_line>:<end_line>
+#   edit <start_line> <end_line>
 #   <replacement_text>
 #   end_of_edit
 # docstring: replaces lines <start_line> through <end_line> (inclusive) with the given text in the open file. The replacement text is terminated by a line with only end_of_edit on it. All of the <replacement text> will be entered, so make sure your indentation is formatted properly. Python files will be checked for syntax errors after the edit. If the system detects a syntax error, the edit will not be executed. Simply try to edit the file again, but make sure to read the error message and modify the edit command you issue accordingly. Issuing the same command a second time will just lead to the same error message again.
@@ -25,23 +25,23 @@ edit() {
         return
     fi
 
-    local start_line="$(echo $1: | cut -d: -f1)"
-    local end_line="$(echo $1: | cut -d: -f2)"
-
-    if [ -z "$start_line" ] || [ -z "$end_line" ]
-    then
-        echo "Usage: edit <start_line>:<end_line>"
+    if [ $# -eq 2 ]; then
+        local start_line="$1"
+        local end_line="$2"
+    else
+        echo "Usage: edit <start_line> <end_line>"
+        echo "Error: start_line and end_line are required and no other arguments are allowed."
         return
     fi
 
     local re='^[0-9]+$'
     if ! [[ $start_line =~ $re ]]; then
-        echo "Usage: edit <start_line>:<end_line>"
+        echo "Usage: edit <start_line> <end_line>"
         echo "Error: start_line must be a number"
         return
     fi
     if ! [[ $end_line =~ $re ]]; then
-        echo "Usage: edit <start_line>:<end_line>"
+        echo "Usage: edit <start_line> <end_line>"
         echo "Error: end_line must be a number"
         return
     fi
