@@ -213,7 +213,7 @@ class ParseCommandBash(ParseCommand):
 class ParseCommandDetailed(ParseCommandBash):
     """
     # command_name:
-    #   "docstring"
+    #   docstring: "docstring"
     #   signature: "signature"
     #   arguments:
     #     arg1 (type) [required]: "description"

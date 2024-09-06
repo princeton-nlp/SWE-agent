@@ -176,6 +176,7 @@ class AnthropicWithToolsThoughtsParser(ParseFunction):
             msg = "Only tool_use and text blocks are allowed in model response."
             raise FormatError(msg)
 
+        # Convert tool calls to properly formatted actions:
         command_name, command_args = tool_blocks[0].input
         command = next((c for c in commands if c.name == command_name), None)
         if not command:
@@ -186,19 +187,18 @@ class AnthropicWithToolsThoughtsParser(ParseFunction):
             # multiline
             # NOTE: This logic is implicit from the semantics of `multi_line_command_endings`.
             inline_args = [command_args[key] for key in command.arguments[:-1] if key in command_args]
-            multiline_arg = command_args.get(command.arguments[-1])
-            suffix = {f"{multiline_arg}\n{command.end_name}" if multiline_arg else ''}
+            explicit_multiline_arg = command_args.get(command.arguments[-1])
+            suffix = {f"{explicit_multiline_arg}\n{command.end_name}" if explicit_multiline_arg else ''}
         else:
             # single-line
             inline_args = [command_args[key] for key in command.arguments if key in command_args]
             suffix = ""
 
-        inline_args = tuple(inline_args)
-
-        action = f"{command_name} {" ".join(f"\"{a}\"" for a in inline_args)} {suffix}"
+        # Final results:
         text = "\n".join(texts)
+        action = f"{command_name} {" ".join(f"\"{a}\"" for a in inline_args)} {suffix}"
 
-        logger.info(f"DDBG ToolParse result:\n  TEXT={text}\n  ACTION={action}")
+        logger.info(f"DDBG [Tool Parse Result]\n ## TEXT\n  {text}\n\n ## ACTION\n  {action}")
 
         return text.strip(), action.strip()
 

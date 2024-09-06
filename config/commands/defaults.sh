@@ -1,3 +1,6 @@
+# set -x
+set -e
+
 _print() {
     local total_lines=$(awk 'END {print NR}' $CURRENT_FILE)
     echo "[File: $(realpath $CURRENT_FILE) ($total_lines lines total)]"
@@ -206,6 +209,26 @@ create() {
     printf "\n" > "$1"
     # Use the existing open command to open the created file
     open "$1"
+}
+
+# @yaml
+# signature: exec <command> [<command_arg1>,...]
+# docstring: Execute any command in the shell. The environment does NOT support interactive session commands (e.g. python, vim).
+# arguments:
+#  command:
+#     type: string
+#     description: Shell command to execute
+#     required: true
+#  any_args:
+#     type: string
+#     description: Any args passed to the shell command as-is.
+#     required: false
+exec() {
+    if [ -z "$1" ]; then
+        echo "Usage: exec <command> [<command_arg1>, ...]"
+        return
+    fi
+    $@
 }
 
 # @yaml
