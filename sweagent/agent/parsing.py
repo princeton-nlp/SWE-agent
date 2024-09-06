@@ -9,7 +9,10 @@ from abc import abstractmethod
 from dataclasses import dataclass
 
 from sweagent.agent.commands import Command
+from sweagent.agent.models import AnthropicModelResult, ModelQueryResult
+from sweagent.utils.log import get_logger
 
+logger = get_logger("parsing")
 
 class FormatError(Exception):
     pass
@@ -77,14 +80,17 @@ class ActionParser(ParseFunction):
     {command_docs}
     """
 
-    def __call__(self, model_response, commands: list[Command], strict=False):
+    def __call__(self, model_response: ModelQueryResult, commands: list[Command], strict=False):        
+        if not isinstance(model_response, str):
+            msg = f"{self.__class__.__name__}: model_response must be a string"
+            raise TypeError(msg)
+
         if model_response.split():
             action = model_response.strip().split()[0]
             if action in {command.name for command in commands}:
                 return model_response, model_response
         msg = "First word in model response is not a valid command."
         raise FormatError(msg)
-
 
 class ThoughtActionParser(ParseFunction):
     """
@@ -107,7 +113,7 @@ class ThoughtActionParser(ParseFunction):
     ```
     """
 
-    def __call__(self, model_response: str, commands: list[Command], strict=False):
+    def __call__(self, model_response: ModelQueryResult, commands: list[Command], strict=False):
         """
         Parses the action from the output of the API call.
         We assume that the action is the last code block in the model_response.
@@ -123,6 +129,9 @@ class ThoughtActionParser(ParseFunction):
 
         In this case, only the second code block will be parsed as the action.
         """
+        if not isinstance(model_response, str):
+            msg = f"{self.__class__.__name__}: model_response must be a string"
+            raise TypeError(msg)
         discussions = model_response.split("\nDISCUSSION\n")
         if len(discussions) > 2:
             msg = f"Don't make up conversations. Your response must have at most one '\\nDISCUSSION\\n' string. Found: {len(discussions)}"
@@ -148,9 +157,51 @@ class ThoughtActionParser(ParseFunction):
         msg = "No action found in model response."
         raise FormatError(msg)
 
-    
-class ThoughtsWithToolsParser(ParseFunction):
-    TODO
+
+class AnthropicWithToolsThoughtsParser(ParseFunction):
+    def __call__(self, model_response: ModelQueryResult, commands: list[Command], strict=False):
+        if not isinstance(model_response, AnthropicModelResult):
+            msg = f"{self.__class__.__name__}: model_response must be AnthropicModelResult. Can only work with Anthropic models."
+            raise TypeError(msg)
+        
+        tool_blocks = [block for block in model_response.blocks if block.type == "tool_use"]
+        texts = [block.text for block in model_response.blocks if block.type == "text"]
+
+        if len(tool_blocks) != 1:
+            msg = "Exactly one tool_use block must be present in the model response."
+            raise FormatError(msg)
+
+        other_blocks = [block for block in model_response.blocks if block.type not in ["tool_use", "text"]]
+        if other_blocks:
+            msg = "Only tool_use and text blocks are allowed in model response."
+            raise FormatError(msg)
+
+        command_name, command_args = tool_blocks[0].input
+        command = next((c for c in commands if c.name == command_name), None)
+        if not command:
+            msg = f"Command '{command_name}' not found in tools."
+            raise FormatError(msg)
+        
+        if hasattr(command.end_name):
+            # multiline
+            # NOTE: This logic is implicit from the semantics of `multi_line_command_endings`.
+            inline_args = [command_args[key] for key in command.arguments[:-1] if key in command_args]
+            multiline_arg = command_args.get(command.arguments[-1])
+            suffix = {f"{multiline_arg}\n{command.end_name}" if multiline_arg else ''}
+        else:
+            # single-line
+            inline_args = [command_args[key] for key in command.arguments if key in command_args]
+            suffix = ""
+
+        inline_args = tuple(inline_args)
+
+        action = f"{command_name} {" ".join(f"\"{a}\"" for a in inline_args)} {suffix}"
+        text = "\n".join(texts)
+
+        logger.info(f"DDBG ToolParse result:\n  TEXT={text}\n  ACTION={action}")
+
+        return text.strip(), action.strip()
+
 
 class XMLThoughtActionParser(ParseFunction):
     """
@@ -167,7 +218,7 @@ class XMLThoughtActionParser(ParseFunction):
     Please make sure your output precisely matches the following format:
     """
 
-    def __call__(self, model_response, commands: list[Command], strict=False):
+    def __call__(self, model_response: ModelQueryResult, commands: list[Command], strict=False):
         """
         Parses the action from the output of the API call.
         We assume that the action is the last code block in the model_response.
@@ -183,6 +234,10 @@ class XMLThoughtActionParser(ParseFunction):
 
         In this case, only the second code block will be parsed as the action.
         """
+        if not isinstance(model_response, str):
+            msg = f"{self.__class__.__name__}: model_response must be a string"
+            raise TypeError(msg)
+        
         if "<command>" not in model_response or "</command>" not in model_response:
             msg = "No action found in model response."
             raise FormatError(msg)
@@ -252,7 +307,7 @@ class JsonParser(ParseFunction):
 
     """
 
-    def __call__(self, model_response, commands: list[Command], strict=False):
+    def __call__(self, model_response: ModelQueryResult, commands: list[Command], strict=False):
         """
         Parses the action from the output of the API call.
         We assume that model output is a JSON object with the following fields:
@@ -267,7 +322,11 @@ class JsonParser(ParseFunction):
                 "name": "command_name"
             }
         }
-        """
+        """        
+        if not isinstance(model_response, str):
+            msg = f"{self.__class__.__name__}: model_response must be a string"
+            raise TypeError(msg)
+
         try:
             data = json.loads(model_response)
             if not isinstance(data, dict):

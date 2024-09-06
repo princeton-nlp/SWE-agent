@@ -81,7 +81,7 @@ state_command:
           echo '{"open_file": "'$(realpath $CURRENT_FILE)'", "working_dir": "'$working_dir'"}';
       fi
     };
-parse_function: ThoughtActionParser
+parse_function: AnthropicWithToolsThoughtsParser
 env_variables:
   WINDOW: 100
   OVERLAP: 2

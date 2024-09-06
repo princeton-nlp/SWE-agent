@@ -10,7 +10,7 @@ from pathlib import Path
 
 import together
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
-from anthropic.types import ToolParam
+from anthropic.types import ContentBlock, ToolParam
 from groq import Groq
 from openai import AzureOpenAI, BadRequestError, OpenAI
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
@@ -29,6 +29,13 @@ logger = get_logger("api_models")
 
 _MAX_RETRIES = keys_config.get("SWE_AGENT_MODEL_MAX_RETRIES", 10)
 
+class AnthropicModelResult:
+    blocks: list[ContentBlock]
+
+    def __repr__(self) -> str:
+        return f"AnthropicModelResult(blocks={repr(self.blocks)})"
+
+ModelQueryResult = str | AnthropicModelResult
 
 @dataclass(frozen=True)
 class ModelArguments(FrozenSerializable):
@@ -183,7 +190,7 @@ class BaseModel:
             raise CostLimitExceededError(msg)
         return cost
 
-    def query(self, history: list[dict[str, str]]) -> str:
+    def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
         msg = "Use a subclass of BaseModel"
         raise NotImplementedError(msg)
 
@@ -300,7 +307,7 @@ class OpenAIModel(BaseModel):
         stop=stop_after_attempt(_MAX_RETRIES),
         retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
     )
-    def query(self, history: list[dict[str, str]]) -> str:
+    def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
         """
         Query the OpenAI API with the given `history` and return the response.
         """
@@ -506,42 +513,11 @@ class AnthropicModel(BaseModel):
         stop=stop_after_attempt(_MAX_RETRIES),
         retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
     )
-    def query(self, history: list[dict[str, str]]) -> str:
+    def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
         """
         Query the Anthropic API with the given `history` and return the response.
         """
         return anthropic_query(self, history)
-    
-    def _handle_tool_use(
-        self, response_message: dict
-    ) -> dict:
-        tool_name: str = response_message.name
-        tool = self.agent.get_tool(tool_name)
-        if tool is None:
-            raise Exception(f"Unknown tool: {tool_name}")
-
-        return self.create_claude_tool_call_result(
-            response_message.id,
-            response_message.input,
-            tool,
-        )
-
-    def create_claude_tool_call_result(
-        id: any,
-        input: dict[str, any],
-        tool: Tool,
-    ) -> list[dict[str, Tool]]:
-        result = {"type": "tool_result", "tool_use_id": id}
-        try:
-            # Call the handle_tool_call method on the instance
-            call_result = tool.handle_tool_call(input)
-            result["content"] = call_result
-
-        except Exception as err:
-            logger.error(f"TOOL CALL FAILED: {traceback.format_exc()}")
-            result["is_error"] = True
-            result["content"] = str(err)
-        return result
 
 
 class BedrockModel(BaseModel):
@@ -621,7 +597,7 @@ class BedrockModel(BaseModel):
         stop=stop_after_attempt(_MAX_RETRIES),
         retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
     )
-    def query(self, history: list[dict[str, str]]) -> str:
+    def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
         """
         Query Amazon Bedrock with the given `history` and return the response.
         """
@@ -733,26 +709,11 @@ def anthropic_query(model: AnthropicModel | BedrockModel, history: list[dict[str
         tools=model.tools
     )
 
-    for response_message in response.content:
-        # print("RAW RESPONSE:")
-        # pprint(response_message)
-        assistant_messages.append(response_message)
-
-        # ContentBlock type: https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/types/content_block.py#L12
-        if response_message.type == "tool_use":
-            user_messages.append(
-                model._handle_tool_use(response_message)
-            )
-        elif response_message.type == "text":
-            final_message_content = response_message.text
-            print(f"A: {final_message_content}")
-        else:
-            msg = f"Unhandled message type: {response_message.type} - {str(response_message)}"
-            raise Exception(msg)
-
     # Calculate + update costs, return response
     model.update_stats(response.usage.input_tokens, response.usage.output_tokens)
-    return "\n".join([x.text for x in response.content])
+    # return "\n".join([x.text for x in response.content])
+    # NOTE: This requires AnthropicWithToolsThoughtsParser.
+    return response.content
 
 
 class OllamaModel(BaseModel):
@@ -791,7 +752,7 @@ class OllamaModel(BaseModel):
         stop=stop_after_attempt(_MAX_RETRIES),
         retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
     )
-    def query(self, history: list[dict[str, str]]) -> str:
+    def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
         """
         Query the Ollama API with the given `history` and return the response.
         """
@@ -884,7 +845,7 @@ class TogetherModel(BaseModel):
         stop=stop_after_attempt(_MAX_RETRIES),
         retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
     )
-    def query(self, history: list[dict[str, str]]) -> str:
+    def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
         """
         Query the Together API with the given `history` and return the response.
         """
@@ -934,7 +895,7 @@ class HumanModel(BaseModel):
         # Return history components with just role, content fields
         return [{k: v for k, v in entry.items() if k in ["role", "content"]} for entry in history]
 
-    def query(self, history: list[dict[str, str]], action_prompt: str = "> ") -> str:
+    def query(self, history: list[dict[str, str]], action_prompt: str = "> ") -> ModelQueryResult:
         """
         Logic for handling user input to pass to SWEEnv
         """
@@ -966,7 +927,7 @@ class HumanModel(BaseModel):
 class HumanThoughtModel(HumanModel):
     MODELS = {"human_thought": {}}
 
-    def query(self, history: list[dict[str, str]]) -> str:
+    def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
         """
         Logic for handling user input (both thought + action) to pass to SWEEnv
         """
@@ -1006,7 +967,7 @@ class ReplayModel(BaseModel):
         self.replay_idx += 1
         self.action_idx = 0
 
-    def query(self, history: list[dict[str, str]]) -> str:
+    def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
         """
         Logic for tracking which replay action to pass to SWEEnv
         """
@@ -1039,7 +1000,7 @@ class InstantEmptySubmitTestModel(BaseModel):
         super().__init__(args, commands)
         self._action_idx = 0
 
-    def query(self, history: list[dict[str, str]]) -> str:
+    def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
         # Need to at least do _something_ to submit
         if self._action_idx == 0:
             self._action_idx = 1

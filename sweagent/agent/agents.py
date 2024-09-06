@@ -18,6 +18,7 @@ from sweagent.agent.models import (
     ContextWindowExceededError,
     CostLimitExceededError,
     ModelArguments,
+    ModelQueryResult,
     get_model,
 )
 from sweagent.agent.parsing import FormatError, ParseFunction
@@ -197,7 +198,7 @@ class AgentArguments(FlattenedAccess, FrozenSerializable):
 class TrajectoryStep(TypedDict):
     action: str
     observation: str
-    response: str
+    response: ModelQueryResult
     state: str | None
     thought: str
 
@@ -211,7 +212,7 @@ class AgentHook:
 
     def on_step_start(self): ...
 
-    def on_actions_generated(self, *, thought: str, action: str, output: str): ...
+    def on_actions_generated(self, *, thought: str, action: str, output: ModelQueryResult): ...
 
     def on_sub_action_started(self, *, sub_action: str): ...
 
@@ -471,7 +472,7 @@ class Agent:
         self.subroutine_patterns[self.config.submit_command] = submit_pat
         self.command_patterns[self.config.submit_command] = submit_pat
 
-    def forward(self, observation: str, available_actions: list[str], state: str) -> tuple[str, str, str]:
+    def forward(self, observation: str, available_actions: list[str], state: str) -> tuple[str, str, ModelQueryResult]:
         """Forwards the model
 
         Args:
@@ -501,7 +502,7 @@ class Agent:
 
         return thought, action, output
 
-    def forward_model(self, observation: str, state: str) -> str:
+    def forward_model(self, observation: str, state: str) -> ModelQueryResult:
         """Query the model with the current state and observation with the appropriate template.
 
         Returns:
@@ -546,7 +547,7 @@ class Agent:
             hook.on_model_query(query=self.local_history, agent=self.name)
         return self.model.query(self.local_history)
 
-    def retry_after_format_fail(self, output: str) -> str:
+    def retry_after_format_fail(self, output: str) -> ModelQueryResult:
         """Ask the model to correct (without committing to persistent history) after a malformatted model output"""
         format_error_template = self.config.format_error_template
 
@@ -559,7 +560,7 @@ class Agent:
         ]
         return self.model.query(temp_history)
 
-    def retry_after_blocklist_fail(self, output: str, action: str) -> str:
+    def retry_after_blocklist_fail(self, output: ModelQueryResult, action: str) -> ModelQueryResult:
         """Ask the model to correct (without committing to persistent history) after a disallowed command"""
         name = action.strip().split()[0]
         blocklist_error_message = self.config.blocklist_error_template.format(name=name)
@@ -587,8 +588,8 @@ class Agent:
 
     def check_format_and_requery(
         self,
-        output: str,
-    ) -> tuple[str, str, str]:
+        output: ModelQueryResult,
+    ) -> tuple[str, str, ModelQueryResult]:
         """Query the model with the current state and observation with the appropriate template.
 
         Try to parse the output into a thought and action. Retry if the output is malformatted or the action is blocked.
@@ -632,7 +633,7 @@ class Agent:
         self.logger.warning(f"Malformat limit reached: \n{output}")
         return "Exit due to format error", "exit_format", output
 
-    def forward_with_error_check(self, observation: str, state: str) -> tuple[str, str, str]:
+    def forward_with_error_check(self, observation: str, state: str) -> tuple[str, str, ModelQueryResult]:
         """Wrapper around `self.forward_model` that handles errors and retries
         due to format errors or blocked actions.
 
