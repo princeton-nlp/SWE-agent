@@ -166,14 +166,14 @@ class SWEEnv(gym.Env):
 
         self._github_token: str = keys_config.get("GITHUB_TOKEN", "")  # type: ignore
 
+        # Load Task Instances
+        self.data_path = self.args.data_path
+
         # Get Problem Statement
-        self.logger.debug("Hello Demro")
         issue_service_factory = IssueServiceFactory()
         issue_service = issue_service_factory.create_issue_factory(self.data_path)
         problem_statement_results = issue_service.get_problem_statement()
 
-        # Load Task Instances
-        self.data_path = self.args.data_path
         self.data = get_instances(
             self.data_path,
             self.args.base_commit,

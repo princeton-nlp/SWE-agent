@@ -23,7 +23,7 @@ class IssueDatabaseType(Enum):
 
 
 class IssueServiceFactory:
-    def parse_issue_db_type(self, data_path: str) -> IssueDatabaseType:
+    def _parse_issue_db_type(self, data_path: str) -> IssueDatabaseType:
         """Parse the data_path and determine what kind of issue repository we're using"""
         if GITHUB_ISSUE_URL_PATTERN.search(data_path) is not None:
             return IssueDatabaseType.GITHUB
@@ -34,16 +34,15 @@ class IssueServiceFactory:
         else:
             return IssueDatabaseType.FILE
 
+    def create_issue_factory(self, data_path: str):
+        issue_type = self._parse_issue_db_type(data_path)
 
-def create_issue_factory(self, data_path: str):
-    issue_type = self.parse_issue_db_type(data_path)
-
-    if issue_type == IssueDatabaseType.GITHUB:
-        return GitHubIssueService(data_path)
-    elif issue_type == IssueDatabaseType.JIRA:
-        return JiraIssueService(data_path)
-    elif issue_type == IssueDatabaseType.FILE:
-        return FileIssueService(data_path)
-    else:
-        error_message = "Invalid Issue Source"
-        raise ValueError(error_message)
+        if issue_type == IssueDatabaseType.GITHUB:
+            return GitHubIssueService(data_path)
+        elif issue_type == IssueDatabaseType.JIRA:
+            return JiraIssueService(data_path)
+        elif issue_type == IssueDatabaseType.FILE:
+            return FileIssueService(data_path)
+        else:
+            error_message = "Invalid Issue Source"
+            raise ValueError(error_message)

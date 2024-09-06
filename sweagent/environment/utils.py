@@ -519,8 +519,8 @@ class InstanceBuilder:
 
     def set_problem_statement(self, problem_statement_results: ProblemStatementResults):
         self.args["problem_statement"] = problem_statement_results.problem_statement
-        self.args["instance_id"] = problem_statement_results.instance_id.value
-        self.args["problem_statement_source"] = problem_statement_results.problem_statement_source
+        self.args["instance_id"] = problem_statement_results.instance_id
+        self.args["problem_statement_source"] = problem_statement_results.problem_statement_source.value
 
     def set_repo_info_from_gh_url(self, url: str, base_commit: str | None = None):
         owner, repo = parse_gh_repo_url(url)
