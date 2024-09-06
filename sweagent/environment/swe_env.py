@@ -179,7 +179,7 @@ class SWEEnv(gym.Env):
             self.args.split,
             token=self._github_token,
             repo_path=self.args.repo_path,
-            issue_service=issue_service_instance
+            issue_service=issue_service_instance,
         )
         #: Instance we're currently processing. Gets set in self.reset.
         self.record: dict[str, Any] | None = None

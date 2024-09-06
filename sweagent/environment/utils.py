@@ -22,7 +22,7 @@ from git import InvalidGitRepositoryError, Repo
 
 import docker
 from docker.models.containers import Container
-from sweagent.agent.issueService.issue_service import ProblemStatementResults, IssueService
+from sweagent.agent.issueService.issue_service import IssueService, ProblemStatementResults
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
@@ -606,7 +606,7 @@ def get_instances(
     token: str | None = None,
     *,
     repo_path: str = "",
-    issue_service:IssueService
+    issue_service: IssueService,
 ) -> list[dict[str, Any]]:
     """
     Getter function for handling json, jsonl files
