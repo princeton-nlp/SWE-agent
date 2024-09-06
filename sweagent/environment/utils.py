@@ -22,10 +22,9 @@ from git import InvalidGitRepositoryError, Repo
 
 import docker
 from docker.models.containers import Container
+from sweagent.agent.issueService.issue_service import ProblemStatementResults
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
-
-from sweagent.agent.issueService.issue_service import ProblemStatementResults
 
 DOCKER_START_UP_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 1))
 GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
@@ -607,7 +606,7 @@ def get_instances(
     token: str | None = None,
     *,
     repo_path: str = "",
-    problem_statement_results: ProblemStatementResults
+    problem_statement_results: ProblemStatementResults,
 ) -> list[dict[str, Any]]:
     """
     Getter function for handling json, jsonl files

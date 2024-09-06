@@ -1,13 +1,11 @@
-import logging
-from pathlib import Path
-import hashlib
+from __future__ import annotations
 
+import hashlib
+from pathlib import Path
+
+from sweagent.agent.issueService.issue_service import IssueService, ProblemStatementResults, ProblemStatementSource
 from sweagent.utils.log import default_logger
-from sweagent.agent.issueService.issue_service import (
-    IssueService, 
-    ProblemStatementResults, 
-    ProblemStatementSource
-)
+
 
 class FileIssueService(IssueService):
     def __init__(self, data_path):
@@ -18,7 +16,7 @@ class FileIssueService(IssueService):
         return ProblemStatementResults(text, instance_id, ProblemStatementSource.LOCAL)
 
     def get_problem_statement(self):
-        default_logger.debug(f'File {self.data_path}')
+        default_logger.debug(f"File {self.data_path}")
 
         if self.data_path.startswith("text://"):
             results = self._get_problem_statement_results_from_text(self.data_path.removeprefix("text://"))

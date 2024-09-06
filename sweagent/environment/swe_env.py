@@ -27,9 +27,7 @@ import docker
 import docker.errors
 import docker.models.containers
 from sweagent import REPO_ROOT
-from sweagent.agent.issueService.issue_service_factory import (
-    IssueServiceFactory
-)
+from sweagent.agent.issueService.issue_service_factory import IssueServiceFactory
 from sweagent.environment.utils import (
     PROCESS_DONE_MARKER_END,
     PROCESS_DONE_MARKER_START,
@@ -182,7 +180,7 @@ class SWEEnv(gym.Env):
             self.args.split,
             token=self._github_token,
             repo_path=self.args.repo_path,
-            problem_statement_results=problem_statement_results
+            problem_statement_results=problem_statement_results,
         )
         #: Instance we're currently processing. Gets set in self.reset.
         self.record: dict[str, Any] | None = None

@@ -1,8 +1,15 @@
-import logging
-from sweagent.utils.log import default_logger, get_logger
-from sweagent.utils.config import keys_config
-from sweagent.agent.issueService.issue_service import IssueService, GITHUB_ISSUE_URL_PATTERN, JIRA_ISSUE_URL_PATTERN, ProblemStatementResults, ProblemStatementSource
+from __future__ import annotations
+
 from ghapi.all import GhApi
+
+from sweagent.agent.issueService.issue_service import (
+    GITHUB_ISSUE_URL_PATTERN,
+    IssueService,
+    ProblemStatementResults,
+    ProblemStatementSource,
+)
+from sweagent.utils.config import keys_config
+
 
 class GitHubIssueService(IssueService):
     def __init__(self, data_path):
@@ -28,7 +35,9 @@ class GitHubIssueService(IssueService):
         assert len(res) == 3
         return tuple(res)  # type: ignore
 
-    def _get_problem_statement_from_github_issue(self, owner: str, repo: str, issue_number: str, *, token: str | None = "") -> str:
+    def _get_problem_statement_from_github_issue(
+        self, owner: str, repo: str, issue_number: str, *, token: str | None = ""
+    ) -> str:
         """Return problem statement from github issue"""
         api = GhApi(token=token)
         issue = api.issues.get(owner, repo, issue_number)
