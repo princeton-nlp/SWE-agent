@@ -34,22 +34,15 @@ class IssueServiceFactory:
         else:
             return IssueDatabaseType.FILE
 
-    def create_issue_factory(self, data_path: str):
-        issue_type = self.parse_issue_db_type(data_path)
+def create_issue_factory(self, data_path: str):
+    issue_type = self.parse_issue_db_type(data_path)
 
-        match issue_type:
-            case IssueDatabaseType.GITHUB:
-                return GitHubIssueService(data_path)
-            case IssueDatabaseType.JIRA:
-                return JiraIssueService(data_path)
-            case IssueDatabaseType.FILE:
-                return FileIssueService(data_path)
-            case _:
-                error_message = "Invalid Issue Source"
-                raise ValueError(error_message)
-
-
-# # In your main application logic
-# factory = InstanceBuilderFactory()
-# reader = factory.create_issue_reader(user_selected_source)
-# issue_details = reader.get_issue_details(issue_id)
+    if issue_type == IssueDatabaseType.GITHUB:
+        return GitHubIssueService(data_path)
+    elif issue_type == IssueDatabaseType.JIRA:
+        return JiraIssueService(data_path)
+    elif issue_type == IssueDatabaseType.FILE:
+        return FileIssueService(data_path)
+    else:
+        error_message = "Invalid Issue Source"
+        raise ValueError(error_message)
