@@ -22,7 +22,7 @@ from git import InvalidGitRepositoryError, Repo
 
 import docker
 from docker.models.containers import Container
-from sweagent.agent.issueService.issue_service import ProblemStatementResults
+from sweagent.agent.issueService.issue_service import ProblemStatementResults, IssueService
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
@@ -606,7 +606,7 @@ def get_instances(
     token: str | None = None,
     *,
     repo_path: str = "",
-    problem_statement_results: ProblemStatementResults,
+    issue_service:IssueService
 ) -> list[dict[str, Any]]:
     """
     Getter function for handling json, jsonl files
@@ -628,6 +628,9 @@ def get_instances(
             msg = "Expected a list of instances, got a dictionary."
             raise ValueError(msg)
         return [instance_from_dict(x) for x in instances]
+
+    # Get Problem Statement
+    problem_statement_results = issue_service.get_problem_statement()
 
     # The next if statement is very brittle logic to determine if we're processing a single instance
     if (

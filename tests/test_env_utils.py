@@ -18,6 +18,7 @@ from sweagent.environment.utils import (
     remove_triple_backticks,
 )
 from sweagent.utils.config import keys_config
+from sweagent.agent.issueService.issue_service import IssueService
 
 _TOKEN = {"token": keys_config["GITHUB_TOKEN"]}
 
@@ -86,8 +87,14 @@ def test_get_associated_commit_urls():
     assert len(assoc) > 0
 
 
+def build_issue_service(data_path:str)->IssueService :
+    issue_service_factory = IssueServiceFactory()
+    issue_service = issue_service_factory.create_issue_factory(data_path)
+    return issue_service
+
 def test_get_instance_gh_issue():
-    instance = get_instances("https://github.com/swe-agent/test-repo/issues/1", **_TOKEN)[0]
+    data_path = "https://github.com/swe-agent/test-repo/issues/1"
+    instance = get_instances(data_path, **_TOKEN, issue_service=build_issue_service(data_path))[0]
     compare_with = {
         "repo": "swe-agent/test-repo",
         "instance_id": "swe-agent__test-repo-i1",
@@ -110,11 +117,13 @@ def clone_repo(tmp_path, repo_url):
 
 
 def test_get_instance_gh_issue_local_repo(tmp_path):
+    data_path="https://github.com/swe-agent/test-repo/issues/1"
     clone_repo(tmp_path, "https://github.com/swe-agent/test-repo/")
     instance = get_instances(
-        file_path="https://github.com/swe-agent/test-repo/issues/1",
+        file_path=data_path,
         repo_path=str(tmp_path / "test-repo"),
-        **_TOKEN,
+        **_TOKEN,\
+        issue_service=build_issue_service(data_path)
     )[0]
     compare_with = {
         "repo": str(tmp_path.resolve() / "test-repo"),
@@ -135,6 +144,7 @@ def test_get_instance_local_issue_local_repo(tmp_path):
     instance = get_instances(
         file_path=str(issue_path),
         repo_path=str(tmp_path / "test-repo"),
+        issue_service=build_issue_service(str(issue_path))
     )[0]
     compare_with = {
         "repo": str(tmp_path.resolve() / "test-repo"),
@@ -149,10 +159,12 @@ def test_get_instance_local_issue_local_repo(tmp_path):
 
 
 def test_get_instance_gh_issue_gh_repo(tmp_path):
+    data_path = "https://github.com/swe-agent/test-repo/issues/1"
     instance = get_instances(
-        file_path="https://github.com/swe-agent/test-repo/issues/1",
+        file_path=data_path,
         repo_path="https://github.com/princeton-nlp/SWE-agent",
         **_TOKEN,
+        issue_service=build_issue_service(data_path)
     )[0]
     compare_with = {
         "repo": "princeton-nlp/SWE-agent",
@@ -167,10 +179,12 @@ def test_get_instance_gh_issue_gh_repo(tmp_path):
 
 
 def test_get_instance_text_issue_gh_repo(tmp_path):
+    data_path="text://this is a test"
     instance = get_instances(
-        file_path="text://this is a test",
+        file_path=data_path,
         repo_path="https://github.com/princeton-nlp/SWE-agent",
         **_TOKEN,
+        issue_service=build_issue_service(data_path)
     )[0]
     compare_with = {
         "repo": "princeton-nlp/SWE-agent",
@@ -187,4 +201,4 @@ def test_load_instances(test_data_path, caplog):
     test_data_sources = test_data_path / "data_sources"
     examples = list(test_data_sources.iterdir())
     for example in examples:
-        get_instances(file_path=str(example), **_TOKEN)
+        get_instances(file_path=str(example), **_TOKEN, issue_service=build_issue_service(str(example)))

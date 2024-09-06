@@ -171,8 +171,7 @@ class SWEEnv(gym.Env):
 
         # Get Problem Statement
         issue_service_factory = IssueServiceFactory()
-        issue_service = issue_service_factory.create_issue_factory(self.data_path)
-        problem_statement_results = issue_service.get_problem_statement()
+        issue_service_instance = issue_service_factory.create_issue_factory(self.data_path)
 
         self.data = get_instances(
             self.data_path,
@@ -180,7 +179,7 @@ class SWEEnv(gym.Env):
             self.args.split,
             token=self._github_token,
             repo_path=self.args.repo_path,
-            problem_statement_results=problem_statement_results,
+            issue_service=issue_service_instance
         )
         #: Instance we're currently processing. Gets set in self.reset.
         self.record: dict[str, Any] | None = None
