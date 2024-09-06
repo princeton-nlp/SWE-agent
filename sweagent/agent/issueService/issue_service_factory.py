@@ -1,39 +1,22 @@
-import re
-
-from abc import ABC, abstractmethod
 from enum import Enum, auto
 import logging
 from sweagent.utils.log import default_logger, get_logger
+from sweagent.agent.issueService.github_issue_service import GitHubIssueService
 
-class InstanceBuilder(ABC):
-    def __init__(self, data_path):
-        self.data_path = data_path
+from sweagent.agent.issueService.issue_service import IssueService, GITHUB_ISSUE_URL_PATTERN, JIRA_ISSUE_URL_PATTERN
 
-    @abstractmethod
-    def get_instance(self, issue_id):
-        pass
-
-    # ... other common methods
-
-class GitHubInstanceBuilder(InstanceBuilder):
+class JiraInstanceBuilder(IssueService):
     def __init__(self, data_path):
         super().__init__(data_path)
 
-    def get_instance(self):
-        default_logger.debug(f'GitHub {self.data_path}')
-
-class JiraInstanceBuilder(InstanceBuilder):
-    def __init__(self, data_path):
-        super().__init__(data_path)
-
-    def get_instance(self):
+    def get_problem_statement(self):
         default_logger.debug(f'Jira {self.data_path}')
 
-class FileInstanceBuilder(InstanceBuilder):
+class FileInstanceBuilder(IssueService):
     def __init__(self, data_path):
         super().__init__(data_path)
 
-    def get_instance(self):
+    def get_problem_statement(self):
         default_logger.debug(f'File {self.data_path}')
 
 class IssueDatabaseType(Enum):
@@ -41,28 +24,25 @@ class IssueDatabaseType(Enum):
     JIRA = auto()
     FILE = auto()
 
-class InstanceBuilderFactory:
-    GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
-    JIRA_ISSUE_URL_PATTERN = re.compile(r"atlassian\.net\/browse\/([A-Z]+-\d+)")
-
+class IssueServiceFactory:
     def parse_issue_db_type(self, data_path: str) -> IssueDatabaseType:
         """Parse the data_path and determine what kind of issue repository we're using"""
-        if self.GITHUB_ISSUE_URL_PATTERN.search(data_path) is not None:
+        if GITHUB_ISSUE_URL_PATTERN.search(data_path) is not None:
             return IssueDatabaseType.GITHUB
         
-        elif self.JIRA_ISSUE_URL_PATTERN.search(data_path) is not None:
+        elif JIRA_ISSUE_URL_PATTERN.search(data_path) is not None:
             return IssueDatabaseType.JIRA
 
         else:
             return IssueDatabaseType.FILE
         
 
-    def create_instance_builder(self, data_path: str):
+    def create_issue_factory(self, data_path: str):
         issueType = self.parse_issue_db_type(data_path)
 
         match issueType:
             case IssueDatabaseType.GITHUB:
-                return GitHubInstanceBuilder(data_path)
+                return GitHubIssueService(data_path)
             case IssueDatabaseType.JIRA:
                 return JiraInstanceBuilder(data_path)
             case IssueDatabaseType.FILE:
