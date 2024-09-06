@@ -1,10 +1,7 @@
 import logging
 from sweagent.utils.log import default_logger, get_logger
-
-from sweagent.agent.issueService.issue_service import IssueService, GITHUB_ISSUE_URL_PATTERN, JIRA_ISSUE_URL_PATTERN
-
 from sweagent.utils.config import keys_config
-
+from sweagent.agent.issueService.issue_service import IssueService, GITHUB_ISSUE_URL_PATTERN, JIRA_ISSUE_URL_PATTERN, ProblemStatementResults, ProblemStatementSource
 from ghapi.all import GhApi
 
 class GitHubIssueService(IssueService):
@@ -12,8 +9,6 @@ class GitHubIssueService(IssueService):
         super().__init__(data_path)
 
         self._github_token: str = keys_config.get("GITHUB_TOKEN", "")  # type: ignore
-
-    
 
     def _parse_gh_issue_url(self, issue_url: str) -> tuple[str, str, str]:
         """
@@ -39,7 +34,7 @@ class GitHubIssueService(IssueService):
         issue = api.issues.get(owner, repo, issue_number)
         title = issue.title if issue.title else ""
         body = issue.body if issue.body else ""
-        return f"{title}\n{body}\n"
+        return ProblemStatementResults(f"{title}\n{body}\n", ProblemStatementSource.ONLINE)
 
     def get_problem_statement(self):
         owner, repo, issue_number = self._parse_gh_issue_url(self.data_path)
