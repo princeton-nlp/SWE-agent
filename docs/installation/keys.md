@@ -20,6 +20,9 @@ The following `keys.cfg` example shows you how the keys are named:
 # AZURE_OPENAI_DEPLOYMENT: 'Azure OpenAI Deployment Here if using Azure OpenAI Model'
 # AZURE_OPENAI_API_VERSION: 'Azure OpenAI API Version Here if using Azure OpenAI Model'
 # OPENAI_API_BASE_URL: 'LM base URL here if using Local or alternative api Endpoint'
+# GROQ_API_KEY: 'Groq Models API Key'
+# HONEYCOMB_API_KEYH: 'Honeycomb API Key Here if sending otel traces to Honeycomb'
+# OTEL_EXPORTER_OTLP_ENDPOINT: 'OTLP Exporter Endpoint if sending otel traces to Honeycomb'
 ```
 
 See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) tokens.

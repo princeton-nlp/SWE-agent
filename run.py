@@ -4,6 +4,7 @@ import logging
 
 from sweagent import CONFIG_DIR
 from sweagent.utils.log import add_file_handler, get_logger
+from sweagent.utils.instrumentation import initialize_tracer, current_span, instrument
 
 try:
     import rich
@@ -335,9 +336,13 @@ class Main:
         hook.on_init(args=self.args, agent=self.agent, env=self.env, traj_dir=self.traj_dir)
         self.hooks.append(hook)
 
+    @instrument("Main#run", params=["index"])
     def run(self, index):
         # Reset environment
         instance_id = self.env.data[index]["instance_id"]
+        current_span().set_attributes({
+            "instance_id": instance_id,
+        })
         for hook in self.hooks:
             hook.on_instance_start(index=index, instance=self.env.data[index])
         assert isinstance(instance_id, str)  # mypy
@@ -389,6 +394,7 @@ class Main:
         for hook in self.hooks:
             hook.on_instance_completed(info=info, trajectory=trajectory)
 
+    @instrument("Main#main")
     def main(self):
         for hook in self.hooks:
             hook.on_start()
@@ -539,4 +545,5 @@ def main(args: ScriptArguments):
 
 
 if __name__ == "__main__":
+    initialize_tracer()
     main(get_args())
