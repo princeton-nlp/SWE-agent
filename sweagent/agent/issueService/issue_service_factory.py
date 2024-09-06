@@ -45,7 +45,8 @@ class IssueServiceFactory:
             case IssueDatabaseType.FILE:
                 return FileIssueService(data_path)
             case _:
-                raise ValueError("Invalid Issue Source")
+                error_message = "Invalid Issue Source"
+                raise ValueError(error_message)
 
 
 # # In your main application logic

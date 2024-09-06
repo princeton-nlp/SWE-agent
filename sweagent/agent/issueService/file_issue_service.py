@@ -23,6 +23,7 @@ class FileIssueService(IssueService):
         elif Path(self.data_path).is_file():
             results = self._get_problem_statement_results_from_text(Path(self.data_path).read_text())
         else:
-            raise ValueError(f"Invalid file path: {self.data_path}")
+            error_message = f"Invalid file path: {self.data_path}"
+            raise ValueError(error_message)
 
         return results
