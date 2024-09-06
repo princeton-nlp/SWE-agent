@@ -8,7 +8,7 @@ from sweagent.agent.issueService.issue_service import (
     ProblemStatementResults,
     ProblemStatementSource,
 )
-from sweagent.environment import InvalidGithubURL
+from sweagent.environment.utils import InvalidGithubURL
 from sweagent.utils.config import keys_config
 
 
