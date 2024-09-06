@@ -7,6 +7,7 @@ import subprocess
 import pytest
 
 from sweagent.agent.issueService.issue_service import IssueService
+from sweagent.agent.issueService.issue_service_factory import IssueServiceFactory
 from sweagent.environment.utils import (
     InvalidGithubURL,
     format_trajectory_markdown,
@@ -89,8 +90,7 @@ def test_get_associated_commit_urls():
 
 def build_issue_service(data_path: str) -> IssueService:
     issue_service_factory = IssueServiceFactory()
-    issue_service = issue_service_factory.create_issue_factory(data_path)
-    return issue_service
+    return issue_service_factory.create_issue_factory(data_path)
 
 
 def test_get_instance_gh_issue():
