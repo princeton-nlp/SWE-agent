@@ -35,9 +35,9 @@ class IssueServiceFactory:
             return IssueDatabaseType.FILE
 
     def create_issue_factory(self, data_path: str):
-        issueType = self.parse_issue_db_type(data_path)
+        issue_type = self.parse_issue_db_type(data_path)
 
-        match issueType:
+        match issue_type:
             case IssueDatabaseType.GITHUB:
                 return GitHubIssueService(data_path)
             case IssueDatabaseType.JIRA:
