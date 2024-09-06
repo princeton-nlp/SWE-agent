@@ -37,8 +37,12 @@ Read our [documentation][docs] to learn more:
 * [Benchmarking on SWE-bench](https://princeton-nlp.github.io/SWE-agent/usage/benchmarking/)
 * [Frequently Asked Questions](https://princeton-nlp.github.io/SWE-agent/faq/)
 
+Our most recent lecture touches on the project's motivation,
+showcases our research findings and provides a hands-on tutorial on how to install,
+use, and configure SWE-agent:
+
 <div align="center">
-<a href="https://princeton-nlp.github.io/SWE-agent/"><img src="assets/doc-scrot.png" style="width: 600px"/></a>
+<a href="https://youtu.be/d9gcXpiiDao"><img src="assets/wb_stream_youtube.png" style="width: 600px"/></a>
 </div>
 
 [docs]: https://princeton-nlp.github.io/SWE-agent/
