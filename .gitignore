@@ -3,6 +3,7 @@
 service-account-key.json
 **/investigations/investigation-data
 **/investigations/run-logs*
+*~
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

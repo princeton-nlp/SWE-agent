@@ -22,6 +22,7 @@ from tenacity import (
 )
 
 from sweagent.agent.commands import Command
+from sweagent.agent.model_cache import ModelCache
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
@@ -166,6 +167,7 @@ class BaseModel:
         self.commands = commands
         self.model_metadata = {}
         self.stats = APIStats()
+        self.cache = ModelCache()
 
         # Map `model_name` to API-compatible name `api_model`
         self.api_model = (
@@ -219,6 +221,11 @@ class BaseModel:
         Returns:
         float: The cost of the response.
         """
+        self.update_stats_calls.append({
+            'input_tokens': input_tokens,
+            'output_tokens': output_tokens
+        })
+
         # Calculate cost and update cost related fields
         cost = (
             self.model_metadata["cost_per_input_token"] * input_tokens
@@ -257,6 +264,19 @@ class BaseModel:
         return cost
 
     def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
+        result = self.cache.query(history)
+        self.update_stats_calls = []
+        if result is not None:
+            result_string, stats_calls = result
+            for call in stats_calls:
+                self.update_stats(call["input_tokens"], call["output_tokens"])
+        else:
+            result_string = self._query_raw(history)
+            self.cache.insert(history, result_string, self.update_stats_calls)
+        self.update_stats_calls = None
+        return result_string
+
+    def _query_raw(self, history: list[dict[str, str]]) -> ModelQueryResult:
         msg = "Use a subclass of BaseModel"
         raise NotImplementedError(msg)
 
@@ -373,7 +393,7 @@ class OpenAIModel(BaseModel):
         stop=stop_after_attempt(_MAX_RETRIES),
         retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
     )
-    def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
+    def _query_raw(self, history: list[dict[str, str]]) -> ModelQueryResult:
         """
         Query the OpenAI API with the given `history` and return the response.
         """
@@ -576,7 +596,7 @@ class AnthropicModel(BaseModel):
         stop=stop_after_attempt(_MAX_RETRIES),
         retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
     )
-    def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
+    def _query_raw(self, history: list[dict[str, str]]) -> ModelQueryResult:
         """
         Query the Anthropic API with the given `history` and return the response.
         """
@@ -660,7 +680,7 @@ class BedrockModel(BaseModel):
         stop=stop_after_attempt(_MAX_RETRIES),
         retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
     )
-    def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
+    def _query_raw(self, history: list[dict[str, str]]) -> ModelQueryResult:
         """
         Query Amazon Bedrock with the given `history` and return the response.
         """
@@ -824,7 +844,7 @@ class OllamaModel(BaseModel):
         stop=stop_after_attempt(_MAX_RETRIES),
         retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
     )
-    def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
+    def _query_raw(self, history: list[dict[str, str]]) -> ModelQueryResult:
         """
         Query the Ollama API with the given `history` and return the response.
         """
@@ -917,7 +937,7 @@ class TogetherModel(BaseModel):
         stop=stop_after_attempt(_MAX_RETRIES),
         retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
     )
-    def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
+    def _query_raw(self, history: list[dict[str, str]]) -> ModelQueryResult:
         """
         Query the Together API with the given `history` and return the response.
         """
@@ -967,7 +987,7 @@ class HumanModel(BaseModel):
         # Return history components with just role, content fields
         return [{k: v for k, v in entry.items() if k in ["role", "content"]} for entry in history]
 
-    def query(self, history: list[dict[str, str]], action_prompt: str = "> ") -> ModelQueryResult:
+    def _query_raw(self, history: list[dict[str, str]], action_prompt: str = "> ") -> ModelQueryResult:
         """
         Logic for handling user input to pass to SWEEnv
         """
@@ -999,7 +1019,7 @@ class HumanModel(BaseModel):
 class HumanThoughtModel(HumanModel):
     MODELS = {"human_thought": {}}
 
-    def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
+    def _query_raw(self, history: list[dict[str, str]]) -> ModelQueryResult:
         """
         Logic for handling user input (both thought + action) to pass to SWEEnv
         """
@@ -1039,7 +1059,7 @@ class ReplayModel(BaseModel):
         self.replay_idx += 1
         self.action_idx = 0
 
-    def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
+    def _query_raw(self, history: list[dict[str, str]]) -> ModelQueryResult:
         """
         Logic for tracking which replay action to pass to SWEEnv
         """
@@ -1072,7 +1092,7 @@ class InstantEmptySubmitTestModel(BaseModel):
         super().__init__(args, commands)
         self._action_idx = 0
 
-    def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
+    def _query_raw(self, history: list[dict[str, str]]) -> ModelQueryResult:
         # Need to at least do _something_ to submit
         if self._action_idx == 0:
             self._action_idx = 1
