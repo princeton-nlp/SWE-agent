@@ -18,13 +18,17 @@ from sweagent.agent.models import (
     ContextWindowExceededError,
     CostLimitExceededError,
     ModelArguments,
+    ModelQueryResult,
     get_model,
+    make_history_content_entry,
+    make_tool_result,
 )
 from sweagent.agent.parsing import FormatError, ParseFunction
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.utils.config import convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 
+logger = get_logger("agents")
 
 @dataclass(frozen=True)
 class Subroutine(FrozenSerializable):
@@ -111,7 +115,10 @@ class AgentConfig(FrozenSerializable):
 
         object.__setattr__(self, "parse_command", ParseCommand.get(self.parse_command))
         for file in self.command_files:
-            commands = self.parse_command.parse_command_file(file)
+            try:
+                commands = self.parse_command.parse_command_file(file)
+            except Exception as err:
+                raise ValueError(f"Failed to parse commands from {file}: {err}")
 
             util_functions = [command for command in commands if command.name.startswith("_")]
             commands = [command for command in commands if not command.name.startswith("_")]
@@ -181,7 +188,12 @@ class AgentArguments(FlattenedAccess, FrozenSerializable):
     def __post_init__(self):
         if self.config is None and self.config_file is not None:
             # If unassigned, we load the config from the file to store its contents with the overall arguments
-            config = AgentConfig.load_yaml(self.config_file)
+            logger.debug(f"Loading config from '{self.config_file}'...")
+            try:
+                config = AgentConfig.load_yaml(self.config_file)
+            except Exception as err:
+                # stack = ''.join(traceback.format_exception(type(err), err, err.__traceback__))
+                raise ValueError(f"Failed to load config from {self.config_file}: {err}")
             object.__setattr__(self, "config", config)
         assert self.config is not None  # mypy
         for subroutine in getattr(self.config, "subroutines", {}).values():
@@ -197,7 +209,7 @@ class AgentArguments(FlattenedAccess, FrozenSerializable):
 class TrajectoryStep(TypedDict):
     action: str
     observation: str
-    response: str
+    response: ModelQueryResult
     state: str | None
     thought: str
 
@@ -211,7 +223,7 @@ class AgentHook:
 
     def on_step_start(self): ...
 
-    def on_actions_generated(self, *, thought: str, action: str, output: str): ...
+    def on_actions_generated(self, *, thought: str, action: str, output: ModelQueryResult): ...
 
     def on_sub_action_started(self, *, sub_action: str): ...
 
@@ -253,7 +265,7 @@ class Agent:
         self.history = []
         self.last_container_id = None
         self.hooks = []
-        self.logger = get_logger("agent")
+        self.logger = get_logger(f"Agent[{name}]")
 
     def add_hook(self, hook: AgentHook):
         """Add hook to agent"""
@@ -273,7 +285,7 @@ class Agent:
             instance_args: Arguments for the instance
         """
         assert self.config is not None  # mypy
-        self.model.reset_stats(init_model_stats)
+        self.model.setup(init_model_stats)
         self.instance_args = instance_args
 
         system_msg = self.config.system_template.format(**self.system_args)
@@ -341,7 +353,11 @@ class Agent:
             "history": self.history,
             "info": info,
         }
-        log_path.write_text(json.dumps(log_dict, indent=2))
+        try:
+            # NOTE: We need `default=vars` since trajectories can now contain typed objects.
+            log_path.write_text(json.dumps(log_dict, indent=2, default=vars))
+        except Exception as err:
+            raise TypeError(f"Failed to save trajectory to '{log_path}':\n  ERROR={err}\n\n  LOGS={repr(log_dict)}")
 
     def _get_first_match(self, action: str, pattern_type: str) -> re.Match | None:
         """Return the first match of a command pattern in the action string."""
@@ -471,7 +487,7 @@ class Agent:
         self.subroutine_patterns[self.config.submit_command] = submit_pat
         self.command_patterns[self.config.submit_command] = submit_pat
 
-    def forward(self, observation: str, available_actions: list[str], state: str) -> tuple[str, str, str]:
+    def forward(self, observation: str, available_actions: list[str], state: str) -> tuple[str, str, ModelQueryResult]:
         """Forwards the model
 
         Args:
@@ -489,7 +505,7 @@ class Agent:
         self._append_history(
             {
                 "role": "assistant",
-                "content": output,
+                "content": make_history_content_entry(output),
                 "thought": thought,
                 "action": action,
                 "agent": self.name,
@@ -501,7 +517,7 @@ class Agent:
 
         return thought, action, output
 
-    def forward_model(self, observation: str, state: str) -> str:
+    def forward_model(self, observation: str, state: str) -> ModelQueryResult:
         """Query the model with the current state and observation with the appropriate template.
 
         Returns:
@@ -540,36 +556,36 @@ class Agent:
         message = "\n".join(messages)
 
         self.logger.info(f"🤖 MODEL INPUT\n{message}")
-        self._append_history({"role": "user", "content": message, "agent": self.name})
+        self._append_history({"role": "user", "content": make_tool_result(message, None, self.history, False), "agent": self.name})
 
         for hook in self.hooks:
             hook.on_model_query(query=self.local_history, agent=self.name)
         return self.model.query(self.local_history)
 
-    def retry_after_format_fail(self, output: str) -> str:
+    def retry_after_format_fail(self, output: ModelQueryResult) -> ModelQueryResult:
         """Ask the model to correct (without committing to persistent history) after a malformatted model output"""
         format_error_template = self.config.format_error_template
 
-        self.logger.warning(f"PROMPT-RESULT: MALFORMED OUTPUT\n{output}")
+        self.logger.warning(f"PROMPT-RESULT: MALFORMED OUTPUT\n{repr(output)}")
         self.logger.warning(f"FORMAT ERROR\n{format_error_template}")
 
         temp_history = self.local_history + [
-            {"role": "assistant", "content": output, "agent": self.name},
-            {"role": "user", "content": format_error_template, "agent": self.name},
+            {"role": "assistant", "content": make_history_content_entry(output), "agent": self.name},
+            {"role": "user", "content": make_tool_result(format_error_template, output, self.history, True), "agent": self.name},
         ]
         return self.model.query(temp_history)
 
-    def retry_after_blocklist_fail(self, output: str, action: str) -> str:
+    def retry_after_blocklist_fail(self, output: ModelQueryResult, action: str) -> ModelQueryResult:
         """Ask the model to correct (without committing to persistent history) after a disallowed command"""
         name = action.strip().split()[0]
         blocklist_error_message = self.config.blocklist_error_template.format(name=name)
 
-        self.logger.warning(f"PROMPT-RESULT: BLOCKLISTED OUTPUT\n{output}")
+        self.logger.warning(f"PROMPT-RESULT: BLOCKLISTED OUTPUT\n{repr(output)}")
         self.logger.warning(f"BLOCKLIST ERROR\n{blocklist_error_message}")
 
         temp_history = self.local_history + [
-            {"role": "assistant", "content": output, "agent": self.name},
-            {"role": "user", "content": blocklist_error_message, "agent": self.name},
+            {"role": "assistant", "content": make_history_content_entry(output), "agent": self.name},
+            {"role": "user", "content": make_tool_result(blocklist_error_message, output, self.history, True), "agent": self.name},
         ]
         return self.model.query(temp_history)
 
@@ -587,8 +603,8 @@ class Agent:
 
     def check_format_and_requery(
         self,
-        output: str,
-    ) -> tuple[str, str, str]:
+        output: ModelQueryResult,
+    ) -> tuple[str, str, ModelQueryResult]:
         """Query the model with the current state and observation with the appropriate template.
 
         Try to parse the output into a thought and action. Retry if the output is malformatted or the action is blocked.
@@ -620,8 +636,9 @@ class Agent:
                 )
             except KeyboardInterrupt:
                 raise
-            except FormatError:
+            except FormatError as err:
                 format_fails += 1
+                logger.error(f"[check_format_and_requery] failed to parse output:\n  ERROR={err}\n\nOUTPUT={repr(output)}")
                 output = self.retry_after_format_fail(output)
                 continue
             if self.should_block_action(action):
@@ -629,10 +646,10 @@ class Agent:
                 output = self.retry_after_blocklist_fail(output, action)
             else:
                 return thought, action, output
-        self.logger.warning(f"Malformat limit reached: \n{output}")
+        self.logger.warning(f"Malformat limit reached: \n{repr(output)}")
         return "Exit due to format error", "exit_format", output
 
-    def forward_with_error_check(self, observation: str, state: str) -> tuple[str, str, str]:
+    def forward_with_error_check(self, observation: str, state: str) -> tuple[str, str, ModelQueryResult]:
         """Wrapper around `self.forward_model` that handles errors and retries
         due to format errors or blocked actions.
 
@@ -670,10 +687,7 @@ class Agent:
         self.set_environment_vars(env, self.config.env_variables)
 
     def set_environment_vars(self, env: SWEEnv, env_variables: dict[str, Any]) -> None:
-        # Init REPO and assure that the bot constrains its works to that folder.        
-        env_vars = self.config.env_variables.copy()
-        env_vars["REPO_ROOT"] = f"/{env._repo_name}"
-
+        # Init REPO and assure that the bot constrains its works to that folder.
         assert self.config is not None  # mypy
         commands_to_execute = (
             [self.config.state_command.code]
@@ -814,7 +828,7 @@ class Agent:
             state = env.communicate(self.state_command) if self.state_command else None
             thought, action, output = self.forward(observation, env.get_available_actions(), state)
             for hook in self.hooks:
-                hook.on_actions_generated(thought=thought, action=action, output=output)
+                hook.on_actions_generated(thought=thought, action=action, output=repr(output))
             observations = list()
             run_action = self._guard_multiline_input(action)
             for sub_action in self.split_actions(run_action):
@@ -831,6 +845,7 @@ class Agent:
                         break
                 else:
                     agent_name = sub_action["agent"]
+                    logger.info(f"DDBG call_subroutine: {repr(sub_action)}")
                     sub_agent_output = self.call_subroutine(agent_name, sub_action, env)
                     observations.append(sub_agent_output)
 

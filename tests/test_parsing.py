@@ -5,6 +5,7 @@ import pytest
 from sweagent.agent.commands import Command
 from sweagent.agent.parsing import (
     ActionParser,
+    AnthropicWithToolsThoughtsParser,
     EditFormat,
     FormatError,
     Identity,
@@ -22,6 +23,9 @@ def test_parse_function_registry():
     assert isinstance(ParseFunction.get("EditFormat"), EditFormat)
     assert isinstance(ParseFunction.get("Identity"), Identity)
     assert isinstance(ParseFunction.get("JsonParser"), JsonParser)
+
+    assert isinstance(ParseFunction.get("AnthropicWithToolsThoughtsParser"), AnthropicWithToolsThoughtsParser)
+
     with pytest.raises(ValueError):
         ParseFunction.get("InvalidParser")
 

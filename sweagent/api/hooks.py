@@ -7,6 +7,7 @@ from flask_socketio import SocketIO
 
 from sweagent import PACKAGE_DIR
 from sweagent.agent.agents import AgentHook
+from sweagent.agent.models import ModelQueryResult
 from sweagent.api.utils import strip_ansi_sequences
 from sweagent.environment.swe_env import EnvHook
 
@@ -124,7 +125,7 @@ class AgentUpdateHook(AgentHook):
         self._sub_action = None
         self._thought_idx = 0
 
-    def on_actions_generated(self, *, thought: str, action: str, output: str):
+    def on_actions_generated(self, *, thought: str, action: str, output: ModelQueryResult):
         self._thought_idx += 1
         for prefix in ["DISCUSSION\n", "THOUGHT\n", "DISCUSSION", "THOUGHT"]:
             thought = thought.replace(prefix, "")

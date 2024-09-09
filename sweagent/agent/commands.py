@@ -4,9 +4,14 @@ import re
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 import yaml
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
+
+from sweagent.utils.log import get_logger
+
+logger = get_logger("agent.commands")
 
 
 @dataclass(frozen=True)
@@ -26,6 +31,11 @@ class ControlMetadata(FrozenSerializable):
     next_step_template: str | None = None
     next_step_action_template: str | None = None
 
+
+class ArgumentInfo:
+    type: Literal["string", "integer", "boolean", "number"]
+    description: str
+    required: bool
 
 @dataclass(frozen=True)
 class Command(FrozenSerializable):
@@ -127,19 +137,23 @@ class ParseCommandBash(ParseCommand):
                     idx += 1
                 code += lines[idx]
                 docstring, end_name, arguments, signature = None, None, None, name
+                # logger.debug(f"Parsing YAML in {path} at line: {repr(line)}")
                 docs_dict = yaml.safe_load("\n".join(docs).replace("@yaml", ""))
                 if docs_dict is not None:
-                    docstring = docs_dict["docstring"]
-                    end_name = docs_dict.get("end_name", None)
-                    arguments = docs_dict.get("arguments", None)
-                    if "signature" in docs_dict:
-                        signature = docs_dict["signature"]
-                    elif arguments is not None:
-                        for param, settings in arguments.items():
-                            if settings["required"]:
-                                signature += f" <{param}>"
-                            else:
-                                signature += f" [<{param}>]"
+                    if not isinstance(docs_dict, dict):
+                        raise ValueError(f"\n\n[NYI] Command file may currently only contain yaml-parsable docs and functions.\nCOULD NOT PARSE {path}: {repr(docs_dict)}.")
+                    else:
+                        docstring = docs_dict["docstring"]
+                        end_name = docs_dict.get("end_name", None)
+                        arguments = docs_dict.get("arguments", None)
+                        if "signature" in docs_dict:
+                            signature = docs_dict["signature"]
+                        elif arguments is not None:
+                            for param, settings in arguments.items():
+                                if settings["required"]:
+                                    signature += f" <{param}>"
+                                else:
+                                    signature += f" [<{param}>]"
                 command = Command.from_dict(
                     {
                         "code": code,
@@ -207,7 +221,7 @@ class ParseCommandBash(ParseCommand):
 class ParseCommandDetailed(ParseCommandBash):
     """
     # command_name:
-    #   "docstring"
+    #   docstring: "docstring"
     #   signature: "signature"
     #   arguments:
     #     arg1 (type) [required]: "description"

@@ -13,7 +13,7 @@
 search_dir() {
     if [ $# -eq 1 ]; then
         local search_term="$1"
-        local dir="./"
+        local dir=$PWD
     elif [ $# -eq 2 ]; then
         local search_term="$1"
         if [ -d "$2" ]; then
@@ -27,6 +27,12 @@ search_dir() {
         return
     fi
     dir=$(realpath "$dir")
+
+    if [ "$dir" = "/" ]; then
+        echo "ERROR: Cannot search root directory. Don't cd into the root directory."
+        return
+    fi
+
     local matches=$(find "$dir" -type f ! -path '*/.*' -exec grep -nIH -- "$search_term" {} + | cut -d: -f1 | sort | uniq -c)
     # if no matches, return
     if [ -z "$matches" ]; then
@@ -66,16 +72,9 @@ search_file() {
         echo "Usage: search_file <search_term> [<file>]"
         return
     fi
-    # Check if the second argument is provided
     if [ -n "$2" ]; then
-        # Check if the provided argument is a valid file
-        if [ -f "$2" ]; then
-            local file="$2"  # Set file if valid
-        else
-            echo "Usage: search_file <search_term> [<file>]"
-            echo "Error: File name $2 not found. Please provide a valid file name."
-            return  # Exit if the file is not valid
-        fi
+        # A file arg is provided
+        local file=$(_make_full_path "$2")
     else
         # Check if a file is open
         if [ -z "$CURRENT_FILE" ]; then
@@ -85,7 +84,6 @@ search_file() {
         local file="$CURRENT_FILE"  # Set file to the current open file
     fi
     local search_term="$1"
-    file=$(realpath "$file")
     # Use grep to directly get the desired formatted output
     local matches=$(grep -nH -- "$search_term" "$file")
     # Check if no matches were found

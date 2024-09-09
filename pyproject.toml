@@ -164,7 +164,10 @@ select = [
     "PT",
     # flake8-simplify (SIM)
     "SIM201",
+    # Type checking disabled (and also does not work?!)
+    # "TCH"
 ]
+
 ignore = [
     # flake8-return
     "RET505",  # can't autofix
@@ -178,6 +181,7 @@ ignore = [
     # pytest
     "PT011",
     "PT018",
+    "EM102"    # assign to variable first
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.

@@ -10,7 +10,7 @@ from instances import instance_id_list
 model_name = "claude-sonnet-3.5"
 dataset_name = "princeton-nlp/SWE-bench_Verified"
 split = "test"
-config = "default"
+config = "default_with_tools"
 temperature = 0
 top_p = 0.95
 per_instance_cost_limit_usd = 4.00

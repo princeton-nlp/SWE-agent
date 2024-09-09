@@ -24,13 +24,31 @@ _constrain_line() {
     export CURRENT_LINE=$(jq -n "[$CURRENT_LINE, $half_window] | max")
 }
 
+_make_full_path() {
+    if [[ $1 == /* ]]; then
+        # Absolute path
+        FULL_PATH=$1
+    else
+        # Relative path: resolve relative to PWD
+        FULL_PATH="${PWD}/${1}"
+    fi
+    FULL_PATH=$(realpath $FULL_PATH)
+
+    # make sure file is within REPO_ROOT
+    if [[ ! $FULL_PATH == $REPO_ROOT/* ]]; then
+        echo "Error: File '$1' is not in CWD."
+        exit -1
+    fi
+    echo "$FULL_PATH"
+}
+
 # @yaml
 # signature: open <path> [<line_number>]
 # docstring: opens the file at the given path in the editor. If line_number is provided, the window will be move to include that line
 # arguments:
 #   path:
 #     type: string
-#     description: The path to the file to open. Prefer relative paths.
+#     description: The path to the file to open.
 #     required: true
 #   line_number:
 #     type: integer
@@ -66,28 +84,16 @@ open() {
     else
         local line_number=$(jq -n "$WINDOW/2")  # Set default line number if not provided
     fi
-
-    if [[ $1 == /* ]]; then
-        # Absolute path: Check if file is in REPO_ROOT
-        FULL_PATH=$1
-        if [[ ! $TARGET_FILE == $REPO_ROOT/* ]]; then
-            echo "Usage: open <file> [<line_number>].\nNOTE: Files must be in $REPO_ROOT. Relative paths preferred."
-            echo "Error: File is not within the repo root directory."
-            return 1
-        fi
-    else
-        # Relative path
-        FULL_PATH="${REPO_ROOT}/${1}"
-    fi
+    FULL_PATH=$(_make_full_path "$1")
     if [ -f "$FULL_PATH" ]; then
-        export CURRENT_FILE=$(realpath $FULL_PATH)
+        export CURRENT_FILE=$FULL_PATH
         export CURRENT_LINE=$line_number
         _constrain_line
         _print
     elif [ -d "$1" ]; then
         echo "Error: $1 is a directory. You can only open files. Use cd or ls to navigate directories."
     else
-        echo "File $1 not found"
+        echo "File $1 not found (resolved to: $FULL_PATH)"
     fi
 }
 
@@ -203,9 +209,30 @@ create() {
     fi
 
     # Create the file an empty new line
-    printf "\n" > "$1"
+    FULL_PATH=$(_make_full_path "$1")
+    printf "\n" > "$FULL_PATH"
     # Use the existing open command to open the created file
     open "$1"
+}
+
+# @yaml
+# signature: exec <command> <all_args>
+# docstring: Execute any command in the shell. The environment does NOT support interactive session commands (e.g. python, vim).
+# arguments:
+#  command:
+#     type: string
+#     description: Shell command to execute
+#     required: true
+#  all_args:
+#     type: string
+#     description: Any args passed to the shell command as-is in one string. [IMPORTANT] Any files passed to exec must be absolute. Prefix them with $PWD.
+#     required: false
+exec() {
+    if [ $# -eq 0 ]; then
+        echo "Usage: exec <command> [args...]"
+        return 1
+    fi
+    eval "$@"
 }
 
 # @yaml
