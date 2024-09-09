@@ -479,7 +479,7 @@ class Main:
             KEY_PREDICTION: model_patch,
         }
         with open(output_file, "a+") as fp:
-            print(json.dumps(datum), file=fp, flush=True)
+            print(json.dumps(datum, default=vars), file=fp, flush=True)
         logger.info(f"Saved predictions to {output_file}")
 
 

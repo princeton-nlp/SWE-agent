@@ -66,7 +66,8 @@ def last_n_history(history, n):
         if user_msg_idx == 1 or user_msg_idx in range(user_messages - n + 1, user_messages + 1):
             new_history.append(entry)
         else:
-            data["content"] = f'Old output omitted ({len(entry["content"].splitlines())} lines)'
+            from sweagent.agent.models import compress_history_entry
+            compress_history_entry(data)
             new_history.append(data)
     return new_history
 

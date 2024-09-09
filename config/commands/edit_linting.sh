@@ -25,7 +25,7 @@ edit() {
         return
     fi
 
-    if [ $# -le 2 ]; then
+    if [ $# -lt 2 ]; then
         echo "Usage: edit <start_line> <end_line>"
         echo "ERROR: start_line and end_line are required."
         return
@@ -53,7 +53,8 @@ edit() {
     local end_line=$((end_line))
 
     local line_count=0
-    local replacement="${@:3}"
+    # local replacement="${@:3}"
+    local replacement=()
     while IFS= read -r line
     do
         replacement+=("$line")

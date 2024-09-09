@@ -14,6 +14,7 @@ from sweagent.utils.log import get_logger
 
 logger = get_logger("parsing")
 
+
 class FormatError(Exception):
     pass
 
@@ -80,7 +81,7 @@ class ActionParser(ParseFunction):
     {command_docs}
     """
 
-    def __call__(self, model_response: ModelQueryResult, commands: list[Command], strict=False):        
+    def __call__(self, model_response: ModelQueryResult, commands: list[Command], strict=False):
         if not isinstance(model_response, str):
             msg = f"{self.__class__.__name__}: model_response must be a string"
             raise TypeError(msg)
@@ -91,6 +92,7 @@ class ActionParser(ParseFunction):
                 return model_response, model_response
         msg = "First word in model response is not a valid command."
         raise FormatError(msg)
+
 
 class ThoughtActionParser(ParseFunction):
     """
@@ -135,10 +137,10 @@ class ThoughtActionParser(ParseFunction):
         discussions = model_response.split("\nDISCUSSION\n")
         if len(discussions) > 2:
             msg = f"Don't make up conversations. Your response must have at most one '\\nDISCUSSION\\n' string. Found: {len(discussions)}"
-            raise(FormatError(msg))
+            raise (FormatError(msg))
         if "\nbash-$\n" in model_response:
             msg = f"Don't make up conversations. Your response must not contain the string '\\nbash-$\\n'. Found: {len(discussions)}"
-            raise(FormatError(msg))
+            raise (FormatError(msg))
         code_block_pat = re.compile(r"^```(\S*)\s*\n|^```\s*$", re.MULTILINE)
         stack = []
         last_valid_block = None
@@ -164,12 +166,12 @@ class AnthropicWithToolsThoughtsParser(ParseFunction):
     """
 
     def __call__(self, model_response: ModelQueryResult, commands: list[Command], strict=False):
-        logger.debug(f"[AnthropicWithToolsThoughtsParser] {repr(model_response)}")
+        # logger.debug(f"[AnthropicWithToolsThoughtsParser] {repr(model_response)}")
         if not isinstance(model_response, AnthropicModelResult):
             msg = f"{model_response.__class__.__name__}: model_response must be AnthropicModelResult. Can only work with Anthropic models. Found instead: {repr(model_response)}"
             raise TypeError(msg)
-        
-        tool_blocks = [block for block in model_response.blocks if block.type == "tool_use"]
+
+        tool_blocks = list(model_response.get_tool_uses())
         texts = [block.text for block in model_response.blocks if block.type == "text"]
 
         if len(tool_blocks) != 1:
@@ -184,20 +186,27 @@ class AnthropicWithToolsThoughtsParser(ParseFunction):
         # Convert tool calls to SWE-agent action command strings (actions):
         tool_block = tool_blocks[0]
         command_name: str = tool_block.name
-        command_args: dict = tool_block.input
+        tool_args: dict = tool_block.input
         command = next((c for c in commands if c.name == command_name), None)
         if not command:
             msg = f"Command '{command_name}' not found in tools."
             raise FormatError(msg)
-        
+
         args = ""
         if command.arguments:
-            ordered_parameters = command.arguments.keys()
-            args = ' '.join([str(command_args.get(key)) for key in ordered_parameters])
-            if command.end_name and not args.endswith(f"\n{command.end_name}"):
+            # Get the actual command parameters that were provided.
+            ordered_parameters = list(command.arguments.keys())[0 : len(tool_args)]
+            all_args = [str(tool_args.get(key)) for key in ordered_parameters]
+            inline_args = all_args
+            multi_line_input = ""
+            if command.end_name:
                 # Has multiline arg with explicit final token.
-                # NOTE: You can understand this logic by searching for `multi_line_command_endings` in this codebase.
-                args += f"\n{command.end_name}"
+                inline_args = all_args[:-1]
+                multi_line_input = "\n" + all_args[-1]
+                if not multi_line_input.endswith(f"\n{command.end_name}"):
+                    # NOTE: You can understand this logic by searching for `multi_line_command_endings` in this codebase.
+                    multi_line_input += f"\n{command.end_name}"
+            args = " ".join(f'"{a}"' for a in inline_args) + multi_line_input
 
         # Final results:
         text = "\n".join(texts)
@@ -240,7 +249,7 @@ class XMLThoughtActionParser(ParseFunction):
         if not isinstance(model_response, str):
             msg = f"{self.__class__.__name__}: model_response must be a string"
             raise TypeError(msg)
-        
+
         if "<command>" not in model_response or "</command>" not in model_response:
             msg = "No action found in model response."
             raise FormatError(msg)
@@ -325,7 +334,7 @@ class JsonParser(ParseFunction):
                 "name": "command_name"
             }
         }
-        """        
+        """
         if not isinstance(model_response, str):
             msg = f"{self.__class__.__name__}: model_response must be a string"
             raise TypeError(msg)

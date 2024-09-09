@@ -10,7 +10,7 @@ from pathlib import Path
 
 import together
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
-from anthropic.types import ContentBlock, ToolParam
+from anthropic.types import ContentBlock, ToolParam, ToolResultBlockParam, ToolUseBlock
 from groq import Groq
 from openai import AzureOpenAI, BadRequestError, OpenAI
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
@@ -31,15 +31,77 @@ logger = get_logger("api_models")
 _MAX_RETRIES = keys_config.get("SWE_AGENT_MODEL_MAX_RETRIES", 0)
 
 
-
 @dataclass
-class AnthropicModelResult:
+class AnthropicModelResult(dict):
     blocks: list[ContentBlock]
+
+    def get_tool_uses(self):
+        return [block for block in self.blocks if block.type == "tool_use"]
+
+    def get_last_tool_use(self):
+        return next(reversed(self.get_tool_uses()), None)
+
+    def __init__(self, blocks):
+        # Inherit from dict to make it JSON-serializable.
+        dict.__init__(self, blocks=blocks)
+        self.blocks = blocks
 
     def __repr__(self) -> str:
         return f"AnthropicModelResult(blocks={repr(self.blocks)})"
 
+
+
 ModelQueryResult = str | AnthropicModelResult
+
+def make_history_content_entry(output: ModelQueryResult):
+    if isinstance(output, str):
+        return output
+    if isinstance(output, AnthropicModelResult):
+        return output.blocks
+    raise RuntimeError(f"Unsupported output type: {repr(output)}")
+
+def make_tool_result(action_result: str, model_result: ModelQueryResult | None, history: list[dict[str, any]], is_error: bool):
+    """
+    Create a tool_result block from the action_result, model_result, and history.
+    action_result: The return value of the action from the environment.
+    model_result: The return value from the model's query function. Might not be provided due to how the Agent is designed.
+    history: history of the conversation.
+    """
+    tool_use: ToolUseBlock | None = model_result.get_last_tool_use() if isinstance(model_result, AnthropicModelResult) else None
+    if not tool_use:
+        # The Agent.run loop does not provide us with the tool_use object, so we have to look it up in the history:
+        last_assistant_entry = next((h for h in reversed(history) if h["role"] == "assistant"), None)
+        if last_assistant_entry and isinstance(last_assistant_entry.get("content"), list):
+            last_assistant_block: ToolUseBlock | None = next(reversed(last_assistant_entry.get("content")), None)
+            if last_assistant_block.type == "tool_use":
+                tool_use = last_assistant_block
+    if tool_use:
+        # This is a reply to a tool_use:
+        result = {
+            "type": "tool_result",
+            "tool_use_id": tool_use.id,
+            "content": action_result
+        }
+        if is_error:
+            result["is_error"] = True
+        
+        # NOTE: Claude expects either a string or a list of typed results in the `content` of user and assistant messages.
+        return [result]
+    # This is not the reply to a tool_use. Return result as-is:
+    return action_result
+
+
+def compress_history_entry(input_entry: any):
+    content: list[ContentBlock] | str | any = input_entry.get("content")
+    if isinstance(content, str):
+        input_entry["content"] = f'(omitted {len(content.splitlines())} lines)'
+    elif isinstance(content, list):
+        for b in content:
+            cont = b["content"]
+            cont = cont if isinstance(cont, str) else json.dumps(cont, indent=2)
+            b["content"] = f'(omitted {len(cont.splitlines())} lines)'
+
+
 
 @dataclass(frozen=True)
 class ModelArguments(FrozenSerializable):
@@ -408,22 +470,19 @@ class GroqModel(OpenAIModel):
             api_key=keys_config["GROQ_API_KEY"],
         )
 
+
 def make_anthropic_tools_from_commands(commands: list[Command]) -> list[ToolParam]:
     anthropic_tools: list[ToolParam] = []
 
     for command in commands:
         # Example: https://github.com/replayio/ai-playground/blob/97e455420c7a093360539c6324d85f546d9c8f1b/code-monkey/src/tools/replace_in_file_tool.py#L8
-        input_schema = {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
+        input_schema = {"type": "object", "properties": {}, "required": []}
 
         if command.arguments:
             for arg_name, arg_info in command.arguments.items():
                 input_schema["properties"][arg_name] = {
                     "type": arg_info["type"],
-                    "description": arg_info["description"]
+                    "description": arg_info["description"],
                 }
                 if arg_info["required"]:
                     input_schema["required"].append(arg_name)
@@ -431,7 +490,7 @@ def make_anthropic_tools_from_commands(commands: list[Command]) -> list[ToolPara
         tool: ToolParam = {
             "name": command.name,
             "description": command.docstring or command.name,
-            "input_schema": input_schema
+            "input_schema": input_schema,
         }
 
         anthropic_tools.append(tool)
@@ -658,7 +717,7 @@ def anthropic_history_to_messages(
     compiled_messages = list(reversed(compiled_messages))
     # Replace any empty content values with a "(No output)"
     for message in compiled_messages:
-        if message["content"].strip() == "":
+        if not message["content"] or (isinstance(message["content"], str) and message["content"].strip() == ""):
             message["content"] = "(No output)"
     return compiled_messages
 
@@ -704,16 +763,23 @@ def anthropic_query(model: AnthropicModel | BedrockModel, history: list[dict[str
     system_message = "\n".join([entry["content"] for entry in history if entry["role"] == "system"])
     messages = anthropic_history_to_messages(model, history)
 
-    # Perform Anthropic API call
-    response = model.api.messages.create(
-        messages=messages,
-        max_tokens=model.model_metadata["max_tokens"],
-        model=model.api_model,
-        temperature=model.args.temperature,
-        top_p=model.args.top_p,
-        system=system_message,
-        tools=model.tools
-    )
+    try:
+        # Perform Anthropic API call
+        response = model.api.messages.create(
+            messages=messages,
+            max_tokens=model.model_metadata["max_tokens"],
+            model=model.api_model,
+            temperature=model.args.temperature,
+            top_p=model.args.top_p,
+            system=system_message,
+            tools=model.tools,
+        )
+    except Exception as e:
+        # get stacktrace from e
+        stacktrace = traceback.format_exc()
+        raise RuntimeError(f"Anthropic API call failed: with \n  TOOLS={repr(model.tools)}\n  MESSAGES={repr(messages)}\n  ERROR={e} {stacktrace}")
+
+    # logger.debug(f"Anthropic response: {repr(response.content)}")
 
     # Calculate + update costs, return response
     model.update_stats(response.usage.input_tokens, response.usage.output_tokens)
@@ -1025,8 +1091,10 @@ def get_model(args: ModelArguments, commands: list[Command] | None = None):
         commands = []
     if args.model_name.startswith("claude"):
         return AnthropicModel(args, commands)
-    
-    logger.warning(f"Using model {args.model_name} is not recommended. We have made modifications only to AnthropicModel. Meaning that all other models are likely going to behave worse.")
+
+    logger.warning(
+        f"Using model {args.model_name} is not recommended. We have made modifications only to AnthropicModel. Meaning that all other models are likely going to behave worse."
+    )
     if args.model_name == "instant_empty_submit":
         return InstantEmptySubmitTestModel(args, commands)
     if args.model_name == "human":

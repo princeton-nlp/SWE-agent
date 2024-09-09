@@ -199,7 +199,7 @@ class SWEEnv(gym.Env):
         ]
         tag = hashlib.sha256("".join(inputs).encode()).hexdigest()[:50]
         image_id = f"{self.cached_image_prefix}{tag}"
-        self.logger.info(f"CACHED_IMAGE={image_id} with inputs={json.dumps(inputs)}")
+        self.logger.info(f"CACHED_IMAGE={image_id} with inputs={repr(inputs)}")
         return image_id
 
     def add_hook(self, hook: EnvHook):
@@ -317,6 +317,7 @@ class SWEEnv(gym.Env):
                 self.close()  # stop current container
                 self._init_container(cached_image=cached_image)
                 self.communicate("export $(xargs </.env)")
+                self.communicate(f"export REPO_ROOT=\"/{self._repo_name}\"")
                 envs = self.communicate("env")
                 self.logger.debug(f"Environment variables restored from the image:\n{envs}\n")
 
@@ -707,6 +708,8 @@ class SWEEnv(gym.Env):
         communicate_method = keys_config.get(
             "SWE_AGENT_COMMUNICATE_METHOD", default="end-marker", choices=["end-marker", "processes"]
         )
+        
+        # self.logger.info(f"[env._communicate]: {input}")
         if communicate_method == "end-marker":
             return self._communicate_experimental(input, timeout_duration)
         try:

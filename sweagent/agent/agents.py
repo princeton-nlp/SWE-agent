@@ -20,13 +20,15 @@ from sweagent.agent.models import (
     ModelArguments,
     ModelQueryResult,
     get_model,
+    make_history_content_entry,
+    make_tool_result,
 )
 from sweagent.agent.parsing import FormatError, ParseFunction
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.utils.config import convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 
-logger = get_logger(f"agents")
+logger = get_logger("agents")
 
 @dataclass(frozen=True)
 class Subroutine(FrozenSerializable):
@@ -352,7 +354,7 @@ class Agent:
             "info": info,
         }
         try:
-            log_path.write_text(json.dumps(log_dict, indent=2))
+            log_path.write_text(json.dumps(log_dict, indent=2, default=vars))
         except Exception as err:
             raise TypeError(f"Failed to save trajectory to '{log_path}':\n  ERROR={err}\n\n  LOGS={repr(log_dict)}")
 
@@ -502,7 +504,7 @@ class Agent:
         self._append_history(
             {
                 "role": "assistant",
-                "content": repr(output),
+                "content": make_history_content_entry(output),
                 "thought": thought,
                 "action": action,
                 "agent": self.name,
@@ -553,36 +555,36 @@ class Agent:
         message = "\n".join(messages)
 
         self.logger.info(f"🤖 MODEL INPUT\n{message}")
-        self._append_history({"role": "user", "content": message, "agent": self.name})
+        self._append_history({"role": "user", "content": make_tool_result(message, None, self.history, False), "agent": self.name})
 
         for hook in self.hooks:
             hook.on_model_query(query=self.local_history, agent=self.name)
         return self.model.query(self.local_history)
 
-    def retry_after_format_fail(self, output: str) -> ModelQueryResult:
+    def retry_after_format_fail(self, output: ModelQueryResult) -> ModelQueryResult:
         """Ask the model to correct (without committing to persistent history) after a malformatted model output"""
         format_error_template = self.config.format_error_template
 
-        self.logger.warning(f"PROMPT-RESULT: MALFORMED OUTPUT\n{output}")
+        self.logger.warning(f"PROMPT-RESULT: MALFORMED OUTPUT\n{repr(output)}")
         self.logger.warning(f"FORMAT ERROR\n{format_error_template}")
 
         temp_history = self.local_history + [
-            {"role": "assistant", "content": output, "agent": self.name},
-            {"role": "user", "content": format_error_template, "agent": self.name},
+            {"role": "assistant", "content": make_history_content_entry(output), "agent": self.name},
+            {"role": "user", "content": make_tool_result(format_error_template, output, self.history, True), "agent": self.name},
         ]
         return self.model.query(temp_history)
 
-    def retry_after_blocklist_fail(self, output: str, action: str) -> ModelQueryResult:
+    def retry_after_blocklist_fail(self, output: ModelQueryResult, action: str) -> ModelQueryResult:
         """Ask the model to correct (without committing to persistent history) after a disallowed command"""
         name = action.strip().split()[0]
         blocklist_error_message = self.config.blocklist_error_template.format(name=name)
 
-        self.logger.warning(f"PROMPT-RESULT: BLOCKLISTED OUTPUT\n{output}")
+        self.logger.warning(f"PROMPT-RESULT: BLOCKLISTED OUTPUT\n{repr(output)}")
         self.logger.warning(f"BLOCKLIST ERROR\n{blocklist_error_message}")
 
         temp_history = self.local_history + [
-            {"role": "assistant", "content": output, "agent": self.name},
-            {"role": "user", "content": blocklist_error_message, "agent": self.name},
+            {"role": "assistant", "content": make_history_content_entry(output), "agent": self.name},
+            {"role": "user", "content": make_tool_result(blocklist_error_message, output, self.history, True), "agent": self.name},
         ]
         return self.model.query(temp_history)
 
@@ -640,7 +642,7 @@ class Agent:
                 continue
             if self.should_block_action(action):
                 blocklist_fails += 1
-                output = self.retry_after_blocklist_fail(repr(output), action)
+                output = self.retry_after_blocklist_fail(output, action)
             else:
                 return thought, action, output
         self.logger.warning(f"Malformat limit reached: \n{repr(output)}")
@@ -684,10 +686,7 @@ class Agent:
         self.set_environment_vars(env, self.config.env_variables)
 
     def set_environment_vars(self, env: SWEEnv, env_variables: dict[str, Any]) -> None:
-        # Init REPO and assure that the bot constrains its works to that folder.        
-        env_vars = self.config.env_variables.copy()
-        env_vars["REPO_ROOT"] = f"/{env._repo_name}"
-
+        # Init REPO and assure that the bot constrains its works to that folder.
         assert self.config is not None  # mypy
         commands_to_execute = (
             [self.config.state_command.code]
@@ -845,6 +844,7 @@ class Agent:
                         break
                 else:
                     agent_name = sub_action["agent"]
+                    logger.info(f"DDBG call_subroutine: {repr(sub_action)}")
                     sub_agent_output = self.call_subroutine(agent_name, sub_action, env)
                     observations.append(sub_agent_output)
 
@@ -854,7 +854,7 @@ class Agent:
                 {
                     "action": action,
                     "observation": observation,
-                    "response": repr(output),
+                    "response": output,
                     "state": state,
                     "thought": thought,
                 },
