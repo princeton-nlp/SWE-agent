@@ -86,10 +86,10 @@ state_command:
   code: |
     state() {
       local working_dir="$PWD";
-      if [ -z $CURRENT_FILE ]; then
+      if [ -z "$CURRENT_FILE" ]; then
           echo '{"open_file": "n/a", "working_dir": "'$working_dir'"}';
       else
-          echo '{"open_file": "'$(realpath $CURRENT_FILE)'", "working_dir": "'$working_dir'"}';
+          echo '{"open_file": "'$(realpath "$CURRENT_FILE")'", "working_dir": "'$working_dir'"}';
       fi
     };
 parse_function: ThoughtActionParser
