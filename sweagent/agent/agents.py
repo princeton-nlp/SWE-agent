@@ -354,6 +354,7 @@ class Agent:
             "info": info,
         }
         try:
+            # NOTE: We need `default=vars` since trajectories can now contain typed objects.
             log_path.write_text(json.dumps(log_dict, indent=2, default=vars))
         except Exception as err:
             raise TypeError(f"Failed to save trajectory to '{log_path}':\n  ERROR={err}\n\n  LOGS={repr(log_dict)}")

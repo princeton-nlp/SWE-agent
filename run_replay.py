@@ -60,7 +60,7 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
         tmp_path = instance_id + ".jsonl"
         with open(tmp_path, "w") as f:
             for d in data:
-                print(json.dumps(d, default=vars), file=f, end="\n", flush=True)
+                print(json.dumps(d), file=f, end="\n", flush=True)
         return tmp_path
 
     is_other = False

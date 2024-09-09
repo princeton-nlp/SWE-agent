@@ -822,7 +822,7 @@ class OllamaModel(BaseModel):
         wait=wait_random_exponential(min=1, max=15),
         reraise=True,
         stop=stop_after_attempt(_MAX_RETRIES),
-        retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError, TypeError)),
+        retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
     )
     def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
         """
