@@ -25,7 +25,7 @@ _constrain_line() {
 }
 
 # @yaml
-# signature: open <path> [<line_number>]
+# signature: open "<path>" [<line_number>]
 # docstring: opens the file at the given path in the editor. If line_number is provided, the window will be move to include that line
 # arguments:
 #   path:
@@ -39,14 +39,14 @@ _constrain_line() {
 open() {
     if [ -z "$1" ]
     then
-        echo "Usage: open <file>"
+        echo "Usage: open \"<file>\""
         return
     fi
     # Check if the second argument is provided
     if [ -n "$2" ]; then
         # Check if the provided argument is a valid number
         if ! [[ $2 =~ ^[0-9]+$ ]]; then
-            echo "Usage: open <file> [<line_number>]"
+            echo "Usage: open \"<file>\" [<line_number>]"
             echo "Error: <line_number> must be a number"
             return  # Exit if the line number is not valid
         fi
