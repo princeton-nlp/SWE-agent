@@ -159,9 +159,14 @@ class ThoughtActionParser(ParseFunction):
 
 
 class AnthropicWithToolsThoughtsParser(ParseFunction):
+    _error_message = """
+    Tool call failed. TODO: We need to tell you how.
+    """
+
     def __call__(self, model_response: ModelQueryResult, commands: list[Command], strict=False):
         if not isinstance(model_response, AnthropicModelResult):
-            msg = f"{self.__class__.__name__}: model_response must be AnthropicModelResult. Can only work with Anthropic models."
+            msg = f"{model_response.__class__.__name__}: model_response must be AnthropicModelResult. Can only work with Anthropic models. Found instead: {repr(model_response)}"
+            logger.error(f"[AnthropicWithToolsThoughtsParser] {msg}")
             raise TypeError(msg)
         
         tool_blocks = [block for block in model_response.blocks if block.type == "tool_use"]
@@ -169,11 +174,13 @@ class AnthropicWithToolsThoughtsParser(ParseFunction):
 
         if len(tool_blocks) != 1:
             msg = "Exactly one tool_use block must be present in the model response."
+            logger.error(f"[AnthropicWithToolsThoughtsParser] {msg}")
             raise FormatError(msg)
 
         other_blocks = [block for block in model_response.blocks if block.type not in ["tool_use", "text"]]
         if other_blocks:
             msg = "Only tool_use and text blocks are allowed in model response."
+            logger.error(f"[AnthropicWithToolsThoughtsParser] {msg}")
             raise FormatError(msg)
 
         # Convert tool calls to properly formatted actions:
@@ -181,6 +188,7 @@ class AnthropicWithToolsThoughtsParser(ParseFunction):
         command = next((c for c in commands if c.name == command_name), None)
         if not command:
             msg = f"Command '{command_name}' not found in tools."
+            logger.error(f"[AnthropicWithToolsThoughtsParser] {msg}")
             raise FormatError(msg)
         
         if hasattr(command.end_name):
@@ -197,7 +205,7 @@ class AnthropicWithToolsThoughtsParser(ParseFunction):
         # Final results:
         text = "\n".join(texts)
         # action = f"{command_name} {" ".join(f"\"{a}\"" for a in inline_args)} {suffix}"
-        action = f"{command_name} {" ".join(inline_args)} {suffix}"
+        action = f"{command_name} {' '.join(inline_args)} {suffix}"
 
         logger.info(f"DDBG [Tool Parse Result]\n ## TEXT\n  {text}\n\n ## ACTION\n  {action}")
 

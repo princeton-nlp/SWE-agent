@@ -494,7 +494,7 @@ class AnthropicModel(BaseModel):
 
     def setup(self, other: APIStats | None = None):
         self.tools = make_anthropic_tools_from_commands(self.commands)
-        super.setup(other)
+        super().setup(other)
 
     def history_to_messages(
         self,
@@ -713,7 +713,7 @@ def anthropic_query(model: AnthropicModel | BedrockModel, history: list[dict[str
     model.update_stats(response.usage.input_tokens, response.usage.output_tokens)
     # return "\n".join([x.text for x in response.content])
     # NOTE: This requires AnthropicWithToolsThoughtsParser.
-    return response.content
+    return AnthropicModelResult(blocks=response.content)
 
 
 class OllamaModel(BaseModel):

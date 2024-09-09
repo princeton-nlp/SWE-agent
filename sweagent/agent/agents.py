@@ -26,6 +26,7 @@ from sweagent.environment.swe_env import SWEEnv
 from sweagent.utils.config import convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 
+logger = get_logger(f"agents")
 
 @dataclass(frozen=True)
 class Subroutine(FrozenSerializable):
@@ -112,7 +113,10 @@ class AgentConfig(FrozenSerializable):
 
         object.__setattr__(self, "parse_command", ParseCommand.get(self.parse_command))
         for file in self.command_files:
-            commands = self.parse_command.parse_command_file(file)
+            try:
+                commands = self.parse_command.parse_command_file(file)
+            except Exception as err:
+                raise ValueError(f"Failed to parse commands from {file}: {err}")
 
             util_functions = [command for command in commands if command.name.startswith("_")]
             commands = [command for command in commands if not command.name.startswith("_")]
@@ -182,7 +186,12 @@ class AgentArguments(FlattenedAccess, FrozenSerializable):
     def __post_init__(self):
         if self.config is None and self.config_file is not None:
             # If unassigned, we load the config from the file to store its contents with the overall arguments
-            config = AgentConfig.load_yaml(self.config_file)
+            logger.debug(f"Loading config from '{self.config_file}'...")
+            try:
+                config = AgentConfig.load_yaml(self.config_file)
+            except Exception as err:
+                # stack = ''.join(traceback.format_exception(type(err), err, err.__traceback__))
+                raise ValueError(f"Failed to load config from {self.config_file}: {err}")
             object.__setattr__(self, "config", config)
         assert self.config is not None  # mypy
         for subroutine in getattr(self.config, "subroutines", {}).values():
@@ -254,7 +263,7 @@ class Agent:
         self.history = []
         self.last_container_id = None
         self.hooks = []
-        self.logger = get_logger("agent")
+        self.logger = get_logger(f"Agent[{name}]")
 
     def add_hook(self, hook: AgentHook):
         """Add hook to agent"""

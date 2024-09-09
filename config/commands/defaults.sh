@@ -1,6 +1,3 @@
-# set -x
-set -e
-
 _print() {
     local total_lines=$(awk 'END {print NR}' $CURRENT_FILE)
     echo "[File: $(realpath $CURRENT_FILE) ($total_lines lines total)]"
