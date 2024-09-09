@@ -164,9 +164,9 @@ class AnthropicWithToolsThoughtsParser(ParseFunction):
     """
 
     def __call__(self, model_response: ModelQueryResult, commands: list[Command], strict=False):
+        logger.debug(f"[AnthropicWithToolsThoughtsParser] {repr(model_response)}")
         if not isinstance(model_response, AnthropicModelResult):
             msg = f"{model_response.__class__.__name__}: model_response must be AnthropicModelResult. Can only work with Anthropic models. Found instead: {repr(model_response)}"
-            logger.error(f"[AnthropicWithToolsThoughtsParser] {msg}")
             raise TypeError(msg)
         
         tool_blocks = [block for block in model_response.blocks if block.type == "tool_use"]
@@ -174,40 +174,34 @@ class AnthropicWithToolsThoughtsParser(ParseFunction):
 
         if len(tool_blocks) != 1:
             msg = "Exactly one tool_use block must be present in the model response."
-            logger.error(f"[AnthropicWithToolsThoughtsParser] {msg}")
             raise FormatError(msg)
 
         other_blocks = [block for block in model_response.blocks if block.type not in ["tool_use", "text"]]
         if other_blocks:
             msg = "Only tool_use and text blocks are allowed in model response."
-            logger.error(f"[AnthropicWithToolsThoughtsParser] {msg}")
             raise FormatError(msg)
 
-        # Convert tool calls to properly formatted actions:
-        command_name, command_args = tool_blocks[0].input
+        # Convert tool calls to SWE-agent action command strings (actions):
+        tool_block = tool_blocks[0]
+        command_name: str = tool_block.name
+        command_args: dict = tool_block.input
         command = next((c for c in commands if c.name == command_name), None)
         if not command:
             msg = f"Command '{command_name}' not found in tools."
-            logger.error(f"[AnthropicWithToolsThoughtsParser] {msg}")
             raise FormatError(msg)
         
-        if hasattr(command.end_name):
-            # multiline
-            # NOTE: This logic is implicit from the semantics of `multi_line_command_endings`.
-            inline_args = [command_args[key] for key in command.arguments[:-1] if key in command_args]
-            explicit_multiline_arg = command_args.get(command.arguments[-1])
-            suffix = {f"{explicit_multiline_arg}\n{command.end_name}" if explicit_multiline_arg else ''}
-        else:
-            # single-line
-            inline_args = [command_args[key] for key in command.arguments if key in command_args]
-            suffix = ""
+        args = ""
+        if command.arguments:
+            ordered_parameters = command.arguments.keys()
+            args = ' '.join([str(command_args.get(key)) for key in ordered_parameters])
+            if command.end_name and not args.endswith(f"\n{command.end_name}"):
+                # Has multiline arg with explicit final token.
+                # NOTE: You can understand this logic by searching for `multi_line_command_endings` in this codebase.
+                args += f"\n{command.end_name}"
 
         # Final results:
         text = "\n".join(texts)
-        # action = f"{command_name} {" ".join(f"\"{a}\"" for a in inline_args)} {suffix}"
-        action = f"{command_name} {' '.join(inline_args)} {suffix}"
-
-        logger.info(f"DDBG [Tool Parse Result]\n ## TEXT\n  {text}\n\n ## ACTION\n  {action}")
+        action = f"{command_name} {args}"
 
         return text.strip(), action.strip()
 

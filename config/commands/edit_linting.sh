@@ -3,7 +3,7 @@
 #   edit <start_line> <end_line>
 #   <replacement_text>
 #   end_of_edit
-# docstring: replaces lines <start_line> through <end_line> (inclusive) with the given text in the open file. The replacement text is terminated by a line with only end_of_edit on it. All of the <replacement text> will be entered, so make sure your indentation is formatted properly. Python files will be checked for syntax errors after the edit. If the system detects a syntax error, the edit will not be executed. Simply try to edit the file again, but make sure to read the error message and modify the edit command you issue accordingly. Issuing the same command a second time will just lead to the same error message again.
+# docstring: replaces lines <start_line> through <end_line> (inclusive) with the given text in the open file. All of the <replacement text> will be entered, so make sure your indentation is formatted properly. Python files will be checked for syntax errors after the edit. If the system detects a syntax error, the edit will not be executed. Simply try to edit the file again, but make sure to read the error message and modify the edit command you issue accordingly. Issuing the same command a second time will just lead to the same error message again.
 # end_name: end_of_edit
 # arguments:
 #   start_line:
@@ -21,28 +21,27 @@
 edit() {
     if [ -z "$CURRENT_FILE" ]
     then
-        echo 'No file open. Use the `open` command first.'
+        echo 'ERROR: No file open. Use the `open` command first.'
         return
     fi
 
-    if [ $# -eq 2 ]; then
-        local start_line="$1"
-        local end_line="$2"
-    else
+    if [ $# -le 2 ]; then
         echo "Usage: edit <start_line> <end_line>"
-        echo "Error: start_line and end_line are required and no other arguments are allowed."
+        echo "ERROR: start_line and end_line are required."
         return
     fi
+    local start_line="$1"
+    local end_line="$2"
 
     local re='^[0-9]+$'
     if ! [[ $start_line =~ $re ]]; then
         echo "Usage: edit <start_line> <end_line>"
-        echo "Error: start_line must be a number"
+        echo "ERROR: start_line must be a number"
         return
     fi
     if ! [[ $end_line =~ $re ]]; then
         echo "Usage: edit <start_line> <end_line>"
-        echo "Error: end_line must be a number"
+        echo "ERROR: end_line must be a number"
         return
     fi
 
@@ -54,7 +53,7 @@ edit() {
     local end_line=$((end_line))
 
     local line_count=0
-    local replacement=()
+    local replacement="${@:3}"
     while IFS= read -r line
     do
         replacement+=("$line")

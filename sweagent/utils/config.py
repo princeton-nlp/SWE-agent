@@ -47,7 +47,7 @@ class Config:
                 msg = f"Error loading keys.cfg from {keys_cfg_path}. Please check the file."
                 raise RuntimeError(msg) from e
         else:
-            logger.error(f"keys.cfg not found in {PACKAGE_DIR}")
+            logger.warning(f"keys.cfg not found in {PACKAGE_DIR}")
 
     def get(self, key: str, default=None, choices: list[Any] | None = None) -> Any:
         """Get a key from environment variables or keys.cfg.

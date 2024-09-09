@@ -27,8 +27,12 @@ from sweagent.utils.log import get_logger
 
 logger = get_logger("api_models")
 
-_MAX_RETRIES = keys_config.get("SWE_AGENT_MODEL_MAX_RETRIES", 10)
+# TODO: [PRO-848] Configure retries
+_MAX_RETRIES = keys_config.get("SWE_AGENT_MODEL_MAX_RETRIES", 0)
 
+
+
+@dataclass
 class AnthropicModelResult:
     blocks: list[ContentBlock]
 
@@ -663,6 +667,8 @@ def anthropic_query(model: AnthropicModel | BedrockModel, history: list[dict[str
     """
     Query the Anthropic API with the given `history` and return the response.
     """
+    # logger.debug(f"DDBG [anthropic_query] {traceback.format_stack()}")
+
     # Preserve behavior for older models
     if model.api_model in ["claude-instant", "claude-2.0", "claude-2.1"] or (
         isinstance(model, BedrockModel) and model.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]
@@ -750,7 +756,7 @@ class OllamaModel(BaseModel):
         wait=wait_random_exponential(min=1, max=15),
         reraise=True,
         stop=stop_after_attempt(_MAX_RETRIES),
-        retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
+        retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError, TypeError)),
     )
     def query(self, history: list[dict[str, str]]) -> ModelQueryResult:
         """

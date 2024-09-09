@@ -351,7 +351,10 @@ class Agent:
             "history": self.history,
             "info": info,
         }
-        log_path.write_text(json.dumps(log_dict, indent=2))
+        try:
+            log_path.write_text(json.dumps(log_dict, indent=2))
+        except Exception as err:
+            raise TypeError(f"Failed to save trajectory to '{log_path}':\n  ERROR={err}\n\n  LOGS={repr(log_dict)}")
 
     def _get_first_match(self, action: str, pattern_type: str) -> re.Match | None:
         """Return the first match of a command pattern in the action string."""
@@ -499,7 +502,7 @@ class Agent:
         self._append_history(
             {
                 "role": "assistant",
-                "content": output,
+                "content": repr(output),
                 "thought": thought,
                 "action": action,
                 "agent": self.name,
@@ -569,7 +572,7 @@ class Agent:
         ]
         return self.model.query(temp_history)
 
-    def retry_after_blocklist_fail(self, output: ModelQueryResult, action: str) -> ModelQueryResult:
+    def retry_after_blocklist_fail(self, output: str, action: str) -> ModelQueryResult:
         """Ask the model to correct (without committing to persistent history) after a disallowed command"""
         name = action.strip().split()[0]
         blocklist_error_message = self.config.blocklist_error_template.format(name=name)
@@ -630,16 +633,17 @@ class Agent:
                 )
             except KeyboardInterrupt:
                 raise
-            except FormatError:
+            except FormatError as err:
                 format_fails += 1
+                logger.error(f"[check_format_and_requery] failed to parse output:\n  ERROR={err}\n\nOUTPUT={repr(output)}")
                 output = self.retry_after_format_fail(output)
                 continue
             if self.should_block_action(action):
                 blocklist_fails += 1
-                output = self.retry_after_blocklist_fail(output, action)
+                output = self.retry_after_blocklist_fail(repr(output), action)
             else:
                 return thought, action, output
-        self.logger.warning(f"Malformat limit reached: \n{output}")
+        self.logger.warning(f"Malformat limit reached: \n{repr(output)}")
         return "Exit due to format error", "exit_format", output
 
     def forward_with_error_check(self, observation: str, state: str) -> tuple[str, str, ModelQueryResult]:
@@ -824,7 +828,7 @@ class Agent:
             state = env.communicate(self.state_command) if self.state_command else None
             thought, action, output = self.forward(observation, env.get_available_actions(), state)
             for hook in self.hooks:
-                hook.on_actions_generated(thought=thought, action=action, output=output)
+                hook.on_actions_generated(thought=thought, action=action, output=repr(output))
             observations = list()
             run_action = self._guard_multiline_input(action)
             for sub_action in self.split_actions(run_action):
@@ -850,7 +854,7 @@ class Agent:
                 {
                     "action": action,
                     "observation": observation,
-                    "response": output,
+                    "response": repr(output),
                     "state": state,
                     "thought": thought,
                 },
