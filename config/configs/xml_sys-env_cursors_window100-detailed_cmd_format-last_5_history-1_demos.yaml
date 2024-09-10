@@ -79,10 +79,10 @@ state_command:
   code: |
     state() {
       local working_dir="$PWD";
-      if [ -z $CURRENT_FILE ]; then
+      if [ -z "$CURRENT_FILE" ]; then
           echo '{"open_file": "n/a", "working_dir": "'$working_dir'"}';
       else
-          echo '{"open_file": "'$(realpath $CURRENT_FILE)'", "working_dir": "'$working_dir'"}';
+          echo '{"open_file": "'$(realpath "$CURRENT_FILE")'", "working_dir": "'$working_dir'"}';
       fi
     };
 parse_function: XMLThoughtActionParser
@@ -90,7 +90,7 @@ env_variables:
   WINDOW: 200
   OVERLAP: 2
   CURRENT_LINE: 0
-  CURRENT_FILE: ''
+  CURRENT_FILE: ""
   SEARCH_RESULTS: ()
   SEARCH_FILES: ()
   SEARCH_INDEX: 0
@@ -98,14 +98,14 @@ env_variables:
   END_INDEX: 0
   START_CURSOR: 0
   END_CURSOR: 0
-  START_CURSOR_MARK: '"<<<<< START CURSOR >>>>>"'  # these have to use double quotes
+  START_CURSOR_MARK: '"<<<<< START CURSOR >>>>>"' # these have to use double quotes
   END_CURSOR_MARK: '"<<<<< END CURSOR >>>>>"' # these have to use double quotes
 command_files:
-- config/commands/cursors_defaults.sh
-- config/commands/cursors_edit_linting.sh
-- config/commands/search.sh
-- config/commands/_split_string.py
+  - config/commands/cursors_defaults.sh
+  - config/commands/cursors_edit_linting.sh
+  - config/commands/search.sh
+  - config/commands/_split_string.py
 parse_command: ParseCommandDetailed
 history_processor: Last5Observations
 demonstrations:
-- trajectories/demonstrations/replay__marshmallow-code__marshmallow-1867__xml_sys-env_cursors_window100__t-0.20__p-0.95__c-2.00__install-1/marshmallow-code__marshmallow-1867.traj
+  - trajectories/demonstrations/replay__marshmallow-code__marshmallow-1867__xml_sys-env_cursors_window100__t-0.20__p-0.95__c-2.00__install-1/marshmallow-code__marshmallow-1867.traj
