@@ -1530,10 +1530,10 @@ or the SWE-agent repository root.</p>
 <span class="w">  </span><span class="nt">code</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
 <span class="w">    </span><span class="no">state() {</span>
 <span class="w">      </span><span class="no">local working_dir=&quot;$PWD&quot;;</span>
-<span class="w">      </span><span class="no">if [ -z $CURRENT_FILE ]; then</span>
+<span class="w">      </span><span class="no">if [ -z &quot;$CURRENT_FILE&quot; ]; then</span>
 <span class="w">          </span><span class="no">echo &#39;{&quot;open_file&quot;: &quot;n/a&quot;, &quot;working_dir&quot;: &quot;&#39;$working_dir&#39;&quot;}&#39;;</span>
 <span class="w">      </span><span class="no">else</span>
-<span class="w">          </span><span class="no">echo &#39;{&quot;open_file&quot;: &quot;&#39;$(realpath $CURRENT_FILE)&#39;&quot;, &quot;working_dir&quot;: &quot;&#39;$working_dir&#39;&quot;}&#39;;</span>
+<span class="w">          </span><span class="no">echo &#39;{&quot;open_file&quot;: &quot;&#39;$(realpath &quot;$CURRENT_FILE&quot;)&#39;&quot;, &quot;working_dir&quot;: &quot;&#39;$working_dir&#39;&quot;}&#39;;</span>
 <span class="w">      </span><span class="no">fi</span>
 <span class="w">    </span><span class="no">};</span>
 <span class="nt">parse_function</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ThoughtActionParser</span>
