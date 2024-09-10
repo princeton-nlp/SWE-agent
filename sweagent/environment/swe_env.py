@@ -22,7 +22,7 @@ from ghapi.all import GhApi
 from git import Repo
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 from swebench.harness.constants import MAP_REPO_VERSION_TO_SPECS
-from swebench.harness.utils import get_environment_yml, get_requirements
+from swebench.harness.utils import get_environment_yml, get_requirements, get_test_directives
 
 import docker
 import docker.errors
@@ -407,11 +407,16 @@ class SWEEnv(gym.Env):
             install_configs = self._get_install_configs()
             # self.logger.warning(f"test_cmd: {repr(install_configs['test_cmd'])}")
             if not install_configs["test_cmd"]:
-                raise RuntimeError(f"No test command found in install configs: {repr(install_configs)}")
+                raise RuntimeError(f"No test_cmd found in install configs: {repr(install_configs)}")
+            
+            # TODO: Consider adding -E for sympy and maybe others?
             self.communicate_with_handling(f'export TEST_CMD="{install_configs["test_cmd"]}"')
 
             # Provide the set of golden tests that need to pass. Should be the same as "all files from test_patch".
-            fail_to_pass = " ".join(json.loads(self.record["FAIL_TO_PASS"]))
+            # fail_to_pass = " ".join(json.loads(self.record["FAIL_TO_PASS"]))
+            fail_to_pass_paths = get_test_directives(self.record)
+            # NOTE: Sympy (and maybe others) expect the basename...!?!
+            fail_to_pass = " ".join([os.path.basename(f) for f in fail_to_pass_paths])
             self.communicate_with_handling(f'export FAIL_TO_PASS="{fail_to_pass}"')
             
             # Provide the set of regression-check tests.

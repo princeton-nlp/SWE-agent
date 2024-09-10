@@ -865,7 +865,6 @@ class Agent:
             for hook in self.hooks:
                 hook.on_step_start()
             state = env.communicate(self.state_command) if self.state_command else None
-            # logger.warning(f"DDBG state:\nself.state_command={self.state_command}\nstate={state}")
             thought, action, output = self.forward(observation, env.get_available_actions(), state)
             for hook in self.hooks:
                 hook.on_actions_generated(thought=thought, action=action, output=repr(output))

@@ -2,6 +2,7 @@
 # docstring: Reproduces the current bug by running a test that was designed to fail as long as the bug exists.
 tdd_repro() {
     set -e
+    echo -e "Running tests to reproduce the bug:\n >$TEST_CMD $FAIL_TO_PASS\n"
     eval "$TEST_CMD $FAIL_TO_PASS"
 }
 
@@ -13,6 +14,9 @@ tdd_run_all() {
         echo "ERROR: File $PASS_TO_PASS_FILE not found."
         exit 1
     fi
+
+    echo "tdd_run_all disabled for now."
+    exit 1
 
     # Read PASS_TO_PASS_FILE line by line and execute the command
     while IFS= read -r line || [[ -n "$line" ]]; do
