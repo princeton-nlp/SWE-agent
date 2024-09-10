@@ -25,7 +25,7 @@ from sweagent.agent.models import (
 )
 from sweagent.agent.parsing import FormatError, ParseFunction
 from sweagent.environment.swe_env import SWEEnv
-from sweagent.utils.config import convert_paths_to_abspath
+from sweagent.utils.config import convert_path_to_abspath, convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 
 logger = get_logger("agents")
@@ -105,6 +105,7 @@ class AgentConfig(FrozenSerializable):
     subroutine_types: list[Subroutine] = field(default_factory=list)
 
     def __post_init__(self):
+        logger.debug("AgentConfig.__post_init__")
         object.__setattr__(self, "command_files", convert_paths_to_abspath(self.command_files))
         object.__setattr__(self, "demonstrations", convert_paths_to_abspath(self.demonstrations))
 
@@ -277,7 +278,7 @@ class Agent:
             hook.on_query_message_added(**item)
         self.history.append(item)
 
-    def setup(self, instance_args, init_model_stats=None) -> None:
+    def setup(self, env: SWEEnv, instance_args, init_model_stats=None) -> None:
         """Setup the agent for a new instance. This includes
         formatting the system message and adding demonstrations to the history.
 
@@ -289,6 +290,11 @@ class Agent:
         self.instance_args = instance_args
 
         system_msg = self.config.system_template.format(**self.system_args)
+
+        if env.args.tdd:
+            tdd_msg = convert_path_to_abspath("config/_tdd_system_prompt.md")
+            system_msg = f"{system_msg}\n\n{tdd_msg}"
+
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
 
         self.history: list[dict[str, Any]] = []
@@ -812,7 +818,7 @@ class Agent:
             self.init_environment_vars(env)
             self.last_container_id = env.container_obj.id
         # Re-initialize primary
-        self.setup(setup_args, init_model_stats)
+        self.setup(env, setup_args, init_model_stats)
 
         for hook in self.hooks:
             hook.on_run_start()

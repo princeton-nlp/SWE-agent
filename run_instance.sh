@@ -11,5 +11,6 @@ python3 run.py \
   --split "test" \
   --instance_filter "$1" \
   --skip_existing False \
-  --cache_task_images
+  --cache_task_images \
+  --tdd
 

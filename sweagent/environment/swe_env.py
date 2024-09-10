@@ -9,6 +9,7 @@ import random
 import re
 import shlex
 import subprocess
+import tempfile
 import time
 import traceback
 from dataclasses import dataclass
@@ -90,6 +91,8 @@ class EnvironmentArguments(FrozenSerializable):
     environment_setup: str | None = None
     # Only used when running on single issue. Path to local repository or github repository.
     repo_path: str = ""
+    # Whether to apply test_patch and ask the agent to fix test failures instead of repro'ing itself.
+    tdd: bool = True
 
     def __post_init__(self):
         if self.timeout is not None:
@@ -279,7 +282,7 @@ class SWEEnv(gym.Env):
             )
         return self._repo_name
 
-    def reset(self, index: int | None = None, apply_test_patch: bool = False) -> tuple[str | None, dict]:
+    def reset(self, index: int | None = None) -> tuple[str | None, dict]:
         """
         Function to reset container between each task instance.
 
@@ -297,6 +300,9 @@ class SWEEnv(gym.Env):
         """
         info = {}
         info["commit_sha"] = self.commit_sha
+        
+        if self.args.tdd:
+            self.logger.warning("⚠ TDD is enabled. The agent has access to the test patch and will not try to reproduce the problem. ⚠")
 
         # Get task instance
         self.idx = index if index is not None else self.idx
@@ -309,7 +315,6 @@ class SWEEnv(gym.Env):
         self.reward = None
 
         ### Reset Container ###
-
         if self.args.cache_task_images:
             cached_image = self._get_cached_task_image_name()
             if image_exists(cached_image):
@@ -317,12 +322,9 @@ class SWEEnv(gym.Env):
                 self.close()  # stop current container
                 self._init_container(cached_image=cached_image)
                 self.communicate("export $(xargs </.env)")
-                self.communicate(f"export REPO_ROOT=\"/{self._repo_name}\"")
-                envs = self.communicate("env")
-                self.logger.debug(f"Environment variables restored from the image:\n{envs}\n")
 
-                if apply_test_patch:
-                    self._apply_test_patch()
+                self.post_init_container()
+
                 return None, info
             else:
                 self.logger.info(f"Cached image {cached_image} not found, rebuilding task environment...")
@@ -383,38 +385,86 @@ class SWEEnv(gym.Env):
         self.communicate_with_handling("pip install flake8", error_msg="Failed to install flake8 (lint library)")
 
         if self.args.cache_task_images:
-            envs = self.communicate("env")
-            self.logger.debug(f"Environment variables to save:\n{envs}\n")
             self.communicate("env >> /.env")
             assert self.container_obj is not None  # mypy
             self.container_obj.commit(cached_image)
             self.logger.info(f"Container with environment {self.container_obj.id} cached as image {cached_image}")
 
-        if apply_test_patch:
-            self._apply_test_patch()
+        self.post_init_container()
 
         # Write any metadata to info if necessary
         return None, info
+
+    
+    def post_init_container(self):
+        self.communicate(f"export REPO_ROOT=\"/{self._repo_name}\"")
+
+        if self.args.tdd:
+            # Apply test patch so the bug can be repro'ed at all.
+            self._apply_test_patch()
+
+            # Provide test_cmd for the instance's repo.
+            install_configs = self._get_install_configs()
+            if not install_configs["test_cmd"]:
+                raise RuntimeError(f"No test command found in install configs: {repr(install_configs)}")
+            self.communicate_with_handling(f"export TEST_CMD=\"{install_configs["test_cmd"]}\"")
+
+            # Provide the set of golden tests that need to pass. Should be the same as "all files from test_patch".
+            fail_to_pass = " ".join(self.record["FAIL_TO_PASS"])
+            self.communicate_with_handling(f"export FAIL_TO_PASS=\"{fail_to_pass}\"")
+            
+            # Provide the set of regression-check tests.
+            # NOTE: We split pass_to_pass into multiple chunks, since they can exceed env var and shell command length limits.
+            pass_to_pass: list[str] = self.record["PASS_TO_PASS"]
+            pass_to_pass_file = "/root/pass_to_pass.txt"
+            arg_max = int(self.communicate_with_handling("getconf ARG_MAX")) - 1000 # Give it some arbitrary leeway of 1000 characters.
+
+            # Take pass_to_pass tests and chunk them into larger chunks that each don't exceed arg_max.
+            chunks = []
+            current_line = ""
+            for test in pass_to_pass:
+                test_length = len(test)
+                if len(current_line) + test_length > arg_max:
+                    chunks.append(current_line)
+                    current_line = test
+                else:
+                    current_line += f" {test}"
+            if current_line:
+                chunks.append(current_line)
+
+            # Write the tests into multiple lines in pass_to_pass_file:
+            self.copy_string_to_container_file("\n".join(chunks), pass_to_pass_file)
+            self.communicate_with_handling(f"export PASS_TO_PASS_FILE={pass_to_pass_file}")        
+
+        envs = self.communicate("env")
+        self.logger.debug(f"Container initialized with the following env:\n{envs}\n")
+
+    def copy_string_to_container_file(self, content: str, container_file_path: str) -> None:
+        with tempfile.NamedTemporaryFile(mode='w', delete=True) as temp_file:
+            temp_file.write(content)
+            temp_file.flush()  # Ensure all data is written to disk
+            
+            subprocess.run(
+                f"docker cp {temp_file.name} {self.container_name}:{container_file_path}",
+                shell=True,
+                check=True,
+                capture_output=True,
+                text=True
+            )
 
     def _apply_test_patch(self):
         """
         Apply test patch for oracle setting
         """
         assert self.record is not None
-        path_to_patch = "test.patch"
-        self.logger.info("Applying test patch...")
-        with open(path_to_patch, "w") as f:
-            f.write(self.record["test_patch"])
-        subprocess.run(
-            f"docker cp {path_to_patch} {self.container_name}:/root/test.patch",
-            shell=True,
-            check=False,
-        )
+        self.logger.debug("Applying test patch...")
+        container_patch_path = "/root/test.patch"
+        self.copy_string_to_container_file(self.record["test_patch"], container_patch_path)
+        
         self.communicate_with_handling(
-            input=f"cd /{self._repo_name} && git apply /root/test.patch",
+            input=f"cd /{self._repo_name} && git apply {container_patch_path}",
             error_msg="Failed to apply test patch correctly",
         )
-        os.remove(path_to_patch)
 
     def step(self, action: str) -> tuple[str | None, int, bool, dict]:
         """
@@ -785,7 +835,7 @@ class SWEEnv(gym.Env):
             self.communicate_output = ""
             return ""
 
-    def communicate_with_handling(self, input: str, error_msg: str, timeout_duration: int | float = 25) -> str:
+    def communicate_with_handling(self, input: str, error_msg: str | None, timeout_duration: int | float = 25) -> str:
         """
         Wrapper for communicate function that raises error if return code is non-zero
 
@@ -798,6 +848,8 @@ class SWEEnv(gym.Env):
             output: output from container
         """
         logs = self.communicate(input, timeout_duration=timeout_duration)
+        if not error_msg:
+            error_msg = "Failed to execute command '" + input.replace('\n', '\\n') + "'"
         if self.returncode != 0:
             self.logger.error(f"{error_msg}: {logs}")
             self.close()

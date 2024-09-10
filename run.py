@@ -352,9 +352,7 @@ class Main:
         # add_file_handler(log_path)
         logger.info(f"▶️  Beginning task {instance_id} ({str(index)})")
 
-        # NOTE: We always start from knowing the test patch first.
-        apply_test_patch = False
-        observation, info = self.env.reset(index, apply_test_patch)
+        observation, info = self.env.reset(index)
         if info is None:
             raise _ContinueLoop
         
@@ -374,7 +372,7 @@ class Main:
             test_patch_obj = PatchSet(self.env.record["test_patch"])
             test_files = "\n".join([f"- {x.path}" for x in test_patch_obj.modified_files + test_patch_obj.added_files])
         tests = ""
-        if "FAIL_endTO_PASS" in self.env.record:
+        if "FAIL_TO_PASS" in self.env.record:
             tests = "\n".join([f"- {x}" for x in self.env.record["FAIL_TO_PASS"]])
 
         setup_args = {"issue": issue, "files": files, "test_files": test_files, "tests": tests}
@@ -498,6 +496,7 @@ def get_args(args=None) -> ScriptArguments:
             verbose=True,
             install_environment=True,
             cache_task_images=False,
+            tdd=True
         ),
         skip_existing=True,
         agent=AgentArguments(
@@ -512,6 +511,10 @@ def get_args(args=None) -> ScriptArguments:
         ),
         actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
     )
+
+    if defaults.environment.tdd:
+        # Add tdd commands before they are processed in AgentConfig.__post_init__.
+        defaults.agent.config.command_files.append("config/commands/_tdd.sh")
 
     # Nicer yaml dumping of multiline strings
     def multiline_representer(dumper, data):

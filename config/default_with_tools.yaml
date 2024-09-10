@@ -5,8 +5,7 @@ system_template: |-
   In addition to typical bash commands, you can also use the given commands (tools) to help you navigate and edit files.
 
   ## RESPONSE FORMAT
-  At every iteration, you should only call a *SINGLE* tool and then wait for a response from the shell before continuing with more discussion and tool calls.
-  Don't issue two tool calls at once.
+  At every iteration, you should only call a *SINGLE* tool. Don't issue two tool calls at once.
 
 instance_template: |-
   ## ISSUE
