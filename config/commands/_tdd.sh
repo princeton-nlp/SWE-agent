@@ -1,7 +1,6 @@
 # @yaml
 # docstring: Reproduces the current bug by running a test that was designed to fail as long as the bug exists.
 tdd_repro() {
-    set -x
     set -e
     eval "$TEST_CMD $FAIL_TO_PASS"
 }

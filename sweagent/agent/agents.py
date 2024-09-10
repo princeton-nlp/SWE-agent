@@ -105,8 +105,6 @@ class AgentConfig(FrozenSerializable):
     subroutine_types: list[Subroutine] = field(default_factory=list)
 
     def init_with_args(self, tdd: bool):
-        logger.debug("AgentConfig.__post_init__")
-
         if tdd:
             # Add tdd commands before they are processed below.
             self.command_files.append("config/commands/_tdd.sh")
@@ -561,7 +559,11 @@ class Agent:
         """
         assert self.config is not None  # mypy
 
-        state_vars = json.loads(state)
+        try:
+            state_vars = json.loads(state)
+        except json.JSONDecodeError as err:
+            msg = f"Failed to decode state JSON -\n  INPUT={state}\n  ERROR={err}"
+            raise ValueError(msg)
 
         templates: list[str] = []
         # Determine observation template based on what prior observation was
@@ -863,6 +865,7 @@ class Agent:
             for hook in self.hooks:
                 hook.on_step_start()
             state = env.communicate(self.state_command) if self.state_command else None
+            # logger.warning(f"DDBG state:\nself.state_command={self.state_command}\nstate={state}")
             thought, action, output = self.forward(observation, env.get_available_actions(), state)
             for hook in self.hooks:
                 hook.on_actions_generated(thought=thought, action=action, output=repr(output))

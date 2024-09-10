@@ -405,7 +405,7 @@ class SWEEnv(gym.Env):
 
             # Provide test_cmd for the instance's repo.
             install_configs = self._get_install_configs()
-            self.logger.warning(f"test_cmd: {repr(install_configs['test_cmd'])}")
+            # self.logger.warning(f"test_cmd: {repr(install_configs['test_cmd'])}")
             if not install_configs["test_cmd"]:
                 raise RuntimeError(f"No test command found in install configs: {repr(install_configs)}")
             self.communicate_with_handling(f'export TEST_CMD="{install_configs["test_cmd"]}"')
@@ -458,14 +458,13 @@ class SWEEnv(gym.Env):
         Apply test patch for oracle setting
         """
         assert self.record is not None
-        self.logger.debug("Applying test patch...")
         container_patch_path = "/root/test.patch"
         self.copy_string_to_container_file(self.record["test_patch"], container_patch_path)
-        
-        self.communicate_with_handling(
-            input=f"cd /{self._repo_name} && git apply {container_patch_path}",
+        res = self.communicate_with_handling(
+            input=f"cd /{self._repo_name} && git apply -v {container_patch_path}",
             error_msg="Failed to apply test patch correctly",
         )
+        self.logger.debug(f"Applied test patch - output:\n{res}")
 
     def step(self, action: str) -> tuple[str | None, int, bool, dict]:
         """
