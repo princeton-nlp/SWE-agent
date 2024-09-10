@@ -321,7 +321,7 @@ class Main:
             logger.info(f"📙 Arguments: {args.dumps_yaml()}")
         self.args = args
         self.agent = Agent("primary", args.agent)
-        self.env = SWEEnv(args.environment)
+        self.env = SWEEnv(args.environment, args.agent.tdd)
         self._save_arguments()
         default_hooks = [
             SaveApplyPatchHook(),
@@ -496,7 +496,6 @@ def get_args(args=None) -> ScriptArguments:
             verbose=True,
             install_environment=True,
             cache_task_images=False,
-            tdd=True
         ),
         skip_existing=True,
         agent=AgentArguments(
@@ -511,10 +510,6 @@ def get_args(args=None) -> ScriptArguments:
         ),
         actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
     )
-
-    if defaults.environment.tdd:
-        # Add tdd commands before they are processed in AgentConfig.__post_init__.
-        defaults.agent.config.command_files.append("config/commands/_tdd.sh")
 
     # Nicer yaml dumping of multiline strings
     def multiline_representer(dumper, data):

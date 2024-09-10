@@ -104,8 +104,13 @@ class AgentConfig(FrozenSerializable):
     _subroutines: dict[str, Subroutine] = field(default_factory=dict)
     subroutine_types: list[Subroutine] = field(default_factory=list)
 
-    def __post_init__(self):
+    def init_with_args(self, tdd: bool):
         logger.debug("AgentConfig.__post_init__")
+
+        if tdd:
+            # Add tdd commands before they are processed below.
+            self.command_files.append("config/commands/_tdd.sh")
+
         object.__setattr__(self, "command_files", convert_paths_to_abspath(self.command_files))
         object.__setattr__(self, "demonstrations", convert_paths_to_abspath(self.demonstrations))
 
@@ -179,12 +184,12 @@ class AgentConfig(FrozenSerializable):
 @dataclass(frozen=True)
 class AgentArguments(FlattenedAccess, FrozenSerializable):
     """Configure the agent's behaviour (templates, parse functions, blocklists, ...)."""
-
     model: ModelArguments = None
 
     # Policy can only be set via config yaml file from command line
     config_file: Path | None = None
     config: AgentConfig | None = field(default=None, cmd=False)
+    tdd: bool = False
 
     def __post_init__(self):
         if self.config is None and self.config_file is not None:
@@ -192,6 +197,10 @@ class AgentArguments(FlattenedAccess, FrozenSerializable):
             logger.debug(f"Loading config from '{self.config_file}'...")
             try:
                 config = AgentConfig.load_yaml(self.config_file)
+
+                # NOTE: We need to explicitely patch things through because of carelessly designed initialization logic.
+                #       → Complex initialization logic should generally make it easy to provide external inputs, e.g. via DI.
+                config.init_with_args(self.tdd)
             except Exception as err:
                 # stack = ''.join(traceback.format_exception(type(err), err, err.__traceback__))
                 raise ValueError(f"Failed to load config from {self.config_file}: {err}")
@@ -256,6 +265,7 @@ class Agent:
         self.name = name
         self.model = get_model(args.model, args.config._commands + args.config.subroutine_types)
         self.config = args.config
+        self.made_initial_prompt = False
         assert self.config is not None  # mypy
         self.system_args = {
             "command_docs": self.config.command_docs,
@@ -289,55 +299,75 @@ class Agent:
         self.model.setup(init_model_stats)
         self.instance_args = instance_args
 
+        # Read repro instructions.
+        repro_fpath = convert_path_to_abspath(
+            "config/_tdd_repro_prompt.md" if env.tdd else "config/_not_tdd_repro_prompt.md",
+        )
+        repro_msg = Path(repro_fpath).read_text("utf-8")
+
+        # Compose system prompt.
         system_msg = self.config.system_template.format(**self.system_args)
-
-        if env.args.tdd:
-            tdd_msg = convert_path_to_abspath("config/_tdd_system_prompt.md")
-            system_msg = f"{system_msg}\n\n{tdd_msg}"
-
+        system_msg = f"{system_msg}\n\n{repro_msg}"
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
 
         self.history: list[dict[str, Any]] = []
         self._append_history({"role": "system", "content": system_msg, "agent": self.name})
 
         if "history_to_messages" in dir(self.model):
-            for demonstration_path in self.config.demonstrations:
-                if self.config.demonstration_template is None and not self.config.put_demos_in_history:
-                    msg = "Cannot use demonstrations without a demonstration template or put_demos_in_history=True"
-                    raise ValueError(msg)
+            if env.tdd:
+                self.append_initial_tdd_result(env)
+            self.prepare_demos()
 
-                # Load history
-                self.logger.info(f"DEMONSTRATION: {demonstration_path}")
-                demo_history = json.loads(Path(demonstration_path).read_text())["history"]
-                demo_history = [
-                    entry
-                    for entry in demo_history
-                    if ("agent" not in entry) or ("agent" in entry and entry["agent"] == self.name)
-                ]
+    def append_initial_tdd_result(self, env: SWEEnv):
+        test_result = env.communicate("tdd_repro")
+        logger.debug(f"[TDD initial result] {test_result}")
+        self._append_history(
+            {
+                "agent": self.name,
+                "content": test_result,
+                "tdd": True,
+                "role": "user",
+            },
+        )
 
-                if self.config.put_demos_in_history:
-                    if self.config.demonstration_template is not None:
-                        self.logger.warning("Demonstration template is ignored for put_demos_in_history=True")
-                    # Add demonstration to history directly as separate messages
-                    for entry in demo_history:
-                        if entry["role"] != "system":
-                            entry["is_demo"] = True
-                            self._append_history(entry)
-                else:
-                    # Add demonstration as single message to history
-                    demo_message = self.model.history_to_messages(
-                        demo_history,
-                        is_demonstration=True,
-                    )
-                    demonstration = self.config.demonstration_template.format(demonstration=demo_message)
-                    self._append_history(
-                        {
-                            "agent": self.name,
-                            "content": demonstration,
-                            "is_demo": True,
-                            "role": "user",
-                        },
-                    )
+    def prepare_demos(self):
+        for demonstration_path in self.config.demonstrations:
+            if self.config.demonstration_template is None and not self.config.put_demos_in_history:
+                msg = "Cannot use demonstrations without a demonstration template or put_demos_in_history=True"
+                raise ValueError(msg)
+
+            # Load history
+            self.logger.info(f"DEMONSTRATION: {demonstration_path}")
+            demo_history = json.loads(Path(demonstration_path).read_text())["history"]
+            demo_history = [
+                entry
+                for entry in demo_history
+                if ("agent" not in entry) or ("agent" in entry and entry["agent"] == self.name)
+            ]
+
+            if self.config.put_demos_in_history:
+                if self.config.demonstration_template is not None:
+                    self.logger.warning("Demonstration template is ignored for put_demos_in_history=True")
+                # Add demonstration to history directly as separate messages
+                for entry in demo_history:
+                    if entry["role"] != "system":
+                        entry["is_demo"] = True
+                        self._append_history(entry)
+            else:
+                # Add demonstration as single message to history
+                demo_message = self.model.history_to_messages(
+                    demo_history,
+                    is_demonstration=True,
+                )
+                demonstration = self.config.demonstration_template.format(demonstration=demo_message)
+                self._append_history(
+                    {
+                        "agent": self.name,
+                        "content": demonstration,
+                        "is_demo": True,
+                        "role": "user",
+                    },
+                )
 
     @property
     def state_command(self) -> str:
@@ -535,8 +565,9 @@ class Agent:
 
         templates: list[str] = []
         # Determine observation template based on what prior observation was
-        if self.history[-1]["role"] == "system" or self.history[-1].get("is_demo", False):
+        if not self.made_initial_prompt:
             # Show instance template if prev. obs. was initial system message
+            self.made_initial_prompt = True
             templates = [self.config.instance_template]
             if self.config.strategy_template is not None:
                 templates.append(self.config.strategy_template)
@@ -850,8 +881,9 @@ class Agent:
                     if done:
                         break
                 else:
+                    # We expect this to never happen.
+                    logger.warning(f"DDBG call_subroutine: {repr(sub_action)}")
                     agent_name = sub_action["agent"]
-                    logger.info(f"DDBG call_subroutine: {repr(sub_action)}")
                     sub_agent_output = self.call_subroutine(agent_name, sub_action, env)
                     observations.append(sub_agent_output)
 

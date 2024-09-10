@@ -91,8 +91,6 @@ class EnvironmentArguments(FrozenSerializable):
     environment_setup: str | None = None
     # Only used when running on single issue. Path to local repository or github repository.
     repo_path: str = ""
-    # Whether to apply test_patch and ask the agent to fix test failures instead of repro'ing itself.
-    tdd: bool = True
 
     def __post_init__(self):
         if self.timeout is not None:
@@ -141,9 +139,10 @@ class SWEEnv(gym.Env):
     # This prefix will be prepended to the image name when caching task images
     cached_image_prefix = "swe-agent-task-env-"
 
-    def __init__(self, args: EnvironmentArguments):
+    def __init__(self, args: EnvironmentArguments, tdd: bool):
         super().__init__()
         t0 = time.perf_counter()
+        self.tdd = tdd # Annoying pass-through.
         self.args = args
         self.base_commit: str | None = None
         self.communicate_output: str | None = None
@@ -301,7 +300,7 @@ class SWEEnv(gym.Env):
         info = {}
         info["commit_sha"] = self.commit_sha
         
-        if self.args.tdd:
+        if self.tdd:
             self.logger.warning("⚠ TDD is enabled. The agent has access to the test patch and will not try to reproduce the problem. ⚠")
 
         # Get task instance
@@ -393,29 +392,31 @@ class SWEEnv(gym.Env):
         self.post_init_container()
 
         # Write any metadata to info if necessary
-        return None, info
+        initial_observation: str | None = None
+        return initial_observation, info
 
     
     def post_init_container(self):
         self.communicate(f"export REPO_ROOT=\"/{self._repo_name}\"")
 
-        if self.args.tdd:
+        if self.tdd:
             # Apply test patch so the bug can be repro'ed at all.
             self._apply_test_patch()
 
             # Provide test_cmd for the instance's repo.
             install_configs = self._get_install_configs()
+            self.logger.warning(f"test_cmd: {repr(install_configs['test_cmd'])}")
             if not install_configs["test_cmd"]:
                 raise RuntimeError(f"No test command found in install configs: {repr(install_configs)}")
-            self.communicate_with_handling(f"export TEST_CMD=\"{install_configs["test_cmd"]}\"")
+            self.communicate_with_handling(f'export TEST_CMD="{install_configs["test_cmd"]}"')
 
             # Provide the set of golden tests that need to pass. Should be the same as "all files from test_patch".
-            fail_to_pass = " ".join(self.record["FAIL_TO_PASS"])
-            self.communicate_with_handling(f"export FAIL_TO_PASS=\"{fail_to_pass}\"")
+            fail_to_pass = " ".join(json.loads(self.record["FAIL_TO_PASS"]))
+            self.communicate_with_handling(f'export FAIL_TO_PASS="{fail_to_pass}"')
             
             # Provide the set of regression-check tests.
             # NOTE: We split pass_to_pass into multiple chunks, since they can exceed env var and shell command length limits.
-            pass_to_pass: list[str] = self.record["PASS_TO_PASS"]
+            pass_to_pass: list[str] = json.loads(self.record["PASS_TO_PASS"])
             pass_to_pass_file = "/root/pass_to_pass.txt"
             arg_max = int(self.communicate_with_handling("getconf ARG_MAX")) - 1000 # Give it some arbitrary leeway of 1000 characters.
 
@@ -835,7 +836,7 @@ class SWEEnv(gym.Env):
             self.communicate_output = ""
             return ""
 
-    def communicate_with_handling(self, input: str, error_msg: str | None, timeout_duration: int | float = 25) -> str:
+    def communicate_with_handling(self, input: str, error_msg: str | None = None, timeout_duration: int | float = 25) -> str:
         """
         Wrapper for communicate function that raises error if return code is non-zero
 

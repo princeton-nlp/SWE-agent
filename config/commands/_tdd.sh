@@ -1,12 +1,14 @@
 # @yaml
 # docstring: Reproduces the current bug by running a test that was designed to fail as long as the bug exists.
-repro_bug() {
-    $TEST_CMD $FAIL_TO_PASS
+tdd_repro() {
+    set -x
+    set -e
+    eval "$TEST_CMD $FAIL_TO_PASS"
 }
 
 # @yaml
 # docstring: Run all tests to check for regressions. This might execute multiple individual test runs.
-run_all_tests() {
+tdd_run_all() {
     # Assert that the file exists
     if [ ! -f "$PASS_TO_PASS_FILE" ]; then
         echo "ERROR: File $PASS_TO_PASS_FILE not found."
@@ -20,7 +22,7 @@ run_all_tests() {
         
         # Skip empty lines
         if [ -n "$line" ]; then
-            $TEST_CMD "$line"
+            eval "$TEST_CMD $line"
         fi
     done < "$PASS_TO_PASS_FILE"
 }
