@@ -328,6 +328,8 @@ class SWEEnv(gym.Env):
             else:
                 self.logger.info(f"Cached image {cached_image_name} not found, rebuilding task environment...")
 
+        self._init_container()
+
         # Clone repository if not already cloned
         self.communicate(input="cd /")
         folders = self.communicate(input="ls").split("\n")
@@ -455,6 +457,7 @@ class SWEEnv(gym.Env):
 
     
     def init_container_postbake(self):
+        self._init_scripts()
         if self.tdd:
             # Apply test patch so the bug can be repro'ed at all.
             self._apply_test_patch()
@@ -615,30 +618,31 @@ class SWEEnv(gym.Env):
                 self.logger.warning("Failed to remove container", exc_info=True)
             else:
                 self.logger.info("Agent container stopped")
+        self.container_obj = None
         for hook in self.hooks:
             hook.on_close()
 
     # MARK: Helper functions #
 
-    def _reset_container(self) -> None:
-        if self.container is not None:
-            try:
-                # TODO: This should not call terminate, since this is not `close` (and `close` already did this).
-                self.container.terminate()
-            except KeyboardInterrupt:
-                raise
-            except:
-                self.logger.warning("Failed to terminate container", exc_info=True)
-            else:
-                self.logger.debug("Terminated container")
-        # TODO: This should not init anything, since this is not `setup`.
-        self._init_container()
-        self._init_scripts()
+    # def _reset_container(self) -> None:
+    #     if self.container is not None:
+    #         try:
+    #             # TODO: This should not call terminate, since this is not `close` (and `close` already did this).
+    #             self.container.terminate()
+    #         except KeyboardInterrupt:
+    #             raise
+    #         except:
+    #             self.logger.warning("Failed to terminate container", exc_info=True)
+    #         else:
+    #             self.logger.debug("Terminated container")
+    #     # TODO: This should not init anything. Init happens in the `reset` function.
+    #     self._init_container()
+    #     self._init_scripts()
 
     def reset_container(self) -> None:
         self.close()
-        self.container_obj = None
-        self._reset_container()
+        # self.container_obj = None
+        # self._reset_container()
 
     @staticmethod
     def _get_container_name(image_name: str) -> str:
