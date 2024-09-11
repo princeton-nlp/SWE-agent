@@ -571,14 +571,15 @@ class SWEEnv(gym.Env):
         """
         Handle environment shutdown
         """
-        self.logger.info("Beginning environment shutdown...")
-        try:
-            self.communicate(input="exit")
-        except KeyboardInterrupt:
-            raise
-        except:
-            self.logger.warning("Errors when exiting container", exc_info=True)
         if self.container:
+            self.logger.info("Beginning environment shutdown...")
+            try:
+                # NOTE: This also only calls terminate() for some reason.
+                self.communicate(input="exit")
+            except KeyboardInterrupt:
+                raise
+            except:
+                self.logger.warning("Errors when exiting container", exc_info=True)
             self.container.terminate()
             self.container = None
         if self.container_obj is None:
