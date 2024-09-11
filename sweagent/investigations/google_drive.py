@@ -200,37 +200,40 @@ def list_shared_folders() -> list[str]:
         print(f"An error occurred while listing shared folders: {str(error)}")
         return []
 
-def upload_file(dest_parent_folder_id: str, relative_dest_path: list[str], local_file_path: str):
+def upload_file(dest_parent_folder_id: str, relative_dest_path: list[str], src_file_path: str):
     service = get_google_drive_service()
-    
+
     # Get or create the destination folder
     dest_folder_id = get_or_create_drive_folder(dest_parent_folder_id, relative_dest_path)
     
     file_metadata = {
-        'name': os.path.basename(local_file_path),
+        'name': os.path.basename(src_file_path),
         'parents': [dest_folder_id]
     }
     
-    media = MediaFileUpload(local_file_path, resumable=True)
+    media = MediaFileUpload(src_file_path, resumable=True)
     
     try:
         file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
         return file.get('id')
     except HttpError as error:
-        print(f'An error occurred: {error}')
-        return None
+        msg = f"Error uploading file {src_file_path}: {str(error)}"
+        raise Exception(msg)
 
-def upload_directory(dest_parent_folder_id: str, relative_dest_path: list[str], local_directory_path: str):
+def upload_folder(dest_parent_folder_id: str, relative_dest_path: list[str], src_folder_path: str):
     uploaded_files = []
     
-    print(f"Uploading directory {local_directory_path} to {get_google_drive_folder_href(dest_parent_folder_id)}")
-    for root, _, files in os.walk(local_directory_path):
+    print(f"Uploading directory {src_folder_path} to {get_google_drive_folder_href(dest_parent_folder_id)}")
+    for root, _, files in os.walk(src_folder_path):
         for file in tqdm(files, desc="Uploading files", unit="file"):
-            local_file_path = os.path.join(root, file)
+            src_file_path = os.path.join(root, file)
             file_relative_dest_path = relative_dest_path.copy()
-            file_relative_dest_path.extend(os.path.dirname(os.path.relpath(local_file_path, local_directory_path)).split(os.sep))
 
-            file_id = upload_file(dest_parent_folder_id, file_relative_dest_path, local_file_path)
+            dirname = os.path.dirname(os.path.relpath(src_file_path, src_folder_path))
+            if dirname != "":
+                file_relative_dest_path.extend(dirname.split(os.sep))
+
+            file_id = upload_file(dest_parent_folder_id, file_relative_dest_path, src_file_path)
             if file_id:
                 uploaded_files.append((file, file_id))
     
