@@ -1,4 +1,4 @@
-set -e
+set -euo pipefail
 set -x
 
 # This runs the instance from the official SWE-agent demo video.

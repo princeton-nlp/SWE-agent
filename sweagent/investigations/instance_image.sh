@@ -2,7 +2,7 @@
 # Get or create docker image for instance.
 #######################################################
 
-set -e
+set -euo pipefail
 
 if [ -z "$BASH_SOURCE" ]; then
   # NOTE: When running the script through Python's subprocess, BASH_SOURCE does not exist.

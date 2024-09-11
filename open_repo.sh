@@ -3,7 +3,7 @@
 # Create it if it does not exist.
 #######################################################
 
-set -e
+set -euo pipefail
 # set -x
 
 if [ -z "$BASH_SOURCE" ]; then
