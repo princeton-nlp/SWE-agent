@@ -5,8 +5,6 @@ from abc import ABC, abstractmethod
 from enum import Enum
 
 GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
-JIRA_ISSUE_URL_PATTERN = re.compile(r"atlassian\.net\/browse\/([A-Z]+-\d+)")
-
 
 class ProblemStatementSource(Enum):
     LOCAL = "local"
