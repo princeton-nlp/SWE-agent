@@ -390,7 +390,7 @@ class SWEEnv(gym.Env):
         if self.args.cache_task_images:
             self.communicate("env >> /.env")
             assert self.container_obj is not None  # mypy
-            self.container_obj.commit(cached_image_name, self._repo_name)
+            self.container_obj.commit(cached_image_name)
             self.logger.info(f"Container with environment {self.container_obj.id} cached as image {cached_image_name}")
 
         self.init_container_postbake()

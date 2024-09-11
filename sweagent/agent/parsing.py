@@ -197,16 +197,21 @@ class AnthropicWithToolsThoughtsParser(ParseFunction):
             # Get the actual command parameters that were provided.
             ordered_parameters = list(command.arguments.keys())[0 : len(tool_args)]
             all_args = [str(tool_args.get(key)) for key in ordered_parameters]
-            inline_args = all_args
-            multi_line_input = ""
-            if command.end_name:
+            if command.name == "exec":
+                # exec should just pass things through as-is.
+                quoted_args = []
+                unquoted_tail = " ".join(all_args)
+            elif command.end_name:
                 # Has multiline arg with explicit final token.
-                inline_args = all_args[:-1]
-                multi_line_input = "\n" + all_args[-1]
-                if not multi_line_input.endswith(f"\n{command.end_name}"):
+                quoted_args = all_args[:-1]
+                unquoted_tail = "\n" + all_args[-1]
+                if not unquoted_tail.endswith(f"\n{command.end_name}"):
                     # NOTE: You can understand this logic by searching for `multi_line_command_endings` in this codebase.
-                    multi_line_input += f"\n{command.end_name}"
-            args = " ".join(f'"{a}"' for a in inline_args) + multi_line_input
+                    unquoted_tail += f"\n{command.end_name}"
+            else:
+                quoted_args = all_args
+                unquoted_tail = ""
+            args = " ".join(f'"{a}"' for a in quoted_args) + unquoted_tail
 
         # Final results:
         text = "\n".join(texts)

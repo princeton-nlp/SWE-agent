@@ -216,23 +216,20 @@ create() {
 }
 
 # @yaml
-# signature: exec <command> <all_args>
+# signature: exec <command>
 # docstring: Execute any command in the shell. The environment does NOT support interactive session commands (e.g. python, vim).
 # arguments:
 #  command:
 #     type: string
-#     description: Shell command to execute
-#     required: true
-#  all_args:
-#     type: string
-#     description: Any args passed to the shell command as-is in one string. [IMPORTANT] Any files passed to exec must be absolute. Prefix them with $PWD.
+#     description: Shell command string to execute. Will execute with `eval "$@"`.
+#     required: truewith $PWD.
 #     required: false
 exec() {
     if [ $# -eq 0 ]; then
-        echo "Usage: exec <command> [args...]"
+        echo "Usage: exec <command>"
         return 1
     fi
-    eval "$@"
+    eval $@
 }
 
 # @yaml
