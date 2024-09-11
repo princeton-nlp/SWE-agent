@@ -278,8 +278,6 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> tuple[subpr
         "-l",
     ]
     logger.debug("Starting non-persistent container with command: %s", shlex.join(startup_cmd))
-    # log stacktrace
-    logger.debug("Stacktrace: %s", "".join(traceback.format_stack()))
     container = subprocess.Popen(
         startup_cmd,
         stdin=PIPE,

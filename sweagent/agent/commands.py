@@ -45,6 +45,7 @@ class Command(FrozenSerializable):
     end_name: str | None = None  # if there is an end_name, then it is a multi-line command
     arguments: dict | None = None
     signature: str | None = None
+    tdd: bool | None = None
 
 
 class ParseCommandMeta(type):
@@ -136,7 +137,7 @@ class ParseCommandBash(ParseCommand):
                     code += lines[idx]
                     idx += 1
                 code += lines[idx]
-                docstring, end_name, arguments, signature = None, None, None, name
+                docstring, end_name, arguments, signature, tdd = None, None, None, name, None
                 # logger.debug(f"Parsing YAML in {path} at line: {repr(line)}")
                 docs_dict = yaml.safe_load("\n".join(docs).replace("@yaml", ""))
                 if docs_dict is not None:
@@ -154,6 +155,7 @@ class ParseCommandBash(ParseCommand):
                                     signature += f" <{param}>"
                                 else:
                                     signature += f" [<{param}>]"
+                        tdd = docs_dict.get("tdd", False)
                 command = Command.from_dict(
                     {
                         "code": code,
@@ -162,6 +164,7 @@ class ParseCommandBash(ParseCommand):
                         "name": name,
                         "arguments": arguments,
                         "signature": signature,
+                        "tdd": tdd,
                     },
                 )
                 commands.append(command)
@@ -203,6 +206,7 @@ class ParseCommandBash(ParseCommand):
                         "name": name,
                         "arguments": arguments,
                         "signature": signature,
+                        "tdd": docs_dict.get("tdd", False),
                     },
                 ),
             ]

@@ -315,13 +315,15 @@ class Main:
         self.traj_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.datetime.now().strftime("%y%m%d%H%M%S")
         self.log_path = log_path = self.traj_dir / f"run-{timestamp}.log"
-        logger.info("Logging to %s", log_path)
+        logger.info("Logging to %s", log_path.absolute())
         add_file_handler(log_path)
         if args.print_config:
             logger.info(f"📙 Arguments: {args.dumps_yaml()}")
         self.args = args
-        self.agent = Agent("primary", args.agent)
+
         self.env = SWEEnv(args.environment, args.agent.tdd)
+        self.agent = Agent("primary", args.agent, self.env)
+
         self._save_arguments()
         default_hooks = [
             SaveApplyPatchHook(),

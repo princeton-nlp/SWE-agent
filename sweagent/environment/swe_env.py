@@ -141,7 +141,7 @@ class SWEEnv(gym.Env):
 
     def __init__(self, args: EnvironmentArguments, tdd: bool):
         super().__init__()
-        t0 = time.perf_counter()
+        # t0 = time.perf_counter()
         self.tdd = tdd # Annoying pass-through.
         self.args = args
         self.base_commit: str | None = None
@@ -189,6 +189,7 @@ class SWEEnv(gym.Env):
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
         self.hooks: list[EnvHook] = []
+        self.commands = dict
 
     def _get_cached_task_image_name(self) -> str:
         assert self.record is not None

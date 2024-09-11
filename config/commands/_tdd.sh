@@ -1,13 +1,22 @@
 # @yaml
 # docstring: Reproduces the current bug by running a test that was designed to fail as long as the bug exists.
+# tdd: true
 tdd_repro() {
     # set -euo pipefail
-    echo -e "Running tests to reproduce the bug:\n >$TEST_CMD $FAIL_TO_PASS\n"
-    eval "$TEST_CMD $FAIL_TO_PASS"
+
+    # TODO: better commands.
+    extra_args="-E -k test_col_insert --tb"
+    TEST_CMD="PYTHONWARNINGS='ignore::UserWarning,ignore::SyntaxWarning,ignore::DeprecationWarning' bin/test -C --verbose"
+    # TEST_CMD="PYTHONWARNINGS='ignore::UserWarning,ignore::SyntaxWarning' bin/test -C --verbose"
+
+    final_cmd="$TEST_CMD $extra_args $FAIL_TO_PASS"
+    echo -e "Running tests to reproduce the bug:\n >$final_cmd\n"
+    eval "$final_cmd"
 }
 
 # @yaml
 # docstring: Run all tests to check for regressions. This might execute multiple individual test runs.
+# tdd: true
 tdd_run_all() {
     # Assert that the file exists
     if [ ! -f "$PASS_TO_PASS_FILE" ]; then

@@ -19,9 +19,10 @@ from sweagent.agent.models import (
     CostLimitExceededError,
     ModelArguments,
     ModelQueryResult,
+    get_last_valid_tool_use_name,
     get_model,
-    make_history_content_entry,
-    make_tool_result,
+    make_assistant_content,
+    make_user_reply_content,
 )
 from sweagent.agent.parsing import FormatError, ParseFunction
 from sweagent.environment.swe_env import SWEEnv
@@ -103,6 +104,7 @@ class AgentConfig(FrozenSerializable):
     _commands: list[Command] = field(default_factory=list)
     _subroutines: dict[str, Subroutine] = field(default_factory=dict)
     subroutine_types: list[Subroutine] = field(default_factory=list)
+    tdd: bool = False
 
     def init_with_args(self, tdd: bool):
         if tdd:
@@ -187,6 +189,8 @@ class AgentArguments(FlattenedAccess, FrozenSerializable):
     # Policy can only be set via config yaml file from command line
     config_file: Path | None = None
     config: AgentConfig | None = field(default=None, cmd=False)
+
+    # We put tdd on the agent args because it needs it in post_init.
     tdd: bool = False
 
     def __post_init__(self):
@@ -259,8 +263,9 @@ class AgentHook:
 class Agent:
     """Agent handles the behaviour of the model and how it interacts with the environment."""
 
-    def __init__(self, name: str, args: AgentArguments):
+    def __init__(self, name: str, args: AgentArguments, env: SWEEnv):
         self.name = name
+        self.env = env
         self.model = get_model(args.model, args.config._commands + args.config.subroutine_types)
         self.config = args.config
         self.made_initial_prompt = False
@@ -280,6 +285,13 @@ class Agent:
         """Add hook to agent"""
         hook.on_init()
         self.hooks.append(hook)
+
+
+    # Unflag all tdd entries from history, so it can be compressed.
+    def _unflag_tdd_history(self):
+        for entry in self.history:
+            if "tdd" in entry:
+                entry["tdd"] = False
 
     def _append_history(self, item: dict):
         for hook in self.hooks:
@@ -312,21 +324,12 @@ class Agent:
         self._append_history({"role": "system", "content": system_msg, "agent": self.name})
 
         if "history_to_messages" in dir(self.model):
-            if env.tdd:
-                self.append_initial_tdd_result(env)
             self.prepare_demos()
 
-    def append_initial_tdd_result(self, env: SWEEnv):
+    def make_initial_tdd_result(self, env: SWEEnv):
         test_result = env.communicate("tdd_repro")
-        logger.debug(f"[TDD initial result] {test_result}")
-        self._append_history(
-            {
-                "agent": self.name,
-                "content": test_result,
-                "tdd": True,
-                "role": "user",
-            },
-        )
+        # logger.debug(f"[TDD] Initial Results:\n{test_result}")
+        return f"## INITIAL REPRODUCTION RESULTS<NOTE: pay special attention to these>\n```\n{test_result}\n```\n\n"
 
     def prepare_demos(self):
         for demonstration_path in self.config.demonstrations:
@@ -521,6 +524,9 @@ class Agent:
         self.subroutine_patterns[self.config.submit_command] = submit_pat
         self.command_patterns[self.config.submit_command] = submit_pat
 
+    def get_command(self, name: str) -> Command | None:
+        return next((c for c in self.config._commands if c.name == name), None)
+
     def forward(self, observation: str, available_actions: list[str], state: str) -> tuple[str, str, ModelQueryResult]:
         """Forwards the model
 
@@ -535,14 +541,22 @@ class Agent:
             output: raw model output (not output of the action)
         """
         thought, action, output = self.forward_with_error_check(observation, state)
+        last_tool_name = get_last_valid_tool_use_name(output)
+        last_command = self.get_command(last_tool_name)
+        tdd = last_command.tdd if last_command is not None else False
+
+        if tdd:
+            # Only keep one tdd entry at a time.
+            self._unflag_tdd_history()
 
         self._append_history(
             {
                 "role": "assistant",
-                "content": make_history_content_entry(output),
+                "content": make_assistant_content(output),
                 "thought": thought,
                 "action": action,
                 "agent": self.name,
+                "tdd": tdd,
             },
         )
 
@@ -573,6 +587,12 @@ class Agent:
             templates = [self.config.instance_template]
             if self.config.strategy_template is not None:
                 templates.append(self.config.strategy_template)
+            if self.env.tdd:
+                # Inject tdd_results, so it can be rendered by the template.
+                if "{tdd_results}" not in self.config.instance_template:
+                    # {tdd_results} needs to be referenced in instance_template for this to work.
+                    raise ValueError("{tdd_results} not found in instance_template:\n\n" + self.config.instance_template)
+                state_vars["tdd_results"] = self.make_initial_tdd_result(self.env)
         elif observation is None or observation.strip() == "":
             # Show no output template if observation content was empty
             templates = [self.config.next_step_no_output_template]
@@ -595,7 +615,7 @@ class Agent:
         message = "\n".join(messages)
 
         self.logger.info(f"🤖 MODEL INPUT\n{message}")
-        self._append_history({"role": "user", "content": make_tool_result(message, None, self.history, False), "agent": self.name})
+        self._append_history({"role": "user", "content": make_user_reply_content(message, None, self.history, False), "agent": self.name})
 
         for hook in self.hooks:
             hook.on_model_query(query=self.local_history, agent=self.name)
@@ -609,8 +629,8 @@ class Agent:
         self.logger.warning(f"FORMAT ERROR\n{format_error_template}")
 
         temp_history = self.local_history + [
-            {"role": "assistant", "content": make_history_content_entry(output), "agent": self.name},
-            {"role": "user", "content": make_tool_result(format_error_template, output, self.history, True), "agent": self.name},
+            {"role": "assistant", "content": make_assistant_content(output), "agent": self.name},
+            {"role": "user", "content": make_user_reply_content(format_error_template, output, self.history, True), "agent": self.name},
         ]
         return self.model.query(temp_history)
 
@@ -623,8 +643,8 @@ class Agent:
         self.logger.warning(f"BLOCKLIST ERROR\n{blocklist_error_message}")
 
         temp_history = self.local_history + [
-            {"role": "assistant", "content": make_history_content_entry(output), "agent": self.name},
-            {"role": "user", "content": make_tool_result(blocklist_error_message, output, self.history, True), "agent": self.name},
+            {"role": "assistant", "content": make_assistant_content(output), "agent": self.name},
+            {"role": "user", "content": make_user_reply_content(blocklist_error_message, output, self.history, True), "agent": self.name},
         ]
         return self.model.query(temp_history)
 
@@ -883,7 +903,7 @@ class Agent:
                     if done:
                         break
                 else:
-                    # We expect this to never happen.
+                    # We don't expect agent subroutines to be a thing (at least we are not prepared for them):
                     logger.warning(f"DDBG call_subroutine: {repr(sub_action)}")
                     agent_name = sub_action["agent"]
                     sub_agent_output = self.call_subroutine(agent_name, sub_action, env)

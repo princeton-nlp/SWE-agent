@@ -180,7 +180,7 @@ class AnthropicWithToolsThoughtsParser(ParseFunction):
 
         other_blocks = [block for block in model_response.blocks if block.type not in ["tool_use", "text"]]
         if other_blocks:
-            msg = "Only tool_use and text blocks are allowed in model response."
+            msg = f"NYI: Found {len(other_blocks)} unknown blocks in model response. Only tool_use and text blocks are supported: {repr(model_response.blocks)}"
             raise FormatError(msg)
 
         # Convert tool calls to SWE-agent action command strings (actions):

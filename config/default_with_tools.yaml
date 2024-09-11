@@ -12,6 +12,7 @@ instance_template: |-
   A user reported the following issue:
   {issue}
 
+  {tdd_results}
   ## INSTRUCTIONS
   * Solve this issue on your own. Your terminal session has started and you're in the repository's root directory. Edit files and run any checks or tests as needed.
   * YOU CAN ONLY MAKE ONE TOOL CALL (RUN A COMMAND) AT A TIME. You should always wait for feedback after every command.

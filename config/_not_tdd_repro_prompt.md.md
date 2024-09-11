@@ -1,4 +1,4 @@
-## Reproduction Requirements
+## Requirements
 
 1. Always start by replicating the bug that is discussed in the ISSUE.
      * We recommend that you always first reproduce a test or script that reproduces the bug in your environment. Execute and verify that you can repro it.
