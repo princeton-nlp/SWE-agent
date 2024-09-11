@@ -181,7 +181,8 @@ ignore = [
     # pytest
     "PT011",
     "PT018",
-    "EM102"    # assign to variable first
+    "EM101",  # assign to variable first
+    "EM102"   # assign to variable first
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
