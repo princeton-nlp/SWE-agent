@@ -6,6 +6,7 @@ from enum import Enum
 
 GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
 
+
 class ProblemStatementSource(Enum):
     LOCAL = "local"
     ONLINE = "online"

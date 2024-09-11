@@ -4,12 +4,13 @@ from enum import Enum, auto
 
 from sweagent.agent.issueService.file_issue_service import FileIssueService
 from sweagent.agent.issueService.github_issue_service import GitHubIssueService
-from sweagent.agent.issueService.issue_service import GITHUB_ISSUE_URL_PATTERN, IssueService
-from sweagent.utils.log import default_logger
+from sweagent.agent.issueService.issue_service import GITHUB_ISSUE_URL_PATTERN
+
 
 class IssueDatabaseType(Enum):
     GITHUB = auto()
     FILE = auto()
+
 
 class IssueServiceFactory:
     def _parse_issue_db_type(self, data_path: str) -> IssueDatabaseType:
