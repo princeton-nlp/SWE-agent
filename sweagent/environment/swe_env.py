@@ -697,7 +697,6 @@ class SWEEnv(gym.Env):
             print(available_containers_info)
             msg = "Failed to get container object."
             raise RuntimeError(msg)
-        self.logger.info("🌱 Environment Initialized")
 
     def _init_scripts(self):
         """

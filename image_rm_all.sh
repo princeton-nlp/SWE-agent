@@ -18,7 +18,7 @@ $thisDir/image_stop_all.sh
 
 # Delete container images.
 img_name_partial="swe-agent-task-env-"
-found="$(docker images | (grep "$img_name_partial" || :))"
+found="$(docker images | (grep "$img_name_partial" | awk '{print $3}' || :))"
 
 if [ -n "$found" ]; then
   echo "Deleting images: $found"
