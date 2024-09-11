@@ -1,4 +1,5 @@
 set -euo pipefail
+# set -x
 
 if [ -z "$BASH_SOURCE" ]; then
   # NOTE: When running the script through Python's subprocess, BASH_SOURCE does not exist.
@@ -16,4 +17,10 @@ thisDir=$(dirname "$thisFile")
 $thisDir/image_stop_all.sh
 
 # Delete container images.
-docker rmi $(docker images | grep "$img_name_partial")
+img_name_partial="swe-agent-task-env-"
+found="$(docker images | (grep "$img_name_partial" || :))"
+
+if [ -n "$found" ]; then
+  echo "Deleting images: $found"
+  docker rmi $found
+fi

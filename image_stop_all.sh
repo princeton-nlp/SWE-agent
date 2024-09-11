@@ -1,5 +1,11 @@
 set -euo pipefail
+# set -x
 
 # Stop all swe-agent containers.
 img_name_partial="swe-agent-task-env-"
-docker rm $(docker stop $(docker ps -a | grep "$yourImgName" | cut -d " " -f 1))
+found="$(docker ps -a | (grep "$img_name_partial" || :) | cut -d " " -f 1)"
+
+if [ -n "$found" ]; then
+  echo "Stopping containers: $found"
+  docker rm $(docker stop $found)
+fi
