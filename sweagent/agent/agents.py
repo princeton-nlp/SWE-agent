@@ -289,6 +289,11 @@ class Agent:
 
     # Unflag all tdd entries from history, so it can be compressed.
     def _unflag_tdd_history(self):
+        # count tdd entries
+        tdd_count = sum(1 for entry in self.history if entry.get("tdd"))
+        if tdd_count != 1:
+            raise ValueError(f"There should always be exactly 1 TDD entry in history, but found {tdd_count}: {repr(self.history)}")
+
         for entry in self.history:
             if "tdd" in entry:
                 entry["tdd"] = False
@@ -543,9 +548,9 @@ class Agent:
         thought, action, output = self.forward_with_error_check(observation, state)
         last_tool_name = get_last_valid_tool_use_name(output)
         last_command = self.get_command(last_tool_name)
-        tdd = last_command.tdd if last_command is not None else False
+        ran_tdd_action = last_command.tdd if last_command is not None else False
 
-        if tdd:
+        if ran_tdd_action:
             # Only keep one tdd entry at a time.
             self._unflag_tdd_history()
 
@@ -556,7 +561,7 @@ class Agent:
                 "thought": thought,
                 "action": action,
                 "agent": self.name,
-                "tdd": tdd,
+                "tdd": ran_tdd_action,
             },
         )
 
