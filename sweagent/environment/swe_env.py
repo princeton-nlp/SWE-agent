@@ -184,13 +184,11 @@ class SWEEnv(gym.Env):
         self.image_name = args.image_name
         self.container_obj: docker.models.containers.Container | None = None
         self.container: subprocess.Popen | None = None
-        self._reset_container()
+        # self._reset_container()
 
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
         self.hooks: list[EnvHook] = []
-
-        self.logger.debug("Environment initialization took %.2f seconds", time.perf_counter() - t0)
 
     def _get_cached_task_image_name(self) -> str:
         assert self.record is not None
@@ -315,18 +313,19 @@ class SWEEnv(gym.Env):
 
         ### Reset Container ###
         if self.args.cache_task_images:
-            cached_image = self._get_cached_task_image_name()
-            if image_exists(cached_image):
-                self.logger.info(f"Restore environment from cached image {cached_image}")
+            cached_image_name = self._get_cached_task_image_name()
+            if image_exists(cached_image_name):
+                self.logger.info(f"Restore environment from cached image {cached_image_name}")
                 self.close()  # stop current container
-                self._init_container(cached_image=cached_image)
+                self._init_container(cached_image=cached_image_name)
                 self.communicate("export $(xargs </.env)")
 
-                self.post_init_container()
+                self.init_container_prebake()
+                self.init_container_postbake()
 
                 return None, info
             else:
-                self.logger.info(f"Cached image {cached_image} not found, rebuilding task environment...")
+                self.logger.info(f"Cached image {cached_image_name} not found, rebuilding task environment...")
 
         # Clone repository if not already cloned
         self.communicate(input="cd /")
@@ -383,26 +382,34 @@ class SWEEnv(gym.Env):
         # Install mypy for linting purposes
         self.communicate_with_handling("pip install flake8", error_msg="Failed to install flake8 (lint library)")
 
+        self.init_container_prebake()
+
         if self.args.cache_task_images:
             self.communicate("env >> /.env")
             assert self.container_obj is not None  # mypy
-            self.container_obj.commit(cached_image)
-            self.logger.info(f"Container with environment {self.container_obj.id} cached as image {cached_image}")
+            self.container_obj.commit(cached_image_name, self._repo_name)
+            self.logger.info(f"Container with environment {self.container_obj.id} cached as image {cached_image_name}")
 
-        self.post_init_container()
+        self.init_container_postbake()
 
         # Write any metadata to info if necessary
         initial_observation: str | None = None
         return initial_observation, info
 
-    
-    def post_init_container(self):
+    def init_container_prebake(self):
+        """
+        This is called after container preparation, but before committing the image; and also every time the container is opened.
+        WARNING: Make sure all image changes in this function are repeatable and idempotent.
+        NOTE: These settings should be baked into the container image.
+              However, since things are still changing a lot, not all images will be prebaked correctly.
+              That is why we have to also run this when loading an image.
+        When debugging a container image and you have trouble getting it into the right state:
+              1. Modify this function.
+              2. Delete the cached image (use `./image_rm_all.sh`).
+              3. Re-run to have settings baked into the image.
+        """
         self.communicate(f"export REPO_ROOT=\"/{self._repo_name}\"")
-
         if self.tdd:
-            # Apply test patch so the bug can be repro'ed at all.
-            self._apply_test_patch()
-
             # Provide test_cmd for the instance's repo.
             install_configs = self._get_install_configs()
             # self.logger.warning(f"test_cmd: {repr(install_configs['test_cmd'])}")
@@ -445,6 +452,12 @@ class SWEEnv(gym.Env):
         envs = self.communicate("env")
         self.logger.debug(f"Container initialized with the following env:\n{envs}\n")
 
+    
+    def init_container_postbake(self):
+        if self.tdd:
+            # Apply test patch so the bug can be repro'ed at all.
+            self._apply_test_patch()
+
     def copy_string_to_container_file(self, content: str, container_file_path: str) -> None:
         with tempfile.NamedTemporaryFile(mode='w', delete=True) as temp_file:
             temp_file.write(content)
@@ -469,7 +482,7 @@ class SWEEnv(gym.Env):
             input=f"cd /{self._repo_name} && git apply -v {container_patch_path}",
             error_msg="Failed to apply test patch correctly",
         )
-        self.logger.debug(f"Applied test patch - output:\n{res}")
+        self.logger.debug(f"[TDD] Applied test patch - output:\n{res}")
 
     def step(self, action: str) -> tuple[str | None, int, bool, dict]:
         """
@@ -561,8 +574,9 @@ class SWEEnv(gym.Env):
             raise
         except:
             self.logger.warning("Errors when exiting container", exc_info=True)
-        assert self.container is not None  # mypy
-        self.container.terminate()
+        if self.container:
+            self.container.terminate()
+            self.container = None
         if self.container_obj is None:
             pass
         elif self.persistent:
@@ -620,7 +634,6 @@ class SWEEnv(gym.Env):
 
     def reset_container(self) -> None:
         self.close()
-        self.container = None
         self.container_obj = None
         self._reset_container()
 
@@ -727,7 +740,7 @@ class SWEEnv(gym.Env):
         try:
             buffer, exit_code = read_with_timeout_experimental(self.container, timeout_duration)
         except Exception:
-            msg = f"Read with timeout failed on input:\n---\n{input}\n---"
+            msg = f"Read with timeout failed:\n----Input----\n{input}\n------------"
             self.logger.error(msg)
             raise
         if exit_code == "$EXITSTATUS":

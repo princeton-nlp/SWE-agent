@@ -306,7 +306,7 @@ class Agent:
         # Compose system prompt.
         system_msg = self.config.system_template.format(**self.system_args)
         system_msg = f"{system_msg}\n\n{repro_msg}"
-        self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
+        # self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
 
         self.history: list[dict[str, Any]] = []
         self._append_history({"role": "system", "content": system_msg, "agent": self.name})

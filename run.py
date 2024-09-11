@@ -413,7 +413,8 @@ class Main:
                     logger.error(f"❌ Failed on {self.env.record['instance_id']}: {e}")
                 else:
                     logger.error("❌ Failed on unknown instance")
-                self.env.reset_container()
+                # self.env.reset_container()
+                self.env.close()
                 continue
         for hook in self.hooks:
             hook.on_end()
