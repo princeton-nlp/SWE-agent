@@ -623,6 +623,7 @@ class SWEEnv(gym.Env):
     def _reset_container(self) -> None:
         if self.container is not None:
             try:
+                # TODO: This should not call terminate, since this is not `close` (and `close` already did this).
                 self.container.terminate()
             except KeyboardInterrupt:
                 raise
@@ -630,6 +631,7 @@ class SWEEnv(gym.Env):
                 self.logger.warning("Failed to terminate container", exc_info=True)
             else:
                 self.logger.debug("Terminated container")
+        # TODO: This should not init anything, since this is not `setup`.
         self._init_container()
         self._init_scripts()
 
