@@ -8,7 +8,7 @@ tdd_repro() {
         exit 1
     fi
     pushd $REPO_ROOT > /dev/null
-    echo -e "Running tests to reproduce the bug:\n >$TEST_CMD_FAIL_TO_PASS\n"
+    echo -e "Running tests to reproduce the bug (from $PWD):\n >$TEST_CMD_FAIL_TO_PASS\n"
     eval "$TEST_CMD_FAIL_TO_PASS"
     popd > /dev/null
 }

@@ -431,6 +431,8 @@ class SWEEnv(gym.Env):
     
     def init_container_postbake(self):
         self._init_scripts()
+        self.communicate_with_handling(f"source activate {self.env_name}")
+        self.logger.debug(f"Activated container environment: {self.env_name}")
         if self.tdd:
             # Apply test patch so the bug can be repro'ed at all.
             self._apply_test_patch()
@@ -963,6 +965,10 @@ class SWEEnv(gym.Env):
     def _conda_environment_exists(self, env_name: str) -> bool:
         env_check = self.communicate(f"conda env list | grep {env_name}", timeout_duration=LONG_TIMEOUT)
         return env_check.strip() != ""
+    
+    @property
+    def env_name(self) -> str:
+        return f"{self._repo_name}__{self.record['version']}"
 
     def install_env(self) -> None:
         """
@@ -980,7 +986,7 @@ class SWEEnv(gym.Env):
             return
         assert self.record is not None  # mypy
         # Create environment if does not exist yet
-        env_name = f"{self._repo_name}__{self.record['version']}"
+        env_name = self.env_name
         if not self._conda_environment_exists(env_name):
             self.logger.info(f"{env_name} conda env not found, creating...")
             packages = install_configs.get("packages", "")
