@@ -677,6 +677,9 @@ def get_instances(
         raise ValueError(msg)
 
     if repo_path:
+        if not Path(repo_path).exists():
+            msg = f"Specified repository path {repo_path} does not exist"
+            raise FileNotFoundError(msg)
         msg = "repo_path must be empty if running over multiple problem statements"
         raise ValueError(msg)
 
