@@ -128,15 +128,24 @@ class ParseCommandBash(ParseCommand):
         while idx < len(lines):
             line = lines[idx]
             idx += 1
+            if not docs and line != "# @yaml" and not line.startswith("_"):
+                # Ignore until command or utility function found.
+                # logger.debug(f"bash parser ignoring line in {path}: {line}")
+                continue
             if line.startswith("# "):
                 docs.append(line[2:])
             elif line.strip().endswith("() {"):
                 name = line.split()[0][:-2]
                 code = line
+
+                # Consume all lines until closing bracket.
                 while lines[idx].strip() != "}":
                     code += lines[idx]
                     idx += 1
                 code += lines[idx]
+                idx += 1
+
+                # Parse yaml description.
                 docstring, end_name, arguments, signature, tdd = None, None, None, name, None
                 # logger.debug(f"Parsing YAML in {path} at line: {repr(line)}")
                 docs_dict = yaml.safe_load("\n".join(docs).replace("@yaml", ""))
