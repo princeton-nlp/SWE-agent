@@ -286,13 +286,30 @@ class Agent:
         hook.on_init()
         self.hooks.append(hook)
 
+    def _assert_tdd_history_entries(self, history=None):
+        if self.env.tdd:
+            # count tdd entries
+            history = history or self.history
+            tdd_count = sum(1 for entry in history if entry.get("tdd"))
+            if tdd_count != 1:
+                raise ValueError(
+                    f"There should always be exactly 1 TDD entry in history, but found {tdd_count} (using history_processor='{self.config.history_processor}'): {repr(history)}"
+                )
+
+    # ###########################################################################
+    # TDD stuff.
+    # ###########################################################################
+
+    def _system_repro_prompt(self):
+        # Read repro instructions.
+        repro_fpath = convert_path_to_abspath(
+            "config/_tdd_repro_prompt.md" if self.env.tdd else "config/_not_tdd_repro_prompt.md",
+        )
+        return Path(repro_fpath).read_text("utf-8")
 
     # Unflag all tdd entries from history, so it can be compressed.
     def _unflag_tdd_history(self):
-        # count tdd entries
-        tdd_count = sum(1 for entry in self.history if entry.get("tdd"))
-        if tdd_count != 1:
-            raise ValueError(f"There should always be exactly 1 TDD entry in history, but found {tdd_count}: {repr(self.history)}")
+        self._assert_tdd_history_entries()
 
         for entry in self.history:
             if "tdd" in entry:
@@ -302,6 +319,20 @@ class Agent:
         for hook in self.hooks:
             hook.on_query_message_added(**item)
         self.history.append(item)
+
+    def _make_initial_tdd_result(self) -> str:
+        if self.env.tdd:
+            if "{tdd_results}" not in self.config.instance_template:
+                # {tdd_results} needs to be referenced in instance_template for this to work.
+                raise ValueError("{tdd_results} not found in instance_template:\n\n" + self.config.instance_template)
+            test_result = self.env.communicate("tdd_repro")
+            # logger.debug(f"[TDD] Initial Results:\n{test_result}")
+            return f"## INITIAL REPRODUCTION RESULTS<NOTE: pay special attention to these>\n```\n{test_result}\n```\n\n"
+        return ""
+
+    # ###########################################################################
+    # setup and more
+    # ###########################################################################
 
     def setup(self, env: SWEEnv, instance_args, init_model_stats=None) -> None:
         """Setup the agent for a new instance. This includes
@@ -314,15 +345,9 @@ class Agent:
         self.model.setup(init_model_stats)
         self.instance_args = instance_args
 
-        # Read repro instructions.
-        repro_fpath = convert_path_to_abspath(
-            "config/_tdd_repro_prompt.md" if env.tdd else "config/_not_tdd_repro_prompt.md",
-        )
-        repro_msg = Path(repro_fpath).read_text("utf-8")
-
         # Compose system prompt.
         system_msg = self.config.system_template.format(**self.system_args)
-        system_msg = f"{system_msg}\n\n{repro_msg}"
+        system_msg = f"{system_msg}\n\n{self._system_repro_prompt()}"
         # self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
 
         self.history: list[dict[str, Any]] = []
@@ -330,11 +355,6 @@ class Agent:
 
         if "history_to_messages" in dir(self.model):
             self.prepare_demos()
-
-    def make_initial_tdd_result(self, env: SWEEnv):
-        test_result = env.communicate("tdd_repro")
-        # logger.debug(f"[TDD] Initial Results:\n{test_result}")
-        return f"## INITIAL REPRODUCTION RESULTS<NOTE: pay special attention to these>\n```\n{test_result}\n```\n\n"
 
     def prepare_demos(self):
         for demonstration_path in self.config.demonstrations:
@@ -383,7 +403,9 @@ class Agent:
     @property
     def local_history(self) -> list[dict[str, str]]:
         """Return the history of the agent since the last reset."""
-        return self.config.history_processor([entry for entry in self.history if entry["agent"] == self.name])
+        result = self.config.history_processor([entry for entry in self.history if entry["agent"] == self.name])
+        self._assert_tdd_history_entries(result)
+        return result
 
     def save_trajectory(
         self, trajectory: list[dict[str, Any]], log_path: Path, env_name: str, info: dict[str, Any]
@@ -586,18 +608,15 @@ class Agent:
 
         templates: list[str] = []
         # Determine observation template based on what prior observation was
-        if not self.made_initial_prompt:
+        is_init = not self.made_initial_prompt
+        if is_init:
             # Show instance template if prev. obs. was initial system message
             self.made_initial_prompt = True
             templates = [self.config.instance_template]
             if self.config.strategy_template is not None:
                 templates.append(self.config.strategy_template)
-            if self.env.tdd:
-                # Inject tdd_results, so it can be rendered by the template.
-                if "{tdd_results}" not in self.config.instance_template:
-                    # {tdd_results} needs to be referenced in instance_template for this to work.
-                    raise ValueError("{tdd_results} not found in instance_template:\n\n" + self.config.instance_template)
-                state_vars["tdd_results"] = self.make_initial_tdd_result(self.env)
+            # Get tdd_results, to be rendered into the initial_prompt template.
+            state_vars["tdd_results"] = self._make_initial_tdd_result()
         elif observation is None or observation.strip() == "":
             # Show no output template if observation content was empty
             templates = [self.config.next_step_no_output_template]
@@ -620,7 +639,14 @@ class Agent:
         message = "\n".join(messages)
 
         self.logger.info(f"🤖 MODEL INPUT\n{message}")
-        self._append_history({"role": "user", "content": make_user_reply_content(message, None, self.history, False), "agent": self.name})
+        self._append_history(
+            {
+                "role": "user",
+                "content": make_user_reply_content(message, None, self.history, False),
+                "agent": self.name,
+                "tdd": self.env.tdd and is_init,
+            }
+        )
 
         for hook in self.hooks:
             hook.on_model_query(query=self.local_history, agent=self.name)
