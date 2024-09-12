@@ -36,6 +36,13 @@ def set_tracer(tracer: Tracer):
 def current_span() -> trace.Span:
     return trace.get_current_span()
 
+def set_current_span_error(description: str):
+    current_span().set_status(
+        trace.Status(
+            trace.StatusCode.ERROR,
+            description=description,
+        )
+    )
 
 # Creates a tracer from the global tracer provider
 def initialize_tracer(attributes: Attributes | None = None):
@@ -115,10 +122,7 @@ def instrument(
                 try:
                     return func(*args, **kwargs)
                 except Exception as e:
-                    current_span().set_status(
-                        trace.StatusCode.ERROR,
-                        description=str(e)
-                    )
+                    set_current_span_error(str(e))
                     current_span().record_exception(e)
                     raise
 
@@ -131,5 +135,6 @@ __all__ = [
     "current_span",
     "initialize_tracer",
     "instrument",
+    "set_current_span_error",
     "tracer",
 ]
