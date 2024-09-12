@@ -112,7 +112,15 @@ def instrument(
                 span_attributes.update(attributes)
 
             with tracer().start_as_current_span(name, attributes=span_attributes):
-                return func(*args, **kwargs)
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    current_span().set_status(
+                        trace.StatusCode.ERROR,
+                        description=str(e)
+                    )
+                    current_span().record_exception(e)
+                    raise
 
         return wrapper
 

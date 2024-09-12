@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 from sweagent.agent.commands import Command
 from sweagent.agent.models import AnthropicModelResult, ModelQueryResult
+from sweagent.utils.instrumentation import current_span, instrument
 from sweagent.utils.log import get_logger
 
 logger = get_logger("parsing")
@@ -165,7 +166,11 @@ class AnthropicWithToolsThoughtsParser(ParseFunction):
     Tool call failed. TODO: We need to tell you how.
     """
 
+    @instrument("AnthropicWithToolsThoughtsParser#__call__")
     def __call__(self, model_response: ModelQueryResult, commands: list[Command], strict=False):
+        current_span().set_attributes({
+            "model_response": repr(model_response),
+        })
         # logger.debug(f"[AnthropicWithToolsThoughtsParser] {repr(model_response)}")
         if not isinstance(model_response, AnthropicModelResult):
             msg = f"{model_response.__class__.__name__}: model_response must be AnthropicModelResult. Can only work with Anthropic models. Found instead: {repr(model_response)}"
@@ -212,6 +217,10 @@ class AnthropicWithToolsThoughtsParser(ParseFunction):
         text = "\n".join(texts)
         action = f"{command_name} {args}"
 
+        current_span().set_attributes({
+            "text": text.strip(),
+            "action": action.strip(),
+        })
         return text.strip(), action.strip()
 
 
