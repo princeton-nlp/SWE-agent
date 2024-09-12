@@ -13,7 +13,7 @@ def parse_django_test(test: str) -> str:
     if match:
         test_name, class_name = match.groups()
         return f"{class_name}.{test_name}"
-    raise ValueError(f"Invalid Django test format: {test}")
+    raise ValueError(f"Invalid Django test format in `FAIL_TO_PASS`: '{test}'")
 
 def parse_pytest_tox_test(test: str) -> str:
     pattern = r'^[\w./:_-]+(::\w+)*$'

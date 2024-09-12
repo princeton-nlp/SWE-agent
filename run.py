@@ -321,6 +321,9 @@ class Main:
             logger.info(f"📙 Arguments: {args.dumps_yaml()}")
         self.args = args
 
+        if args.agent.tdd:
+            logger.warning("⚠ TDD is enabled. Agents have access to the test patch and will not try to reproduce the problem. ⚠")
+
         self.env = SWEEnv(args.environment, args.agent.tdd)
         self.agent = Agent("primary", args.agent, self.env)
 

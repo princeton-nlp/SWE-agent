@@ -299,9 +299,6 @@ class SWEEnv(gym.Env):
         """
         info = {}
         info["commit_sha"] = self.commit_sha
-        
-        if self.tdd:
-            self.logger.warning("⚠ TDD is enabled. The agent has access to the test patch and will not try to reproduce the problem. ⚠")
 
         # Get task instance
         self.idx = index if index is not None else self.idx
