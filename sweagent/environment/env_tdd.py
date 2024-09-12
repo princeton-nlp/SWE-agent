@@ -42,7 +42,7 @@ def make_fail_to_pass_test_cmd(record: SWEbenchInstance, test_cmd: str) -> str:
         else:
             raise ValueError(f"Unsupported repo '{repo}' - don't know how to run these tests: {test_cmd}")
         
-        separator = "" if test_cmd.endswith("--") else " -- "
+        separator = " " if test_cmd.endswith("--") else " -- "
         return f"{test_cmd}{separator}{test_args}"
 
 
