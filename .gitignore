@@ -196,7 +196,6 @@ website/frontend/build
 trajectories/**
 !trajectories/demonstrations/**
 data/**
-.vscode/**
 
 # PyCharm
 .idea/
