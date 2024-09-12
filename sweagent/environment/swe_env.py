@@ -22,12 +22,13 @@ from ghapi.all import GhApi
 from git import Repo
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 from swebench.harness.constants import MAP_REPO_VERSION_TO_SPECS
-from swebench.harness.utils import get_environment_yml, get_requirements, get_test_directives
+from swebench.harness.utils import get_environment_yml, get_requirements
 
 import docker
 import docker.errors
 import docker.models.containers
 from sweagent import REPO_ROOT
+from sweagent.environment.env_tdd import make_fail_to_pass_test_cmd
 from sweagent.environment.utils import (
     PROCESS_DONE_MARKER_END,
     PROCESS_DONE_MARKER_START,
@@ -200,7 +201,7 @@ class SWEEnv(gym.Env):
         ]
         tag = hashlib.sha256("".join(inputs).encode()).hexdigest()[:50]
         image_id = f"{self.cached_image_prefix}{tag}"
-        self.logger.info(f"CACHED_IMAGE={image_id} with inputs={repr(inputs)}")
+        self.logger.info(f"CACHED_IMAGE_NAME={image_id} with inputs={repr(inputs)}")
         return image_id
 
     def add_hook(self, hook: EnvHook):
@@ -417,40 +418,12 @@ class SWEEnv(gym.Env):
             install_configs = self._get_install_configs()
             # self.logger.warning(f"test_cmd: {repr(install_configs['test_cmd'])}")
             if not install_configs["test_cmd"]:
-                raise RuntimeError(f"No test_cmd found in install configs: {repr(install_configs)}")
+                raise RuntimeError(f"No test_cmd found in install configs for instance {self.record['instance_id']}: {repr(install_configs)}")
             
-            # TODO: Consider adding -E for sympy and maybe others?
-            self.communicate_with_handling(f'export TEST_CMD="{install_configs["test_cmd"]}"')
-
-            # Provide the set of golden tests that need to pass. Should be the same as "all files from test_patch".
-            # fail_to_pass = " ".join(json.loads(self.record["FAIL_TO_PASS"]))
-            fail_to_pass_paths = get_test_directives(self.record)
-            # NOTE: Sympy (and maybe others) expect the basename...!?!
-            fail_to_pass = " ".join([os.path.basename(f) for f in fail_to_pass_paths])
-            self.communicate_with_handling(f'export FAIL_TO_PASS="{fail_to_pass}"')
+            fail_to_pass_cmd = make_fail_to_pass_test_cmd(self.record, install_configs["test_cmd"])
+            self.communicate_with_handling(f'export TEST_CMD_FAIL_TO_PASS="{fail_to_pass_cmd}"')
             
-            # Provide the set of regression-check tests.
-            # NOTE: We split pass_to_pass into multiple chunks, since they can exceed env var and shell command length limits.
-            pass_to_pass: list[str] = json.loads(self.record["PASS_TO_PASS"])
-            pass_to_pass_file = "/root/pass_to_pass.txt"
-            arg_max = int(self.communicate_with_handling("getconf ARG_MAX")) - 1000 # Give it some arbitrary leeway of 1000 characters.
-
-            # Take pass_to_pass tests and chunk them into larger chunks that each don't exceed arg_max.
-            chunks = []
-            current_line = ""
-            for test in pass_to_pass:
-                test_length = len(test)
-                if len(current_line) + test_length > arg_max:
-                    chunks.append(current_line)
-                    current_line = test
-                else:
-                    current_line += f" {test}"
-            if current_line:
-                chunks.append(current_line)
-
-            # Write the tests into multiple lines in pass_to_pass_file:
-            self.copy_string_to_container_file("\n".join(chunks), pass_to_pass_file)
-            self.communicate_with_handling(f"export PASS_TO_PASS_FILE={pass_to_pass_file}")        
+            # pass_to_pass_cmd = make_pass_to_pass_test_cmd()
 
         envs = self.communicate("env")
         self.logger.debug(f"Container initialized with the following env:\n{envs}\n")
