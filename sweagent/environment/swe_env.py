@@ -49,7 +49,10 @@ from sweagent.utils.log import default_logger, get_logger
 from sweagent.utils.instrumentation import instrument, current_span, set_current_span_error
 
 
-LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500))
+LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 
+                                    #  500 # 8 minutes 20 seconds
+                                    25 * 60 # 25 minutes
+                                    ))
 AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
 PATH_TO_REQS = "/root/requirements.txt"
 PATH_TO_ENV_YML = "/root/environment.yml"
