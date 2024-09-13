@@ -46,6 +46,8 @@ from sweagent.environment.utils import (
 )
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import default_logger, get_logger
+from sweagent.utils.instrumentation import instrument, current_span, set_current_span_error
+
 
 LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500))
 AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
@@ -797,6 +799,7 @@ class SWEEnv(gym.Env):
         output = self._communicate(f"/bin/bash -n <<'EOF'\n{input}\nEOF\n")
         return output, self.returncode == 0
 
+    @instrument("SWEEnv#communicate", params=["input", "timeout_duration"])
     def communicate(self, input: str, timeout_duration: int | float = 25, *, set_last_action: bool = False) -> str:
         """
         Sends input to container and returns output
@@ -813,6 +816,7 @@ class SWEEnv(gym.Env):
             self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
             output, valid = self._check_syntax(input)
             if not valid:
+                set_current_span_error(output)
                 return output  # shows syntax errors
             output = self._communicate(
                 input,
@@ -820,6 +824,10 @@ class SWEEnv(gym.Env):
             )
             self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
             self.communicate_output = output
+            current_span().set_attributes({
+                "returncode": self.returncode,
+                "output": output,
+            })
             if set_last_action:
                 # Cannot merge this with last command, because of multiline command
                 # handling.
@@ -831,6 +839,10 @@ class SWEEnv(gym.Env):
             self.container.terminate()
             self.returncode = 0
             self.communicate_output = ""
+            current_span().set_attributes({
+                "returncode": 0,
+                "output": "",
+            })
             return ""
 
     def communicate_with_handling(self, input: str, error_msg: str | None = None, timeout_duration: int | float = 25) -> str:

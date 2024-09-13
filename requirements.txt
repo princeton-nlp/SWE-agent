@@ -28,3 +28,6 @@ google-auth-httplib2
 google-auth-oauthlib
 python-dotenv
 tqdm
+opentelemetry-api>=1.25.0
+opentelemetry-exporter-otlp-proto-http>=1.25.0
+opentelemetry-sdk>=1.25.0

@@ -28,6 +28,7 @@ from sweagent.agent.parsing import FormatError, ParseFunction
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.utils.config import convert_path_to_abspath, convert_paths_to_abspath
 from sweagent.utils.log import get_logger
+from sweagent.utils.instrumentation import instrument
 
 logger = get_logger("agents")
 
@@ -867,6 +868,7 @@ class Agent:
         self.model.stats.replace(sub_agent.model.stats)
         return sub_agent_output
 
+    @instrument("Agent#run", params=["setup_args", "env", "observation", "traj_dir", "return_type", "init_model_stats"])
     def run(
         self,
         setup_args: dict[str, Any],
