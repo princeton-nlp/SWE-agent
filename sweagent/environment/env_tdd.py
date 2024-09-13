@@ -1,53 +1,37 @@
 from __future__ import annotations
 
-import json
-import re
-
 from swebench.harness.constants import SWEbenchInstance
 from swebench.harness.utils import get_test_directives
 
+from sweagent.environment.tdd_verify import InstanceTestCategory, categorize_instance, verify_fail_to_pass
 
-def parse_django_test(test: str) -> str:
-    pattern = r'^(\w+)\s+\(([\w_.]+)\)$'
-    match = re.match(pattern, test)
-    if match:
-        test_name, class_name = match.groups()
-        return f"{class_name}.{test_name}"
-    raise ValueError(f"Invalid Django test format in `FAIL_TO_PASS`: '{test}'")
 
-def parse_pytest_tox_test(test: str) -> str:
-    pattern = r'^[\w./:_-]+(::\w+)*$'
-    if re.match(pattern, test):
-        return test
-    raise ValueError(f"Invalid pytest/tox test format: {test}")
-
+# The actual make_fail_to_pass_test_cmd function
 def make_fail_to_pass_test_cmd(record: SWEbenchInstance, test_cmd: str) -> str:
-    fail_to_pass = json.loads(record["FAIL_TO_PASS"])
-    repo = record["repo"]
+    # Categorize the instance
+    category = categorize_instance(record)
+
+    # Verify arguments and parse tests
+    fail_to_pass = verify_fail_to_pass(record)
 
     if not fail_to_pass:
-        return test_cmd
+        return test_cmd  # No tests to add
 
-    if repo == "sympy/sympy":
+    if category == InstanceTestCategory.SymPy:
         fail_to_pass_files = get_test_directives(record)
-        return f"bin/test -C --verbose -E -k {' '.join(fail_to_pass)} -- {' '.join(fail_to_pass_files)}"
+        test_args = " ".join(fail_to_pass)
+        return (
+            f"bin/test -C --verbose -E -k {test_args} -- {' '.join(fail_to_pass_files)}"
+        )
     else:
-        command = test_cmd.split()[0]
-        if command == "pytest" or command == "tox":
-            # NOTE: Most repos fall into this bracket.
-            # NOTE2: This might not work for all of tox, but of swebench repos, only sphinx uses tox, and that should work.
-            test_args = " ".join(parse_pytest_tox_test(test) for test in fail_to_pass)
-        elif repo == "django/django":
-            test_args = " ".join(parse_django_test(test) for test in fail_to_pass)
-        else:
-            raise ValueError(f"Unsupported repo '{repo}' - don't know how to run these tests: {test_cmd}")
-        
         separator = " " if test_cmd.endswith("--") else " -- "
+        test_args = " ".join(fail_to_pass)
         return f"{test_cmd}{separator}{test_args}"
 
 
+# Pre-process PASS_TO_PASS regression tests.
+# TODO: Fix this so it runs correctly. Check for correct column entries, because not all rows have correct entries.
 def make_pass_to_pass_test_cmd():
-    # TODO: Pre-process PASS_TO_PASS regression tests.
     # Problem: PASS_TO_PASS tests can be several hundred kb long which exceeds env var and shell command length limits.
     # pass_to_pass: list[str] = json.loads(self.record["PASS_TO_PASS"])
     # pass_to_pass_file = "/root/pass_to_pass.txt"
