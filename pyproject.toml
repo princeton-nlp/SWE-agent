@@ -175,6 +175,7 @@ ignore = [
     "RET507",  # can't autofix
     # error (E)
     "E501",    # line too long
+    "E504",    # Unnecessary assignment * before `return` statement
     "E402",    # import not on top of file
     "E722",    # bare except
     "E741",    # ambiguous symbol
