@@ -5,6 +5,7 @@ import os
 from pathlib import PurePath
 
 from rich.logging import RichHandler
+from rich.console import Console
 
 _SET_UP_LOGGERS = set()
 _ADDITIONAL_HANDLERS = []
@@ -33,9 +34,11 @@ def get_logger(name: str) -> logging.Logger:
     if name in _SET_UP_LOGGERS:
         # Already set up
         return logger
+    console = Console(width=200)  # Set console width to 200
     handler = RichHandler(
         show_time=bool(os.environ.get("SWE_AGENT_LOG_TIME", False)),
         show_path=False,
+        console=console
     )
     handler.setLevel(_STREAM_LEVEL)
     logger.setLevel(min(_STREAM_LEVEL, _FILE_LEVEL))

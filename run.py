@@ -461,6 +461,7 @@ class Main:
         # Check if there's an existing trajectory for this instance
         log_path = self.traj_dir / (instance_id + ".traj")
         if not log_path.exists():
+            # logger.debug(f"Trajetory for '{instance_id}' does not exist at {log_path}. NOT skipping....")
             return False
 
         content = log_path.read_text()
