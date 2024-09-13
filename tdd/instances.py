@@ -1,5 +1,5 @@
 # Instance sample (as of 2024/9/13)
-[
+instance_id_list: list[str] = [
     "django__django-12419",
     "django__django-14373",
     "django__django-9296",
