@@ -98,8 +98,8 @@ def categorize_instance(record: SWEbenchInstance) -> InstanceTestCategory:
 # {@link verify_fail_to_pass}
 # ###########################################################################
 
-# Function to verify all arguments and parse tests
-def verify_fail_to_pass(record) -> list[str]:
+# Throws if FAIL_TO_PASS is invalid.
+def verify_fail_to_pass(record: SWEbenchInstance) -> list[str]:
     # Basic sanity checks.
     if "FAIL_TO_PASS" not in record:
         raise ValueError("[TDD Failure] Missing 'FAIL_TO_PASS' in record")
