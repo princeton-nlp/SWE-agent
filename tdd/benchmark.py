@@ -46,6 +46,7 @@ def run_inference():
         "split": split,
         "instance_filter": f"\"{'|'.join(instance_id_list)}\"", # make sure we quote this because it contains a | symbol which the shell will want to interpret.
         "skip_existing": skip_existing,
+        "cache_task_images": True,
         "tdd": tdd
     })
 
