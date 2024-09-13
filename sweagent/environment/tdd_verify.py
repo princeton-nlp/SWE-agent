@@ -7,7 +7,7 @@ from typing import Callable
 
 from swebench.harness.constants import SWEbenchInstance
 
-# Define the InstanceTestCategory enum
+# These are the general categories for test_cmd from swebench's constants.py.
 class InstanceTestCategory(Enum):
     SymPy = "sympy"
     PytestTox = "pytest_tox"
@@ -15,7 +15,11 @@ class InstanceTestCategory(Enum):
     Unsupported = "unsupported"
 
 
-# Define parse functions
+# ###########################################################################
+# parse_* functions
+# ###########################################################################
+
+
 def parse_sympy_test(test: str) -> str:
     # Check that the test name is a valid Python function name and starts with 'test_'
     pattern = r"^test_[A-Za-z_][A-Za-z0-9_]*$"
@@ -49,6 +53,11 @@ PARSE_FUNCTIONS: dict[InstanceTestCategory, Callable[[str], str]] = {
     InstanceTestCategory.PytestTox: parse_pytest_tox_test,
     InstanceTestCategory.Django: parse_django_test,
 }
+
+
+# ###########################################################################
+# {@link categorize_instance}
+# ###########################################################################
 
 
 # NOTE: Most of this function is Claude-generated.
@@ -85,6 +94,9 @@ def categorize_instance(record: SWEbenchInstance) -> InstanceTestCategory:
             f"[TDD Failure] Unsupported repository for instance {record['instance_id']} in repo {record['repo']}. Check swebench's `constants.py`."
         )
 
+# ###########################################################################
+# {@link verify_fail_to_pass}
+# ###########################################################################
 
 # Function to verify all arguments and parse tests
 def verify_fail_to_pass(record) -> list[str]:
