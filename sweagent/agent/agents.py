@@ -265,7 +265,10 @@ class Agent:
 
     def __init__(self, name: str, args: AgentArguments, env: SWEEnv):
         self.name = name
+
+        # We added `env` as a class property because its the main interface for the agent and a constant throughout the agent's lifecycle.
         self.env = env
+
         self.model = get_model(args.model, args.config._commands + args.config.subroutine_types)
         self.config = args.config
         self.made_initial_prompt = False
@@ -296,6 +299,11 @@ class Agent:
                     f"There should always be exactly 1 TDD entry in history, but found {tdd_count} (using history_processor='{self.config.history_processor}'): {repr(history)}"
                 )
 
+    def _append_history(self, item: dict):
+        for hook in self.hooks:
+            hook.on_query_message_added(**item)
+        self.history.append(item)
+
     # ###########################################################################
     # TDD stuff.
     # ###########################################################################
@@ -314,11 +322,6 @@ class Agent:
         for entry in self.history:
             if "tdd" in entry:
                 entry["tdd"] = False
-
-    def _append_history(self, item: dict):
-        for hook in self.hooks:
-            hook.on_query_message_added(**item)
-        self.history.append(item)
 
     def _make_initial_tdd_result(self) -> str:
         if self.env.tdd:
@@ -570,7 +573,7 @@ class Agent:
         thought, action, output = self.forward_with_error_check(observation, state)
         last_tool_name = get_last_valid_tool_use_name(output)
         last_command = self.get_command(last_tool_name)
-        ran_tdd_action = last_command.tdd if last_command is not None else False
+        ran_tdd_action = last_command.tdd if last_command else False
 
         if ran_tdd_action:
             # Only keep one tdd entry at a time.

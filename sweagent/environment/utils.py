@@ -244,7 +244,7 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
     if time.time() >= end_time:
         msg = "Timeout reached while reading from subprocess."
         _log_read_error(msg, buffer)
-        raise TimeoutError()
+        raise TimeoutError(msg)
 
     decoded = buffer.decode("utf-8", errors="backslashreplace")
     body = "\n".join(line for line in decoded.splitlines() if not line.startswith(PROCESS_DONE_MARKER_START))

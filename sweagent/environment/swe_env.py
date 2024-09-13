@@ -185,7 +185,7 @@ class SWEEnv(gym.Env):
         self.image_name = args.image_name
         self.container_obj: docker.models.containers.Container | None = None
         self.container: subprocess.Popen | None = None
-        # self._reset_container()
+        # self._reset_container() # Don't initialize the default container in the ctor.
 
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
@@ -316,7 +316,8 @@ class SWEEnv(gym.Env):
             if image_exists(cached_image_name):
                 self.logger.info(f"Restore environment from cached image {cached_image_name}")
                 self.close()  # stop current container
-                self._init_container(cached_image=cached_image_name)
+
+                self._init_container(cached_image=cached_image_name)    # Start container from cached image.
                 self.communicate("export $(xargs </.env)")
 
                 self.init_container_prebake()
@@ -326,7 +327,7 @@ class SWEEnv(gym.Env):
             else:
                 self.logger.info(f"Cached image {cached_image_name} not found, rebuilding task environment...")
 
-        self._init_container()
+        self._init_container()  # Start container and create new image.
 
         # Clone repository if not already cloned
         self.communicate(input="cd /")
@@ -597,7 +598,7 @@ class SWEEnv(gym.Env):
 
     # MARK: Helper functions #
 
-    # def _reset_container(self) -> None:
+    # def _reset_container(self) -> None:  # This function has a terrible mix of concerns, so we decomissioned it.
     #     if self.container is not None:
     #         try:
     #             # TODO: This should not call terminate, since this is not `close` (and `close` already did this).
@@ -845,9 +846,9 @@ class SWEEnv(gym.Env):
             output: output from container
         """
         logs = self.communicate(input, timeout_duration=timeout_duration)
-        if not error_msg:
-            error_msg = "Failed to execute command '" + input.replace('\n', '\\n') + "'"
         if self.returncode != 0:
+            if not error_msg:
+                error_msg = "Failed to execute command '" + input.replace('\n', '\\n') + "'"
             self.logger.error(f"{error_msg}: {logs}")
             self.close()
             msg = f"{error_msg}: {logs}"
