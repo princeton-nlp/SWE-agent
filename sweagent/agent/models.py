@@ -54,28 +54,36 @@ class AnthropicModelResult(dict):
 
 ModelQueryResult = str | AnthropicModelResult
 
-def make_history_content_entry(output: ModelQueryResult):
+def make_assistant_content(output: ModelQueryResult):
     if isinstance(output, str):
         return output
     if isinstance(output, AnthropicModelResult):
         return output.blocks
     raise RuntimeError(f"Unsupported output type: {repr(output)}")
 
-def make_tool_result(action_result: str, model_result: ModelQueryResult | None, history: list[dict[str, any]], is_error: bool):
-    """
-    Create a tool_result block from the action_result, model_result, and history.
-    action_result: The return value of the action from the environment.
-    model_result: The return value from the model's query function. Might not be provided due to how the Agent is designed.
-    history: history of the conversation.
-    """
+def get_last_valid_tool_use_name(model_result: ModelQueryResult | None, history: list[dict[str, any]] = None) -> str | None:
+    tool_use = get_last_valid_tool_use_block(model_result, history)
+    return tool_use.name if tool_use else None
+
+def get_last_valid_tool_use_block(model_result: ModelQueryResult | None, history: list[dict[str, any]] = None) -> ToolUseBlock | None:
     tool_use: ToolUseBlock | None = model_result.get_last_tool_use() if isinstance(model_result, AnthropicModelResult) else None
-    if not tool_use:
+    if not tool_use and history:
         # The Agent.run loop does not provide us with the tool_use object, so we have to look it up in the history:
         last_assistant_entry = next((h for h in reversed(history) if h["role"] == "assistant"), None)
         if last_assistant_entry and isinstance(last_assistant_entry.get("content"), list):
             last_assistant_block: ToolUseBlock | None = next(reversed(last_assistant_entry.get("content")), None)
             if last_assistant_block.type == "tool_use":
                 tool_use = last_assistant_block
+    return tool_use
+
+def make_user_reply_content(action_result: str, model_result: ModelQueryResult | None, history: list[dict[str, any]], is_error: bool):
+    """
+    Create a tool_result block from the action_result, model_result, and history.
+    action_result: The return value of the action from the environment.
+    model_result: The return value from the model's query function. Might not be provided due to how the Agent is designed.
+    history: history of the conversation.
+    """
+    tool_use = get_last_valid_tool_use_block(model_result, history)
     if tool_use:
         # This is a reply to a tool_use:
         result = {
@@ -724,13 +732,18 @@ def anthropic_history_to_messages(
 
     # Return history components with just role, content fields (no system message)
     messages = [
-        {k: v for k, v in entry.items() if k in ["role", "content"]} for entry in history if entry["role"] != "system"
+        # Pick role and content of all history entries, ignoring system entries:
+        {k: v for k, v in entry.items() if k in ["role", "content"]}
+            for entry in history if entry["role"] != "system"
     ]
     compiled_messages = []  # Combine messages from the same role
     last_role = None
     for message in reversed(messages):
         if last_role == message["role"]:
-            compiled_messages[-1]["content"] = message["content"] + "\n" + compiled_messages[-1]["content"]
+            # compiled_messages[-1]["content"] = message["content"] + "\n" + compiled_messages[-1]["content"]
+            raise NotImplementedError(
+                f"Model does not support consecutive messages by the same role: {repr(messages)}"
+            )
         else:
             compiled_messages.append(message)
         last_role = message["role"]
@@ -782,6 +795,9 @@ def anthropic_query(model: AnthropicModel | BedrockModel, history: list[dict[str
     # Get system message(s)
     system_message = "\n".join([entry["content"] for entry in history if entry["role"] == "system"])
     messages = anthropic_history_to_messages(model, history)
+    
+    # TODO: Log a human-readable version of this to file, if some debug flag is set.
+    # logger.debug(f"[anthropic_query] PROMPT:\n{repr(messages)}")
 
     try:
         # Perform Anthropic API call

@@ -14,6 +14,7 @@ config = "default_with_tools"
 temperature = 0
 top_p = 0.95
 per_instance_cost_limit_usd = 4.00
+tdd = True
 
 # Total cost:
 # Our daily limit is roughly 50M tokens, so let's make sure that no single run hits it.
@@ -45,6 +46,7 @@ def run_inference():
         "split": split,
         "instance_filter": f"\"{'|'.join(instance_id_list)}\"", # make sure we quote this because it contains a | symbol which the shell will want to interpret.
         "skip_existing": skip_existing,
+        "tdd": tdd
     })
 
 def run_evaluation(predictions_path):

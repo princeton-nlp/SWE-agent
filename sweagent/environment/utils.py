@@ -169,10 +169,12 @@ def read_with_timeout(container: subprocess.Popen, pid_func: Callable, timeout_d
         time.sleep(0.05)  # Prevents CPU hogging
 
     if container.poll() is not None:
-        msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {buffer.decode()}"
+        msg = "Subprocess exited unexpectedly."
+        _log_read_error(msg, buffer)
         raise RuntimeError(msg)
     if time.time() >= end_time:
-        msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}\nRunning PIDs: {pids}"
+        msg = f"Timeout reached while reading from subprocess.(Running PIDs = {pids})"
+        _log_read_error(msg, buffer)
         raise TimeoutError(msg)
     return buffer.decode()
 
@@ -180,6 +182,10 @@ def read_with_timeout(container: subprocess.Popen, pid_func: Callable, timeout_d
 PROCESS_DONE_MARKER_START = "///PROCESS-DONE:"
 PROCESS_DONE_MARKER_END = ":PROCESS-DONE///"
 PROCESS_DONE_REGEX = re.compile(rf"{PROCESS_DONE_MARKER_START}(.+?){PROCESS_DONE_MARKER_END}")
+
+
+def _log_read_error(explanation: str, buffer: bytes):
+    logger.error(f"[CONTAINER FAILURE] {explanation}. Output:\n{buffer.decode()}")
 
 
 def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration: int | float) -> tuple[str, str]:
@@ -232,10 +238,12 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
         time.sleep(0.01)  # Prevents CPU hogging
 
     if container.poll() is not None:
-        msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {buffer.decode()}"
+        msg = "Subprocess exited unexpectedly."
+        _log_read_error(msg, buffer)
         raise RuntimeError(msg)
     if time.time() >= end_time:
-        msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}"
+        msg = "Timeout reached while reading from subprocess."
+        _log_read_error(msg, buffer)
         raise TimeoutError(msg)
 
     decoded = buffer.decode("utf-8", errors="backslashreplace")
@@ -269,7 +277,7 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> tuple[subpr
         "/bin/bash",
         "-l",
     ]
-    logger.debug("Starting container with command: %s", shlex.join(startup_cmd))
+    logger.debug("Starting non-persistent container with command: %s", shlex.join(startup_cmd))
     container = subprocess.Popen(
         startup_cmd,
         stdin=PIPE,
@@ -326,7 +334,11 @@ def _get_persistent_container(
         "/bin/bash",
         "-l",
     ]
-    logger.debug("Starting container with command: %s", shlex.join(startup_cmd))
+    logger.debug("Starting persistent container with command: %s", shlex.join(startup_cmd))
+
+    # log stacktrace
+    logger.debug("Stacktrace: %s", "".join(traceback.format_stack()))
+
     container = subprocess.Popen(
         startup_cmd,
         stdin=PIPE,
@@ -420,12 +432,12 @@ def image_exists(image_name: str) -> bool:
         return False
     elif len(filterred_images) > 1:
         RuntimeError(f"Multiple images found for {image_name}, that's weird.")
-    attrs = filterred_images[0].attrs
-    if attrs is not None:
-        logger.info(
-            f"Found image {image_name} with tags: {attrs['RepoTags']}, created: {attrs['Created']} "
-            f"for {attrs['Os']} {attrs['Architecture']}.",
-        )
+    # attrs = filterred_images[0].attrs
+    # if attrs is not None:
+    #     logger.info(
+    #         f"Found image {image_name} with tags: {attrs['RepoTags']}, created: {attrs['Created']} "
+    #         f"for {attrs['Os']} {attrs['Architecture']}.",
+    #     )
     return True
 
 

@@ -45,27 +45,26 @@ class DefaultHistoryProcessor(HistoryProcessor):
     def __call__(self, history):
         return history
 
+def may_compress(entry: dict):
+    return entry["role"] == "user" and not entry.get("is_demo", False) and not entry.get("tdd", False)
 
 def last_n_history(history, n):
     if n <= 0:
         msg = "n must be a positive integer"
         raise ValueError(msg)
     new_history = list()
-    user_messages = len([entry for entry in history if (entry["role"] == "user" and not entry.get("is_demo", False))])
+    compressable_messages = len([entry for entry in history if may_compress(entry)])
     user_msg_idx = 0
     for entry in history:
-        data = entry.copy()
-        if data["role"] != "user":
-            new_history.append(entry)
-            continue
-        if data.get("is_demo", False):
+        if not may_compress(entry):
             new_history.append(entry)
             continue
         else:
             user_msg_idx += 1
-        if user_msg_idx == 1 or user_msg_idx in range(user_messages - n + 1, user_messages + 1):
+        if user_msg_idx == 1 or user_msg_idx in range(compressable_messages - n + 1, compressable_messages + 1):
             new_history.append(entry)
         else:
+            data = entry.copy()
             from sweagent.agent.models import compress_history_entry
             compress_history_entry(data)
             new_history.append(data)
@@ -102,10 +101,7 @@ class ClosedWindowHistoryProcessor(HistoryProcessor):
         windows = set()
         for entry in reversed(history):
             data = entry.copy()
-            if data["role"] != "user":
-                new_history.append(entry)
-                continue
-            if data.get("is_demo", False):
+            if not may_compress(entry):
                 new_history.append(entry)
                 continue
             matches = list(self.pattern.finditer(entry["content"]))

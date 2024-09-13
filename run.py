@@ -315,13 +315,18 @@ class Main:
         self.traj_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.datetime.now().strftime("%y%m%d%H%M%S")
         self.log_path = log_path = self.traj_dir / f"run-{timestamp}.log"
-        logger.info("Logging to %s", log_path)
+        logger.info("Logging to %s", log_path.absolute())
         add_file_handler(log_path)
         if args.print_config:
             logger.info(f"📙 Arguments: {args.dumps_yaml()}")
         self.args = args
-        self.agent = Agent("primary", args.agent)
-        self.env = SWEEnv(args.environment)
+
+        if args.agent.tdd:
+            logger.warning("⚠ TDD is enabled. Agents have access to the test patch and will not try to reproduce the problem. ⚠")
+
+        self.env = SWEEnv(args.environment, args.agent.tdd)
+        self.agent = Agent("primary", args.agent, self.env)
+
         self._save_arguments()
         default_hooks = [
             SaveApplyPatchHook(),
@@ -352,9 +357,7 @@ class Main:
         # add_file_handler(log_path)
         logger.info(f"▶️  Beginning task {instance_id} ({str(index)})")
 
-        # NOTE: We always start from knowing the test patch first.
-        apply_test_patch = False
-        observation, info = self.env.reset(index, apply_test_patch)
+        observation, info = self.env.reset(index)
         if info is None:
             raise _ContinueLoop
         
@@ -374,7 +377,7 @@ class Main:
             test_patch_obj = PatchSet(self.env.record["test_patch"])
             test_files = "\n".join([f"- {x.path}" for x in test_patch_obj.modified_files + test_patch_obj.added_files])
         tests = ""
-        if "FAIL_endTO_PASS" in self.env.record:
+        if "FAIL_TO_PASS" in self.env.record:
             tests = "\n".join([f"- {x}" for x in self.env.record["FAIL_TO_PASS"]])
 
         setup_args = {"issue": issue, "files": files, "test_files": test_files, "tests": tests}
@@ -415,7 +418,8 @@ class Main:
                     logger.error(f"❌ Failed on {self.env.record['instance_id']}: {e}")
                 else:
                     logger.error("❌ Failed on unknown instance")
-                self.env.reset_container()
+                # self.env.reset_container()  # Close instead of rest_container.
+                self.env.close()
                 continue
         for hook in self.hooks:
             hook.on_end()
