@@ -15,7 +15,7 @@ name = "sweagent"
 dynamic = ["version", "dependencies"]
 description = "The official SWE-agent package - an open source Agent Computer Interface for running language models as software engineers."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {file = "LICENSE"}
 keywords = ["nlp", "agents", "code"]
 authors = [
