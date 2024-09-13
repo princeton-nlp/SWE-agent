@@ -896,6 +896,7 @@ class Agent:
             If return_type is "info_trajectory", returns a tuple of
             the info dictionary and the trajectory (list of dictionaries).
         """
+        self.made_initial_prompt = False
         done = False
         # mypy checks
         assert env.container_obj is not None
