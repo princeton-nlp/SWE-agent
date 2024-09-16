@@ -6,13 +6,7 @@ import sys
 from argparse import ArgumentParser
 
 from sweagent.investigations.instance_data import get_swe_bench_instance_markdown
-from sweagent.investigations.run_logs import (
-    download_instance_eval_test_output,
-    download_instance_patch,
-    download_instance_prediction_log,
-    download_instance_prediction_trajectory_json,
-    get_instance_eval_folder_href,
-)
+from sweagent.investigations.run_logs_sync import RunLogsSync
 
 investigation_data_folder_name = "investigation-data"
 
@@ -53,11 +47,12 @@ def make_relative_path(fpath: str):
 
 def summarize_instance(instance_id: str):
     print(f"Summarizing Instance {instance_id}...")
-    prediction_logs = download_instance_prediction_log(instance_id)
-    prediction_trajectories = download_instance_prediction_trajectory_json(instance_id)
-    result_patches = download_instance_patch(instance_id)
-    eval_folder_href = get_instance_eval_folder_href(instance_id)
-    eval_test_output = download_instance_eval_test_output(instance_id)
+    syncer = RunLogsSync(get_investigation_data_folder(), instance_id)
+    prediction_logs = syncer.download_instance_prediction_log(instance_id)
+    prediction_trajectories = syncer.download_instance_prediction_trajectory_json(instance_id)
+    result_patches = syncer.download_instance_patch(instance_id)
+    eval_folder_href = syncer.get_instance_eval_folder_href(instance_id)
+    eval_test_output = syncer.download_instance_eval_test_output(instance_id)
 
     summary_fpath = get_investigation_data_path(instance_id)
     with open(summary_fpath, "w", encoding="utf-8") as f:

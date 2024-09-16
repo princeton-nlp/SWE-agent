@@ -1,3 +1,13 @@
+# Our re-organized logs.
+sanitized_logs
+run_results
+
+# their logs.
+logs
+trajectories/**
+!trajectories/demonstrations/**
+
+
 # Other
 .env.secret
 service-account-key.json
