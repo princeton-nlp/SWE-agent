@@ -278,7 +278,7 @@ def upload_folder(
         for file in tqdm(files, desc="Uploading files", unit="file"):
             src_file_path = os.path.join(abs_folder_path, file)
             relative_segments = get_relative_path_segments(src_root, abs_folder_path)
-            print(f"Uploading {src_file_path} to {relative_segments}...")
+            # print(f"Uploading {src_file_path} to {relative_segments}...")
             file_id = upload_file(actual_dest_folder_id, relative_segments, src_file_path)
             if file_id:
                 uploaded_files.append((file, file_id))
