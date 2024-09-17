@@ -23,6 +23,7 @@ from tenacity import (
 
 from sweagent.agent.commands import Command
 from sweagent.agent.model_cache import ModelCache
+from sweagent.agent.model_result import AnthropicModelResult, ModelQueryResult
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
@@ -31,28 +32,6 @@ logger = get_logger("api_models")
 # TODO: [PRO-848] Configure retries
 _MAX_RETRIES = keys_config.get("SWE_AGENT_MODEL_MAX_RETRIES", 0)
 
-
-@dataclass
-class AnthropicModelResult(dict):
-    blocks: list[ContentBlock]
-
-    def get_tool_uses(self):
-        return [block for block in self.blocks if block.type == "tool_use"]
-
-    def get_last_tool_use(self):
-        return next(reversed(self.get_tool_uses()), None)
-
-    def __init__(self, blocks):
-        # Inherit from dict to make it JSON-serializable.
-        dict.__init__(self, blocks=blocks)
-        self.blocks = blocks
-
-    def __repr__(self) -> str:
-        return f"AnthropicModelResult(blocks={repr(self.blocks)})"
-
-
-
-ModelQueryResult = str | AnthropicModelResult
 
 def make_assistant_content(output: ModelQueryResult):
     if isinstance(output, str):
