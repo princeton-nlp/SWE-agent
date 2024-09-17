@@ -68,6 +68,9 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
         replay_task_instances_path = create_task_instances_tmp_file(
             [json.loads(x) for x in Path(data_path).read_text().splitlines(keepends=True)],
         )
+    elif data_path.endswith("challenge.json"):
+        replay_task_instances_path = data_path
+        is_other = True
     elif data_path.endswith(".json"):
         with open(data_path) as file:
             data = json.load(file)
