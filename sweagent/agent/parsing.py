@@ -176,14 +176,14 @@ class AnthropicWithToolsThoughtsParser(ParseFunction):
             msg = f"{model_response.__class__.__name__}: model_response must be AnthropicModelResult. Can only work with Anthropic models. Found instead: {repr(model_response)}"
             raise TypeError(msg)
 
-        tool_blocks = list(model_response.get_tool_uses())
-        texts = [block.text for block in model_response.blocks if block.type == "text"]
+        tool_blocks = model_response.get_tool_use_blocks()
+        texts = [block.text for block in model_response.get_text_blocks()]
 
         if len(tool_blocks) != 1:
             msg = "Exactly one tool_use block must be present in the model response."
             raise FormatError(msg)
 
-        other_blocks = [block for block in model_response.blocks if block.type not in ["tool_use", "text"]]
+        other_blocks = model_response.get_non_content_blocks()
         if other_blocks:
             msg = f"NYI: Found {len(other_blocks)} unknown blocks in model response. Only tool_use and text blocks are supported: {repr(model_response.blocks)}"
             raise FormatError(msg)
