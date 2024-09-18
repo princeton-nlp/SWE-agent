@@ -155,6 +155,8 @@ class BaseModel:
         self.model_metadata = {}
         self.stats = APIStats()
         self.cache = ModelCache()
+        # set this to true to raise an exception on cache misses
+        self.cache_only = False
 
         # Map `model_name` to API-compatible name `api_model`
         self.api_model = (
@@ -258,6 +260,8 @@ class BaseModel:
             for call in stats_calls:
                 self.update_stats(call["input_tokens"], call["output_tokens"])
         else:
+            if self.cache_only:
+                raise Exception("ModelCache miss")
             result_string = self._query_raw(history)
             self.cache.insert(history, result_string, self.update_stats_calls)
         self.update_stats_calls = None
