@@ -107,6 +107,9 @@ class LocalPaths:
     def get_eval_path(self, relative_path: str = "") -> str:
         return self.get_run_path(os.path.join(EVAL_FOLDER_NAME, relative_path))
 
+    def get_eval_meta_log(self, instance_id: str):
+        return self.get_eval_path(os.path.join(instance_id, "run_instance.log"))
+
     def get_eval_test_output_log(self, instance_id: str):
         return self.get_eval_path(os.path.join(instance_id, "test_output.txt"))
 

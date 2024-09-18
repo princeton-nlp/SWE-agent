@@ -54,6 +54,7 @@ def summarize_instance(instance_id: str):
         prediction_trajectories = syncer.get_trajectory_json_path(instance_id)
         result_patches = syncer.get_prediction_patch_path(instance_id)
         # eval_folder_href = syncer.get_instance_eval_folder_href(instance_id)
+        eval_test_meta_log = syncer.get_eval_meta_log(instance_id)
         eval_test_output = syncer.get_eval_test_output_log(instance_id)
         nlnl = "\n\n"
         run_data.append(f"""
@@ -65,6 +66,7 @@ def summarize_instance(instance_id: str):
   * [Trajectory json]({make_relative_path(prediction_trajectories)})
   * [Patch]({make_relative_path(result_patches)})
 * Evaluation
+  * [Eval Meta Log]({make_relative_path(eval_test_meta_log)})
   * [Eval Log]({make_relative_path(eval_test_output)})
 """.strip())
 
