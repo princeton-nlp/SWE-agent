@@ -110,6 +110,7 @@ frozenlist==1.4.1
     # via aiosignal
 fsspec==2024.6.1
     # via datasets
+    # via fsspec
     # via huggingface-hub
 ghapi==1.0.6
     # via swebench
@@ -187,6 +188,7 @@ multiprocess==0.70.16
     # via datasets
 nodeenv==1.9.1
     # via pre-commit
+    # via pyright
 numpy==2.1.1
     # via datasets
     # via gymnasium
@@ -257,6 +259,8 @@ pygments==2.18.0
     # via rich
 pyparsing==3.1.4
     # via httplib2
+pyright==1.1.380
+    # via sweagent
 python-dateutil==2.9.0.post0
     # via botocore
     # via pandas
