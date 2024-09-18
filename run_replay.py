@@ -103,7 +103,7 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
         run_args.extend(["--suffix", suffix])
     if is_ctf:
         run_args.extend(["--repo_path", str(Path(data_path).parent)])
-        run_args.extend(["--image_name", "sweagent/swe-ctf:latest"])
+        run_args.extend(["--image_name", "sweagent/enigma:latest"])
     script_args = runscript.get_args(run_args)
     runscript.main(script_args)
 
