@@ -480,7 +480,11 @@ class SWEEnv(gym.Env):
             out[f"edited_files{context_length}"] = value
         return out
 
-    def _get_only_one_interactive_error_message_observation(self):
+    def _get_only_one_interactive_error_message_observation(self) -> str:
+        """Return a warning message about having to quit the existing interactive session before
+        starting a new one.
+        """
+        assert self.interactive_session  # mypy
         exit_command = self.args.interactive_sessions_config[self.interactive_session.name].exit_command
         return f"Interactive session already open. Please close the current interactive session: {self.interactive_session.name} with the command: `{exit_command}`"
 
@@ -492,7 +496,19 @@ class SWEEnv(gym.Env):
             self.logger.warning(f"Failed to terminate interactive session {session_name}: {e}")
         self.interactive_session = None
 
-    def _handle_interactive_commands(self, observation):
+    def _handle_interactive_commands(self, observation: str) -> str:
+        """Handle interactive commands in the environment
+
+        Args:
+            observation: Output from running the interactive command standsin in the
+                environment. This output will caught and interpreted and then we
+                will run the actual commands in the interactive session.
+
+        Returns:
+            observation: The observation shown to the model. If no interactive commands
+                are detected, this is the same as the input observation.
+                Else, only the output from the interactive commands is returned.
+        """
         session_name, interactive_commands = self.get_interactive_commands(observation)
         if session_name is None:
             return observation
@@ -1161,7 +1177,7 @@ class SWEEnv(gym.Env):
 
         return True
 
-    def get_interactive_commands(self, output: str):
+    def get_interactive_commands(self, output: str) -> tuple[str | None, list[str]]:
         """
         Function for extracting interactive session commands.
 
@@ -1176,9 +1192,12 @@ class SWEEnv(gym.Env):
         session_pattern = r"SESSION=(.*)"
         session_name = ""
         commands = []
+        n_lines_ignored = 0
         for line in output.split("\n"):
             match = re.search(pattern, line, re.DOTALL)
             if match is None:
+                if line.strip():
+                    n_lines_ignored += 1
                 continue
             command = match.group(1)
             match = re.search(session_pattern, command, re.DOTALL)
@@ -1187,9 +1206,16 @@ class SWEEnv(gym.Env):
             else:
                 session_name = match.group(1)
         if not session_name:
+            if commands:
+                self.logger.error(
+                    f"No session name found even though interactive " f"commands {commands!r} were found."
+                )
             return None, []
-        else:
-            return session_name, commands
+
+        if n_lines_ignored:
+            self.logger.error(f"Ignored {n_lines_ignored} lines when parsing interactive commands.")
+
+        return session_name, commands
 
     def get_submission(self, output: str) -> str | None:
         """
