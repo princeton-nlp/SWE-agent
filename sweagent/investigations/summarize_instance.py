@@ -11,7 +11,7 @@ from sweagent.investigations.run_logs_sync import RunLogsSync
 investigation_data_folder_name = "investigation-data"
 
 
-RUN_NAME = "domi-claude-3.5-sonnet-20240916"
+RUN_NAMES = ["domi-claude-3.5-sonnet-20240916"]
 
 def get_absolute_path(relative_path: str) -> str:
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -47,26 +47,17 @@ def make_relative_path(fpath: str):
     return os.path.relpath(fpath, get_investigation_data_folder())
 
 def summarize_instance(instance_id: str):
-    syncer = RunLogsSync(RUN_NAME)
-
-    # Download everything and open everything individually, for 2 reasons:
-    # 1. This makes it very fast to investigate any amount of instances (after the first) and
-    # 2. keeps our caching logic simple.
-    print(f"Downloading logs for run {RUN_NAME}...")
-    syncer.download_entire_run()
-
     print(f"Summarizing Instance {instance_id}...")
-    prediction_run_logs = syncer.get_prediction_run_log_path(instance_id)
-    prediction_trajectories = syncer.get_trajectory_json_path(instance_id)
-    result_patches = syncer.get_prediction_patch_path(instance_id)
-    # eval_folder_href = syncer.get_instance_eval_folder_href(instance_id)
-    eval_test_output = syncer.get_eval_test_output_log(instance_id)
-
-    summary_fpath = get_investigation_data_path(instance_id)
-    with open(summary_fpath, "w", encoding="utf-8") as f:
-        contents = f"""
-# {instance_id}
-## Links
+    run_data = []
+    for run_name in RUN_NAMES:
+        syncer = RunLogsSync(run_name)
+        prediction_run_logs = syncer.get_prediction_run_log_path(instance_id)
+        prediction_trajectories = syncer.get_trajectory_json_path(instance_id)
+        result_patches = syncer.get_prediction_patch_path(instance_id)
+        # eval_folder_href = syncer.get_instance_eval_folder_href(instance_id)
+        eval_test_output = syncer.get_eval_test_output_log(instance_id)
+        run_data.append(f"""
+### {run_name}
 
 * [PR Link]({make_bug_href(instance_id)})
 * Prediction
@@ -75,7 +66,16 @@ def summarize_instance(instance_id: str):
   * [Patch]({make_relative_path(result_patches)})
 * Evaluation
   * [Eval Log]({make_relative_path(eval_test_output)})
+""".strip())
 
+    summary_fpath = get_investigation_data_path(instance_id)
+    with open(summary_fpath, "w", encoding="utf-8") as f:
+        contents = f"""
+# {instance_id}
+
+## Runs
+
+{"\n\n".join(run_data)}
 
 ## Bug Data
 
@@ -116,10 +116,23 @@ def main():
     open_repo: bool = args.open_repo
 
     os.makedirs(get_investigation_data_folder(), exist_ok=True)
+
+    # Download everything and open everything individually, for 2 reasons:
+    # 1. This makes it very fast to investigate any amount of instances (after the first) and
+    # 2. keeps our caching logic simple.
+    for run_name in RUN_NAMES:
+        syncer = RunLogsSync(run_name)
+        print(f"Downloading logs for run {run_name}...")
+        syncer.download_entire_run()
+
+    # Produce instance summaries.
     for i, instance_id in enumerate(args.instance_ids, 1):
         print(f"Summarizing {i}/{len(args.instance_ids)}: {instance_id}")
         summarize_instance(instance_id)
 
+    # Open repo(s) in VSCode.
+    # WARNING: This might be slightly different from previous run results,
+    # since environment setup might be tweaked over time.
     if open_repo:
         print("Opening repo(s)...")
         open_repo_sh = os.path.join(os.path.join(os.path.dirname(__file__), "../../open_repo.sh"))
