@@ -41,6 +41,9 @@ jobs:
       - name: Pull swe-agent docker container
         run: |
           docker pull sweagent/swe-agent:latest
+      - name: Pull enigma docker container
+        run: |
+          docker pull sweagent/enigma:latest
       - name: Create keys.cfg
         run: |
           touch keys.cfg
