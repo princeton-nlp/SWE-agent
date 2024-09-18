@@ -37,6 +37,13 @@ def test_trajectories_path(test_data_path) -> Path:
 
 
 @pytest.fixture
+def test_ctf_trajectories_path(test_data_path) -> Path:
+    p = test_data_path / "trajectories" / "ctf"
+    assert p.is_dir()
+    return p
+
+
+@pytest.fixture
 def test_data_sources_path(test_data_path) -> Path:
     p = test_data_path / "data_sources"
     assert p.is_dir()
