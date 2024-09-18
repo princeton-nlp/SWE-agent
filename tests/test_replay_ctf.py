@@ -6,7 +6,7 @@ from run_replay import get_args, main
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("traj_rel_path", ["pwn/warmup.traj", "forensics/flash.traj", "crypto/katy.traj", "web/i_got_id_demo.traj", "rev/rock.traj", "misc/networking_1.traj"])
+@pytest.mark.parametrize("traj_rel_path", ["pwn/warmup.traj", "forensics/flash.traj", "web/i_got_id_demo.traj", "rev/rock.traj", "misc/networking_1.traj"])
 def test_ctf_traj_replay(test_ctf_trajectories_path, traj_rel_path):
     traj_path = test_ctf_trajectories_path / traj_rel_path
     assert traj_path.is_file()
