@@ -1,0 +1,14 @@
+version: '3'
+services:
+  server:
+    image: llmctf/2016f-cry-katy
+    ports:
+      - 4242:4242
+    networks:
+      ctfnet:
+        aliases:
+          - crypto.chal.csaw.io
+
+networks:
+  ctfnet:
+    external: true
