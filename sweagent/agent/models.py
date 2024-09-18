@@ -759,8 +759,6 @@ def anthropic_query(model: AnthropicModel | BedrockModel, history: list[dict[str
     """
     Query the Anthropic API with the given `history` and return the response.
     """
-    # logger.debug(f"DDBG [anthropic_query] {traceback.format_stack()}")
-
     # Preserve behavior for older models
     if model.api_model in ["claude-instant", "claude-2.0", "claude-2.1"] or (
         isinstance(model, BedrockModel) and model.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]

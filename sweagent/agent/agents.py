@@ -941,7 +941,7 @@ class Agent:
                         break
                 else:
                     # We don't expect agent subroutines to be a thing (at least we are not prepared for them):
-                    logger.warning(f"DDBG call_subroutine: {repr(sub_action)}")
+                    logger.warning(f"WARNING: unexpected call_subroutine: {repr(sub_action)}")
                     agent_name = sub_action["agent"]
                     sub_agent_output = self.call_subroutine(agent_name, sub_action, env)
                     observations.append(sub_agent_output)
