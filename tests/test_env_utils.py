@@ -184,6 +184,13 @@ def test_get_instance_text_issue_gh_repo(tmp_path):
 
 def test_load_instances(test_data_path, caplog):
     test_data_sources = test_data_path / "data_sources"
-    examples = list(test_data_sources.iterdir())
+    examples = [example for example in test_data_sources.iterdir() if example.is_file()]
     for example in examples:
         get_instances(file_path=str(example), **_TOKEN)
+
+
+def test_load_ctf_instances(test_data_path, caplog):
+    test_data_sources = test_data_path / "data_sources" / "ctf"
+    examples = list(test_data_sources.glob("**/challenge.json"))
+    for example in examples:
+        get_instances(file_path=str(example), repo_path=str(example.parent))
