@@ -159,9 +159,6 @@ class LocalPaths:
             recursive_move(src_eval_logs_path, dst_eval_logs_path)
             recursive_move(src_summary_json, dst_summary_json)
 
-            # Disentangle prediction run log files:
-            self.disentangle_prediction_run_logs()
-
             bundle_lock.write_lock("downloaded")  # Also write downloaded.lock
 
             print("Done.")
@@ -188,7 +185,6 @@ class LocalPaths:
 
             # Create a new file for each instance
             output_file = self.get_prediction_run_log_path(instance_id)
-            print(f"DDBG Writing instance log to {output_file}")
             with open(output_file, "w", encoding="utf-8") as f:
                 f.write(instance_content)
 
@@ -196,26 +192,28 @@ class LocalPaths:
 
         return disentangled_files
 
-    def disentangle_prediction_run_logs(self) -> list[str]:
-        all_disentangled_files = []
-        trajectories_path = self.get_prediction_trajectories_path()
+    def disentangle_prediction_run_logs(self) -> None:
+        with LockFile("logs_processed", self.run_path) as lock_file:
+            if lock_file.had_lock: # Already processed. Skip.
+                return
 
-        # Clean up.
-        raw_run_log_files = [
-            f
-            for f in os.listdir(trajectories_path)
-            if f.startswith("run-") and f.endswith(".log")
-        ]
-        for filename in tqdm(
-            raw_run_log_files, desc="Processing log files", unit="file"
-        ):
-            run_log_path = os.path.join(trajectories_path, filename)
-            disentangled_files = self.disentangle_raw_run_log_file(run_log_path)
-            all_disentangled_files.extend(disentangled_files)
+            all_disentangled_files = []
+            trajectories_path = self.get_prediction_trajectories_path()
 
-        print(f"Disentangled {len(disentangled_files)} instance log files.")
+            # Clean up.
+            raw_run_log_files = [
+                f
+                for f in os.listdir(trajectories_path)
+                if f.startswith("run-") and f.endswith(".log")
+            ]
+            for filename in tqdm(
+                raw_run_log_files, desc="Processing log files", unit="file"
+            ):
+                run_log_path = os.path.join(trajectories_path, filename)
+                disentangled_files = self.disentangle_raw_run_log_file(run_log_path)
+                all_disentangled_files.extend(disentangled_files)
 
-        return all_disentangled_files
+            print(f"Disentangled {len(disentangled_files)} instance log files.")
 
 
 LocalPathsT = TypeVar("LocalPathsT", bound="LocalPaths")

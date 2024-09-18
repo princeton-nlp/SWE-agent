@@ -47,7 +47,6 @@ def make_relative_path(fpath: str):
     return os.path.relpath(fpath, get_investigation_data_folder())
 
 def summarize_instance(instance_id: str):
-    print(f"Summarizing Instance {instance_id}...")
     run_data = []
     for run_name in RUN_NAMES:
         syncer = RunLogsSync(run_name)
@@ -56,6 +55,7 @@ def summarize_instance(instance_id: str):
         result_patches = syncer.get_prediction_patch_path(instance_id)
         # eval_folder_href = syncer.get_instance_eval_folder_href(instance_id)
         eval_test_output = syncer.get_eval_test_output_log(instance_id)
+        nlnl = "\n\n"
         run_data.append(f"""
 ### {run_name}
 
@@ -75,7 +75,7 @@ def summarize_instance(instance_id: str):
 
 ## Runs
 
-{"\n\n".join(run_data)}
+{nlnl.join(run_data)}
 
 ## Bug Data
 

@@ -19,12 +19,14 @@ class GoogleDriveDownloader:
 
     def download_folder_but_slow(
         self, drive_parent_folder_id: str, parent_dest_path: str, folder_name: str
-    ):
+    ) -> bool:
+        """
+        Returns whether the folder was downloaded for the first time.
+        """
         dest_path = os.path.join(parent_dest_path, folder_name)
-        with LockFile("downloaded", dest_path) as bundle_lock:
-            if bundle_lock.had_lock:
-                # We downloaded this before. Skip.
-                return
+        with LockFile("downloaded", dest_path) as download_lock_file:
+            if download_lock_file.had_lock: # Already downloaded. Skip.
+                return False
 
             print("Calculating total files and size...")
             drive_item_id = get_drive_file_id(drive_parent_folder_id, [folder_name])

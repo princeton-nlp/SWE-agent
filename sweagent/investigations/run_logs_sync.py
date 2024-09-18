@@ -4,6 +4,7 @@ from sweagent.investigations.constants import DRIVE_REPRO_DATA_ROOT_FOLDER_ID, S
 from sweagent.investigations.google_drive import get_google_drive_folder_href, get_drive_file_id, drive_download_files, upload_folder
 from sweagent.investigations.google_drive_downloader import GoogleDriveDownloader
 from sweagent.investigations.local_paths import LocalPaths, get_instance_run_log_name
+from sweagent.investigations.lock_file import LockFile
 
 class RunLogsSync(LocalPaths):
     """
@@ -37,7 +38,10 @@ class RunLogsSync(LocalPaths):
     def download_entire_run(self):
         downloader = GoogleDriveDownloader()
         downloader.download_folder_but_slow(DRIVE_REPRO_DATA_ROOT_FOLDER_ID, self.logs_root, self.run_name)
-    
+
+        # Disentangle prediction run log files.
+        self.disentangle_prediction_run_logs()
+
     def upload_entire_run(self):
         return upload_folder(DRIVE_REPRO_DATA_ROOT_FOLDER_ID, [self.run_name], self.run_path)
 
