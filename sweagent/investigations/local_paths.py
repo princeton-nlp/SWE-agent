@@ -65,8 +65,12 @@ class LocalPaths:
         self.run_name = run_name
 
     @property
+    def logs_root(self) -> str:
+        return SANTIZIED_LOGS_ROOT_FOLDER
+
+    @property
     def run_path(self) -> str:
-        return os.path.join(SANTIZIED_LOGS_ROOT_FOLDER, self.run_name)
+        return os.path.join(self.logs_root, self.run_name)
 
     def get_run_path(self, relative_path="") -> str:
         folder = self.run_path

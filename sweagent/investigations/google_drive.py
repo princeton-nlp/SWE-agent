@@ -41,7 +41,7 @@ def get_google_drive_service() -> any:
 drive_file_ids_by_path: dict = {}
 
 
-def get_drive_file(parent_folder_id: str, relative_path: list[str]) -> str | None:
+def get_drive_file_id(parent_folder_id: str, relative_path: list[str]) -> str | None:
     global drive_file_ids_by_path
 
     # Construct the cache key
@@ -101,7 +101,7 @@ def get_or_create_drive_folder(parent_folder_id: str, relative_path: list[str]) 
         current_path.append(folder_name)
 
         # Try to get the folder using the get_drive_file function
-        folder_id = get_drive_file(current_parent_id, [folder_name])
+        folder_id = get_drive_file_id(current_parent_id, [folder_name])
 
         if folder_id is not None:
             current_parent_id = folder_id
@@ -284,3 +284,9 @@ def upload_folder(
                 uploaded_files.append((file, file_id))
 
     return uploaded_files
+
+
+def drive_create_shared_link(folder_id: str):
+    service = get_google_drive_service()
+    file = service.files().get(fileId=folder_id, fields='webViewLink').execute()
+    return file.get('webViewLink')

@@ -33,6 +33,6 @@ class LockFile:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if not self.locked:
+        if not self.locked and not exc_value:
             self.write_lock(self.label)
             self.locked = True
