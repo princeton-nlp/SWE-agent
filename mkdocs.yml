@@ -74,9 +74,13 @@ nav:
     - "Demonstrations": "config/demonstrations.md"
     - "Environment variables": "config/env.md"
     - "Docker images": "config/docker.md"
+    - "Summarizers": "config/summarizers.md"
   - Development:
     - "Contribution guide": "dev/contribute.md"
     - "Formatting conflicts": "dev/formatting_conflicts.md"
+  - EnIGMA:
+    - "enigma/index.md"
+    - "Interactive Agent Tool": "enigma/iat.md"
   - Reference:
     - "reference/index.md"
     - "Agent": "reference/agent.md"
