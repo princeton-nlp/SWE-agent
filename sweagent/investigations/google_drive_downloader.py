@@ -21,7 +21,9 @@ class GoogleDriveDownloader:
         self, drive_parent_folder_id: str, parent_dest_path: str, folder_name: str
     ) -> bool:
         """
-        Returns whether the folder was downloaded for the first time.
+        Returns whether the folder was downloaded (or False if it was downloaded previously).
+        This uses a lock file mechanism to track cached downloaded files.
+        WARNING: This is slow. Faster (batch) downloads of big files/folders are apparently possible with the gdown library, but require public access.
         """
         dest_path = os.path.join(parent_dest_path, folder_name)
         with LockFile("downloaded", dest_path) as download_lock_file:
@@ -123,46 +125,3 @@ class GoogleDriveDownloader:
         print(f"Failed: {self.failed_files}")
         print(f"Total size: {self.total_size / (1024*1024):.2f} MB")
         print(f"Processed size: {self.processed_size / (1024*1024):.2f} MB")
-
-
-    # # Zip the folder, download it and unzip it.
-    # NOTE: This won't work.
-    # NOTE2: Direct downloads of big files/folders are apparently possible with the gdown library, but require public access.
-    # def download_big_folder(self, drive_parent_folder_id: str, parent_dest_path: str, folder_name: str):
-    #     folder_id = get_drive_file_id(drive_parent_folder_id, [folder_name])
-    #     dest_path = os.path.join(parent_dest_path, folder_name)
-
-    #     # Convert the shared link to a download link
-    #     shared_link = drive_create_shared_link(folder_id)
-    #     download_file_id = shared_link.split('/')[-2]
-    #     print(f"[Download] shared link: {shared_link}")
-    #     download_link = f"https://drive.google.com/uc?id={download_file_id}&export=download"
-
-    #     # Send a GET request to the download link
-    #     response = requests.get(download_link)
-
-    #     # Create a temporary directory
-    #     with tempfile.TemporaryDirectory() as temp_dir:
-    #         # Send a GET request to the download link
-    #         response = requests.get(download_link)
-
-    #         # Check if the content is a zip file
-    #         if 'Content-Disposition' in response.headers:
-    #             # Extract the filename from the Content-Disposition header
-    #             filename = response.headers['Content-Disposition'].split('filename=')[1].strip('"')
-
-    #             # Save the zip file to the temporary directory
-    #             temp_zip_path = os.path.join(temp_dir, filename)
-    #             with open(temp_zip_path, 'wb') as f:
-    #                 f.write(response.content)
-    #             print(f"Downloaded: {filename}")
-
-    #             # Extract the zip file to the final download location
-    #             with zipfile.ZipFile(temp_zip_path, 'r') as zip_ref:
-    #                 zip_ref.extractall(dest_path)
-    #             print(f"Extracted: {filename} to {dest_path}")
-
-    #             # The temporary directory and its contents will be automatically deleted
-    #             # when we exit the 'with' block
-    #         else:
-    #             raise Exception("Failed to download the folder. The link might not be shareable or the folder might be too large.")
