@@ -6,24 +6,20 @@ import sys
 from argparse import ArgumentParser
 
 from sweagent.investigations.instance_data import get_swe_bench_instance_markdown
-from sweagent.investigations.run_logs import (
-    download_instance_eval_test_output,
-    download_instance_patch,
-    download_instance_prediction_log,
-    download_instance_prediction_trajectory_json,
-    get_instance_eval_folder_href,
-)
+from sweagent.investigations.run_logs_sync import RunLogsSync
 
 investigation_data_folder_name = "investigation-data"
 
 
+RUN_NAMES = ["domi-claude-3.5-sonnet-20240916"]
+
 def get_absolute_path(relative_path: str) -> str:
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(script_dir, relative_path)
+    return os.path.realpath(os.path.join(script_dir, relative_path))
 
 
 def get_investigation_data_folder() -> str:
-    return get_absolute_path(investigation_data_folder_name)
+    return get_absolute_path("../../" + investigation_data_folder_name)
 
 
 def get_investigation_data_path(instance_id: str) -> str:
@@ -46,39 +42,49 @@ def make_bug_href(instance_id: str) -> str:
     [repo_path, pr_number] = parse_instance_id(instance_id)
     return f"https://github.com/{repo_path}/pull/{str(pr_number)}"
 
-
 # NOTE: Markdown requires relative paths.
 def make_relative_path(fpath: str):
     return os.path.relpath(fpath, get_investigation_data_folder())
 
 def summarize_instance(instance_id: str):
-    print(f"Summarizing Instance {instance_id}...")
-    prediction_logs = download_instance_prediction_log(instance_id)
-    prediction_trajectories = download_instance_prediction_trajectory_json(instance_id)
-    result_patches = download_instance_patch(instance_id)
-    eval_folder_href = get_instance_eval_folder_href(instance_id)
-    eval_test_output = download_instance_eval_test_output(instance_id)
+    run_data = []
+    for run_name in RUN_NAMES:
+        syncer = RunLogsSync(run_name)
+        prediction_run_logs = syncer.get_prediction_run_log_path(instance_id)
+        prediction_trajectories = syncer.get_trajectory_json_path(instance_id)
+        result_patches = syncer.get_prediction_patch_path(instance_id)
+        # eval_folder_href = syncer.get_instance_eval_folder_href(instance_id)
+        eval_test_meta_log = syncer.get_eval_meta_log(instance_id)
+        eval_test_output = syncer.get_eval_test_output_log(instance_id)
+        nlnl = "\n\n"
+        run_data.append(f"""
+### {run_name}
+
+* [PR Link]({make_bug_href(instance_id)})
+* Prediction
+  * [Run Log]({make_relative_path(prediction_run_logs)})
+  * [Trajectory json]({make_relative_path(prediction_trajectories)})
+  * [Patch]({make_relative_path(result_patches)})
+* Evaluation
+  * [Eval Meta Log]({make_relative_path(eval_test_meta_log)})
+  * [Eval Log]({make_relative_path(eval_test_output)})
+""".strip())
 
     summary_fpath = get_investigation_data_path(instance_id)
     with open(summary_fpath, "w", encoding="utf-8") as f:
         contents = f"""
 # {instance_id}
-## Links
 
-* [PR Link]({make_bug_href(instance_id)})
-* Prediction
-  * Run Logs: {", ".join([f"[Run Log]({make_relative_path(fpath)})" for fpath in prediction_logs])}
-  * Traj Json: {", ".join([f"[Traj]({make_relative_path(fpath)})" for fpath in prediction_trajectories])}
-  * {", ".join([f"[Patch]({make_relative_path(fpath)})" for fpath in result_patches])}
-* Evaluation
-  * {f"[Evaluation Results Folder]({eval_folder_href})" if eval_folder_href else "(no evaluation found)"}
-  * Eval Log: {", ".join([f"[Eval Log]({make_relative_path(fpath)})" for fpath in eval_test_output])}
+## Runs
+
+{nlnl.join(run_data)}
 
 ## Bug Data
 
 {get_swe_bench_instance_markdown(instance_id)}
 
 """.strip()
+#   * {f"[Evaluation Results Folder]({eval_folder_href})" if eval_folder_href else "(no evaluation found)"}
         f.write(contents)
     print(f"  Done: {summary_fpath}")
 
@@ -112,10 +118,23 @@ def main():
     open_repo: bool = args.open_repo
 
     os.makedirs(get_investigation_data_folder(), exist_ok=True)
+
+    # Download everything and open everything individually, for 2 reasons:
+    # 1. This makes it very fast to investigate any amount of instances (after the first) and
+    # 2. keeps our caching logic simple.
+    for run_name in RUN_NAMES:
+        syncer = RunLogsSync(run_name)
+        print(f"Downloading logs for run {run_name}...")
+        syncer.download_entire_run()
+
+    # Produce instance summaries.
     for i, instance_id in enumerate(args.instance_ids, 1):
         print(f"Summarizing {i}/{len(args.instance_ids)}: {instance_id}")
         summarize_instance(instance_id)
 
+    # Open repo(s) in VSCode.
+    # WARNING: This might be slightly different from previous run results,
+    # since environment setup might be tweaked over time.
     if open_repo:
         print("Opening repo(s)...")
         open_repo_sh = os.path.join(os.path.join(os.path.dirname(__file__), "../../open_repo.sh"))

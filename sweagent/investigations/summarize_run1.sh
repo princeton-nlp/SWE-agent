@@ -1,0 +1,2 @@
+# can_improve = 1
+rsi django__django-10999 django__django-11299 django__django-13406 sympy__sympy-15875 psf__requests-2317 pydata__xarray-6744 django__django-10554 django__django-11820 django__django-12406 django__django-13343 django__django-14122 django__django-16454 pytest-dev__pytest-6197 scikit-learn__scikit-learn-14629 sympy__sympy-22080 scikit-learn__scikit-learn-10297 scikit-learn__scikit-learn-25102 scikit-learn__scikit-learn-26194
