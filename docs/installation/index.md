@@ -14,7 +14,7 @@
 
     ---
 
-    Install SWE-agent from source using `pip`.
+    Install SWE-agent or EnIGMA from source using `pip`.
 
     [:octicons-arrow-right-24: Get started](source.md)
 
@@ -23,7 +23,7 @@
 
     ---
 
-    Pull a docker container and directly run SWE-agent. This is our fallback solution if the local installation does not work for you.
+    Pull a docker container and directly run SWE-agent or EnIGMA. This is our fallback solution if the local installation does not work for you.
 
     [:octicons-arrow-right-24: Get started](docker.md)
 
@@ -31,7 +31,7 @@
 
     ---
 
-    See what's new in SWE-agent
+    See what's new in SWE-agent and EnIGMA
 
     [:octicons-arrow-right-24: Read the changelog](changelog.md)
 </div>

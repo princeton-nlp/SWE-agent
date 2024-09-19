@@ -14,6 +14,15 @@ SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix b
 
     [:octicons-arrow-right-24: Learn more](background/index.md)
 
+
+-   :material-hat-fedora:{ .lg .middle } __EnIGMA__
+
+    ---
+
+    EnIGMA agent turns SWE-agent to a cybersecurity expert that can solve Capture The Flag (CTF) challenges.
+
+    [:octicons-arrow-right-24: Learn more](background/index.md#enigma)
+
 -   :material-download:{ .lg .middle } __Installation__
 
     ---
@@ -55,12 +64,4 @@ SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix b
     Dig into SWE-agent's code and build your own agent!
 
     [:octicons-arrow-right-24: Development information](reference/index.md)
-
--   :material-hat-fedora:{ .lg .middle } __EnIGMA__
-
-    ---
-
-    EnIGMA agent turns SWE-agent to a cybersecurity expert that can solve Capture The Flag (CTF) challenges.
-
-    [:octicons-arrow-right-24: Learn more](enigma/index.md)
 </div>

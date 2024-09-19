@@ -1,4 +1,4 @@
-# Interactive Agent Tool (IAT)
+# Interactive Agent Tools (IATs)
 
 Tools useful for debugging (`gdb`, `radare2`), remote server interaction (`netcat`, `socat`) and penetration testing (`metasploit`) are widely used during CTF problem-solving and by cybersecurity experts. These tools are all interactive, i.e., they wait for user input, evaluate it, and print the results (read-eval-print loop, REPL). 
 Current LM agents, which build their ACI around a running shell as central REPL, lack the ability to nest REPLs or start separate REPLs for interactive tools.

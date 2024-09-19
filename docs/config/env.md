@@ -10,6 +10,7 @@ This page details all environment variables that are currently in use by SWE-age
 * `SWE_AGENT_CONFIG_ROOT`: Used to resolve relative paths in the [config](config.md)
 * `SWE_AGENT_ENV_LONG_TIMEOUT` (default: 500): Timeout in seconds used for commands that install instance environment.
 * `SWE_AGENT_ACTION_TIMEOUT` (default: 25): Timeout in seconds used for commands issued by the agent
+* `SWE_AGENT_ACTION_NO_OUTPUT_TIMEOUT` (default: equal to `SWE_AGENT_ACTION_TIMEOUT`): Timeout in seconds used when no output is produced for the defined duration for commands issued by the agent
 * `SWE_AGENT_MODEL_MAX_RETRIES` (default: 10): Maximum retries when querying the model
 
 The following three variables can only be set as environment variables, not in the config file

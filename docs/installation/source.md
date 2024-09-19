@@ -21,6 +21,10 @@ Installation from source is the preferred way to set up SWE-agent on your machin
     ```bash
     docker pull sweagent/swe-agent:latest
     ```
+    *Optional.* If you want to run EnIGMA for cybersecurity challenges, run also:
+    ```bash
+    docker pull sweagent/enigma:latest
+    ```
     Errors? See [docker issues](tips.md#docker). Alternatively, you can run `./setup.sh` to create your own `swe-agent` docker image.
 6. Set up your LM API keys as explained [here](keys.md).
 
