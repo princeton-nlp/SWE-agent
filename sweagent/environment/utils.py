@@ -828,7 +828,7 @@ class InstanceBuilder:
             except InvalidGitRepositoryError as e:
                 msg = f"Could not find git repository at {path=}."
                 raise ValueError(msg) from e
-            if repo.is_dirty():
+            if repo.is_dirty() and "PYTEST_CURRENT_TEST" not in os.environ:
                 msg = f"Local git repository {path} is dirty. Please commit or stash changes."
                 raise ValueError(msg)
             self.args["base_commit"] = repo.head.object.hexsha

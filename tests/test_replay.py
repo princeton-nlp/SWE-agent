@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
+from unittest import mock
 
 import pytest
 
@@ -146,5 +148,9 @@ def test_exception_replay_local_dirty(swe_agent_test_repo_clone, swe_agent_test_
         "--raise_exceptions",
     ]
     args, remaining_args = get_args(run_cmd)
-    with pytest.raises(ValueError, match=".*dirty.*"):
-        main(**vars(args), forward_args=remaining_args)
+    # In the code, we exclude testing from this check because of tests hosted in the repo
+    # so here we pretend we're not in a test
+    modified_environ = {k: v for k, v in os.environ.items() if k != "PYTEST_CURRENT_TEST"}
+    with mock.patch.dict(os.environ, modified_environ, clear=True):
+        with pytest.raises(ValueError, match=".*dirty.*"):
+            main(**vars(args), forward_args=remaining_args)
