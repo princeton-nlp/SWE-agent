@@ -19,6 +19,7 @@ def test_ctf_traj_replay(test_ctf_trajectories_path, traj_rel_path):
         "--config_file",
         "config/default_ctf.yaml",
         "--raise_exceptions",
+        "--noprint_config",
     ]
     args, remaining_args = get_args(args)
     main(**vars(args), forward_args=remaining_args)
