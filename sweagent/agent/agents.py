@@ -23,10 +23,9 @@ from sweagent.agent.models import (
     get_model,
 )
 from sweagent.agent.parsing import FormatError, ParseFunction
-from sweagent.agent.reviewer import AbstractReviewLoop, ReviewLoopConfig, get_review_loop_from_config
 from sweagent.agent.summarizer import SummarizerConfig
 from sweagent.environment.swe_env import SWEEnv
-from sweagent.types import AgentInfo, History, HistoryItem, ReviewSubmission, Trajectory, TrajectoryStep
+from sweagent.types import AgentInfo, History, HistoryItem, Trajectory, TrajectoryStep
 from sweagent.utils.config import convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 
@@ -107,7 +106,6 @@ class AgentConfig(FrozenSerializable):
     _commands: list[Command] = field(default_factory=list)
     _subroutines: dict[str, Subroutine] = field(default_factory=dict)
     subroutine_types: list[Subroutine] = field(default_factory=list)
-    review_loop_config: ReviewLoopConfig | None = None
 
     def __post_init__(self):
         object.__setattr__(self, "command_files", convert_paths_to_abspath(self.command_files))
@@ -266,8 +264,6 @@ class Agent:
         self.name = name
         # todo: currently only used to get the model name, so might remove this later
         self._args = args
-        #: Model used by the agent. Note: Will initialize a separate model together with the reviewer
-        #: (if any) to disentangle costs.
         self.model = get_model(args.model, args.config._commands + args.config.subroutine_types)
         self.summarizer_model = get_model(
             args.config.summarizer_config.model if args.config.summarizer_config.model is not None else args.model
@@ -284,7 +280,7 @@ class Agent:
         self.hooks = []
         self.logger = get_logger("agent")
         # Requires instance, so is set in `setup` methods
-        self._rloop: AbstractReviewLoop | None = None
+        self._rloop = None
 
         # Set in run method
         self._env: SWEEnv | None = None
@@ -367,11 +363,6 @@ class Agent:
         assert self.config is not None  # mypy
         self.instance_args = instance_args
 
-        if self.config.review_loop_config is not None:
-            rmodel = get_model(self._args.model, [])
-            rmodel.reset_stats()
-            self._rloop = get_review_loop_from_config(self.config.review_loop_config, instance_args, rmodel)
-
         self._i_attempt = 0
         self._history_by_attempt = defaultdict(list)
         self._trajectory_by_attempt = defaultdict(list)
@@ -453,7 +444,7 @@ class Agent:
         return self.config.history_processor([entry for entry in self.history if entry["agent"] == self.name])
 
     def _get_total_stats(self) -> APIStats:
-        """Combine model stats of different attempts and the reviewer"""
+        """Combine model stats of different attempts"""
         total_stats = APIStats()
         for stats in self._info_by_attempt.values():
             assert "model_stats" in stats  # mypy
@@ -484,18 +475,9 @@ class Agent:
                 }
             )
 
-        if self._rloop is not None:
-            best_attempt_idx = self._rloop.get_best()
-            data = {
-                "attempts": [get_attempt_data(i) for i in range(self._i_attempt + 1)],
-                **get_attempt_data(best_attempt_idx),
-            }
-            data["info"]["model_stats"] = self._get_total_stats().to_dict()
-            data["extra_info"] = {"comparisons": [(a, b, comp.to_dict()) for a, b, comp in self._rloop.comparisons]}
-        else:
-            data = {
-                **get_attempt_data(0),
-            }
+        data = {
+            **get_attempt_data(0),
+        }
 
         assert self.traj_path is not None
         self.traj_path.write_text(json.dumps(data, indent=2))
@@ -1058,22 +1040,7 @@ class Agent:
             observation, done = self._run_step(observation)
             self.save_trajectory()
             if done:
-                # fixme: Would have to fix this for replay model
-                if self._rloop is not None:
-                    # Note: The trajectory/info will not include the last `submit` command
-                    self._rloop.on_submit(ReviewSubmission(trajectory=self.trajectory, info=self.info))
-                    # (make sure to save trajectory after self._rloop.on_submit)
-                    retry: bool = self._rloop.retry()
-                    self._forwarded_vars = self._rloop.get_forwarded_vars()
-                    self.info["review"] = self._rloop.reviews[-1].to_dict()
-                    # Call save_trajectory again to save the updated info with the final reviews
-                    self.save_trajectory()
-                    if retry:
-                        self._i_attempt += 1
-                        self.setup_attempt()
-                    done = not retry
-                else:
-                    done = True
+                done = True
         for hook in self.hooks:
             hook.on_run_done(trajectory=self.trajectory, info=self.info)
 

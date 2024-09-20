@@ -5,7 +5,6 @@ import json
 import logging
 import os
 import subprocess
-from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -132,25 +131,6 @@ def test_exception_raised(test_script_args: ScriptArguments):
     main.add_hook(RaisesExceptionHook())
     with pytest.raises(ValueError, match="test exception"):
         main.main()
-
-
-@pytest.mark.slow
-@pytest.mark.parametrize(
-    "config_file_name", ["config/default_retry.yaml", "tests/test_data/config_files/default_retry_no_breviewer.yaml"]
-)
-def test_retry_from_config(test_script_args: ScriptArguments, config_file_name):
-    agent = AgentArguments(
-        model=ModelArguments(
-            model_name="instant_empty_submit",
-        ),
-        config_file=config_file_name,
-    )
-    assert agent.config is not None
-    assert agent.config.review_loop_config is not None
-    # Note: Not enough to just replace `config_file`
-    test_script_args = replace(test_script_args, agent=agent)
-    main = Main(test_script_args)
-    main.main()
 
 
 @pytest.mark.slow
