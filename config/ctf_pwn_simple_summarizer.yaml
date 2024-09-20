@@ -66,6 +66,16 @@ instance_template: |-
 
   9. YOU CAN SOLVE THE CHALLENGES BY YOURSELF COMPLETELY - I TRUST IN YOU!
 
+  DEBUG SESSION TIPS:
+  1. The debug session runs GDB, so use the appropriate syntax to specify breakpoints and provide arguments.
+
+  2. Debugging allows you to perform dynamic analysis of the program execution and view the internal program state at various points. First analyze the program via the disassembly and decompile commands to find interesting points to stop the execution, and then start debugging by setting meaningful breakpoints.
+
+  3. Provide inputs to the program ONLY via an input file by providing arguments at the start, for example `debug_start program '< input.txt'`. NOTE that it is important to properly quote the arguments to avoid shell redirection. You cannot provide inputs to the program in any other way.
+
+  4. The `debug_exec` command lets you execute arbitrary GDB commands - write proper GDB syntax and use it to analyze program state. Remember to quote the commands properly. For example, `debug_exec 'info registers'` will print all the registers, `debug_exec 'x/8wx $sp'` will print 8 words from the stack, `debug_exec 'x/20i $pc'` will print disassembly of the next 20 instructions.
+
+
   (Open file: {open_file})
   (Current directory: {working_dir})
   (Interactive session: {interactive_session})
