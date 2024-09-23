@@ -6,6 +6,7 @@ from run_replay import get_args, main
 
 
 @pytest.mark.slow
+@pytest.mark.ctf
 @pytest.mark.parametrize(
     "traj_rel_path",
     ["pwn/warmup.traj", "forensics/flash.traj", "web/i_got_id_demo.traj", "rev/rock.traj", "misc/networking_1.traj"],
