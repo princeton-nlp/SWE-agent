@@ -225,3 +225,4 @@ required-imports = ["from __future__ import annotations"]
 
 [tool.rye.scripts]
 replayio-tests = "pytest -m replayio"
+replayio-typecheck = "pyright tdd/**/*.py sweagent/investigations/**/*.py"
