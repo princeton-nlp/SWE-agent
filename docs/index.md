@@ -2,7 +2,10 @@
 
 ![SWE-agent banner](assets/readme_assets/swe-agent-banner.png)
 
-SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix bugs and issues in real GitHub repositories.
+SWE-agent turns LMs (e.g. GPT-4) into agents that can
+[fix issues in real GitHub repositories](background#swe-agent),
+[solve coding challenges](usage/coding_challenges.md), and
+[solve capture the flag challenges (EnIGMA mode)](background#enigma).
 
 <div class="grid cards" markdown>
 
