@@ -34,7 +34,7 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
   --config_file config/default_ctf.yaml  --skip_existing=False
 ```
 
-For more information about the command-line for running EnIGMA please read our [usage instrctions](../usage/enigma.md)
+For more information about the command-line for running EnIGMA please read our [usage instructions](../usage/enigma.md).
 
 <details>
 <summary>Output</summary>
