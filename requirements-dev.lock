@@ -88,6 +88,7 @@ eval-type-backport==0.2.0
     # via together
 exceptiongroup==1.2.2
     # via anyio
+    # via pytest
 farama-notifications==0.0.4
     # via gymnasium
 fastcore==1.7.5
@@ -110,6 +111,7 @@ frozenlist==1.4.1
     # via aiosignal
 fsspec==2024.6.1
     # via datasets
+    # via fsspec
     # via huggingface-hub
 ghapi==1.0.6
     # via swebench
@@ -163,6 +165,8 @@ idna==3.8
     # via yarl
 importlib-metadata==8.4.0
     # via opentelemetry-api
+iniconfig==2.0.0
+    # via pytest
 itsdangerous==2.2.0
     # via flask
 jinja2==3.1.4
@@ -187,6 +191,7 @@ multiprocess==0.70.16
     # via datasets
 nodeenv==1.9.1
     # via pre-commit
+    # via pyright
 numpy==2.1.1
     # via datasets
     # via gymnasium
@@ -222,6 +227,7 @@ packaging==24.1
     # via fastcore
     # via ghapi
     # via huggingface-hub
+    # via pytest
 pandas==2.2.2
     # via datasets
     # via sweagent
@@ -229,6 +235,8 @@ pillow==10.4.0
     # via together
 platformdirs==4.3.2
     # via virtualenv
+pluggy==1.5.0
+    # via pytest
 pre-commit==3.8.0
     # via swebench
 proto-plus==1.24.0
@@ -257,6 +265,9 @@ pygments==2.18.0
     # via rich
 pyparsing==3.1.4
     # via httplib2
+pyright==1.1.380
+    # via sweagent
+pytest==8.3.3
 python-dateutil==2.9.0.post0
     # via botocore
     # via pandas
@@ -327,6 +338,8 @@ together==1.2.12
     # via sweagent
 tokenizers==0.20.0
     # via anthropic
+tomli==2.0.1
+    # via pytest
 tqdm==4.66.5
     # via datasets
     # via huggingface-hub

@@ -22,11 +22,12 @@ flask-socketio
 groq
 pandas
 
-# Some of our own dependencies
+# Replay: Some of our own dependencies
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
 python-dotenv
+pyright
 tqdm
 opentelemetry-api>=1.25.0
 opentelemetry-exporter-otlp-proto-http>=1.25.0

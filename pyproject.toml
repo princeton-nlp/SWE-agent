@@ -65,10 +65,16 @@ namespaces = false
 "Documentation" = "https://github.com/princeton-nlp/SWE-agent"
 "Source" = "http://github.com/princeton-nlp/SWE-agent"
 
+[tool.rye]
+dev-dependencies = [
+    "pytest>=8.3.3",
+]
+
 
 [tool.pytest.ini_options]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "replayio: marks tests added as part of replay.io work (deselect with '-m \"not replayio\"')",
 ]
 testpaths = [
     "tests"
@@ -170,12 +176,12 @@ select = [
 
 ignore = [
     # flake8-return
+    "RET504",  # Unnecessary assignment * before `return` statement
     "RET505",  # can't autofix
     "RET506",  # can't autofix
     "RET507",  # can't autofix
     # error (E)
     "E501",    # line too long
-    "E504",    # Unnecessary assignment * before `return` statement
     "E402",    # import not on top of file
     "E722",    # bare except
     "E741",    # ambiguous symbol
@@ -216,3 +222,6 @@ aci = "aci"
 
 [tool.ruff.lint.isort]
 required-imports = ["from __future__ import annotations"]
+
+[tool.rye.scripts]
+replayio-tests = "pytest -m replayio"

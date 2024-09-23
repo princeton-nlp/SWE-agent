@@ -22,7 +22,8 @@ from tenacity import (
 )
 
 from sweagent.agent.commands import Command
-from sweagent.agent.model_cache import ModelCache
+from sweagent.agent.model_cache import ModelCache, json_serialize_str
+from sweagent.agent.model_result import AnthropicModelResult, ModelQueryResult
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
@@ -31,28 +32,6 @@ logger = get_logger("api_models")
 # TODO: [PRO-848] Configure retries
 _MAX_RETRIES = keys_config.get("SWE_AGENT_MODEL_MAX_RETRIES", 0)
 
-
-@dataclass
-class AnthropicModelResult(dict):
-    blocks: list[ContentBlock]
-
-    def get_tool_uses(self):
-        return [block for block in self.blocks if block.type == "tool_use"]
-
-    def get_last_tool_use(self):
-        return next(reversed(self.get_tool_uses()), None)
-
-    def __init__(self, blocks):
-        # Inherit from dict to make it JSON-serializable.
-        dict.__init__(self, blocks=blocks)
-        self.blocks = blocks
-
-    def __repr__(self) -> str:
-        return f"AnthropicModelResult(blocks={repr(self.blocks)})"
-
-
-
-ModelQueryResult = str | AnthropicModelResult
 
 def make_assistant_content(output: ModelQueryResult):
     if isinstance(output, str):
@@ -107,7 +86,7 @@ def compress_history_entry(input_entry: any):
     elif isinstance(content, list):
         for b in content:
             cont = b["content"]
-            cont = cont if isinstance(cont, str) else json.dumps(cont, indent=2)
+            cont = cont if isinstance(cont, str) else json_serialize_str(cont, indent=2)
             b["content"] = f'(omitted {len(cont.splitlines())} lines)'
 
 
@@ -176,6 +155,9 @@ class BaseModel:
         self.model_metadata = {}
         self.stats = APIStats()
         self.cache = ModelCache()
+        # set this to true to raise an exception on cache misses
+        # this doesn't work since there is so much non-determinism within our command execution.
+        self.cache_only = False
 
         # Map `model_name` to API-compatible name `api_model`
         self.api_model = (
@@ -279,6 +261,8 @@ class BaseModel:
             for call in stats_calls:
                 self.update_stats(call["input_tokens"], call["output_tokens"])
         else:
+            if self.cache_only:
+                raise Exception("ModelCache miss")
             result_string = self._query_raw(history)
             self.cache.insert(history, result_string, self.update_stats_calls)
         self.update_stats_calls = None
