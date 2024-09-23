@@ -22,7 +22,7 @@ from tenacity import (
 )
 
 from sweagent.agent.commands import Command
-from sweagent.agent.model_cache import ModelCache
+from sweagent.agent.model_cache import ModelCache, json_serialize_str
 from sweagent.agent.model_result import AnthropicModelResult, ModelQueryResult
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
@@ -86,7 +86,7 @@ def compress_history_entry(input_entry: any):
     elif isinstance(content, list):
         for b in content:
             cont = b["content"]
-            cont = cont if isinstance(cont, str) else json.dumps(cont, indent=2)
+            cont = cont if isinstance(cont, str) else json_serialize_str(cont, indent=2)
             b["content"] = f'(omitted {len(cont.splitlines())} lines)'
 
 
@@ -156,6 +156,7 @@ class BaseModel:
         self.stats = APIStats()
         self.cache = ModelCache()
         # set this to true to raise an exception on cache misses
+        # this doesn't work since there is so much non-determinism within our command execution.
         self.cache_only = False
 
         # Map `model_name` to API-compatible name `api_model`

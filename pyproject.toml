@@ -65,10 +65,16 @@ namespaces = false
 "Documentation" = "https://github.com/princeton-nlp/SWE-agent"
 "Source" = "http://github.com/princeton-nlp/SWE-agent"
 
+[tool.rye]
+dev-dependencies = [
+    "pytest>=8.3.3",
+]
+
 
 [tool.pytest.ini_options]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "replayio: marks tests added as part of replay.io work (deselect with '-m \"not replayio\"')",
 ]
 testpaths = [
     "tests"
@@ -216,3 +222,6 @@ aci = "aci"
 
 [tool.ruff.lint.isort]
 required-imports = ["from __future__ import annotations"]
+
+[tool.rye.scripts]
+replayio-tests = "pytest -m replayio"
