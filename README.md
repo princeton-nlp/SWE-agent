@@ -4,26 +4,37 @@
   </a>
 </p>
 
+<p align="center">
+  <a href="#enigma"><img src="https://github.com/user-attachments/assets/5ec8331f-293a-4e1a-ad67-795bc49ee428" height="35px"></a>
+</p>
 
 <p align="center">
-  <a href="https://swe-agent.com"><strong>Website & Demo</strong></a>&nbsp; | &nbsp;
   <a href="https://princeton-nlp.github.io/SWE-agent/"><strong>Documentation</strong></a>&nbsp; | &nbsp;
   <a href="https://discord.gg/AVEFbBn2rH"><strong>Discord</strong></a>&nbsp; | &nbsp;
   <a href="https://arxiv.org/abs/2405.15793"><strong>Preprint</strong></a>
 </p>
 
-**SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can resolve issues in real GitHub repositories.**
+**SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can resolve issues in real GitHub repositories and more.**
 
-On [SWE-bench](https://github.com/princeton-nlp/SWE-bench), SWE-agent resolves 12.47% of issues, achieving the state-of-the-art performance on the full test set.
+On [SWE-bench][], SWE-agent resolves 12.47% of issues of the full test set and 23% of issues of SWE-bench lite.
+[SWE-agent EnIGMA][enigma] solves more than **3x more** challenges of the cybersecurity [NYU CTF benchmark][nyu-ctf] than the previous SOTA agent.
+
+[enigma]: https://enigma-agent.github.io/
+[SWE-bench]: https://github.com/princeton-nlp/SWE-bench
+[nyu-ctf]: https://arxiv.org/abs/2406.05590
 
 We accomplish our results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, view, edit and execute code files. We call this an **Agent-Computer Interface (ACI)**.
 Read more about it in our [paper](https://arxiv.org/abs/2405.15793)!
 
 SWE-agent is built and maintained by researchers from Princeton University.
 
-![My Movie 3](https://github.com/princeton-nlp/SWE-agent/assets/13602468/fa201621-ec31-4644-b658-c1d0feb92253)
+![swe-agent-gui-demo](https://github.com/princeton-nlp/SWE-agent/assets/13602468/fa201621-ec31-4644-b658-c1d0feb92253)
 
-You can use SWE-agent either through a web interface (shown above) or through the command line.
+## 🕵️ SWE-agent as a cybersecurity agent <a name="enigma"></a>
+<img src="https://github.com/user-attachments/assets/2b74827b-9603-4865-a322-a21f30edf995" height="80px"></img>
+
+[SWE-agent: EnIGMA][enigma] (Enhanced Interactive Generative Model Agent) is a mode for solving Capture The Flag (CTF) cybersecurity challenges.
+The EnIGMA project introduced multiple novelties that are available to all use cases of SWE-agent, such as Interactive Agent Tools and a Summarizer to handle long outputs.
 
 ## 🚀 Get started!
 
@@ -36,12 +47,6 @@ Read our [documentation][docs] to learn more:
 * [Using the web UI](https://princeton-nlp.github.io/SWE-agent/usage/web_ui/)
 * [Benchmarking on SWE-bench](https://princeton-nlp.github.io/SWE-agent/usage/benchmarking/)
 * [Frequently Asked Questions](https://princeton-nlp.github.io/SWE-agent/faq/)
-
-<div align="center">
-<a href="https://princeton-nlp.github.io/SWE-agent/"><img src="assets/doc-scrot.png" style="width: 600px"/></a>
-</div>
-
-[docs]: https://princeton-nlp.github.io/SWE-agent/
 
 ## 💫 Contributions <a name="contributions"></a>
 - If you'd like to ask questions, learn about upcoming features, and participate in future development, join our [Discord community](https://discord.gg/AVEFbBn2rH)!
