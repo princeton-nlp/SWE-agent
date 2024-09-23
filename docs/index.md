@@ -1,11 +1,11 @@
-# SWE-agent: Turn LMs into SWE agents!
+# Turn LMs into SWE agents (and more)!
 
 ![SWE-agent banner](assets/readme_assets/swe-agent-banner.png)
 
 SWE-agent turns LMs (e.g. GPT-4) into agents that can
 [fix issues in real GitHub repositories](background#swe-agent),
 [solve coding challenges](usage/coding_challenges.md), and
-[solve capture the flag challenges (EnIGMA mode)](background#enigma).
+[solve capture the flag challenges](background#enigma) (<span class="enigma">EnIGMA</span> mode).
 
 <div class="grid cards" markdown>
 
@@ -22,7 +22,7 @@ SWE-agent turns LMs (e.g. GPT-4) into agents that can
 
     ---
 
-    EnIGMA agent turns SWE-agent to a cybersecurity expert that can solve Capture The Flag (CTF) challenges.
+    <span class="enigma">EnIGMA</span> turns SWE-agent to a cybersecurity expert that can solve Capture The Flag (CTF) challenges.
 
     [:octicons-arrow-right-24: Learn more](background/index.md#enigma)
 

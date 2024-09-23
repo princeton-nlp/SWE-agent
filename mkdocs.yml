@@ -99,3 +99,5 @@ plugins:
 repo_url: https://github.com/princeton-nlp/SWE-agent
 repo_name: princeton-nlp/SWE-agent
 edit_uri: edit/main/docs/
+extra_css:
+  - assets/custom.css

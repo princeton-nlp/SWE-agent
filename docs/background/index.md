@@ -33,9 +33,9 @@ If you found this work helpful, please consider using the following citation:
 }
 ```
 
-## EnIGMA <a name="enigma"></a>
+## <span class="enigma">EnIGMA</span> <a name="enigma"></a>
 
-EnIGMA (Enhanced Interactive Generative Model Agent) is an LM agent built on top of SWE-agent for solving Capture The Flag (CTF) cybersecurity challenges.
+<span class="enigma">EnIGMA</span> (Enhanced Interactive Generative Model Agent) is an LM agent built on top of SWE-agent for solving Capture The Flag (CTF) cybersecurity challenges.
 
 The challenges range in various categories: cryptography, reverse-engineering, forensics, binary exploitation, web security and miscellaneous.
 
