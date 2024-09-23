@@ -48,6 +48,8 @@ Read our [documentation][docs] to learn more:
 * [Benchmarking on SWE-bench](https://princeton-nlp.github.io/SWE-agent/usage/benchmarking/)
 * [Frequently Asked Questions](https://princeton-nlp.github.io/SWE-agent/faq/)
 
+[docs]: https://princeton-nlp.github.io/SWE-agent/
+
 ## 💫 Contributions <a name="contributions"></a>
 - If you'd like to ask questions, learn about upcoming features, and participate in future development, join our [Discord community](https://discord.gg/AVEFbBn2rH)!
 - If you'd like to contribute to the codebase, we welcome [issues](https://github.com/princeton-nlp/SWE-agent/issues) and [pull requests](https://github.com/princeton-nlp/SWE-agent/pulls)!
