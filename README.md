@@ -30,12 +30,6 @@ SWE-agent is built and maintained by researchers from Princeton University.
 
 ![swe-agent-gui-demo](https://github.com/princeton-nlp/SWE-agent/assets/13602468/fa201621-ec31-4644-b658-c1d0feb92253)
 
-## 🕵️ SWE-agent as a cybersecurity agent <a name="enigma"></a>
-<img src="https://github.com/user-attachments/assets/2b74827b-9603-4865-a322-a21f30edf995" height="80px"></img>
-
-[SWE-agent: EnIGMA][enigma] (Enhanced Interactive Generative Model Agent) is a mode for solving Capture The Flag (CTF) cybersecurity challenges.
-The EnIGMA project introduced multiple novelties that are available to all use cases of SWE-agent, such as Interactive Agent Tools and a Summarizer to handle long outputs.
-
 ## 🚀 Get started!
 
 👉 Try SWE-agent in your browser: [![Open in GitHub Codespaces](https://img.shields.io/badge/Open_in_GitHub_Codespaces-gray?logo=github)](https://codespaces.new/princeton-nlp/SWE-agent) ([more information](https://princeton-nlp.github.io/SWE-agent/installation/codespaces/))
@@ -49,6 +43,12 @@ Read our [documentation][docs] to learn more:
 * [Frequently Asked Questions](https://princeton-nlp.github.io/SWE-agent/faq/)
 
 [docs]: https://princeton-nlp.github.io/SWE-agent/
+
+## 🕵️ SWE-agent for offensive cybersecurity (EnIGMA) <a name="enigma"></a>
+<img src="https://github.com/user-attachments/assets/2b74827b-9603-4865-a322-a21f30edf995" height="80px"></img>
+
+[SWE-agent: EnIGMA][enigma] (Enhanced Interactive Generative Model Agent) is a mode for solving Capture The Flag (CTF) cybersecurity challenges.
+The EnIGMA project introduced multiple novelties that are available to all use cases of SWE-agent, such as Interactive Agent Tools and a Summarizer to handle long outputs.
 
 ## 💫 Contributions <a name="contributions"></a>
 - If you'd like to ask questions, learn about upcoming features, and participate in future development, join our [Discord community](https://discord.gg/AVEFbBn2rH)!
