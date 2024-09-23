@@ -18,10 +18,11 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
   python run.py --image_name=sweagent/swe-agent:latest \
   --model_name gpt4 \
   --data_path https://github.com/pvlib/pvlib-python/issues/1603 \
-  --config_file config/default_from_url.yaml  --skip_existing=False
+  --config_file config/default_from_url.yaml \
+  --skip_existing=False
 ```
 
-For EnIGMA you should run
+For EnIGMA, change the `run.py` arguments as usual:
 
 ```bash
 docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
@@ -30,11 +31,12 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
   python run.py --image_name=sweagent/enigma:latest \
   --model_name gpt4 \
   --data_path /path/to/challenge.json \
-  --repo_path /path/to/repo
-  --config_file config/default_ctf.yaml  --skip_existing=False
+  --repo_path /path/to/repo \
+  --config_file config/default_ctf.yaml  \
+  --skip_existing=False
 ```
 
-For more information about the command-line for running EnIGMA please read our [usage instructions](../usage/enigma.md).
+For more information about running EnIGMA please read our [usage instructions](../usage/enigma.md).
 
 <details>
 <summary>Output</summary>
