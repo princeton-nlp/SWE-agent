@@ -2,6 +2,9 @@
 
 Instead of installing SWE-agent from source, you can also run the software directly using Docker.
 
+!!! warning "Limited support"
+    Wherever possible, the [installation from source](source.md) is preferred.
+
 1. Install Docker ([follow the docs](https://github.com/docker/docker-install) or use the [get-docker.sh script for linux](https://github.com/docker/docker-install)), then start Docker locally. Problems? See [docker issues](tips.md#docker).
 2. Run `docker pull sweagent/swe-agent:latest`. *Optional*: If you want to use EnIGMA run also `docker pull sweagent/enigma:latest`.
 3. Add your API tokens to a file `keys.cfg` as explained [here](keys.md) or pass them as
