@@ -8,8 +8,7 @@ on:
   push:
     branches:
       - main
-      - reviewer
-      - talor-branch
+      - prepare-public2
     paths-ignore:
       - 'docs/**'
       - 'README.md'
@@ -17,8 +16,7 @@ on:
   pull_request:
     branches:
       - main
-      - reviewer
-      - talor-branch
+      - prepare-public2
     paths-ignore:
       - 'docs/**'
       - 'README.md'
