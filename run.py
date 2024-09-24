@@ -108,6 +108,8 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
     raise_exceptions: bool = False
     # Dump the entire config to the log
     print_config: bool = True
+    # Run the agent in CTF mode (SWE-agent: EnIGMA)
+    ctf: bool = False
 
     @property
     def run_name(self) -> str:
@@ -515,6 +517,7 @@ def get_args(args=None) -> ScriptArguments:
             config_file=CONFIG_DIR / "default.yaml",
         ),
         actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
+        ctf=False,
     )
 
     # Nicer yaml dumping of multiline strings
