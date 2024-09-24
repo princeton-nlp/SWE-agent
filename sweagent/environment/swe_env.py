@@ -489,11 +489,18 @@ class SWEEnv(gym.Env):
         return f"Interactive session already open. Please close the current interactive session: {self.interactive_session.name} with the command: `{exit_command}`"
 
     def _terminate_interactive_session(self, session_name: str):
+        if not self.interactive_session:
+            # Maybe fixing #772
+            return
         try:
             self.interactive_session.session_process.terminate()
             self.communicate(self.args.interactive_sessions_config[session_name].exit_command)
         except Exception as e:
-            self.logger.warning(f"Failed to terminate interactive session {session_name}: {e}")
+            msg = (
+                f"Failed to terminate interactive session {session_name}: {e}."
+                "\nHere's the full traceback\n" + traceback.format_exc()
+            )
+            self.logger.warning(msg)
         self.interactive_session = None
 
     def _handle_interactive_commands(self, observation: str) -> str:
@@ -532,11 +539,14 @@ class SWEEnv(gym.Env):
                     self.args.interactive_sessions_config[session_name].cmdline,
                 )
             elif command == "STOP":
-                if self.interactive_session.session_process.poll() is None:
-                    self.logger.warning("Session did not quit successfully, terminating.")
-                    self.interactive_session.session_process.terminate()
-                observation = f"Interactive session {session_name} stopped successfully"
-                self.interactive_session = None
+                if self.interactive_session is None:
+                    observation = f"Interactive session {session_name} is not running, so it cannot be stopped!"
+                else:
+                    if self.interactive_session.session_process.poll() is None:
+                        self.logger.warning("Session did not quit successfully, terminating.")
+                        self.interactive_session.session_process.terminate()
+                    observation = f"Interactive session {session_name} stopped successfully"
+                    self.interactive_session = None
             else:
                 if self.interactive_session is None:
                     self.logger.warning("Tried to run interactive commands without starting session")
