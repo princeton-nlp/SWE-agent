@@ -54,7 +54,14 @@ jobs:
       - name: Run pytest
         uses: sjvrijn/pytest-last-failed@v2
         with:
-          pytest-args: '-s --cov'
+          pytest-args: '--cov'
+      - name: Upload logs & trajectories
+        uses: actions/upload-artifact@v4
+        with:
+          name: trajectories
+          path: |
+            trajectories
+            !trajectories/demonstrations/**
       - name: Explicitly convert coverage to xml
         run: coverage xml
       - name: Upload coverage reports to Codecov
