@@ -1,13 +1,19 @@
 {
   "ignorePatterns": [
     {
-      "pattern": "https://github.com/?.*"
-    },
-    {
       "pattern": "https://platform.openai.com/docs/.*"
     },
     {
       "pattern": ".*localhost.*"
     }
-  ]
+  ],
+  "httpHeaders": [
+    {
+      "urls": ["https://github.com/", "https://guides.github.com/", "https://help.github.com/", "https://docs.github.com/"],
+      "headers": {
+        "Accept-Encoding": "zstd, br, gzip, deflate"
+      }
+    }
+  ],
+  "aliveStatusCodes": [429, 200]
 }
