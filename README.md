@@ -12,6 +12,7 @@
   <a href="https://princeton-nlp.github.io/SWE-agent/"><strong>Documentation</strong></a>&nbsp; | &nbsp;
   <a href="https://discord.gg/AVEFbBn2rH"><strong>Discord</strong></a>&nbsp; | &nbsp;
   <a href="https://arxiv.org/abs/2405.15793"><strong>Preprint</strong></a>
+  <a href="https://enigma-agent.github.io/assets/paper.pdf"><strong>EnIGMA preprint</strong></a>
 </p>
 
 **SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can resolve issues in real GitHub repositories and more.**

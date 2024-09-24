@@ -23,7 +23,7 @@ A longer lecture touching on the project's motivation, research findings, as wel
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/d9gcXpiiDao" title="NeurIPS Hacker Cup AI: SWEAgent" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-If you found this work helpful, please consider using the following citation:
+For in-depth information, read our [paper](https://arxiv.org/abs/2405.15793). If you found this work helpful, please consider using the following citation:
 
 ```
 @misc{yang2024sweagent,
@@ -50,3 +50,5 @@ EnIGMA is built and maintained by researchers from Tel-Aviv University, New York
 For a quick introduction, watch the following video:
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/IJxqOsNFiCc?si=xtIxyCcriM9FJexK" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+For all the details, read our [paper](https://enigma-agent.github.io/assets/paper.pdf).
