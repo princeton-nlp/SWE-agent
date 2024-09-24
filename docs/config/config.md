@@ -68,7 +68,7 @@ parse_function: Parser run on agent output
 
 In the [`config/`](https://github.com/princeton-nlp/SWE-agent/tree/main/config) directory, we recommend looking at...
 
-* [`configs/`](https://github.com/princeton-nlp/SWE-agent/tree/main/config/configs) for examples of properly formatted configuration files. Each configuration differs in its set of commands, input/output format, demonstrations, etc.
+* [`configs/`](https://github.com/princeton-nlp/SWE-agent/tree/main/config/) for examples of properly formatted configuration files. Each configuration differs in its set of commands, input/output format, demonstrations, etc.
 * [`commands/`](https://github.com/princeton-nlp/SWE-agent/tree/main/config/commands) for the bash implementations of the custom commands that SWE-agent uses to navigate + edit the codebase. More information [here](commands.md).
 
 !!! hint "Relative paths"
