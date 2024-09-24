@@ -12,11 +12,11 @@
         <link rel="prev" href="../">
       
       
-        <link rel="next" href="../architecture/">
+        <link rel="next" href="../iat/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.34">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.36">
     
     
       
@@ -24,7 +24,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.35f28582.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.06209087.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
@@ -47,6 +47,8 @@
     
     
       <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../assets/custom.css">
     
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -89,6 +91,28 @@
       
     </div>
     <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            
+            
+<!-- This link won't work in local preview -->
+<a href="SWE-agent/background#enigma" class="clickable-banner">
+    <div>
+        News: SWE-agent <span class="enigma">EniGMA</span> solves cybersecurity and CTF challanges to achieve <span class="enigma">3x improvement over previous SOTA!</span>
+    </div>
+</a>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
       
     </div>
     
@@ -302,6 +326,8 @@
       
         
       
+        
+      
     
     
     
@@ -318,7 +344,7 @@
               
   
   <span class="md-ellipsis">
-    Background
+    Project Overview
   </span>
   
 
@@ -334,7 +360,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
-            Background
+            Project Overview
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -366,6 +392,27 @@
 
       </a>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../iat/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interactive Agent Tools
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -515,7 +562,7 @@
         
   
   <span class="md-ellipsis">
-    Docker
+    Run with docker
   </span>
   
 
@@ -622,6 +669,8 @@
       
         
       
+        
+      
     
     
     
@@ -672,6 +721,27 @@
   
   <span class="md-ellipsis">
     Command line usage
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/enigma/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    EnIGMA usage
   </span>
   
 
@@ -833,6 +903,8 @@
       
         
       
+        
+      
     
     
     
@@ -957,6 +1029,27 @@
   
   <span class="md-ellipsis">
     Docker images
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config/summarizers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Summarizers
   </span>
   
 
@@ -1276,15 +1369,16 @@
 
 <h1 id="agent-computer-interface-aci">Agent Computer Interface (ACI)</h1>
 <p>We accomplish our results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, view, edit and execute code files. We call this an <strong>Agent-Computer Interface</strong> (ACI) and build the SWE-agent repository to make it easy to iterate on ACI design for repository-level coding agents.</p>
-<p>Just like how typical language models requires good prompt engineering, good ACI design leads to much better results when using agents. As we show in our <a href="https://arxiv.org/abs/2405.15793">paper</a>, a baseline agent without a well-tuned ACI does much worse than SWE-agent.</p>
+<p>Just like how typical language models requires good prompt engineering, <strong>good ACI design leads to much better results when using agents</strong>. As we show in our <a href="https://arxiv.org/abs/2405.15793">paper</a>, a baseline agent without a well-tuned ACI does much worse than SWE-agent.</p>
 <p>SWE-agent contains features that we discovered to be immensely helpful during the agent-computer interface design process:</p>
 <ol>
-<li>We add a linter that runs when an edit command is issued, and do not let the edit command go through if the code isn't syntactically correct.</li>
-<li>We supply the agent with a special-built file viewer, instead of having it just <code>cat</code> files. We found that this file viewer works best when displaying just 100 lines in each turn. The file editor that we built has commands for scrolling up and down and for performing a search within the file.</li>
-<li>We supply the agent with a special-built full-directory string searching command. We found that it was important for this tool to succinctly list the matches- we simply list each file that had at least one match. Showing the model more context about each match proved to be too confusing for the model.</li>
+<li>We add a <strong>linter</strong> that runs when an edit command is issued, and do not let the edit command go through if the code isn't syntactically correct.</li>
+<li>We supply the agent with a <strong>special-built file viewer</strong>, instead of having it just <code>cat</code> files. We found that this file viewer works best when displaying just 100 lines in each turn. The <strong>file editor</strong> that we built has commands for scrolling up and down and for performing a search within the file.</li>
+<li>We supply the agent with a special-built full-directory string <strong>searching command</strong>. We found that it was important for this tool to succinctly list the matches- we simply list each file that had at least one match. Showing the model more context about each match proved to be too confusing for the model.</li>
 <li>When commands have an empty output we return a message saying "Your command ran successfully and did not produce any output."</li>
 </ol>
-<p>Read our paper for more details <a href="https://arxiv.org/abs/2405.15793">here</a>.</p>
+<p>Read our paper for more details <a href="https://arxiv.org/abs/2405.15793">here</a>.
+A recent extension of our ACI are <a href="../iat/">Interactive Agent Tools</a>.</p>
 
 
 
@@ -1314,7 +1408,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Learn more about the SWE-agent project.">
+          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Learn more about the project.">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1324,20 +1418,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Learn more about the SWE-agent project.
+                Learn more about the project.
               </div>
             </div>
           </a>
         
         
           
-          <a href="../architecture/" class="md-footer__link md-footer__link--next" aria-label="Next: Architecture">
+          <a href="../iat/" class="md-footer__link md-footer__link--next" aria-label="Next: Interactive Agent Tools">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Architecture
+                Interactive Agent Tools
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1371,7 +1465,7 @@
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.indexes", "content.action.edit", "navigation.footer", "content.code.copy", "content.footnote.tooltips", "header.autohide", "announce.dismiss"], "search": "../../assets/javascripts/workers/search.07f07601.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.indexes", "content.action.edit", "navigation.footer", "content.code.copy", "content.footnote.tooltips", "header.autohide", "announce.dismiss"], "search": "../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.56dfad97.min.js"></script>

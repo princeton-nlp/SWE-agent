@@ -9,25 +9,25 @@
       
       
       
-        <link rel="prev" href="../dev/formatting_conflicts/">
+        <link rel="prev" href="../aci/">
       
       
-        <link rel="next" href="agent/">
+        <link rel="next" href="../architecture/">
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.36">
     
     
       
-        <title>Code structure and reference - SWE-agent documentation</title>
+        <title>Interactive Agent Tools - SWE-agent documentation</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.06209087.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.06209087.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -46,18 +46,18 @@
       
     
     
-      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../assets/custom.css">
+      <link rel="stylesheet" href="../../assets/custom.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
     
     
     
-   <link href="../assets/stylesheets/glightbox.min.css" rel="stylesheet"/><style>
+   <link href="../../assets/stylesheets/glightbox.min.css" rel="stylesheet"/><style>
     html.glightbox-open { overflow: initial; height: 100%; }
     .gslide-title { margin-top: 0px; user-select: text; }
     .gslide-desc { color: #666; user-select: text; }
@@ -66,7 +66,7 @@
     .gdesc-inner { font-size: 0.75rem; }
     body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color);}
     body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color);}
-    body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color);}</style> <script src="../assets/javascripts/glightbox.min.js"></script></head>
+    body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color);}</style> <script src="../../assets/javascripts/glightbox.min.js"></script></head>
   
   
     
@@ -85,7 +85,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#code-structure-and-reference" class="md-skip">
+        <a href="#interactive-agent-tools-iats" class="md-skip">
           Skip to content
         </a>
       
@@ -123,9 +123,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="SWE-agent documentation" class="md-header__button md-logo" aria-label="SWE-agent documentation" data-md-component="logo">
+    <a href="../.." title="SWE-agent documentation" class="md-header__button md-logo" aria-label="SWE-agent documentation" data-md-component="logo">
       
-  <img src="../assets/swe-agent.svg" alt="logo">
+  <img src="../../assets/swe-agent.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -142,7 +142,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Code structure and reference
+              Interactive Agent Tools
             
           </span>
         </div>
@@ -265,9 +265,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="SWE-agent documentation" class="md-nav__button md-logo" aria-label="SWE-agent documentation" data-md-component="logo">
+    <a href="../.." title="SWE-agent documentation" class="md-nav__button md-logo" aria-label="SWE-agent documentation" data-md-component="logo">
       
-  <img src="../assets/swe-agent.svg" alt="logo">
+  <img src="../../assets/swe-agent.svg" alt="logo">
 
     </a>
     SWE-agent documentation
@@ -294,7 +294,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -311,6 +311,8 @@
       
   
   
+    
+  
   
   
     
@@ -329,16 +331,16 @@
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../background/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -355,7 +357,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Project Overview
@@ -371,7 +373,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../background/aci/" class="md-nav__link">
+      <a href="../aci/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -389,10 +391,19 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../background/iat/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -401,6 +412,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -413,7 +425,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../background/architecture/" class="md-nav__link">
+      <a href="../architecture/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -471,7 +483,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../installation/" class="md-nav__link ">
+            <a href="../../installation/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -504,7 +516,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../installation/codespaces/" class="md-nav__link">
+      <a href="../../installation/codespaces/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -525,7 +537,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../installation/source/" class="md-nav__link">
+      <a href="../../installation/source/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -546,7 +558,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../installation/docker/" class="md-nav__link">
+      <a href="../../installation/docker/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -567,7 +579,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../installation/keys/" class="md-nav__link">
+      <a href="../../installation/keys/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -588,7 +600,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../installation/tips/" class="md-nav__link">
+      <a href="../../installation/tips/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -609,7 +621,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../installation/changelog/" class="md-nav__link">
+      <a href="../../installation/changelog/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -671,7 +683,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../usage/" class="md-nav__link ">
+            <a href="../../usage/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -704,7 +716,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../usage/cl_tutorial/" class="md-nav__link">
+      <a href="../../usage/cl_tutorial/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -725,7 +737,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../usage/enigma/" class="md-nav__link">
+      <a href="../../usage/enigma/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -746,7 +758,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../usage/coding_challenges/" class="md-nav__link">
+      <a href="../../usage/coding_challenges/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -767,7 +779,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../usage/web_ui/" class="md-nav__link">
+      <a href="../../usage/web_ui/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -788,7 +800,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../usage/trajectories/" class="md-nav__link">
+      <a href="../../usage/trajectories/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -809,7 +821,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../usage/inspector/" class="md-nav__link">
+      <a href="../../usage/inspector/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -830,7 +842,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../usage/usage_faq/" class="md-nav__link">
+      <a href="../../usage/usage_faq/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -851,7 +863,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../usage/benchmarking/" class="md-nav__link">
+      <a href="../../usage/benchmarking/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -928,7 +940,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../config/config/" class="md-nav__link">
+      <a href="../../config/config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -949,7 +961,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../config/commands/" class="md-nav__link">
+      <a href="../../config/commands/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -970,7 +982,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../config/demonstrations/" class="md-nav__link">
+      <a href="../../config/demonstrations/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -991,7 +1003,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../config/env/" class="md-nav__link">
+      <a href="../../config/env/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1012,7 +1024,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../config/docker/" class="md-nav__link">
+      <a href="../../config/docker/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1033,7 +1045,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../config/summarizers/" class="md-nav__link">
+      <a href="../../config/summarizers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1102,7 +1114,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dev/contribute/" class="md-nav__link">
+      <a href="../../dev/contribute/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1123,7 +1135,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dev/formatting_conflicts/" class="md-nav__link">
+      <a href="../../dev/formatting_conflicts/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1148,8 +1160,6 @@
       
   
   
-    
-  
   
   
     
@@ -1170,16 +1180,16 @@
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="./" class="md-nav__link md-nav__link--active">
+            <a href="../../reference/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1190,13 +1200,13 @@
             </a>
             
               
-              <label class="md-nav__link md-nav__link--active" for="__nav_7" id="__nav_7_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             Reference
@@ -1212,7 +1222,7 @@
   
   
     <li class="md-nav__item">
-      <a href="agent/" class="md-nav__link">
+      <a href="../../reference/agent/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1233,7 +1243,7 @@
   
   
     <li class="md-nav__item">
-      <a href="models/" class="md-nav__link">
+      <a href="../../reference/models/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1254,7 +1264,7 @@
   
   
     <li class="md-nav__item">
-      <a href="env/" class="md-nav__link">
+      <a href="../../reference/env/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1275,7 +1285,7 @@
   
   
     <li class="md-nav__item">
-      <a href="env_utils/" class="md-nav__link">
+      <a href="../../reference/env_utils/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1303,7 +1313,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/" class="md-nav__link">
+      <a href="../../faq/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1349,7 +1359,7 @@
                   
 
   
-    <a href="https://github.com/princeton-nlp/SWE-agent/edit/main/docs/reference/index.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/princeton-nlp/SWE-agent/edit/main/docs/background/iat.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1357,37 +1367,20 @@
   
 
 
-<h1 id="code-structure-and-reference">Code structure and reference</h1>
-<div class="admonition warning">
-<p class="admonition-title">This section is in development</p>
-<p>Some submodules are missing. We also do not strive for completeness, but provide this as an easy entry point
-for people who want to start reading the code.
-Also note that SWE-agent is still developed very actively, so the python implementation details
-are still changing. See <a href="../installation/changelog/">the changelog</a> for more information.</p>
-</div>
-<div class="admonition tip">
-<p class="admonition-title">SWE-agent architecture</p>
-<p>Please first read the <a href="../background/architecture/">architecture page</a> for an overview of SWE-agent.</p>
-</div>
-<p>The core:</p>
-<ul>
-<li>The <code>sweagent/agent/</code> <a href=""></a> submodule implements the agent.<ul>
-<li><a href="agent/">Read about the <code>Agent</code> class</a></li>
-<li><a href="https://github.com/princeton-nlp/SWE-agent/tree/main/sweagent/agent/">Explore the code</a></li>
-</ul>
-</li>
-<li>The <code>sweagent/environment/</code> submodule handles the communication with the docker container where we execute code.<ul>
-<li><a href="agent/">Read about the <code>SWEEnv</code> class</a></li>
-<li><a href="https://github.com/princeton-nlp/SWE-agent/tree/main/sweagent/environment/">Explore the code</a></li>
-</ul>
-</li>
-</ul>
-<p>More subfolders</p>
-<ul>
-<li>See the <a href="https://github.com/princeton-nlp/SWE-agent/tree/main/scripts/"><code>scripts/</code></a> folder for other useful scripts and details.</li>
-<li>See the <a href="https://github.com/princeton-nlp/SWE-agent/tree/main/config/"><code>config/</code></a> folder for details about how you can define your own configuration!</li>
-<li>See the <a href="https://github.com/princeton-nlp/SWE-agent/tree/main/trajectories"><code>trajectories/</code></a> folder for details about the output of <code>run.py</code>.</li>
-</ul>
+<h1 id="interactive-agent-tools-iats">Interactive Agent Tools (IATs)</h1>
+<p>Interactive Agent Tools were first developed as part of our <span class="enigma"><a href="../#enigma">EnIGMA</a></span> project, but are compatible with all uses of SWE-agent.
+This page focuses on their usage for capture the flag (CTF) challenges.</p>
+<p>Tools useful for debugging (<code>gdb</code>, <code>radare2</code>), remote server interaction (<code>netcat</code>, <code>socat</code>) and penetration testing (<code>metasploit</code>) are widely used during CTF problem-solving and by cybersecurity experts. These tools are all interactive, i.e., they wait for user input, evaluate it, and print the results (read-eval-print loop, REPL).
+Current LM agents, which build their ACI around a running shell as central REPL, lack the ability to nest REPLs or start separate REPLs for interactive tools.</p>
+<p>In EnIGMA, we build <strong>Interactive Agent Tools (IATs)</strong> that use the same principles from the ACIs introduced in SWE-agent, but are also able to nest new REPL of the desired tool for agent interaction.</p>
+<p>Just like how typical programmer or cybersecurity expert uses multiple programs concurrently to build software or defend against cyber attacks, our IAT design enables the agent to use the interactive tools while still having the ability to access the main shell to run other commands.</p>
+<p>As we show in our <a href="https://enigma-agent.github.io/assets/paper.pdf">paper</a>, a baseline agent without our IATs does worse than EnIGMA.</p>
+<p>EnIGMA contains interactive tools that we discovered to be immensely helpful for CTF solving during the agent-computer interface design process:</p>
+<ol>
+<li>We add a debugger (based on <code>gdb</code>) that have basic commands for controlling (<code>start</code>, <code>stop</code>, <code>step</code>, <code>add_breakpoint</code>), similar to how graphic interfaces for debuggers provide buttons for frequently used operations. We also have a generic command that lets the agent perform arbitrary <code>gdb</code> command inside the interactive debugging session.</li>
+<li>We supply the agent with a special-built server connection tool, instead of having it just <code>netcat</code> to servers. The server connection utility that we built has commands for connecting to a server and sending a line with bytes or unicode strings to the server.</li>
+</ol>
+<p>Read our paper for more details <a href="https://enigma-agent.github.io/assets/paper.pdf">here</a>.</p>
 
 
 
@@ -1417,7 +1410,7 @@ are still changing. See <a href="../installation/changelog/">the changelog</a> f
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../dev/formatting_conflicts/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Formatting conflicts">
+          <a href="../aci/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Agent-Computer Interface">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1427,20 +1420,20 @@ are still changing. See <a href="../installation/changelog/">the changelog</a> f
                 Previous
               </span>
               <div class="md-ellipsis">
-                Formatting conflicts
+                Agent-Computer Interface
               </div>
             </div>
           </a>
         
         
           
-          <a href="agent/" class="md-footer__link md-footer__link--next" aria-label="Next: Agent">
+          <a href="../architecture/" class="md-footer__link md-footer__link--next" aria-label="Next: Architecture">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Agent
+                Architecture
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1474,10 +1467,10 @@ are still changing. See <a href="../installation/changelog/">the changelog</a> f
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.indexes", "content.action.edit", "navigation.footer", "content.code.copy", "content.footnote.tooltips", "header.autohide", "announce.dismiss"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.indexes", "content.action.edit", "navigation.footer", "content.code.copy", "content.footnote.tooltips", "header.autohide", "announce.dismiss"], "search": "../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.56dfad97.min.js"></script>
+      <script src="../../assets/javascripts/bundle.56dfad97.min.js"></script>
       
     
   <script id="init-glightbox">const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});

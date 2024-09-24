@@ -14,7 +14,7 @@
       
       
       <link rel="icon" href="assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.34">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.36">
     
     
       
@@ -22,7 +22,7 @@
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.35f28582.min.css">
+      <link rel="stylesheet" href="assets/stylesheets/main.06209087.min.css">
       
         
         <link rel="stylesheet" href="assets/stylesheets/palette.06af60db.min.css">
@@ -45,6 +45,8 @@
     
     
       <link rel="stylesheet" href="assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="assets/custom.css">
     
     <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -81,12 +83,34 @@
     <div data-md-component="skip">
       
         
-        <a href="#swe-agent-turn-lms-into-swe-agents" class="md-skip">
+        <a href="#turn-lms-into-swe-agents-and-more" class="md-skip">
           Skip to content
         </a>
       
     </div>
     <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            
+            
+<!-- This link won't work in local preview -->
+<a href="SWE-agent/background#enigma" class="clickable-banner">
+    <div>
+        News: SWE-agent <span class="enigma">EniGMA</span> solves cybersecurity and CTF challanges to achieve <span class="enigma">3x improvement over previous SOTA!</span>
+    </div>
+</a>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
       
     </div>
     
@@ -308,6 +332,8 @@
       
         
       
+        
+      
     
     
     
@@ -324,7 +350,7 @@
               
   
   <span class="md-ellipsis">
-    Background
+    Project Overview
   </span>
   
 
@@ -340,7 +366,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
-            Background
+            Project Overview
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -358,6 +384,27 @@
   
   <span class="md-ellipsis">
     Agent-Computer Interface
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="background/iat/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interactive Agent Tools
   </span>
   
 
@@ -511,7 +558,7 @@
         
   
   <span class="md-ellipsis">
-    Docker
+    Run with docker
   </span>
   
 
@@ -618,6 +665,8 @@
       
         
       
+        
+      
     
     
     
@@ -668,6 +717,27 @@
   
   <span class="md-ellipsis">
     Command line usage
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="usage/enigma/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    EnIGMA usage
   </span>
   
 
@@ -829,6 +899,8 @@
       
         
       
+        
+      
     
     
     
@@ -953,6 +1025,27 @@
   
   <span class="md-ellipsis">
     Docker images
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="config/summarizers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Summarizers
   </span>
   
 
@@ -1270,9 +1363,12 @@
   
 
 
-<h1 id="swe-agent-turn-lms-into-swe-agents">SWE-agent: Turn LMs into SWE agents!</h1>
+<h1 id="turn-lms-into-swe-agents-and-more">Turn LMs into SWE agents (and more)!</h1>
 <p><a class="glightbox" href="assets/readme_assets/swe-agent-banner.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="SWE-agent banner" src="assets/readme_assets/swe-agent-banner.png" /></a></p>
-<p>SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix bugs and issues in real GitHub repositories.</p>
+<p>SWE-agent turns LMs (e.g. GPT-4) into agents that can
+<a href="background#swe-agent">🐛 fix issues in real GitHub repositories</a>,
+<a href="usage/coding_challenges/">⛳️ solve coding challenges</a>, and
+<a href="background#enigma">🔥 crack offensive cybersecurity challenges</a> (<span class="enigma">EnIGMA</span> mode).</p>
 <div class="grid cards">
 <ul>
 <li>
@@ -1282,9 +1378,15 @@
 <p><a href="background/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Learn more</a></p>
 </li>
 <li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.11 11.92q.03-.315.03-.63c0-3.43-1.43-7.15-2.86-7.15S13.42 5.57 12 5.57c-1.43 0-2.86-1.43-4.29-1.43s-2.85 3.65-2.85 7.15c0 .21 0 .42.02.63 2.34.53 4.72.8 7.12.79 2.45 0 4.83-.27 7.11-.79M3.45 18.18a29.7 29.7 0 0 0 17.09 0A2.142 2.142 0 0 0 22 16.17c0-.45-.14-.88-.39-1.25-.26-.36-.61-.63-1.05-.78-2.7.86-5.56 1.31-8.56 1.31S6.13 15 3.43 14.14c-.43.15-.78.43-1.04.79-.25.36-.39.79-.39 1.24 0 .94.61 1.73 1.45 2.01"/></svg></span> <strong>EnIGMA</strong></p>
+<hr />
+<p><span class="enigma">EnIGMA</span> turns SWE-agent into an offensive cybersecurity expert.</p>
+<p><a href="background/#enigma"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Learn more</a></p>
+</li>
+<li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7z"/></svg></span> <strong>Installation</strong></p>
 <hr />
-<p>We provide three different ways to get started, including running installation-free in your browser.</p>
+<p>Three different ways to get started, including running installation-free in your browser.</p>
 <p><a href="installation/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Get started</a></p>
 </li>
 <li>
@@ -1296,7 +1398,7 @@
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11H4V8h16m0 7h-7v-2h7m0 6h-7v-2h7m-9 2H4v-6h7m9.33-8.33L18.67 3 17 4.67 15.33 3l-1.66 1.67L12 3l-1.67 1.67L8.67 3 7 4.67 5.33 3 3.67 4.67 2 3v16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V3z"/></svg></span> <strong>Changelog</strong></p>
 <hr />
-<p>See what's new in SWE-agent</p>
+<p>See what's new in SWE-agent.</p>
 <p><a href="installation/changelog/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Read the changelog</a></p>
 </li>
 <li>
@@ -1343,13 +1445,13 @@
         
         
           
-          <a href="background/" class="md-footer__link md-footer__link--next" aria-label="Next: Learn more about the SWE-agent project.">
+          <a href="background/" class="md-footer__link md-footer__link--next" aria-label="Next: Learn more about the project.">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Learn more about the SWE-agent project.
+                Learn more about the project.
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1383,7 +1485,7 @@
     </div>
     
     
-    <script id="__config" type="application/json">{"base": ".", "features": ["navigation.indexes", "content.action.edit", "navigation.footer", "content.code.copy", "content.footnote.tooltips", "header.autohide", "announce.dismiss"], "search": "assets/javascripts/workers/search.07f07601.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": ".", "features": ["navigation.indexes", "content.action.edit", "navigation.footer", "content.code.copy", "content.footnote.tooltips", "header.autohide", "announce.dismiss"], "search": "assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
       <script src="assets/javascripts/bundle.56dfad97.min.js"></script>

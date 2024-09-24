@@ -16,15 +16,15 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.34">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.36">
     
     
       
-        <title>Docker - SWE-agent documentation</title>
+        <title>Run with docker - SWE-agent documentation</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.35f28582.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.06209087.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
@@ -47,6 +47,8 @@
     
     
       <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../assets/custom.css">
     
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -90,6 +92,28 @@
     </div>
     <div data-md-component="announce">
       
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            
+            
+<!-- This link won't work in local preview -->
+<a href="SWE-agent/background#enigma" class="clickable-banner">
+    <div>
+        News: SWE-agent <span class="enigma">EniGMA</span> solves cybersecurity and CTF challanges to achieve <span class="enigma">3x improvement over previous SOTA!</span>
+    </div>
+</a>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
+      
     </div>
     
     
@@ -118,7 +142,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Docker
+              Run with docker
             
           </span>
         </div>
@@ -300,6 +324,8 @@
       
         
       
+        
+      
     
     
     
@@ -316,7 +342,7 @@
               
   
   <span class="md-ellipsis">
-    Background
+    Project Overview
   </span>
   
 
@@ -332,7 +358,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
-            Background
+            Project Overview
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -350,6 +376,27 @@
   
   <span class="md-ellipsis">
     Agent-Computer Interface
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../background/iat/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interactive Agent Tools
   </span>
   
 
@@ -514,7 +561,7 @@
           
   
   <span class="md-ellipsis">
-    Docker
+    Run with docker
   </span>
   
 
@@ -525,7 +572,7 @@
         
   
   <span class="md-ellipsis">
-    Docker
+    Run with docker
   </span>
   
 
@@ -670,6 +717,8 @@
       
         
       
+        
+      
     
     
     
@@ -720,6 +769,27 @@
   
   <span class="md-ellipsis">
     Command line usage
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/enigma/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    EnIGMA usage
   </span>
   
 
@@ -881,6 +951,8 @@
       
         
       
+        
+      
     
     
     
@@ -1005,6 +1077,27 @@
   
   <span class="md-ellipsis">
     Docker images
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config/summarizers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Summarizers
   </span>
   
 
@@ -1350,9 +1443,13 @@
 
 <h1 id="fallback-usage-with-docker">Fallback: Usage with docker</h1>
 <p>Instead of installing SWE-agent from source (the preferred option), you can also run the software directly using Docker.</p>
+<div class="admonition warning">
+<p class="admonition-title">Limited support</p>
+<p>Wherever possible, the <a href="../source/">installation from source</a> is preferred.</p>
+</div>
 <ol>
 <li>Install Docker (<a href="https://github.com/docker/docker-install">follow the docs</a> or use the <a href="https://github.com/docker/docker-install">get-docker.sh script for linux</a>), then start Docker locally. Problems? See <a href="../tips/#docker">docker issues</a>.</li>
-<li>Run <code>docker pull sweagent/swe-agent:latest</code></li>
+<li>Run <code>docker pull sweagent/swe-agent:latest</code>. <em>Optional</em>: If you want to use EnIGMA run also <code>docker pull sweagent/enigma:latest</code>.</li>
 <li>Add your API tokens to a file <code>keys.cfg</code> as explained <a href="../keys/">here</a> or pass them as
    environment variables.</li>
 </ol>
@@ -1364,8 +1461,21 @@
 <span class="w">  </span>python<span class="w"> </span>run.py<span class="w"> </span>--image_name<span class="o">=</span>sweagent/swe-agent:latest<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--model_name<span class="w"> </span>gpt4<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--data_path<span class="w"> </span>https://github.com/pvlib/pvlib-python/issues/1603<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--config_file<span class="w"> </span>config/default_from_url.yaml<span class="w">  </span>--skip_existing<span class="o">=</span>False
+<span class="w">  </span>--config_file<span class="w"> </span>config/default_from_url.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--skip_existing<span class="o">=</span>False
 </code></pre></div>
+<p>For EnIGMA, change the <code>run.py</code> arguments as usual:</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>-v<span class="w"> </span>/var/run/docker.sock:/var/run/docker.sock<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/keys.cfg:/app/keys.cfg<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>sweagent/swe-agent-run:latest<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>python<span class="w"> </span>run.py<span class="w"> </span>--image_name<span class="o">=</span>sweagent/enigma:latest<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--model_name<span class="w"> </span>gpt4<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--data_path<span class="w"> </span>/path/to/challenge.json<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--repo_path<span class="w"> </span>/path/to/repo<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--config_file<span class="w"> </span>config/default_ctf.yaml<span class="w">  </span><span class="se">\</span>
+<span class="w">  </span>--skip_existing<span class="o">=</span>False
+</code></pre></div>
+<p>For more information about running EnIGMA please read our <a href="../../usage/enigma/">usage instructions</a>.</p>
 <details>
 <summary>Output</summary>
 
@@ -2359,7 +2469,7 @@ web UI and additional hints for how to solve problems with the starting it.</p>
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.indexes", "content.action.edit", "navigation.footer", "content.code.copy", "content.footnote.tooltips", "header.autohide", "announce.dismiss"], "search": "../../assets/javascripts/workers/search.07f07601.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.indexes", "content.action.edit", "navigation.footer", "content.code.copy", "content.footnote.tooltips", "header.autohide", "announce.dismiss"], "search": "../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.56dfad97.min.js"></script>
