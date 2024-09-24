@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="#enigma"><img src="https://github.com/user-attachments/assets/5ec8331f-293a-4e1a-ad67-795bc49ee428" height="35px"></a>
+  <a href="#enigma"><img src="https://github.com/user-attachments/assets/70ba3fdf-ee7b-474f-8fdc-de4ffde51eef" height="35px"></a>
 </p>
 
 <p align="center">
@@ -54,7 +54,7 @@ use, and configure SWE-agent:
 [docs]: https://princeton-nlp.github.io/SWE-agent/
 
 ## 🕵️ SWE-agent for offensive cybersecurity (EnIGMA) <a name="enigma"></a>
-<img src="https://github.com/user-attachments/assets/2b74827b-9603-4865-a322-a21f30edf995" height="80px"></img>
+<img src="https://github.com/user-attachments/assets/5128cc06-7a28-4a37-b950-e4e58bc00823" height="80px"></img>
 
 [SWE-agent: EnIGMA][enigma] (Enhanced Interactive Generative Model Agent) is a mode for solving Capture The Flag (CTF) cybersecurity challenges.
 The EnIGMA project introduced multiple novelties that are available to all use cases of SWE-agent, such as Interactive Agent Tools and a Summarizer to handle long outputs.
