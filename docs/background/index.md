@@ -49,10 +49,4 @@ EnIGMA is built and maintained by researchers from Tel-Aviv University, New York
 
 For a quick introduction, watch the following video:
 
-// Add video here
-
-If you found this work helpful, please consider using the following citation:
-
-```
-add bibtex here
-```
+<iframe width="560" height="315" src="https://www.youtube.com/embed/IJxqOsNFiCc?si=xtIxyCcriM9FJexK" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
