@@ -72,7 +72,7 @@ In the above example we used two arguments to specify the challenge, both of the
     "name": "challenge name",
     "description": "challenge description",
     "category": "challenge category, for example crypto",
-    "files": ["list of files to upload for this challenge"], 
+    "files": ["list of files to upload for this challenge"],
     "box": "optional URL for external server challenge",
     "internal_port": "optional port for external server challenge"
 }

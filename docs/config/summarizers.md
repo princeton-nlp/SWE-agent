@@ -13,15 +13,15 @@ summarizer_config:
   function: Reference to functionality of the summarizer. Can be one of SimpleSummarizer, LMSummarizer or Identity
   window_length: Threshold of the line count limit. Observation output exceeding these number, will be summarized.
   system_template: |-
-    First `system` message shown to the LMSummarizer. 
+    First `system` message shown to the LMSummarizer.
     This has no effect in other summarizer functionalities.
   instance_template: |-
-    Instance prompt, contains task instance-specific content, 
-    the most recent action taken by the main agent, 
-    and any observations from that action exceeding the line count threshold. 
+    Instance prompt, contains task instance-specific content,
+    the most recent action taken by the main agent,
+    and any observations from that action exceeding the line count threshold.
     This has effect only for the LM Summarizer functionality.
-  model: [Optional configuration of a different model, 
-  if not configured the same model as the main agent model will be used. 
+  model: [Optional configuration of a different model,
+  if not configured the same model as the main agent model will be used.
   This has effect only for the LM Summarizer functionality.]
     model_name: Name of the model to use
     per_instance_cost_limit: Cost limit for every instance (task)
