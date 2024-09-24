@@ -1,6 +1,6 @@
-# EnIGMA Tutorial
+# <span class="enigma">EnIGMA</span> Tutorial
 
-This tutorial walks you through running EnIGMA from the command-line.
+This tutorial walks you through running <span class="enigma">[EnIGMA](../background/index.md#enigma)</span> from the command-line.
 It is based on basic knowledge of the command-line of SWE-agent that is covered [here](cl_tutorial.md).
 This tutorial focuses on using EnIGMA as a tool to solve individual CTF challenges.
 
@@ -52,15 +52,12 @@ Here,
 * `--config_file` includes settings such as the prompts. Changing the config file is the easiest way to get started with modifying EnIGMA (more advanced options are discussed [here](../config/config.md)).
 * `--per_instance_cost_limit` limits the total inference cost to $2 (default is $3).
 
-!!! tip "All options"
-    Run `python run.py --help` to see all available options for `run.py`. This tutorial will only cover a subset of options.
-
 !!! tip "Running more than once"
     * The complete details of the run are saved as a "trajectory" file (more about them [here](trajectories.md)). They can also be turned into new [demonstrations](../config/demonstrations.md).
     * If you run the same command more than once, you will find that SWE-agent aborts with ` Skipping existing trajectory`. You can either remove the trajectory from the warning message, or add the `--skip_existing=False` flag.
-    * If you solve multiple challenges from the same in the same environment, you can specify the
-      `--cache_task_images` flag. This will create a persistent docker image with the initialized environment
-      required for the problem.
+
+!!! tip "Next reading"
+    There are plenty of options to configure and speed up SWE-agent EnIGMA. Read more about them in the [SWE-agent tutorial](cl_tutorial.md).
 
 ## Specifying the challenge
 

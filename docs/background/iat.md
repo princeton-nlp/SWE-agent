@@ -1,6 +1,6 @@
 # Interactive Agent Tools (IATs)
 
-Interactive Agent Tools were first developed as part of our <span class="enigma">[EnIGMA](../../background#enigma)</span> project, but are compatible with all uses of SWE-agent.
+Interactive Agent Tools were first developed as part of our <span class="enigma">[EnIGMA](../background/index.md#enigma)</span> project, but are compatible with all uses of SWE-agent.
 This page focuses on their usage for capture the flag (CTF) challenges.
 
 Tools useful for debugging (`gdb`, `radare2`), remote server interaction (`netcat`, `socat`) and penetration testing (`metasploit`) are widely used during CTF problem-solving and by cybersecurity experts. These tools are all interactive, i.e., they wait for user input, evaluate it, and print the results (read-eval-print loop, REPL).
