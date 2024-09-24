@@ -660,7 +660,7 @@ class Agent:
         try:
             state_vars = json.loads(state)
         except json.JSONDecodeError as e:
-            msg = f"State {state!r} is not a valid json. This is an internal error, please report it."
+            msg = f"State {state!r} is not valid json. This is an internal error, please report it."
             raise ValueError(msg) from e
 
         templates: list[str] = []
