@@ -60,6 +60,7 @@ jobs:
           pytest-args: '--cov'
       - name: Upload logs & trajectories
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: trajectories
           path: |
