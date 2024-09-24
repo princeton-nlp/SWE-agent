@@ -54,7 +54,7 @@ jobs:
       - name: Run pytest
         uses: sjvrijn/pytest-last-failed@v2
         with:
-          pytest-args: '--exitfirst --cov'
+          pytest-args: '-s --cov'
       - name: Explicitly convert coverage to xml
         run: coverage xml
       - name: Upload coverage reports to Codecov
