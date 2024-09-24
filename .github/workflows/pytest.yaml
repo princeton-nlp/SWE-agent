@@ -42,6 +42,9 @@ jobs:
       - name: Pull enigma docker container
         run: |
           docker pull sweagent/enigma:latest
+      - name: Set up network for CTF challenges
+        run: |
+          docker network create ctfnet
       - name: Create keys.cfg
         run: |
           touch keys.cfg
@@ -60,8 +63,7 @@ jobs:
         with:
           name: trajectories
           path: |
-            trajectories
-            !trajectories/demonstrations/**
+            trajectories/runner/
       - name: Explicitly convert coverage to xml
         run: coverage xml
       - name: Upload coverage reports to Codecov
