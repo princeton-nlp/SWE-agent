@@ -1,12 +1,12 @@
 _print() {
-    local total_lines=$(awk 'END {print NR}' $CURRENT_FILE)
-    echo "[File: $(realpath $CURRENT_FILE) ($total_lines lines total)]"
+    local total_lines=$(awk 'END {print NR}' "$CURRENT_FILE")
+    echo "[File: $(realpath "$CURRENT_FILE") ($total_lines lines total)]"
     lines_above=$(jq -n "$CURRENT_LINE - $WINDOW/2" | jq '[0, .] | max | floor')
     lines_below=$(jq -n "$total_lines - $CURRENT_LINE - $WINDOW/2" | jq '[0, .] | max | round')
     if [ $lines_above -gt 0 ]; then
         echo "($lines_above more lines above)"
     fi
-    cat $CURRENT_FILE | grep -n $ | head -n $(jq -n "[$CURRENT_LINE + $WINDOW/2, $WINDOW/2] | max | floor") | tail -n $(jq -n "$WINDOW")
+    cat "$CURRENT_FILE" | grep -n $ | head -n $(jq -n "[$CURRENT_LINE + $WINDOW/2, $WINDOW/2] | max | floor") | tail -n $(jq -n "$WINDOW")
     if [ $lines_below -gt 0 ]; then
         echo "($lines_below more lines below)"
     fi
@@ -18,14 +18,14 @@ _constrain_line() {
         echo "No file open. Use the open command first."
         return
     fi
-    local max_line=$(awk 'END {print NR}' $CURRENT_FILE)
+    local max_line=$(awk 'END {print NR}' "$CURRENT_FILE")
     local half_window=$(jq -n "$WINDOW/2" | jq 'floor')
     export CURRENT_LINE=$(jq -n "[$CURRENT_LINE, $max_line - $half_window] | min")
     export CURRENT_LINE=$(jq -n "[$CURRENT_LINE, $half_window] | max")
 }
 
 # @yaml
-# signature: open <path> [<line_number>]
+# signature: open "<path>" [<line_number>]
 # docstring: opens the file at the given path in the editor. If line_number is provided, the window will be move to include that line
 # arguments:
 #   path:
@@ -39,14 +39,14 @@ _constrain_line() {
 open() {
     if [ -z "$1" ]
     then
-        echo "Usage: open <file>"
+        echo "Usage: open \"<file>\""
         return
     fi
     # Check if the second argument is provided
     if [ -n "$2" ]; then
         # Check if the provided argument is a valid number
         if ! [[ $2 =~ ^[0-9]+$ ]]; then
-            echo "Usage: open <file> [<line_number>]"
+            echo "Usage: open \"<file>\" [<line_number>]"
             echo "Error: <line_number> must be a number"
             return  # Exit if the line number is not valid
         fi
@@ -68,7 +68,7 @@ open() {
     fi
 
     if [ -f "$1" ]; then
-        export CURRENT_FILE=$(realpath $1)
+        export CURRENT_FILE=$(realpath "$1")
         export CURRENT_LINE=$line_number
         _constrain_line
         _print
@@ -108,7 +108,7 @@ goto() {
         echo "Error: <line> must be a number"
         return
     fi
-    local max_line=$(awk 'END {print NR}' $CURRENT_FILE)
+    local max_line=$(awk 'END {print NR}' "$CURRENT_FILE")
     if [ $1 -gt $max_line ]
     then
         echo "Error: <line> must be less than or equal to $max_line"

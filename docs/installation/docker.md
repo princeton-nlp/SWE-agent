@@ -1,6 +1,6 @@
 # Fallback: Usage with docker
 
-Instead of installing SWE-agent from source, you can also run the software directly using Docker.
+Instead of installing SWE-agent from source (the preferred option), you can also run the software directly using Docker.
 
 !!! warning "Limited support"
     Wherever possible, the [installation from source](source.md) is preferred.

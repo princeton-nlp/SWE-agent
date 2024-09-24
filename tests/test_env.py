@@ -84,7 +84,7 @@ def test_read_file(tmp_path, test_env_args):
 @pytest.mark.slow
 def test_execute_environment(tmp_path, test_env_args, capsys):
     test_env = {
-        "python": "3.6",
+        "python": "3.11",
         "packages": "pytest",
         "pip_packages": ["tox"],
         "install": "python -m pip install --upgrade pip && python -m pip install -e .",

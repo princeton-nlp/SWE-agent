@@ -852,7 +852,7 @@ class HumanModel(BaseModel):
         Logic for handling user input to pass to SWEEnv
         """
         action = input(action_prompt)
-        command_name = action.split()[0] if action else ""
+        command_name = action.split()[0] if action.strip() else ""
 
         # Special handling for multi-line input actions (i.e. edit)
         if command_name in self.multi_line_command_endings:

@@ -95,6 +95,7 @@ class AgentConfig(FrozenSerializable):
         "vim",
         "emacs",
         "nano",
+        "su",
     )
     block_unless_regex: dict[str, str] = field(default_factory=dict)
     # Should extract environment state in a json readable form
