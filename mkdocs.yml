@@ -47,12 +47,12 @@ markdown_extensions:
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 nav:
   - Home: index.md
-  - 📄 Project Overview:
+  - Project Overview:
     - "background/index.md"
     - "Agent-Computer Interface": "background/aci.md"
     - "Interactive Agent Tools": "background/iat.md"
     - "Architecture": "background/architecture.md"
-  - 📦 Installation:
+  - Installation:
     - "installation/index.md"
     - "Use in-browser": "installation/codespaces.md"
     - "Install from source": "installation/source.md"
@@ -60,7 +60,7 @@ nav:
     - "API keys": "installation/keys.md"
     - "Installation tips": "installation/tips.md"
     - "Changelog": "installation/changelog.md"
-  - 🔥 Usage:
+  - Usage:
     - "usage/index.md"
     - "Command line usage": "usage/cl_tutorial.md"
     - "EnIGMA usage": "usage/enigma.md"
@@ -70,14 +70,14 @@ nav:
     - "Trajectory inspector": "usage/inspector.md"
     - "FAQ": "usage/usage_faq.md"
     - "Benchmarking": "usage/benchmarking.md"
-  - 🔧 Configuration:
+  - Configuration:
     - "Config files": "config/config.md"
     - "Command definitions": "config/commands.md"
     - "Demonstrations": "config/demonstrations.md"
     - "Environment variables": "config/env.md"
     - "Docker images": "config/docker.md"
     - "Summarizers": "config/summarizers.md"
-  - ⚙️ Development:
+  - Development:
     - "Contribution guide": "dev/contribute.md"
     - "Formatting conflicts": "dev/formatting_conflicts.md"
   - Reference:
