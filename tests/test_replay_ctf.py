@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import sys
 from typing import Any
 
 import pytest
@@ -75,8 +74,8 @@ _REPLAY_TESTS = {
     ["pwn/warmup.traj", "forensics/flash.traj", "web/i_got_id_demo.traj", "rev/rock.traj", "misc/networking_1.traj"],
 )
 def test_ctf_traj_replay(test_ctf_trajectories_path, traj_rel_path, ctf_data_path, capsys):
-    if sys.platform == "darwin" and traj_rel_path in ["pwn/warmup.traj", "rev/rock.traj"]:
-        pytest.skip("Skipping test on macOS")
+    # if sys.platform == "darwin" and traj_rel_path in ["pwn/warmup.traj", "rev/rock.traj"]:
+    #     pytest.skip("Skipping test on macOS")
     traj_path = test_ctf_trajectories_path / traj_rel_path
     challenge_dir = ctf_data_path / traj_rel_path.removesuffix(".traj")
     assert challenge_dir.is_dir()
