@@ -58,7 +58,7 @@ use, and configure SWE-agent:
 
 [SWE-agent: EnIGMA][enigma] (Enhanced Interactive Generative Model Agent) is a mode for solving offensive cybersecurity challenges.
 EnIGMA achieves SOTA on multiple cybersecurity benchmarks (see [leaderboard](https://enigma-agent.github.io/#results)).
-The EnIGMA project introduced multiple novelties that are available to all use cases of SWE-agent, such as Interactive Agent Tools and a Summarizer to handle long outputs.
+The EnIGMA project introduced multiple novelties that are available to all use cases of SWE-agent, such as [Interactive Agent Tools](https://princeton-nlp.github.io/SWE-agent/background/iat/) and a [Summarizer](https://princeton-nlp.github.io/SWE-agent/config/summarizers/) to handle long outputs.
 
 <img src="https://github.com/user-attachments/assets/a3bdcc06-9193-4368-b612-c7cf94a9482c" height="200px"></img>
 
