@@ -62,11 +62,19 @@ class Disassemble:
     def disassemble(self, binary, function):
         # Look for the disassembly output in "disas"
         basename = Path(binary).name
-        disas_output = Path(f"/ghidra_out/{basename}.disas.json")
-        if not disas_output.exists():
-            if not self.run_ghidra(basename, disas_output):
+        disas_output_path = Path(f"/ghidra_out/{basename}.disas.json")
+        if not disas_output_path.exists():
+            if not self.run_ghidra(basename, disas_output_path):
                 return f"Error: Disassembly for {binary} not available"
-        self.ghidra_out = json.loads(disas_output.read_text())
+        disas_output = disas_output_path.read_text()
+        try:
+            self.ghidra_out = json.loads(disas_output)
+        except json.JSONDecodeError as e:
+            msg = (
+                f"Error: Failed to parse Ghidra output {disas_output!r} for {binary}. "
+                "Please report this bug."
+            )
+            raise ValueError(msg) from e
 
         if found := self.find_function(self.ghidra_out, function):
             ret = self.ghidra_out["functions"][found]

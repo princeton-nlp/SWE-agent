@@ -59,14 +59,22 @@ class Decompile:
         # Nothing found
         return None
 
-    def decompile(self, binary, function):
+    def decompile(self, binary: str, function: str) -> str:
         # Look for the decompilation output in "decomp"
         basename = Path(binary).name
-        decomp_output = Path(f"/ghidra_out/{basename}.decomp.json")
-        if not decomp_output.exists():
-            if not self.run_ghidra(basename, decomp_output):
+        decomp_output_path = Path(f"/ghidra_out/{basename}.decomp.json")
+        if not decomp_output_path.exists():
+            if not self.run_ghidra(basename, decomp_output_path):
                 return f"Error: Decompilation for {binary} not available"
-        self.ghidra_out = json.loads(decomp_output.read_text())
+        decomp_output = decomp_output_path.read_text()
+        try:
+            self.ghidra_out = json.loads(decomp_output)
+        except json.JSONDecodeError as e:
+            msg = (
+                f"Error: Failed to parse Ghidra output {decomp_output!r} for {binary}. "
+                "Please report this bug."
+            )
+            raise ValueError(msg) from e
 
         if found := self.find_function(self.ghidra_out, function):
             ret = self.ghidra_out["functions"][found]
@@ -79,7 +87,12 @@ class Decompile:
             funclist = ", ".join(self.ghidra_out['functions'].keys())
             return f"Error: Function {function} not found in {binary}.\nThese are the available functions found: {funclist}"
 
-    def run_ghidra(self, binary, output):
+    def run_ghidra(self, binary: str, output: Path) -> bool:
+        """Run ghidra if possible.
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
         real_binary = Path(binary)
         if not real_binary or not real_binary.exists():
             return False

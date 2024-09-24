@@ -657,8 +657,11 @@ class Agent:
             output: raw model output (not output of the command)
         """
         assert self.config is not None  # mypy
-
-        state_vars = json.loads(state)
+        try:
+            state_vars = json.loads(state)
+        except json.JSONDecodeError as e:
+            msg = f"State {state!r} is not valid json. This is an internal error, please report it."
+            raise ValueError(msg) from e
 
         templates: list[str] = []
         # Determine observation template based on what prior observation was
