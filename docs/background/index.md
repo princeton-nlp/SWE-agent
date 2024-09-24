@@ -1,8 +1,10 @@
-# Learn more about the SWE-agent project.
+# Learn more about the project.
 
-This section of the documentation talks about the architecture and research goals of SWE-agent.
+This section of the documentation talks about the architecture and research goals of [SWE-agent](#swe-agent) and [EnIGMA](#enigma).
 
-Just want to run SWE-agent? Skip ahead to our [installation notes](../installation/index.md).
+Just want to run SWE-agent or EnIGMA? Skip ahead to our [installation notes](../installation/index.md).
+
+## SWE-agent <a name="swe-agent"></a>
 
 SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix issues in GitHub repositories.
 
@@ -21,7 +23,7 @@ A longer lecture touching on the project's motivation, research findings, as wel
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/d9gcXpiiDao" title="NeurIPS Hacker Cup AI: SWEAgent" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-If you found this work helpful, please consider using the following citation:
+For in-depth information, read our [paper](https://arxiv.org/abs/2405.15793). If you found this work helpful, please consider using the following citation:
 
 ```
 @misc{yang2024sweagent,
@@ -30,3 +32,23 @@ If you found this work helpful, please consider using the following citation:
       year={2024},
 }
 ```
+
+## SWE-agent <span class="enigma">EnIGMA</span> <a name="enigma"></a>
+
+SWE-agent <span class="enigma">EnIGMA</span> (Enhanced Interactive Generative Model Agent) adds advanced **offensive cybersecurity capabilities**.
+
+On [NYU CTF benchmark](https://github.com/NYU-LLM-CTF/LLM_CTF_Database), EnIGMA solves **13.5%** of the capture the flag (CTF) challenges, achieving the state-of-the-art performance on the full test set of 200 challenges (leaderboard), **surpassing previous agents by more than 3x** ([leaderboard](https://enigma-agent.github.io/#leaderboard)).
+
+We accomplish our results by extending the [🤖 ACIs](../background/aci.md) first introduced in SWE-agent, to the cybersecurity domain. We establish the novel [**:gear: Interactive Agent Tools** (IATs)](iat.md) concept, which enables our agent to use interactive tools such as a debugger, in a multiprocess way such that the agent still has access to the main shell.
+
+We also use a new **Summarizer** concept integrated into the agent to deal with long context. Read more about our different summarizers [here](../config/summarizers.md).
+
+Specific [demonstrations](../config/demonstrations.md) were built per each CTF category (cryptography, reverse-engineering, forensics, ...), to enhance the model ability to solve new tasks from the same category.
+
+EnIGMA is built and maintained by researchers from Tel-Aviv University, New York University and Princeton University.
+
+For a quick introduction, watch the following video:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/IJxqOsNFiCc?si=xtIxyCcriM9FJexK" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+For all the details, read our [paper](https://enigma-agent.github.io/assets/paper.pdf).

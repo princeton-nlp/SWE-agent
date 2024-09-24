@@ -11,8 +11,8 @@ import shlex
 import subprocess
 import time
 import traceback
-from dataclasses import dataclass
-from pathlib import Path
+from dataclasses import dataclass, field
+from pathlib import Path, PurePath
 from typing import Any
 
 import gymnasium as gym
@@ -27,26 +27,40 @@ import docker
 import docker.errors
 import docker.models.containers
 from sweagent import REPO_ROOT
+from sweagent.agent.interactive_commands import (
+    INTERACTIVE_SESSIONS_CONFIG,
+    InteractiveSession,
+    InteractiveSessionConfig,
+)
 from sweagent.environment.utils import (
     PROCESS_DONE_MARKER_END,
     PROCESS_DONE_MARKER_START,
     InvalidGithubURL,
+    NoOutputTimeoutError,
+    PatchFormatter,
+    attach_network_interface_to_container,
     copy_anything_to_container,
     copy_file_to_container,
     format_trajectory_markdown,
     get_container,
+    get_docker_compose,
     get_gh_issue_data,
     get_instances,
+    get_interactive_session,
     image_exists,
     parse_gh_issue_url,
+    read_session_with_timeout,
     read_with_timeout,
     read_with_timeout_experimental,
+    terminate_docker_compose,
 )
+from sweagent.types import AgentInfo
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import default_logger, get_logger
 
 LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500))
 AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
+AGENT_ACTION_NO_OUTPUT_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_NO_OUTPUT_TIMEOUT", AGENT_ACTION_TIMEOUT))
 PATH_TO_REQS = "/root/requirements.txt"
 PATH_TO_ENV_YML = "/root/environment.yml"
 
@@ -90,6 +104,12 @@ class EnvironmentArguments(FrozenSerializable):
     environment_setup: str | None = None
     # Only used when running on single issue. Path to local repository or github repository.
     repo_path: str = ""
+    # Interactive command configuration
+    interactive_sessions_config: dict[str, InteractiveSessionConfig] = field(
+        default_factory=lambda: INTERACTIVE_SESSIONS_CONFIG
+    )
+    # Container mounts - additional folders to mount into the environment (useful for caching)
+    container_mounts: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         if self.timeout is not None:
@@ -148,6 +168,7 @@ class SWEEnv(gym.Env):
         self.install_environment = args.install_environment
         self.logger = get_logger("SWEEnv")
         self.persistent = args.container_name is not None
+        self.container_mounts = args.container_mounts
         self.returncode: None | int = None
         if not self.args.verbose:
             # fixme: This creates problems if we have multiple instances of this class
@@ -182,7 +203,11 @@ class SWEEnv(gym.Env):
         self.image_name = args.image_name
         self.container_obj: docker.models.containers.Container | None = None
         self.container: subprocess.Popen | None = None
+        self.docker_compose: Path | None = None
+        self.challenge: dict[str, Any] | None = None
         self._reset_container()
+
+        self.interactive_session: InteractiveSession | None = None
 
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
@@ -226,11 +251,23 @@ class SWEEnv(gym.Env):
         for hook in self.hooks:
             hook.on_copy_repo_started(repo_type=self.record["repo_type"], repo_path=self.record["repo"])
         if self.record["repo_type"] == "local":
-            copy_anything_to_container(
-                self.container_obj,
-                self.record["repo"].removeprefix("local://"),
-                "/" + self._repo_name,
-            )
+            if "challenge" in self.record:
+                self.communicate_with_handling(
+                    input=f"mkdir {self._repo_name}", error_msg=f"Failed to create {self._repo_name} in container"
+                )
+                for file_name in self.record["challenge"]["files"]:
+                    self.logger.debug(f"Copying file {file_name} to container")
+                    copy_anything_to_container(
+                        self.container_obj,
+                        str(Path(self.record["repo"].removeprefix("local://")) / file_name),
+                        "/" + self._repo_name,
+                    )
+            else:
+                copy_anything_to_container(
+                    self.container_obj,
+                    self.record["repo"].removeprefix("local://"),
+                    "/" + self._repo_name,
+                )
             self.communicate_with_handling(
                 input=f"chown -R root:root {self._repo_name}",
                 error_msg="Failed to change permissions on copied repository",
@@ -304,9 +341,11 @@ class SWEEnv(gym.Env):
         # Set query, gold command
         self.base_commit = self.record["base_commit"]
         self.query = self.record["problem_statement"]
+        self.challenge = self.record.get("challenge")
         self.reward = None
 
         ### Reset Container ###
+        self._init_docker_compose()
 
         if self.args.cache_task_images:
             cached_image = self._get_cached_task_image_name()
@@ -323,39 +362,17 @@ class SWEEnv(gym.Env):
             else:
                 self.logger.info(f"Cached image {cached_image} not found, rebuilding task environment...")
 
+        # Init docker network
+        self._init_docker_network()
+
         # Clone repository if not already cloned
         self.communicate(input="cd /")
         folders = self.communicate(input="ls").split("\n")
         if self._repo_name not in folders:
             self._copy_repo()
 
-        # Clean repository of any modifications + Checkout base commit
-        for cmd in [
-            "echo -n > /root/files_to_edit.txt",
-            f"cd {self._repo_name}",
-            "export ROOT=$(pwd -P)",
-            "git status",
-            "git restore .",
-            f"git reset --hard {self.base_commit}",
-            "git clean -fdxq",
-        ]:
-            self.communicate_with_handling(
-                input=cmd,
-                error_msg="Failed to clean repository",
-            )
-
-        # Reset environment variables
-        for cmd in [
-            'export CURRENT_FILE=""',
-            "export CURRENT_LINE=0",
-            "export SEARCH_RESULTS=()",
-            "export SEARCH_FILES=()",
-            "export SEARCH_INDEX=0",
-        ]:
-            self.communicate_with_handling(
-                input=cmd,
-                error_msg="Failed to reset environment variables",
-            )
+        self._reset_repository()
+        self._reset_environment_variables()
 
         # Set up environment
         self.communicate_with_handling(
@@ -391,6 +408,48 @@ class SWEEnv(gym.Env):
         # Write any metadata to info if necessary
         return None, info
 
+    def _reset_repository(self) -> None:
+        """Clean repository of any modifications + Checkout base commit"""
+        startup_commands = [
+            "echo -n > /root/files_to_edit.txt",
+            f"cd /{self._repo_name}",
+            "export ROOT=$(pwd -P)",
+        ]
+        if self.challenge is None:
+            startup_commands += [
+                "git status",
+                "git restore .",
+                f"git reset --hard {self.base_commit}",
+                "git clean -fdxq",
+            ]
+        self.communicate_with_handling(
+            input=" && ".join(startup_commands),
+            error_msg="Failed to clean repository",
+        )
+
+    def _reset_environment_variables(self) -> None:
+        """Reset environment variables (`CURRENT_FILE`) etc. within container"""
+        cmd = [
+            'export CURRENT_FILE=""',
+            "export CURRENT_LINE=0",
+            "export SEARCH_RESULTS=()",
+            "export SEARCH_FILES=()",
+            "export SEARCH_INDEX=0",
+        ]
+        self.communicate_with_handling(
+            input=" && ".join(cmd),
+            error_msg="Failed to reset environment variables",
+        )
+
+    def reset_for_new_attempt(
+        self,
+    ) -> None:
+        """Compared to `reset`, which prepares the container for a new instance,
+        this prepares the container for taking another shot at the same instance.
+        """
+        self._reset_repository()
+        self._reset_environment_variables()
+
     def _apply_test_patch(self):
         """
         Apply test patch for oracle setting
@@ -410,7 +469,125 @@ class SWEEnv(gym.Env):
         )
         os.remove(path_to_patch)
 
-    def step(self, action: str) -> tuple[str | None, int, bool, dict]:
+    def _get_edited_files_with_context(self, patch: str) -> dict[str, str]:
+        """Get the edited files with context from the patch"""
+        pf = PatchFormatter(patch, read_method=self.read_file) if patch else None
+        out = {}
+        for context_length in [30, 50, 70]:
+            value = "Empty. No edited files found."
+            if pf is not None:
+                value = pf.get_files_str(original=False, context_length=context_length)
+            out[f"edited_files{context_length}"] = value
+        return out
+
+    def _get_only_one_interactive_error_message_observation(self) -> str:
+        """Return a warning message about having to quit the existing interactive session before
+        starting a new one.
+        """
+        assert self.interactive_session  # mypy
+        exit_command = self.args.interactive_sessions_config[self.interactive_session.name].exit_command
+        return f"Interactive session already open. Please close the current interactive session: {self.interactive_session.name} with the command: `{exit_command}`"
+
+    def _terminate_interactive_session(self, session_name: str):
+        try:
+            self.interactive_session.session_process.terminate()
+            self.communicate(self.args.interactive_sessions_config[session_name].exit_command)
+        except Exception as e:
+            self.logger.warning(f"Failed to terminate interactive session {session_name}: {e}")
+        self.interactive_session = None
+
+    def _handle_interactive_commands(self, observation: str) -> str:
+        """Handle interactive commands in the environment
+
+        Args:
+            observation: Output from running the interactive command standsin in the
+                environment. This output will caught and interpreted and then we
+                will run the actual commands in the interactive session.
+
+        Returns:
+            observation: The observation shown to the model. If no interactive commands
+                are detected, this is the same as the input observation.
+                Else, only the output from the interactive commands is returned.
+        """
+        session_name, interactive_commands = self.get_interactive_commands(observation)
+        if session_name is None:
+            return observation
+        if (
+            session_name is not None
+            and self.interactive_session is not None
+            and self.interactive_session.name != session_name
+        ):
+            return self._get_only_one_interactive_error_message_observation()
+
+        observation = ""
+        for command in interactive_commands:
+            if command == "START":
+                # Start the session if previous session does not exist
+                if self.interactive_session is not None:
+                    return self._get_only_one_interactive_error_message_observation()
+                self.interactive_session = get_interactive_session(
+                    self.container_name,
+                    "/" + self._repo_name,
+                    session_name,
+                    self.args.interactive_sessions_config[session_name].cmdline,
+                )
+            elif command == "STOP":
+                if self.interactive_session.session_process.poll() is None:
+                    self.logger.warning("Session did not quit successfully, terminating.")
+                    self.interactive_session.session_process.terminate()
+                observation = f"Interactive session {session_name} stopped successfully"
+                self.interactive_session = None
+            else:
+                if self.interactive_session is None:
+                    self.logger.warning("Tried to run interactive commands without starting session")
+                    start_command = self.args.interactive_sessions_config[session_name].start_command
+                    observation = f"Interactive session {session_name} is not running! please start it first using `{start_command}`"
+                elif self.interactive_session and self.interactive_session.session_process.poll() is not None:
+                    start_command = self.args.interactive_sessions_config[session_name].start_command
+                    observation = f"Interactive session {session_name} was unexpectedly closed! Please start it again using `{start_command}`"
+                    self._terminate_interactive_session(session_name=session_name)
+                else:
+                    try:
+                        observation += self.communicate_session(
+                            command,
+                            self.args.interactive_sessions_config[session_name].terminal_prompt_pattern,
+                            AGENT_ACTION_TIMEOUT,
+                            AGENT_ACTION_NO_OUTPUT_TIMEOUT,
+                        )
+                    except TimeoutError as e:
+                        try:
+                            observation = self.interrupt_interactive(session_name=session_name)
+                            observation += "\nEXECUTION TIMED OUT"
+                            observation += (
+                                f" BECAUSE NO OUTPUT WAS PRODUCED FOR MORE THAN {AGENT_ACTION_NO_OUTPUT_TIMEOUT} SECONDS.\nPLEASE REFINE YOUR RUNNING COMMAND SO IT WILL PRODUCE OUTPUT IN THE SPECIFIED TIME FRAME."
+                                if isinstance(e, NoOutputTimeoutError)
+                                else f" BECAUSE THE COMMAND WAS RUNNING FOR MORE THAN {AGENT_ACTION_TIMEOUT} SECONDS."
+                            )
+                        except Exception as e:
+                            observation += (
+                                "\nEXECUTION TIMED OUT AND INTERRUPT FAILED. TERMINATING INTERACTIVE SESSION."
+                            )
+                            self.logger.warning(f"Failed to interrupt container: {e}\nTERMINATING INTERACTIVE SESSION.")
+                            self._terminate_interactive_session(session_name=session_name)
+                            return observation
+                    except RuntimeError as e:
+                        observation += e.args[1] if len(e.args) > 1 else ""
+                        observation += "\nCOMMAND FAILED TO EXECUTE. TERMINATING INTERACTIVE SESSION."
+                        self.logger.warning(f"Failed to execute command: {e}\nTERMINATING INTERACTIVE SESSION.")
+                        self._terminate_interactive_session(session_name=session_name)
+                        return observation
+                    except BrokenPipeError as e:
+                        observation += "\nBROKEN PIPE ERROR. TERMINATING INTERACTIVE SESSION."
+                        self.logger.error(f"Broken pipe error: {e}\nTERMINATING INTERACTIVE SESSION.")
+                        self._terminate_interactive_session(session_name=session_name)
+                        return observation
+                    except Exception:
+                        observation += "\nEXECUTION FAILED OR COMMAND MALFORMED"
+                        self.logger.exception("Unknown exception")
+                    observation += "\n"
+        return observation
+
+    def step(self, action: str) -> tuple[str | None, int, bool, AgentInfo]:
         """
         Runs an action proposed by the agent in the environment and returns the corresponding output.
 
@@ -419,17 +596,24 @@ class SWEEnv(gym.Env):
 
         Returns:
             observation:  output from container
-            reward: value between 0 and 1 quantifying correctness of output + environment state
+            reward: Always set to 0
             done: whether task is over
             info: additional information (e.g. debugging information)
         """
-        info = {}
+        info: AgentInfo = {}
+        # Make sure to have the right keys even if the submission is missing/empty
+        info.update(self._get_edited_files_with_context(patch=""))  # type: ignore
 
         observation = ""
         # Handle special actions
-        if action.strip() == "skip":
+        action = action.strip()
+        if action == "skip":
             observation = "Skipped"
             info["exit_status"] = "skipped"
+            return observation, 0, True, info
+        if action == "exit_forfeit":
+            observation = "Exited"
+            info["exit_status"] = action
             return observation, 0, True, info
         if action in {"exit_context", "exit_cost", "exit_error", "exit_format", "exit_api"}:
             try:
@@ -439,6 +623,7 @@ class SWEEnv(gym.Env):
                 self.logger.info(f"Found submission: {submission}")
                 info["exit_status"] = f"submitted ({action})"
                 info["submission"] = submission
+                info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
                 observation = "Exited (autosubmitted)"
                 self.logger.info("Exiting with autosubmission")
                 return observation, 0, True, info
@@ -452,18 +637,31 @@ class SWEEnv(gym.Env):
         # Attempt to run action in container
         observation = ""
         try:
-            observation = self.communicate(input=action, timeout_duration=AGENT_ACTION_TIMEOUT, set_last_action=True)
-        except TimeoutError:
+            observation = self.communicate(
+                input=action,
+                timeout_duration=AGENT_ACTION_TIMEOUT,
+                no_output_timeout_duration=AGENT_ACTION_NO_OUTPUT_TIMEOUT,
+                set_last_action=True,
+            )
+        except TimeoutError as e:
             try:
-                self.interrupt()
+                observation += e.args[1] if len(e.args) > 1 else ""
+                observation += self.interrupt()
                 observation += "\nEXECUTION TIMED OUT"
+                observation += (
+                    f" BECAUSE NO OUTPUT WAS PRODUCED FOR MORE THAN {AGENT_ACTION_NO_OUTPUT_TIMEOUT} SECONDS.\nPLEASE REFINE YOUR RUNNING COMMAND SO IT WILL PRODUCE OUTPUT IN THE SPECIFIED TIME FRAME."
+                    if isinstance(e, NoOutputTimeoutError)
+                    else f" BECAUSE THE COMMAND WAS RUNNING FOR MORE THAN {AGENT_ACTION_TIMEOUT} SECONDS."
+                )
             except RuntimeError as e:
+                observation += e.args[1] if len(e.args) > 1 else ""
                 observation += "\nEXECUTION TIMED OUT AND INTERRUPT FAILED. RESTARTING PROCESS."
                 info["exit_status"] = "early_exit"
                 self.logger.warning(f"Failed to interrupt container: {e}\nRESTARTING PROCESS.")
                 self.reset_container()
                 return observation, 0, True, info
         except RuntimeError as e:
+            observation += e.args[1] if len(e.args) > 1 else ""
             observation += "\nCOMMAND FAILED TO EXECUTE. RESTARTING PROCESS."
             info["exit_status"] = "early_exit"
             self.logger.warning(f"Failed to execute command: {e}\nRESTARTING PROCESS.")
@@ -475,6 +673,9 @@ class SWEEnv(gym.Env):
             self.logger.error(f"Broken pipe error: {e}\nRESTARTING PROCESS.")
             self.reset_container()
             return observation, 0, True, info
+        except UnicodeError as e:
+            observation += "\nCOMMAND PRODUCED TOO MANY NON-UNICODE CHARACTERS. PLEASE TRY ANOTHER COMMAND.\nIF YOU WANT TO VIEW BINARY FILES, PLEASE USE `xxd` OR `hexdump` INSTEAD.\n"
+            self.logger.error(f"Unicode error: {e}")
         except Exception:
             observation += "\nEXECUTION FAILED OR COMMAND MALFORMED"
             self.logger.exception("Unknown exception")
@@ -482,11 +683,20 @@ class SWEEnv(gym.Env):
         # Record submission and end episode if `submit` keyword found
         submission = self.get_submission(observation)
         if submission is not None:
-            self.logger.info(f"Found submission: {submission}")
-            info["exit_status"] = "submitted"
-            info["submission"] = submission if submission.strip() != "" else None
-            observation = submission if submission.strip() != "" else None
-            return observation, 0, True, info
+            if self.validate_submission(submission):
+                self.logger.info(f"Found submission: {submission}")
+                info["exit_status"] = "submitted"
+                info["submission"] = submission if submission.strip() != "" else None
+                info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
+                observation = submission if submission.strip() != "" else None
+                return observation, 0, True, info
+            else:
+                self.logger.warning(f"Wrong submission found: {submission} (real flag is {self.challenge['flag']})")
+                observation = "Wrong flag!"
+                return observation, 0, False, info
+
+        observation = self._handle_interactive_commands(observation)
+
         return observation, 0, False, info
 
     def close(self) -> None:
@@ -502,6 +712,19 @@ class SWEEnv(gym.Env):
             self.logger.warning("Errors when exiting container", exc_info=True)
         assert self.container is not None  # mypy
         self.container.terminate()
+        if self.docker_compose is not None:
+            terminate_docker_compose(self.docker_compose)
+        if self.interactive_session is not None:
+            try:
+                self.interactive_session.session_process.terminate()
+            except KeyboardInterrupt:
+                raise
+            except Exception as e:
+                self.logger.warning("Failed to stop interactive session: %s", str(e))
+                self.interactive_session = None
+            else:
+                self.logger.info("Interactive session stopped")
+                self.interactive_session = None
         if self.container_obj is None:
             pass
         elif self.persistent:
@@ -554,6 +777,15 @@ class SWEEnv(gym.Env):
                 self.logger.warning("Failed to terminate container", exc_info=True)
             else:
                 self.logger.debug("Terminated container")
+        if self.docker_compose is not None:
+            try:
+                terminate_docker_compose(self.docker_compose)
+            except KeyboardInterrupt:
+                raise
+            except:
+                self.logger.warning("Failed to terminate docker compose", exc_info=True)
+            else:
+                self.logger.debug("Terminated docker compose")
         self._init_container()
         self._init_scripts()
 
@@ -574,6 +806,22 @@ class SWEEnv(gym.Env):
         image_name_sanitized = image_name_sanitized.replace(":", "-")
         return f"{image_name_sanitized}-{hash_object.hexdigest()[:10]}"
 
+    def _init_docker_network(self) -> None:
+        """
+        Add the "ctfnet" network interface for all the containers used for CTF challenges
+        """
+        assert self.container_name is not None
+        if self.challenge is not None:
+            attach_network_interface_to_container(self.container_name)
+
+    def _init_docker_compose(self) -> None:
+        """
+        Handles docker compose initialization for challenge with docker compose file.
+        """
+        if self.challenge is not None and self.challenge.get("docker_compose") is not None:
+            self.docker_compose = get_docker_compose(self.challenge.get("docker_compose"))
+            self.logger.info("🌱 Initialized docker compose for challenge")
+
     def _init_container(self, cached_image: str | None = None) -> None:
         """
         Handles container initialization. Defines container name and creates it.
@@ -589,7 +837,9 @@ class SWEEnv(gym.Env):
             # Make sure that we get a new container name just in case removing didn't work.
             # Might be a fix for https://github.com/princeton-nlp/SWE-agent/issues/451
             self.container_name = self._get_container_name(image_name)
-        self.container, self.parent_pids = get_container(self.container_name, image_name, persistent=self.persistent)
+        self.container, self.parent_pids = get_container(
+            self.container_name, image_name, persistent=self.persistent, container_mounts=self.container_mounts
+        )
         try:
             client = docker.from_env(timeout=600)
         except docker.errors.DockerException as e:
@@ -642,6 +892,7 @@ class SWEEnv(gym.Env):
         self,
         input: str,
         timeout_duration: int | float = 25,
+        no_output_timeout_duration: int | float = 25,
     ) -> str:
         """Experimental version of `_communicate`"""
         assert self.container is not None
@@ -664,7 +915,9 @@ class SWEEnv(gym.Env):
             raise RuntimeError(msg)
 
         try:
-            buffer, exit_code = read_with_timeout_experimental(self.container, timeout_duration)
+            buffer, exit_code = read_with_timeout_experimental(
+                self.container, timeout_duration, no_output_timeout_duration
+            )
         except Exception:
             msg = f"Read with timeout failed on input:\n---\n{input}\n---"
             self.logger.error(msg)
@@ -682,8 +935,10 @@ class SWEEnv(gym.Env):
             self.logger.warning("Couldn't get real exit code. Setting it to 999")
             exit_code = 999
         elif not exit_code.isdigit():
-            msg = f"Failed to get exit code. Output:\n---\n{buffer}\n---"
-            raise RuntimeError(msg)
+            # this sometimes happens if the command is being killed, for example radare2
+            # we set the error to 998 in that case
+            self.logger.warning("Couldn't get real exit code. Setting it to 998")
+            exit_code = 998
         self.returncode = int(exit_code)
         return buffer
 
@@ -691,19 +946,21 @@ class SWEEnv(gym.Env):
         self,
         input: str,
         timeout_duration: int | float = 25,
+        no_output_timeout_duration: int | float = 25,
     ) -> str:
         """Runs command in container and returns output
 
         Args:
             input: command to run in container
             timeout_duration: duration to wait for output
+            no_output_timeout_duration: duration to wait when the process stopped produce any output
         """
         assert self.container is not None
         communicate_method = keys_config.get(
             "SWE_AGENT_COMMUNICATE_METHOD", default="end-marker", choices=["end-marker", "processes"]
         )
         if communicate_method == "end-marker":
-            return self._communicate_experimental(input, timeout_duration)
+            return self._communicate_experimental(input, timeout_duration, no_output_timeout_duration)
         try:
             self.returncode = None
             cmd = input if input.endswith("\n") else input + "\n"
@@ -741,7 +998,14 @@ class SWEEnv(gym.Env):
         output = self._communicate(f"/bin/bash -n <<'EOF'\n{input}\nEOF\n")
         return output, self.returncode == 0
 
-    def communicate(self, input: str, timeout_duration: int | float = 25, *, set_last_action: bool = False) -> str:
+    def communicate(
+        self,
+        input: str,
+        timeout_duration: int | float = 25,
+        no_output_timeout_duration: int | float | None = None,
+        *,
+        set_last_action: bool = False,
+    ) -> str:
         """
         Sends input to container and returns output
 
@@ -753,6 +1017,8 @@ class SWEEnv(gym.Env):
         Returns:
             output: output from container
         """
+        if no_output_timeout_duration is None:
+            no_output_timeout_duration = timeout_duration
         if input.strip() != "exit":
             self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
             output, valid = self._check_syntax(input)
@@ -761,6 +1027,7 @@ class SWEEnv(gym.Env):
             output = self._communicate(
                 input,
                 timeout_duration=timeout_duration,
+                no_output_timeout_duration=no_output_timeout_duration,
             )
             self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
             self.communicate_output = output
@@ -769,7 +1036,7 @@ class SWEEnv(gym.Env):
                 # handling.
                 last_action_string = shlex.quote(input.strip())
                 input = f"export LAST_ACTION={last_action_string}"
-                self._communicate(input, timeout_duration=5)
+                self._communicate(input, timeout_duration=5, no_output_timeout_duration=5)
             return output
         else:
             self.container.terminate()
@@ -797,6 +1064,58 @@ class SWEEnv(gym.Env):
             raise RuntimeError(msg)
         return logs
 
+    def communicate_session(
+        self,
+        input: str,
+        terminal_pattern: str,
+        timeout_duration: int | float = 25,
+        no_output_timeout_duration: int | float = 25,
+    ) -> str:
+        """
+        Sends input to interactive_session and returns output
+
+        Args:
+            input: input to send to session
+            terminal_pattern: pattern indicating the session's output termination (e.g., "(gdb) " in gdb)
+            timeout_duration: duration to wait for output
+
+        Returns:
+            output: output from session
+        """
+        assert self.interactive_session is not None
+        self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
+
+        try:
+            cmd = input if input.endswith("\n") else input + "\n"
+            os.write(self.interactive_session.session_process.stdin.fileno(), cmd.encode())
+            time.sleep(0.03)
+            self.interactive_session.session_process.stdin.flush()
+        except BrokenPipeError:
+            traceback.print_exc()
+            self.logger.error("Failed to communicate with session. Check docker logs for more information.")
+            msg = "Failed to communicate with session"
+            raise RuntimeError(msg)
+
+        self.logger.debug(f"Command: {input}")
+        # if command is to quit the current interactive session, sleep for termination then exit with no observation
+        if (
+            input.strip()
+            in self.args.interactive_sessions_config[self.interactive_session.name].quit_commands_in_session
+        ):
+            time.sleep(1)
+            return ""
+
+        try:
+            buffer = read_session_with_timeout(
+                self.interactive_session.session_process, terminal_pattern, timeout_duration, no_output_timeout_duration
+            )
+        except Exception:
+            msg = f"Read with timeout failed on input:\n---\n{input}\n---"
+            self.logger.error(msg)
+            raise
+        self.logger.log(logging.TRACE, "Output:\n%s", buffer)  # type: ignore
+        return buffer
+
     def get_available_actions(self) -> list[str]:
         """
         Returns list of available actions in current environment state
@@ -816,11 +1135,87 @@ class SWEEnv(gym.Env):
         Returns:
             list of PIDs
         """
-        pids = self.container_obj.exec_run("ps -eo pid,comm --no-headers").output.decode().split("\n")
+        pids = self.container_obj.exec_run("ps -eo pid,comm,ppid --no-headers").output.decode().split("\n")
         pids = [x.split() for x in pids if x]
         if not all_pids:
-            pids = [x for x in pids if x[1] != "ps" and x[0] not in self.parent_pids]
+            # Get just the PIDs of processes that are descendants of parent_pids and not others
+            pids = [
+                (x[0], x[1])
+                for x in pids
+                if x[1] != "ps"
+                and x[0] not in self.parent_pids
+                and x[1] != getattr(self.interactive_session, "name", None)
+                and x[2] in self.parent_pids
+            ]
         return pids
+
+    def validate_submission(self, submission: str) -> bool:
+        """
+        Function for validating submission for CTF challegnes.
+
+        Args:
+            submission: extracted submission
+
+        Returns:
+            validation of the submission found against known flag
+        """
+        submission = submission.strip()
+
+        def wrap(s: str) -> str:
+            return f"flag{{{s}}}"
+
+        if self.challenge is not None:
+            assert "flag" in self.challenge
+            solution = self.challenge["flag"]
+            return any(
+                (
+                    submission == solution,
+                    wrap(submission) == solution,
+                    submission == wrap(solution),
+                )
+            )
+
+        return True
+
+    def get_interactive_commands(self, output: str) -> tuple[str | None, list[str]]:
+        """
+        Function for extracting interactive session commands.
+
+        Args:
+            output: observation
+
+        Returns:
+            session: session name for the commands or None if no commands found.
+            commands: list of commands extracted from observation.
+        """
+        pattern = r"\<\<INTERACTIVE\|\|(.*)\|\|INTERACTIVE\>\>"
+        session_pattern = r"SESSION=(.*)"
+        session_name = ""
+        commands = []
+        n_lines_ignored = 0
+        for line in output.split("\n"):
+            match = re.search(pattern, line, re.DOTALL)
+            if match is None:
+                if line.strip():
+                    n_lines_ignored += 1
+                continue
+            command = match.group(1)
+            match = re.search(session_pattern, command, re.DOTALL)
+            if match is None:
+                commands.append(command)
+            else:
+                session_name = match.group(1)
+        if not session_name:
+            if commands:
+                self.logger.error(
+                    f"No session name found even though interactive " f"commands {commands!r} were found."
+                )
+            return None, []
+
+        if n_lines_ignored:
+            self.logger.error(f"Ignored {n_lines_ignored} lines when parsing interactive commands.")
+
+        return session_name, commands
 
     def get_submission(self, output: str) -> str | None:
         """
@@ -1077,26 +1472,47 @@ class SWEEnv(gym.Env):
                 msg = f"Invalid command type: {command['type']}"
                 raise ValueError(msg)
 
-    def interrupt(self) -> None:
+    def interrupt_interactive(self, session_name: str) -> None:
+        """
+        Send interrupt signal to interactive session several times to see if we can communicate with the process again.
+        """
+        for _ in range(self.args.interactive_sessions_config[session_name].signal_for_interrupt_limit):
+            self.container_obj.exec_run(f"pkill -SIGINT {session_name}")
+        return read_session_with_timeout(
+            self.interactive_session.session_process,
+            terminal_pattern=self.args.interactive_sessions_config[session_name].terminal_prompt_pattern,
+            timeout_duration=self.args.interactive_sessions_config[session_name].timeout_duration_on_interrupt,
+            no_output_timeout_duration=self.args.interactive_sessions_config[
+                session_name
+            ].timeout_duration_on_interrupt,
+        )
+
+    def interrupt(self) -> str:
         """
         Send interrupt signal to container and exhaust stdout buffer with a communicate call
         """
         assert self.container is not None
         assert self.container_obj is not None
         pids = self.get_pids()
-        for pid, cmd in pids:
-            if pid not in self.parent_pids and cmd != "ps":
+        for pid, _ in pids:
+            # Sending signal several times ensures that the process is dead
+            for _ in range(3):
                 self.container_obj.exec_run(f"kill -9 {pid}")
+        observation = ""
         try:
-            _ = read_with_timeout(self.container, self.get_pids, 20)
+            observation += read_with_timeout(self.container, self.get_pids, 20)
         except TimeoutError:
             pass
         try:
+            # This is a workaround because of bash behaviour
+            # when sometimes we get the prints of Killed after we press some "Enter" in stdin
+            self.communicate(input="echo 'interrupted'", timeout_duration=5)
             output = self.communicate(input="echo 'interrupted'", timeout_duration=5)
             assert output.strip().endswith("interrupted"), "container health check failed"
         except TimeoutError:
             msg = "Failed to interrupt container"
             raise RuntimeError(msg)
+        return observation
 
     def open_pr(self, *, trajectory, _dry_run: bool = False) -> None:
         """Create PR to repository
@@ -1197,3 +1613,15 @@ class SWEEnv(gym.Env):
                 "any required changes onto the branch and then click "
                 "'Ready for Review' to bring it to the attention of the maintainers.",
             )
+
+    def read_file(self, path: str | PurePath) -> str:
+        """Read file contents from container
+
+        Args:
+            path: Path to file relative to repository root
+
+        Returns:
+            file_contents: Contents of file as string
+        """
+        path_in_container = f"/{self._repo_name}/{path}"
+        return self.communicate(f"cat {str(path_in_container)}")

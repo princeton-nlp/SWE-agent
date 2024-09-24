@@ -19,17 +19,34 @@ from typing import Any, Callable
 from datasets import load_dataset, load_from_disk
 from ghapi.all import GhApi
 from git import InvalidGitRepositoryError, Repo
+from unidiff import PatchSet
 
 import docker
+import docker.types
 from docker.models.containers import Container
+from sweagent.agent.interactive_commands import InteractiveSession
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
 DOCKER_START_UP_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 1))
+DOCKER_COMPOSE_TERMINATION_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 100))
+DOCKER_COMPOSE_STARTUP_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 600))
 GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
 GITHUB_REPO_URL_PATTERN = re.compile(r".*[/@]?github\.com\/([^/]+)\/([^/]+)")
 
+CTF_CHALLENGES_CATEGORIES = {
+    "rev": "reverse engineering",
+    "pwn": "binary exploitation",
+    "web": "web security",
+    "crypto": "cryptography",
+    "misc": "miscellaneous",
+    "forensics": "forensics",
+}
+
 logger = get_logger("env_utils")
+
+
+class NoOutputTimeoutError(TimeoutError): ...
 
 
 def get_data_path_name(data_path: str) -> str:
@@ -174,15 +191,33 @@ def read_with_timeout(container: subprocess.Popen, pid_func: Callable, timeout_d
     if time.time() >= end_time:
         msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}\nRunning PIDs: {pids}"
         raise TimeoutError(msg)
-    return buffer.decode()
+
+    decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
+    return "\n".join(line for line in decoded.splitlines())
 
 
 PROCESS_DONE_MARKER_START = "///PROCESS-DONE:"
 PROCESS_DONE_MARKER_END = ":PROCESS-DONE///"
 PROCESS_DONE_REGEX = re.compile(rf"{PROCESS_DONE_MARKER_START}(.+?){PROCESS_DONE_MARKER_END}")
+DECODED_BUFFER_FAILURE_THRESHOLD = 0.1
 
 
-def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration: int | float) -> tuple[str, str]:
+def _check_for_too_many_non_unicode_bytes(buffer: bytes):
+    number_of_failures = int(DECODED_BUFFER_FAILURE_THRESHOLD * len(buffer))
+    start_byte = 0
+    for _ in range(number_of_failures):
+        try:
+            buffer[start_byte:].decode()
+            return
+        except UnicodeDecodeError as e:
+            start_byte = e.start + 1
+    msg = "Too many non-unicode characters in output of command."
+    raise UnicodeError(msg)
+
+
+def read_with_timeout_experimental(
+    container: subprocess.Popen, timeout_duration: int | float, no_output_timeout_duration: int | float
+) -> tuple[str, str]:
     """
     Read data from a subprocess with a timeout.
     This function uses a file descriptor to read data from the subprocess in a non-blocking way.
@@ -193,6 +228,7 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
     Args:
         container: The subprocess container.
         timeout_duration: The timeout duration in seconds.
+        no_output_timeout_duration: The timeout duration to wait if no output is produced, in seconds.
 
     Returns:
         Output and exit code, both as strings (!)
@@ -202,7 +238,9 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
     """
     buffer = b""
     fd = container.stdout.fileno()
-    end_time = time.time() + timeout_duration
+    start_time = time.time()
+    end_time = start_time + timeout_duration
+    end_time_no_output = start_time + no_output_timeout_duration
 
     # Select is not available on windows
     is_windows = platform.system() == "Windows"
@@ -217,7 +255,9 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
             return True
         return bool(select.select([fd], [], [], 0.01)[0])
 
-    while time.time() < end_time:
+    process_done = False
+
+    while time.time() < min(end_time, end_time_no_output):
         if ready_to_read(fd):
             try:
                 data = os.read(fd, 4096)
@@ -225,27 +265,103 @@ def read_with_timeout_experimental(container: subprocess.Popen, timeout_duration
                 logger.error("BlockingIOError while reading from subprocess.", exc_info=True)
                 break
             if data:
+                end_time_no_output = time.time() + no_output_timeout_duration
                 buffer += data
-                decoded = buffer.decode("utf-8", errors="backslashreplace")
-                if PROCESS_DONE_MARKER_START in decoded:
+                if PROCESS_DONE_MARKER_START in buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n"):
+                    process_done = True
                     break
         time.sleep(0.01)  # Prevents CPU hogging
 
-    if container.poll() is not None:
-        msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {buffer.decode()}"
-        raise RuntimeError(msg)
-    if time.time() >= end_time:
-        msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}"
-        raise TimeoutError(msg)
-
-    decoded = buffer.decode("utf-8", errors="backslashreplace")
+    decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
     body = "\n".join(line for line in decoded.splitlines() if not line.startswith(PROCESS_DONE_MARKER_START))
+
+    if container.poll() is not None:
+        msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {decoded}"
+        raise RuntimeError(msg, body)
+
+    current_time = time.time()
+    if not process_done and current_time >= min(end_time, end_time_no_output):
+        if current_time >= end_time:
+            msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {decoded}"
+            raise TimeoutError(msg, body)
+        else:
+            msg = f"No output timeout reached while reading from subprocess.\nCurrent buffer: {decoded}"
+            raise NoOutputTimeoutError(msg, body)
+
+    _check_for_too_many_non_unicode_bytes(buffer=buffer)
     _results = PROCESS_DONE_REGEX.search(decoded)
     if _results is None:
         msg = f"Could not find process done marker in last line: {decoded=}, {body=}"
         raise ValueError(msg)
     exit_code = _results.group(1)
-    return body, exit_code
+    return body.replace(f"{PROCESS_DONE_MARKER_START}{exit_code}{PROCESS_DONE_MARKER_END}", ""), exit_code
+
+
+def read_session_with_timeout(
+    session: subprocess.Popen,
+    terminal_pattern: str,
+    timeout_duration: int | float,
+    no_output_timeout_duration: int | float,
+) -> str:
+    """
+    Read data from a subprocess with a timeout.
+    This function uses a file descriptor to read data from the subprocess in a non-blocking way.
+
+    Args:
+        session: The session subprocess.
+        terminal_pattern: the terminal pattern to indicate end of output.
+        timeout_duration: The timeout duration in seconds.
+
+    Returns:
+        Output
+
+    Raises:
+        TimeoutError: If the timeout duration is reached while reading from the subprocess.
+    """
+    buffer = b""
+    fd = session.stdout.fileno()
+    start_time = time.time()
+    end_time = start_time + timeout_duration
+    end_time_no_output = start_time + no_output_timeout_duration
+
+    # Select is not available on windows
+    import select
+
+    def ready_to_read(fd) -> bool:
+        return bool(select.select([fd], [], [], 0.01)[0])
+
+    command_done = False
+    while time.time() < min(end_time, end_time_no_output) and session.poll() is None:
+        if ready_to_read(fd):
+            try:
+                data = os.read(fd, 4096)
+            except BlockingIOError:
+                logger.error("BlockingIOError while reading from subprocess.", exc_info=True)
+                break
+            if data:
+                end_time_no_output = time.time() + no_output_timeout_duration
+                buffer += data
+                if terminal_pattern in buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n"):
+                    command_done = True
+                    break
+        time.sleep(0.01)  # Prevents CPU hogging
+
+    decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
+    body = "\n".join(line for line in decoded.splitlines() if not line.startswith(terminal_pattern))
+
+    if session.poll() is not None:
+        msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {decoded}"
+        raise RuntimeError(msg, body)
+    current_time = time.time()
+    if not command_done and current_time >= min(end_time, end_time_no_output):
+        if current_time >= end_time:
+            msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {decoded}"
+            raise TimeoutError(msg, body)
+        else:
+            msg = f"No output timeout reached while reading from subprocess.\nCurrent buffer: {decoded}"
+            raise NoOutputTimeoutError(msg, body)
+
+    return body
 
 
 def get_background_pids(container_obj: Container):
@@ -257,12 +373,110 @@ def get_background_pids(container_obj: Container):
     return bash_pids, other_pids
 
 
-def _get_non_persistent_container(ctr_name: str, image_name: str) -> tuple[subprocess.Popen, set[str]]:
+def terminate_docker_compose(docker_compose_path: Path) -> None:
+    terminate_cmd = [
+        "docker",
+        "compose",
+        "-f",
+        str(docker_compose_path),
+        "down",
+    ]
+    logger.debug("Terminating docker-compose with command: %s", shlex.join(terminate_cmd))
+    compose = subprocess.Popen(
+        terminate_cmd,
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=STDOUT,
+        text=True,
+        bufsize=1,  # line buffered
+    )
+    _, error = compose.communicate(timeout=DOCKER_COMPOSE_TERMINATION_DELAY)
+    if error:
+        logger.error(f"Unexpected compose termination error: {error}")
+
+
+def attach_network_interface_to_container(container_name: str) -> None:
+    cmd = [
+        "docker",
+        "network",
+        "connect",
+        "ctfnet",
+        container_name,
+    ]
+    logger.debug("Attaching NIC to container with command: %s", shlex.join(cmd))
+    compose = subprocess.Popen(
+        cmd,
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=STDOUT,
+        text=True,
+        bufsize=1,  # line buffered
+    )
+    _, error = compose.communicate(timeout=DOCKER_START_UP_DELAY)
+    if error:
+        logger.error(f"Unexpected compose setup error: {error}")
+        raise RuntimeError(error)
+
+
+def get_docker_compose(docker_compose_path: Path) -> Path:
+    startup_cmd = [
+        "docker",
+        "compose",
+        "-f",
+        str(docker_compose_path),
+        "up",
+        "-d",
+        "--force-recreate",
+    ]
+    logger.debug("Starting docker-compose with command: %s", shlex.join(startup_cmd))
+    compose = subprocess.Popen(
+        startup_cmd,
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=STDOUT,
+        text=True,
+        bufsize=1,  # line buffered
+    )
+    _, error = compose.communicate(timeout=DOCKER_COMPOSE_STARTUP_DELAY)
+    if error:
+        logger.error(f"Unexpected compose setup error: {error}")
+    return docker_compose_path
+
+
+def get_interactive_session(ctr_name: str, cwd: str, session_name: str, cmdline: str, *args) -> InteractiveSession:
+    """
+    Starts a new interacitve session on the given container name.
+    Returns a subprocess.Popen object that is available for further read/writes for submitting commands and reading output.
+    """
+    startup_cmd = ["docker", "exec", "-i", "-w", cwd, ctr_name, cmdline, *args]
+    logger.debug(f"Starting interactive session {session_name} with command: {shlex.join(startup_cmd)}")
+    session = subprocess.Popen(startup_cmd, stdin=PIPE, stdout=PIPE, stderr=STDOUT, text=True, bufsize=1)
+    time.sleep(DOCKER_START_UP_DELAY)
+    _ = read_with_timeout(session, lambda: list(), timeout_duration=1)
+    return InteractiveSession(name=session_name, session_process=session)
+
+
+def _get_container_mounts_list(container_mounts: list[str]) -> list[docker.types.Mount]:
+    try:
+        for i in range(len(container_mounts)):
+            path = Path(container_mounts[i]).absolute()
+            if path.is_dir():
+                container_mounts[i] = docker.types.Mount(source=str(path), target=f"/{path.name}")
+        return container_mounts
+    except Exception:
+        logger.warning("Failed to process container mounts, skipping mount.")
+        return []
+
+
+def _get_non_persistent_container(
+    ctr_name: str, image_name: str, container_mounts: list[str]
+) -> tuple[subprocess.Popen, set[str]]:
     startup_cmd = [
         "docker",
         "run",
         "-i",
         "--rm",
+        *[item for mount in container_mounts for item in ("-v", f"{Path(mount).absolute()}:/{Path(mount).name}")],
         "--name",
         ctr_name,
         image_name,
@@ -290,7 +504,7 @@ def _get_non_persistent_container(ctr_name: str, image_name: str) -> tuple[subpr
 
 
 def _get_persistent_container(
-    ctr_name: str, image_name: str, persistent: bool = False
+    ctr_name: str, image_name: str, container_mounts: list[str], persistent: bool = False
 ) -> tuple[subprocess.Popen, set[str]]:
     client = docker.from_env()
     containers = client.containers.list(all=True, filters={"name": ctr_name})
@@ -308,6 +522,7 @@ def _get_persistent_container(
             msg = f"Unexpected container status: {container_obj.status}"
             raise RuntimeError(msg)
     else:
+        container_mounts = _get_container_mounts_list(container_mounts)
         container_obj = client.containers.run(
             image_name,
             command="/bin/bash -l -m",
@@ -316,6 +531,7 @@ def _get_persistent_container(
             tty=True,
             detach=True,
             auto_remove=not persistent,
+            mounts=container_mounts,
         )
         container_obj.start()
     startup_cmd = [
@@ -364,7 +580,9 @@ def _get_persistent_container(
     return container, {str(bash_pid), "1"}
 
 
-def get_container(ctr_name: str, image_name: str, persistent: bool = False) -> tuple[subprocess.Popen, set]:
+def get_container(
+    ctr_name: str, image_name: str, container_mounts: list[str], persistent: bool = False
+) -> tuple[subprocess.Popen, set]:
     """
     Get a container object for a given container name and image name
 
@@ -384,9 +602,9 @@ def get_container(ctr_name: str, image_name: str, persistent: bool = False) -> t
         raise RuntimeError(msg)
 
     if persistent:
-        return _get_persistent_container(ctr_name, image_name)
+        return _get_persistent_container(ctr_name, image_name, container_mounts=container_mounts)
     else:
-        return _get_non_persistent_container(ctr_name, image_name)
+        return _get_non_persistent_container(ctr_name, image_name, container_mounts=container_mounts)
 
 
 def image_exists(image_name: str) -> bool:
@@ -527,8 +745,48 @@ class InstanceBuilder:
         self.args["instance_id"] = f"{owner}__{repo}-i{issue_number}"
         self.args["problem_statement_source"] = "online"
 
+    def set_server_description(self, server_name: str | None, port: int | None) -> None:
+        """For CTF challenges"""
+        if server_name is None or port is None:
+            self.args["challenge"]["server_description"] = ""
+            return
+        if self.args["challenge"]["category"] in {"web", "misc"} and self.args["challenge"].get("proto") != "nc":
+            self.args["challenge"]["server_description"] = (
+                f"The challenge web server is running on `{server_name}` port `{port}` and you can access it from within the container environment using `curl http://{server_name}:{port}`."
+            )
+        else:
+            self.args["challenge"]["server_description"] = (
+                f"The challenge web server is running on `{server_name}` port `{port}` and you can access it from within the container environment using `connect_start {server_name} {port}`."
+            )
+
+    def set_problem_statement_from_challenge_json(self, file_path: str) -> None:
+        """For CTF challenges"""
+        challenge = json.loads(Path(file_path).read_text())
+        self.args["challenge"] = challenge
+        self.args["challenge"]["files"] = challenge.get("files", [])
+        self.args["challenge"]["points"] = challenge.get("points", 10)
+        self.args["challenge"]["category_friendly"] = CTF_CHALLENGES_CATEGORIES.get(challenge["category"])
+        if (Path(file_path).parent / "docker-compose.yml").is_file():
+            logger.debug(f"Found docker_compose file in {Path(file_path).parent}")
+            self.args["challenge"]["docker_compose"] = Path(file_path).parent / "docker-compose.yml"
+        self.args["challenge"]["port"] = challenge.get("internal_port") or challenge.get("port")
+        if "box" in challenge:
+            self.args["challenge"]["server_name"] = challenge["box"] or "127.0.0.1"
+        else:
+            self.args["challenge"]["server_name"] = ""
+        self.args["challenge"]["file_path"] = file_path
+        self.set_server_description(self.args["challenge"]["server_name"], self.args["challenge"]["port"])
+        self.set_problem_statement_from_text(f"{challenge['name']} {challenge['description']}")
+        self.args["instance_id"] = (
+            # sanitize 'name' to only alphanumeric characters
+            challenge.get("category", "misc") + "_" + "".join(a for a in self.args["challenge"]["name"] if a.isalnum())
+        )
+
     def set_problem_statement_from_file(self, file_path: str):
-        self.set_problem_statement_from_text(Path(file_path).read_text())
+        if Path(file_path).name == "challenge.json":
+            self.set_problem_statement_from_challenge_json(file_path)
+        else:
+            self.set_problem_statement_from_text(Path(file_path).read_text())
 
     def set_problem_statement_from_text(self, text: str):
         self.args["problem_statement"] = text
@@ -570,7 +828,7 @@ class InstanceBuilder:
             except InvalidGitRepositoryError as e:
                 msg = f"Could not find git repository at {path=}."
                 raise ValueError(msg) from e
-            if repo.is_dirty():
+            if repo.is_dirty() and "PYTEST_CURRENT_TEST" not in os.environ:
                 msg = f"Local git repository {path} is dirty. Please commit or stash changes."
                 raise ValueError(msg)
             self.args["base_commit"] = repo.head.object.hexsha
@@ -657,7 +915,10 @@ def get_instances(
     # The next if statement is very brittle logic to determine if we're processing a single instance
     if (
         file_path.startswith("text://")
-        or (Path(file_path).is_file() and Path(file_path).suffix in [".md", ".txt"])
+        or (
+            Path(file_path).is_file()
+            and (Path(file_path).suffix in [".md", ".txt"] or Path(file_path).name == "challenge.json")
+        )
         or is_github_issue_url(file_path)
     ):
         ib = InstanceBuilder(token=token)
@@ -763,3 +1024,150 @@ def format_trajectory_markdown(trajectory: list[dict[str, str]]):
         "</details>",
     ]
     return "\n".join(prefix) + "\n\n---\n\n".join(steps) + "\n".join(suffix)
+
+
+class PatchFormatter:
+    def __init__(
+        self,
+        patch: str,
+        read_method: Callable[[str], str],
+    ):
+        """Given the final patch and access to the container that contains the repository,
+        extract relevant lines from the modified file.
+
+        Args:
+            patch: The patch as a string.
+            read_method: Callable with path to file (relative to repository root) as argument
+                that returns the file content as a string.
+        """
+        self._patch = PatchSet(patch)
+        self._patched_files: dict[str, str] = {}
+        self._original_files: dict[str, str] = {}
+        self._patch_applied = True
+        self._read_file = read_method
+        self._read_files(original=False)
+
+    @staticmethod
+    def _merge_intervals(starts: list[int], stops: list[int]) -> tuple[list[int], list[int]]:
+        """Given two lists of integers, starts and stops, merges all overlapping intervals.
+
+        For example `starts=[1, 5, 18]`, `stops=[10, 13, 20]`
+        should return `starts=[1, 18]`, `stops=[13, 20]`
+        """
+
+        intervals = sorted(zip(starts, stops))
+        merged = []
+        for start, stop in intervals:
+            if not merged or merged[-1][1] < start:
+                # No overlap
+                merged.append([start, stop])
+            else:
+                # Overlap
+                merged[-1][1] = max(merged[-1][1], stop)
+        # Unzip again
+        merged_starts, merged_stops = zip(*merged)
+        return list(merged_starts), list(merged_stops)
+
+    def format_file(self, text: str, starts: list[int], stops: list[int], *, linenos: bool = True) -> str:
+        """Reads file and returns string representation of the relevant lines.
+
+        Args:
+            path: The path to the file within the repo location
+            starts: The starting line numbers of the relevant lines. The first line is line 1.
+            stops: The stopping line numbers of the relevant lines. The stop is not inclusive.
+                The first line is line 1.
+            linenos: Whether to include line numbers
+        """
+        assert len(starts) == len(stops)
+        assert all(start >= 1 for start in starts)
+        assert all(start < stop for start, stop in zip(starts, stops))
+        starts, stops = self._merge_intervals(starts, stops)
+        assert all(hunk1_start < hunk2_start for hunk1_start, hunk2_start in zip(starts, starts[1:]))
+        out: list[str] = []
+        if starts[0] > 1:
+            # Count from 1
+            out.append(f"[{starts[0]-1} lines above omitted]")
+        last_stop: int | None = None
+        lines = text.splitlines()
+        for start, stop in zip(starts, stops):
+            assert start >= 1
+            if last_stop is not None:
+                n_omitted = start - last_stop
+                # Check that we have non-overlapping hunks
+                assert n_omitted >= 0
+                if n_omitted:
+                    out.append(f"\n[{n_omitted} lines omitted]\n")
+            # Count from 1
+            these_lines = lines[start - 1 : stop - 1]
+            if linenos:
+                out.append("\n".join([f"{i:6d}: {l}" for i, l in enumerate(these_lines, start=start)]))
+            else:
+                out.append("\n".join(these_lines))
+            last_stop = stop
+        if last_stop < len(lines):
+            # Stop is not inclusive
+            omitted = len(lines) - last_stop
+            assert omitted > 0
+            out.append(f"[{omitted} lines below omitted]")
+        return "\n".join(out)
+
+    def _get_hunk_lines(self, original: bool, *, context_length: int) -> dict[str, tuple[list[int], list[int]]]:
+        """Get the starts and stops for all files in the patch.
+
+        Args:
+            original: Whether to read the original file or the patched file
+            context_length: The number of lines to include above and below the hunk
+
+        Returns:
+            A dictionary with the file path as key and a tuple of lists of starts and stops as value.
+        """
+        out: dict[str, tuple[list[int], list[int]]] = {}
+        for patch in self._patch:
+            if not patch.is_modified_file:
+                continue
+            starts: list[int] = []
+            stops: list[int] = []
+            for hunk in patch:
+                if original:
+                    # 1 is the lowest line number
+                    start = max(1, hunk.source_start - context_length)
+                    stop = hunk.source_start + hunk.source_length + context_length
+                else:
+                    start = max(1, hunk.target_start - context_length)
+                    stop = hunk.target_start + hunk.target_length + context_length
+                starts.append(start)
+                stops.append(stop)
+            out[patch.path] = (starts, stops)
+        return out
+
+    def _read_files(self, original: bool) -> None:
+        for patch in self._patch:
+            path = patch.path
+            if not patch.is_modified_file:
+                continue
+            if original:
+                msg = "Original file reading not implemented"
+                raise NotImplementedError(msg)
+            else:
+                assert self._patch_applied
+                self._patched_files[path] = self._read_file(path)
+
+    @staticmethod
+    def concat_files_strings(files: dict[str, str]) -> str:
+        """Concatenate multiple `read_files` outputs into a single string."""
+        out = []
+        for path, content in files.items():
+            out.append(f"[File: {path}]\n{content}")
+        return "\n\n".join(out)
+
+    def get_files_str(self, *, original: bool, context_length: int | None = 50, linenos: bool = True) -> str:
+        hunk_lines = self._get_hunk_lines(original=original, context_length=context_length)
+        sources = self._original_files if original else self._patched_files
+        return self.concat_files_strings(
+            {path: self.format_file(text, *hunk_lines[path], linenos=linenos) for path, text in sources.items()}
+        )
+
+
+def extract_flag_format(flag: str) -> str:
+    flag_format = re.sub(r"{.*}$", "{...}", flag)
+    return flag_format if flag_format != flag else "..."

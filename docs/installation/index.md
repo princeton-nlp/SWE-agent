@@ -33,7 +33,7 @@
 
     ---
 
-    See what's new in SWE-agent
+    See what's new in SWE-agent!
 
     [:octicons-arrow-right-24: Read the changelog](changelog.md)
 </div>

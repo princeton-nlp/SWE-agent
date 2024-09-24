@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - main
+      - prepare-public2
     paths-ignore:
       - 'docs/**'
       - 'README.md'
@@ -15,6 +16,7 @@ on:
   pull_request:
     branches:
       - main
+      - prepare-public2
     paths-ignore:
       - 'docs/**'
       - 'README.md'
@@ -37,6 +39,9 @@ jobs:
       - name: Pull swe-agent docker container
         run: |
           docker pull sweagent/swe-agent:latest
+      - name: Pull enigma docker container
+        run: |
+          docker pull sweagent/enigma:latest
       - name: Create keys.cfg
         run: |
           touch keys.cfg
@@ -49,7 +54,7 @@ jobs:
       - name: Run pytest
         uses: sjvrijn/pytest-last-failed@v2
         with:
-          pytest-args: '--exitfirst --cov'
+          pytest-args: '-s --cov'
       - name: Explicitly convert coverage to xml
         run: coverage xml
       - name: Upload coverage reports to Codecov

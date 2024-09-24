@@ -115,10 +115,6 @@ def test_script_args():
         agent=AgentArguments(
             model=ModelArguments(
                 model_name="instant_empty_submit",
-                total_cost_limit=0.0,
-                per_instance_cost_limit=3.0,
-                temperature=0.0,
-                top_p=0.95,
             ),
             config_file=Path("config/default.yaml"),
         ),

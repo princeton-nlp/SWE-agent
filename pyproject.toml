@@ -69,6 +69,7 @@ namespaces = false
 [tool.pytest.ini_options]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "ctf: marks EnIGMA tests for using SWE-agent on capture the flag (CTF) challenges",
 ]
 testpaths = [
     "tests"

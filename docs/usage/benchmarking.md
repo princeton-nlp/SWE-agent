@@ -1,6 +1,10 @@
 # Benchmarking
 
-There are two steps to the SWE-agent pipeline. First SWE-agent takes an input GitHub issue and returns a pull request that attempts to fix it. We call that step *inference*. The second step (currently, only available for issues in the SWE-bench benchmark) is to *evaluate* the pull request to verify that it has indeed fixed the issue.
+!!! note "Scope"
+    This page talks about benchmarking on SWE-bench to measure the software engineering capabilities of SWE-agent.
+    Benchmarking for the other modes (programming challenges, cybersecurity) are coming soon.
+
+There are two steps to the SWE-agent/SWE-bench pipeline. First SWE-agent takes an input GitHub issue and returns a pull request that attempts to fix it. We call that step *inference*. The second step (currently only available for issues in the SWE-bench benchmark) is to *evaluate* the pull request to verify that it has indeed fixed the issue.
 
 !!! warning "Architectures"
     At this moment, there are known issues with a small number of repositories that don't install properly for `arm64` / `aarch64` architecture computers. We're working on a fix, but if you'd like to run and evaluate on the entirety of SWE-bench, the easiest way is by using an `x86` machine.

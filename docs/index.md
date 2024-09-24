@@ -1,8 +1,11 @@
-# SWE-agent: Turn LMs into SWE agents!
+# Turn LMs into SWE agents (and more)!
 
 ![SWE-agent banner](assets/readme_assets/swe-agent-banner.png)
 
-SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix bugs and issues in real GitHub repositories.
+SWE-agent turns LMs (e.g. GPT-4) into agents that can
+[🐛 fix issues in real GitHub repositories](background#swe-agent),
+[⛳️ solve coding challenges](usage/coding_challenges.md), and
+[🔥 crack offensive cybersecurity challenges](background#enigma) (<span class="enigma">EnIGMA</span> mode).
 
 <div class="grid cards" markdown>
 
@@ -14,11 +17,20 @@ SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix b
 
     [:octicons-arrow-right-24: Learn more](background/index.md)
 
+
+-   :material-hat-fedora:{ .lg .middle } __EnIGMA__
+
+    ---
+
+    <span class="enigma">EnIGMA</span> turns SWE-agent into an offensive cybersecurity expert.
+
+    [:octicons-arrow-right-24: Learn more](background/index.md#enigma)
+
 -   :material-download:{ .lg .middle } __Installation__
 
     ---
 
-    We provide three different ways to get started, including running installation-free in your browser.
+    Three different ways to get started, including running installation-free in your browser.
 
     [:octicons-arrow-right-24: Get started](installation/index.md)
 
@@ -35,7 +47,7 @@ SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix b
 
     ---
 
-    See what's new in SWE-agent
+    See what's new in SWE-agent.
 
     [:octicons-arrow-right-24: Read the changelog](installation/changelog.md)
 
