@@ -29,6 +29,7 @@ We will run the following command,
 ```bash
 python run.py \
   --model_name gpt4 \
+  --ctf \
   --image_name sweagent/enigma:latest \
   --data_path ../LLM_CTF_Database/2018/CSAW-Finals/misc/leaked_flag/challenge.json \
   --repo_path ../LLM_CTF_Database/2018/CSAW-Finals/misc/leaked_flag \

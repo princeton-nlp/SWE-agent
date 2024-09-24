@@ -32,6 +32,7 @@ docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock \
   -v $(pwd)/keys.cfg:/app/keys.cfg \
   sweagent/swe-agent-run:latest \
   python run.py --image_name=sweagent/enigma:latest \
+  --ctf \
   --model_name gpt4 \
   --data_path /path/to/challenge.json \
   --repo_path /path/to/repo \
