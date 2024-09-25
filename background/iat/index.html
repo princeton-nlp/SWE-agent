@@ -1374,13 +1374,13 @@ This page focuses on their usage for capture the flag (CTF) challenges.</p>
 Current LM agents, which build their ACI around a running shell as central REPL, lack the ability to nest REPLs or start separate REPLs for interactive tools.</p>
 <p>In EnIGMA, we build <strong>Interactive Agent Tools (IATs)</strong> that use the same principles from the ACIs introduced in SWE-agent, but are also able to nest new REPL of the desired tool for agent interaction.</p>
 <p>Just like how typical programmer or cybersecurity expert uses multiple programs concurrently to build software or defend against cyber attacks, our IAT design enables the agent to use the interactive tools while still having the ability to access the main shell to run other commands.</p>
-<p>As we show in our <a href="https://enigma-agent.github.io/assets/paper.pdf">paper</a>, a baseline agent without our IATs does worse than EnIGMA.</p>
+<p>As we show in our <a href="https://arxiv.org/abs/2409.16165">paper</a>, a baseline agent without our IATs does worse than EnIGMA.</p>
 <p>EnIGMA contains interactive tools that we discovered to be immensely helpful for CTF solving during the agent-computer interface design process:</p>
 <ol>
 <li>We add a debugger (based on <code>gdb</code>) that have basic commands for controlling (<code>start</code>, <code>stop</code>, <code>step</code>, <code>add_breakpoint</code>), similar to how graphic interfaces for debuggers provide buttons for frequently used operations. We also have a generic command that lets the agent perform arbitrary <code>gdb</code> command inside the interactive debugging session.</li>
 <li>We supply the agent with a special-built server connection tool, instead of having it just <code>netcat</code> to servers. The server connection utility that we built has commands for connecting to a server and sending a line with bytes or unicode strings to the server.</li>
 </ol>
-<p>Read our paper for more details <a href="https://enigma-agent.github.io/assets/paper.pdf">here</a>.</p>
+<p>Read our paper for more details <a href="https://arxiv.org/abs/2409.16165">here</a>.</p>
 
 
 
