@@ -51,7 +51,7 @@ For a quick introduction, watch the following video:
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/IJxqOsNFiCc?si=xtIxyCcriM9FJexK" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-For all the details, read our [paper](https://enigma-agent.github.io/assets/paper.pdf). If you found this work helpful, please consider using the following citation:
+For all the details, read our [paper](https://arxiv.org/abs/2409.16165). If you found this work helpful, please consider using the following citation:
 
 ```
 @misc{abramovich2024enigmaenhancedinteractivegenerative,
