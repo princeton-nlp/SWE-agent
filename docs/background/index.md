@@ -51,4 +51,16 @@ For a quick introduction, watch the following video:
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/IJxqOsNFiCc?si=xtIxyCcriM9FJexK" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-For all the details, read our [paper](https://enigma-agent.github.io/assets/paper.pdf).
+For all the details, read our [paper](https://arxiv.org/abs/2409.16165). If you found this work helpful, please consider using the following citation:
+
+```
+@misc{abramovich2024enigmaenhancedinteractivegenerative,
+      title={EnIGMA: Enhanced Interactive Generative Model Agent for CTF Challenges},
+      author={Talor Abramovich and Meet Udeshi and Minghao Shao and Kilian Lieret and Haoran Xi and Kimberly Milner and Sofija Jancheska and John Yang and Carlos E. Jimenez and Farshad Khorrami and Prashanth Krishnamurthy and Brendan Dolan-Gavitt and Muhammad Shafique and Karthik Narasimhan and Ramesh Karri and Ofir Press},
+      year={2024},
+      eprint={2409.16165},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2409.16165},
+}
+```
