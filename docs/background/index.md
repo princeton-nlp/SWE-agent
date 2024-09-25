@@ -25,7 +25,7 @@ A longer lecture touching on the project's motivation, research findings, as wel
 
 For in-depth information, read our [paper](https://arxiv.org/abs/2405.15793). If you found this work helpful, please consider using the following citation:
 
-```
+```bibtex
 @misc{yang2024sweagent,
       title={SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering},
       author={John Yang and Carlos E. Jimenez and Alexander Wettig and Kilian Lieret and Shunyu Yao and Karthik Narasimhan and Ofir Press},
@@ -53,7 +53,7 @@ For a quick introduction, watch the following video:
 
 For all the details, read our [paper](https://arxiv.org/abs/2409.16165). If you found this work helpful, please consider using the following citation:
 
-```
+```bibtex
 @misc{abramovich2024enigmaenhancedinteractivegenerative,
       title={EnIGMA: Enhanced Interactive Generative Model Agent for CTF Challenges},
       author={Talor Abramovich and Meet Udeshi and Minghao Shao and Kilian Lieret and Haoran Xi and Kimberly Milner and Sofija Jancheska and John Yang and Carlos E. Jimenez and Farshad Khorrami and Prashanth Krishnamurthy and Brendan Dolan-Gavitt and Muhammad Shafique and Karthik Narasimhan and Ramesh Karri and Ofir Press},

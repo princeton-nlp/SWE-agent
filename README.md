@@ -71,7 +71,7 @@ Contact person: [John Yang](https://john-b-yang.github.io/) and [Carlos E. Jimen
 
 ## 📝 Citation <a name="citation"></a>
 If you found this work helpful, please consider citing it using the following:
-```
+```bibtex
 @misc{yang2024sweagent,
       title={SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering},
       author={John Yang and Carlos E. Jimenez and Alexander Wettig and Kilian Lieret and Shunyu Yao and Karthik Narasimhan and Ofir Press},
@@ -83,7 +83,7 @@ If you found this work helpful, please consider citing it using the following:
 ```
 
 If you used the offensive cybersecurity capabilities in SWE-agent (EnIGMA), please also consider citing:
-```
+```bibtex
 @misc{abramovich2024enigmaenhancedinteractivegenerative,
       title={EnIGMA: Enhanced Interactive Generative Model Agent for CTF Challenges},
       author={Talor Abramovich and Meet Udeshi and Minghao Shao and Kilian Lieret and Haoran Xi and Kimberly Milner and Sofija Jancheska and John Yang and Carlos E. Jimenez and Farshad Khorrami and Prashanth Krishnamurthy and Brendan Dolan-Gavitt and Muhammad Shafique and Karthik Narasimhan and Ramesh Karri and Ofir Press},
