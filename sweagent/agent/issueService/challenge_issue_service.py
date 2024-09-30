@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sweagent.agent.issueService.helpers import get_problem_statement_from_challenge_json
+from sweagent.agent.issueService.helpers import get_challenge_data_from_json
 from sweagent.agent.issueService.issue_service import IssueService, ProblemStatementResults, ProblemStatementSource
 from sweagent.utils.log import default_logger
 
@@ -11,7 +11,7 @@ class ChallengeIssueService(IssueService):
         default_logger.debug(f"Challenge File: {self.data_path}")
 
     def _get_challenge_data_from_challenge_json(self, file_path: str) -> ProblemStatementResults:
-        challenge_data = get_problem_statement_from_challenge_json(file_path=file_path)
+        challenge_data = get_challenge_data_from_json(file_path=file_path)
 
         # todo null checking?
         problem_statement = f"{challenge_data.name} {challenge_data.description}"

@@ -6,7 +6,7 @@ from pathlib import Path
 from sweagent.agent.issueService.issue_service import ChallengeData
 
 
-def get_problem_statement_from_challenge_json(file_path: str) -> ChallengeData:
+def get_challenge_data_from_json(file_path: str) -> ChallengeData:
     """For CTF challenges"""
     challenge = json.loads(Path(file_path).read_text())
 
