@@ -25,7 +25,7 @@ import docker
 import docker.types
 from docker.models.containers import Container
 from sweagent.agent.interactive_commands import InteractiveSession
-from sweagent.agent.issueService.helpers import get_problem_statement_from_challenge_json
+from sweagent.agent.issueService.helpers import get_challenge_data_from_json
 from sweagent.agent.issueService.issue_service import IssueService, ProblemStatementResults
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
@@ -743,7 +743,7 @@ class InstanceBuilder:
 
     def set_problem_statement_from_challenge_json(self, file_path: str) -> None:
         """For CTF challenges"""
-        challenge_data = get_problem_statement_from_challenge_json(file_path)
+        challenge_data = get_challenge_data_from_json(file_path)
 
         # TODO refactor this to simply pass around the strongly typed challenge_data object
         self.args["challenge"] = challenge_data.challenge
