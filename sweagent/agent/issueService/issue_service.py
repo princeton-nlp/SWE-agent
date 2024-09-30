@@ -36,7 +36,7 @@ class ChallengeData:
         challenge: object,
         name: str,
         description: str,
-        files: list = [],
+        files: list,
         points: int = 10,
         docker_compose: str | None = None,
         port: int | None = None,

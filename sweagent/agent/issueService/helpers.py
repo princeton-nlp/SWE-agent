@@ -11,7 +11,7 @@ def get_problem_statement_from_challenge_json(file_path: str) -> ChallengeData:
     challenge = json.loads(Path(file_path).read_text())
 
     # Create a ChallengeData instance
-    challenge_data = ChallengeData(
+    return ChallengeData(
         challenge=challenge,
         name=challenge["name"],
         description=challenge["description"],
@@ -22,7 +22,5 @@ def get_problem_statement_from_challenge_json(file_path: str) -> ChallengeData:
         else None,
         port=challenge.get("internal_port") or challenge.get("port"),
         server_name=challenge.get("box", "") if "box" in challenge else "",
-        file_path=file_path,
+        file_path=file_path
     )
-
-    return challenge_data

@@ -742,7 +742,7 @@ class InstanceBuilder:
 
     def set_problem_statement_from_challenge_json(self, file_path: str) -> None:
         """For CTF challenges"""
-        challenge_data = ChallengeIssueService.get_problem_statement_from_challenge_json(file_path)
+        challenge_data = get_problem_statement_from_challenge_json(file_path)
 
         # TODO refactor this to simply pass around the strongly typed challenge_data object
         self.args["challenge"] = challenge_data.challenge
@@ -881,6 +881,9 @@ def get_instances(
     ):
         ib = InstanceBuilder(token=token)
         ib.set_problem_statement(problem_statement_results)
+        if(Path(file_path).name == "challenge.json"):
+            ib.set_problem_statement_from_challenge_json(file_path)
+
         if repo_path:
             ib.set_repo_info(repo_path, base_commit=base_commit)
         elif is_github_repo_url(file_path):

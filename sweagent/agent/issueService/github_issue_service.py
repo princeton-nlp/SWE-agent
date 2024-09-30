@@ -10,6 +10,7 @@ from sweagent.agent.issueService.issue_service import (
 )
 from sweagent.environment.utils import InvalidGithubURL
 from sweagent.utils.config import keys_config
+from sweagent.utils.log import default_logger
 
 
 class GitHubIssueService(IssueService):
