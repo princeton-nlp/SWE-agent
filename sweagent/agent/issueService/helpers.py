@@ -1,0 +1,17 @@
+def get_problem_statement_from_challenge_json(self, file_path: str) -> ChallengeData:
+    """For CTF challenges"""
+    challenge = json.loads(Path(file_path).read_text())
+
+    # Create a ChallengeData instance
+    challenge_data = ChallengeData(
+        challenge=challenge,
+        files=challenge.get("files", []),
+        points=challenge.get("points", 10),
+        category_friendly=CTF_CHALLENGES_CATEGORIES.get(challenge["category"]),
+        docker_compose=(Path(file_path).parent / "docker-compose.yml") if (Path(file_path).parent / "docker-compose.yml").is_file() else None,
+        port=challenge.get("internal_port") or challenge.get("port"),
+        server_name=challenge.get("box", "") if "box" in challenge else "",
+        file_path=file_path
+    )
+    
+    return challenge_data

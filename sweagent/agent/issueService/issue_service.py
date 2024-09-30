@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from abc import ABC, abstractmethod
 from enum import Enum
+from typing import List
 
 GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
 
@@ -12,6 +13,13 @@ class ProblemStatementSource(Enum):
     ONLINE = "online"
     SWEBENCH = "swe-bench"
 
+class CtfChallengesCategories(Enum):
+    REV = "reverse engineering"
+    PWN = "binary exploitation"
+    WEB = "web security"
+    CRYPTO = "cryptography"
+    MISC = "miscellaneous"
+    FORENSICS = "forensics"
 
 class ProblemStatementResults:
     def __init__(self, problem_statement: str, instance_id: str, problem_statement_source: ProblemStatementSource):
@@ -19,6 +27,25 @@ class ProblemStatementResults:
         self.instance_id = instance_id
         self.problem_statement_source = problem_statement_source
 
+# TODO Put this class somewhere it makes more sense
+class ChallengeData:
+    def __init__(
+        self, 
+        challenge: CtfChallengesCategories, 
+        files: list = [],
+        points: int = 10,
+        docker_compose: str | None = None,
+        port: int | None = None,
+        server_name: str = "",
+        file_path: str = ""
+    ):
+        self.challenge = challenge
+        self.files = files
+        self.points = points
+        self.docker_compose = docker_compose
+        self.port = port
+        self.server_name = server_name
+        self.file_path = file_path
 
 class IssueService(ABC):
     def __init__(self, data_path):

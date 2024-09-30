@@ -25,6 +25,8 @@ import docker
 import docker.types
 from docker.models.containers import Container
 from sweagent.agent.issueService.issue_service import IssueService, ProblemStatementResults
+from sweagent.agent.issueService.helpers import get_problem_statement_from_challenge_json
+
 from sweagent.agent.interactive_commands import InteractiveSession
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
@@ -34,15 +36,6 @@ DOCKER_COMPOSE_TERMINATION_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START
 DOCKER_COMPOSE_STARTUP_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 600))
 GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
 GITHUB_REPO_URL_PATTERN = re.compile(r".*[/@]?github\.com\/([^/]+)\/([^/]+)")
-
-CTF_CHALLENGES_CATEGORIES = {
-    "rev": "reverse engineering",
-    "pwn": "binary exploitation",
-    "web": "web security",
-    "crypto": "cryptography",
-    "misc": "miscellaneous",
-    "forensics": "forensics",
-}
 
 logger = get_logger("env_utils")
 
@@ -734,6 +727,35 @@ class InstanceBuilder:
         self.args = {}
         self.token = token
         self._instance_id_problem_suffix = ""
+
+    def set_server_description(self, server_name: str | None, port: int | None) -> None:
+        """For CTF challenges"""
+        if server_name is None or port is None:
+            self.args["challenge"]["server_description"] = ""
+            return
+        if self.args["challenge"]["category"] in {"web", "misc"} and self.args["challenge"].get("proto") != "nc":
+            self.args["challenge"]["server_description"] = (
+                f"The challenge web server is running on `{server_name}` port `{port}` and you can access it from within the container environment using `curl http://{server_name}:{port}`."
+            )
+        else:
+            self.args["challenge"]["server_description"] = (
+                f"The challenge web server is running on `{server_name}` port `{port}` and you can access it from within the container environment using `connect_start {server_name} {port}`."
+            )
+
+    def set_problem_statement_from_challenge_json(self, file_path: str) -> None:
+        """For CTF challenges"""
+        challenge_data = ChallengeIssueService.get_problem_statement_from_challenge_json(file_path)
+
+        # TODO refactor this to simply pass around the strongly typed challenge_data object
+        self.args["challenge"] = challenge_data.challenge
+        self.args["challenge"]["files"] = challenge_data.files 
+        self.args["challenge"]["points"] = challenge_data.points
+        self.args["challenge"]["category_friendly"] = challenge_data.category_friendly
+        self.args["challenge"]["docker_compose"] = challenge_data.docker_compose
+        self.args["challenge"]["port"] = challenge_data.port
+        self.args["challenge"]["server_name"] = challenge_data.server_name 
+        self.args["challenge"]["file_path"] = challenge_data.file_path
+        self.set_server_description(challenge_data.server_name, challenge_data.port)
 
     def set_problem_statement(self, problem_statement_results: ProblemStatementResults):
         self.args["problem_statement"] = problem_statement_results.problem_statement
