@@ -204,9 +204,12 @@ def test_load_instances(test_data_path, caplog):
     for example in examples:
         get_instances(file_path=str(example), **_TOKEN, issue_service=build_issue_service(str(example)))
 
+
 @pytest.mark.ctf
 def test_load_ctf_instances(test_data_path, caplog):
     test_data_sources = test_data_path / "data_sources" / "ctf"
     examples = list(test_data_sources.glob("**/challenge.json"))
     for example in examples:
-        get_instances(file_path=str(example), repo_path=str(example.parent), issue_service=build_issue_service(str(example)))
+        get_instances(
+            file_path=str(example), repo_path=str(example.parent), issue_service=build_issue_service(str(example))
+        )

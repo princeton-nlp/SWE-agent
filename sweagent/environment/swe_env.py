@@ -27,12 +27,12 @@ import docker
 import docker.errors
 import docker.models.containers
 from sweagent import REPO_ROOT
-from sweagent.agent.issueService.issue_service_factory import IssueServiceFactory
 from sweagent.agent.interactive_commands import (
     INTERACTIVE_SESSIONS_CONFIG,
     InteractiveSession,
     InteractiveSessionConfig,
 )
+from sweagent.agent.issueService.issue_service_factory import IssueServiceFactory
 from sweagent.environment.utils import (
     PROCESS_DONE_MARKER_END,
     PROCESS_DONE_MARKER_START,

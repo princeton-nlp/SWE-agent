@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from enum import Enum, auto
-
 from pathlib import Path
 
 from sweagent.agent.issueService.challenge_issue_service import ChallengeIssueService

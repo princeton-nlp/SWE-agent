@@ -24,10 +24,8 @@ from unidiff import PatchSet
 import docker
 import docker.types
 from docker.models.containers import Container
-from sweagent.agent.issueService.issue_service import IssueService, ProblemStatementResults
-from sweagent.agent.issueService.helpers import get_problem_statement_from_challenge_json
-
 from sweagent.agent.interactive_commands import InteractiveSession
+from sweagent.agent.issueService.issue_service import IssueService, ProblemStatementResults
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
@@ -748,12 +746,12 @@ class InstanceBuilder:
 
         # TODO refactor this to simply pass around the strongly typed challenge_data object
         self.args["challenge"] = challenge_data.challenge
-        self.args["challenge"]["files"] = challenge_data.files 
+        self.args["challenge"]["files"] = challenge_data.files
         self.args["challenge"]["points"] = challenge_data.points
         self.args["challenge"]["category_friendly"] = challenge_data.category_friendly
         self.args["challenge"]["docker_compose"] = challenge_data.docker_compose
         self.args["challenge"]["port"] = challenge_data.port
-        self.args["challenge"]["server_name"] = challenge_data.server_name 
+        self.args["challenge"]["server_name"] = challenge_data.server_name
         self.args["challenge"]["file_path"] = challenge_data.file_path
         self.set_server_description(challenge_data.server_name, challenge_data.port)
 
