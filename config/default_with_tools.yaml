@@ -14,7 +14,6 @@ instance_template: |-
   {issue}
   </ISSUE_DESCRIPTION>
 
-  {tdd_results}
   # INSTRUCTIONS
   * Solve this issue on your own. Your terminal session has started and you're in the repository's root directory. Edit files and run any checks or tests as needed.
   * YOU CAN ONLY MAKE ONE TOOL CALL (RUN A COMMAND) AT A TIME. You should always wait for feedback after every command.
@@ -28,7 +27,6 @@ instance_template: |-
   2. Always make sure to look at the current open file and the CWD. The currently open file might be in a different directory than the working directory! Note that some commands, such as 'create', open files, so they might change the current open file.
   3. CWD is the directory of the repo you are supposed to edit. Only modify files inside this directory. Always provide absolute file paths, prefixed with $PWD.
   4. When editing files, it is easy to accidentally specify a wrong line number or to write code with incorrect indentation. Always check the code after you issue an edit to make sure that it reflects what you wanted to accomplish. If it didn't, issue another command to fix it.
-
 
   (Open file: {open_file})
   (Current directory: {working_dir})

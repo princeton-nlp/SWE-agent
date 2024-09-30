@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
+from operator import itemgetter
 from pathlib import Path
 from typing import Any, TypedDict
 
@@ -13,6 +14,7 @@ from tenacity import RetryError
 
 from sweagent.agent.commands import Command, ParseCommand
 from sweagent.agent.history_processors import HistoryProcessor
+from sweagent.agent.manual_input import ManualInput
 from sweagent.agent.models import (
     APIStats,
     ContextWindowExceededError,
@@ -21,6 +23,7 @@ from sweagent.agent.models import (
     ModelQueryResult,
     get_last_valid_tool_use_name,
     get_model,
+    make_model_query_result,
     make_assistant_content,
     make_user_reply_content,
 )
@@ -194,6 +197,9 @@ class AgentArguments(FlattenedAccess, FrozenSerializable):
     # We put tdd on the agent args because it needs it in post_init.
     tdd: bool = False
 
+    manual_input_conversation_path: Path | None = None
+    manual_input_continuation_label: str | None = None
+
     def __post_init__(self):
         if self.config is None and self.config_file is not None:
             # If unassigned, we load the config from the file to store its contents with the overall arguments
@@ -284,6 +290,8 @@ class Agent:
         self.last_container_id = None
         self.hooks = []
         self.logger = get_logger(f"Agent[{name}]")
+        self.manual_input = ManualInput(args.manual_input_conversation_path, args.manual_input_continuation_label)
+        self.initial_model_response = None
 
     def add_hook(self, hook: AgentHook):
         """Add hook to agent"""
@@ -318,21 +326,11 @@ class Agent:
 
     # Unflag all tdd entries from history, so it can be compressed.
     def _unflag_tdd_history(self):
-        self._assert_tdd_history_entries()
+        # self._assert_tdd_history_entries()
 
         for entry in self.history:
             if "tdd" in entry:
                 entry["tdd"] = False
-
-    def _make_initial_tdd_result(self) -> str:
-        if self.env.tdd:
-            if "{tdd_results}" not in self.config.instance_template:
-                # {tdd_results} needs to be referenced in instance_template for this to work.
-                raise ValueError("{tdd_results} not found in instance_template:\n\n" + self.config.instance_template)
-            test_result = self.env.communicate("tdd_repro")
-            # logger.debug(f"[TDD] Initial Results:\n{test_result}")
-            return f"# ISSUE REPRODUCTION RESULTS<NOTE: These are the results of a test run of tests that reproduce the issue. Start your investigation here./>\n<ISSUE_REPRODUCTION>\n{test_result}\n</ISSUE_REPRODUCTION>\n\n"
-        return ""
 
     # ###########################################################################
     # setup and more
@@ -348,6 +346,29 @@ class Agent:
         assert self.config is not None  # mypy
         self.model.setup(init_model_stats)
         self.instance_args = instance_args
+
+        if self.manual_input.enabled():
+            history_and_patch = self.manual_input.load_conversation()
+            if history_and_patch is not None:
+                history, patch = history_and_patch
+                self.initial_model_response = history[-1]
+                assert self.initial_model_response["role"] == "assistant"
+                assert self.initial_model_response["action"] == "tdd_repro"
+                self.history = history[:-1]
+                self.made_initial_prompt = True
+                if patch is not None:
+                    env.apply_conversation_patch(patch)
+
+                continuation = self.manual_input.load_continuation_file()
+
+                if continuation is not None:
+                    self.logger.info(f"Continuing from manual input:\n{continuation}")
+                    continuation_file_path = "/root/continuation.md"
+                    env.copy_string_to_container_file(continuation, continuation_file_path)
+                    env.communicate_with_handling(f'export MANUAL_INPUT_CONTINUATION_FILE="{continuation_file_path}"')
+
+                return
+                
 
         # Compose system prompt.
         system_msg = self.config.system_template.format(**self.system_args)
@@ -571,7 +592,13 @@ class Agent:
             action: action that the model proposes
             output: raw model output (not output of the action)
         """
-        thought, action, output = self.forward_with_error_check(observation, state)
+        if self.initial_model_response is not None:
+            thought, action, content = itemgetter("thought", "action", "content")(self.initial_model_response)
+            output = make_model_query_result(content)
+            self.initial_model_response = None
+        else:
+            thought, action, output = self.forward_with_error_check(observation, state)
+
         last_tool_name = get_last_valid_tool_use_name(output)
         last_command = self.get_command(last_tool_name)
         ran_tdd_action = last_command.tdd if last_command else False
@@ -619,8 +646,6 @@ class Agent:
             templates = [self.config.instance_template]
             if self.config.strategy_template is not None:
                 templates.append(self.config.strategy_template)
-            # Get tdd_results, to be rendered into the initial_prompt template.
-            state_vars["tdd_results"] = self._make_initial_tdd_result()
         elif observation is None or observation.strip() == "":
             # Show no output template if observation content was empty
             templates = [self.config.next_step_no_output_template]
@@ -896,12 +921,14 @@ class Agent:
             If return_type is "info_trajectory", returns a tuple of
             the info dictionary and the trajectory (list of dictionaries).
         """
-        self.made_initial_prompt = False
         done = False
         # mypy checks
         assert env.container_obj is not None
         assert env.record is not None
         assert self.config is not None
+
+        self.made_initial_prompt = False
+        self.manual_input.set_instance_id(env.record["instance_id"])
 
         if env.container_obj.id != self.last_container_id:
             self.logger.info(f"Initializing agent settings for container {env.container_obj.id}")
@@ -922,6 +949,7 @@ class Agent:
             for hook in self.hooks:
                 hook.on_step_start()
             state = env.communicate(self.state_command) if self.state_command else None
+            stop_on_tdd_repro = self.manual_input.enabled() and self.initial_model_response is None
             thought, action, output = self.forward(observation, env.get_available_actions(), state)
             for hook in self.hooks:
                 hook.on_actions_generated(thought=thought, action=action, output=repr(output))
@@ -937,6 +965,16 @@ class Agent:
                     observations.append(obs)
                     if sub_action["cmd_name"] == self.config.submit_command:
                         done = True
+                    if sub_action["action"] == "tdd_repro" and stop_on_tdd_repro:
+                        done = True
+                        output = env.communicate("([ -s /root/test.patch ] && git apply -R < /root/test.patch); git add -A && echo -n '<<CONVERSATION_PATCH||' > /root/conversation-patch && git diff --cached >> /root/conversation-patch && echo -n '||CONVERSATION_PATCH>>' >> /root/conversation-patch && cat /root/conversation-patch")
+
+                        pattern = r"\<\<CONVERSATION_PATCH\|\|(.*)\|\|CONVERSATION_PATCH\>\>"
+
+                        match = re.search(pattern, output, re.DOTALL)
+                        if match is not None:
+                            patch = match.group(1)
+                            self.manual_input.save_conversation(self.history, patch)
                     if done:
                         break
                 else:

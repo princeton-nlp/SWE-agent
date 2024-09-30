@@ -466,6 +466,18 @@ class SWEEnv(gym.Env):
         )
         self.logger.debug(f"[TDD] Applied test patch - output:\n{res}")
 
+    def apply_conversation_patch(self, patch: str) -> None:
+        """
+        Apply patch to source in repo
+        """
+        patch_path = "/root/conversation.patch"
+        self.copy_string_to_container_file(patch, patch_path)
+        res = self.communicate_with_handling(
+            f"cd /{self._repo_name} && git apply -v {patch_path} && rm {patch_path}",
+            error_msg="Failed to apply patch",
+        )
+        self.logger.debug(f"[TDD] Applied previous changes - output:\n{res}")
+
     def step(self, action: str) -> tuple[str | None, int, bool, dict]:
         """
         Runs an action proposed by the agent in the environment and returns the corresponding output.

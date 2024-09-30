@@ -146,7 +146,7 @@ class ModelCache:
 
     def _get_file(self, history: list[dict[str, str]]) -> str:
         hash_input = json_serialize_str(history)
-        print(f"HASH_INPUT\n{hash_input}\nEND_OF_HASH_INPUT")
+        # print(f"HASH_INPUT\n{hash_input}\nEND_OF_HASH_INPUT")
         hash = hash_string(hash_input)
         return f"{self.directory}/model-query-{hash}.json"
 

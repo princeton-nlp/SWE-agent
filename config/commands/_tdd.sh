@@ -10,6 +10,12 @@ tdd_repro() {
     pushd $REPO_ROOT > /dev/null
     echo -e "Running tests to reproduce the bug (from $PWD):\n >$TEST_CMD_FAIL_TO_PASS\n"
     eval "$TEST_CMD_FAIL_TO_PASS"
+
+    # include the continuation file if it exists
+    if [ -f "$MANUAL_INPUT_CONTINUATION_FILE" ]; then
+        cat $MANUAL_INPUT_CONTINUATION_FILE
+        rm $MANUAL_INPUT_CONTINUATION_FILE
+    fi
     popd > /dev/null
 }
 
