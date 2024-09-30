@@ -106,6 +106,7 @@ command_files:
 - config/commands/search.sh
 - config/commands/edit_linting.sh
 - config/commands/_split_string.py
+- config/commands/submit.sh
 parse_command: ParseCommandDetailed
 history_processor: Last5Observations
 demonstrations:

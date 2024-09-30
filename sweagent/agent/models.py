@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -127,7 +128,8 @@ class BaseModel:
             self.stats = APIStats(total_cost=self.stats.total_cost)
             logger.info("Resetting model stats")
         else:
-            self.stats = other
+            # Make sure to copy the stats to avoid modifying the original
+            self.stats = copy.deepcopy(other)
 
     def update_stats(self, input_tokens: int, output_tokens: int) -> float:
         """
@@ -151,14 +153,14 @@ class BaseModel:
         self.stats.tokens_received += output_tokens
         self.stats.api_calls += 1
 
-        # Log updated cost values to std. out.
-        logger.info(
+        # Log updated cost values to std. err
+        logger.debug(
             f"input_tokens={input_tokens:,}, "
             f"output_tokens={output_tokens:,}, "
             f"instance_cost={self.stats.instance_cost:.2f}, "
             f"cost={cost:.2f}",
         )
-        logger.info(
+        logger.debug(
             f"total_tokens_sent={self.stats.tokens_sent:,}, "
             f"total_tokens_received={self.stats.tokens_received:,}, "
             f"total_cost={self.stats.total_cost:.2f}, "
@@ -943,7 +945,14 @@ class ReplayModel(BaseModel):
 
 
 class InstantEmptySubmitTestModel(BaseModel):
-    MODELS = {"instant_empty_submit": {}}
+    MODELS = {
+        "instant_empty_submit": {
+            "max_context": 100_000,
+            "max_tokens_to_sample": 4096,
+            "cost_per_input_token": 0,
+            "cost_per_output_token": 0,
+        }
+    }
 
     def __init__(self, args: ModelArguments, commands: list[Command]):
         """This model immediately submits. Useful for testing purposes"""
@@ -958,6 +967,7 @@ class InstantEmptySubmitTestModel(BaseModel):
         elif self._action_idx == 1:
             self._action_idx = 0
             action = "DISCUSSION\nThe task should be resolved, so let's submit the patch.\n\n```\nsubmit\n```\n"
+        self.update_stats(0, 0)
         return action
 
 

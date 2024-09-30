@@ -47,21 +47,23 @@ markdown_extensions:
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 nav:
   - Home: index.md
-  - Background:
+  - Project Overview:
     - "background/index.md"
     - "Agent-Computer Interface": "background/aci.md"
+    - "Interactive Agent Tools": "background/iat.md"
     - "Architecture": "background/architecture.md"
   - Installation:
     - "installation/index.md"
     - "Use in-browser": "installation/codespaces.md"
     - "Install from source": "installation/source.md"
-    - "Docker": "installation/docker.md"
+    - "Run with docker": "installation/docker.md"
     - "API keys": "installation/keys.md"
     - "Installation tips": "installation/tips.md"
     - "Changelog": "installation/changelog.md"
   - Usage:
     - "usage/index.md"
     - "Command line usage": "usage/cl_tutorial.md"
+    - "EnIGMA usage": "usage/enigma.md"
     - "Solving coding challenges": "usage/coding_challenges.md"
     - "Using the web UI": "usage/web_ui.md"
     - "Trajectories": "usage/trajectories.md"
@@ -74,6 +76,7 @@ nav:
     - "Demonstrations": "config/demonstrations.md"
     - "Environment variables": "config/env.md"
     - "Docker images": "config/docker.md"
+    - "Summarizers": "config/summarizers.md"
   - Development:
     - "Contribution guide": "dev/contribute.md"
     - "Formatting conflicts": "dev/formatting_conflicts.md"
@@ -96,3 +99,5 @@ plugins:
 repo_url: https://github.com/princeton-nlp/SWE-agent
 repo_name: princeton-nlp/SWE-agent
 edit_uri: edit/main/docs/
+extra_css:
+  - assets/custom.css

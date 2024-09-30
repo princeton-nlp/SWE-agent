@@ -62,13 +62,14 @@ namespaces = false
 [project.urls]
 "Homepage" = "https://swe-agent.com"
 "Bug Reports" = "http://github.com/princeton-nlp/SWE-agent/issues"
-"Documentation" = "https://github.com/princeton-nlp/SWE-agent"
+"Documentation" = "https://princeton-nlp.github.io/SWE-agent/"
 "Source" = "http://github.com/princeton-nlp/SWE-agent"
 
 
 [tool.pytest.ini_options]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "ctf: marks EnIGMA tests for using SWE-agent on capture the flag (CTF) challenges",
 ]
 testpaths = [
     "tests"

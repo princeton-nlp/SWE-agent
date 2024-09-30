@@ -1,0 +1,14 @@
+version: '3'
+services:
+  server:
+    image: llmctf/2016q-pwn-warmup
+    ports:
+      - 8000:8000
+    networks:
+      ctfnet:
+        aliases:
+          - pwn.chal.csaw.io
+
+networks:
+  ctfnet:
+    external: true

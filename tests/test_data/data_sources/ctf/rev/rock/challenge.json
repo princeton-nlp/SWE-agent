@@ -1,0 +1,8 @@
+{
+    "name": "Rock",
+    "category": "rev",
+    "description": "Never forget the people's champ.",
+    "flag": "flag{IoDJuvwxy\\tuvyxwxvwzx{\\z{vwxyz}",
+    "points": 100,
+    "files": ["rock"]
+}

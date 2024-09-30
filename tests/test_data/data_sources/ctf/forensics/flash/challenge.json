@@ -1,0 +1,9 @@
+{
+	"name": "flash",
+	"category": "forensics",
+	"description": "We were able to grab an image of a harddrive. Find out what's on it",
+	"flag": "flag{b3l0w_th3_r4dar}",
+	"points": 100,
+	"box": "",
+	"files":["flash_c8429a430278283c0e571baebca3d139.zip"]
+}

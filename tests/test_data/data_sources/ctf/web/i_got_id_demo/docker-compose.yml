@@ -1,0 +1,14 @@
+version: '3'
+services:
+  server:
+    image: llmctf/2016q-web-igotid
+    ports:
+      - 8000:8000
+    networks:
+      ctfnet:
+        aliases:
+          - web.chal.csaw.io
+
+networks:
+  ctfnet:
+    external: true

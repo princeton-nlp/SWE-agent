@@ -1,16 +1,13 @@
 {
   "ignorePatterns": [
     {
-      "pattern": "https://github.com/issues?.*"
-    },
-    {
-      "pattern": "https://github.com/?.*/pull/?.*"
-    },
-    {
-      "pattern": ".*localhost.*"
+      "pattern": "https://github.com/?.*"
     },
     {
       "pattern": "https://platform.openai.com/docs/.*"
+    },
+    {
+      "pattern": ".*localhost.*"
     }
   ]
 }

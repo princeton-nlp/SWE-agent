@@ -21,3 +21,5 @@ We currently provide two interfaces to SWE-agent:
     [:octicons-arrow-right-24: Get started](web_ui.md)
 
 </div>
+
+For EnIGMA usage, only the CLI is currently supported. [Get started here](enigma.md).

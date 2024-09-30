@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - main
+      - prepare-public2
     paths-ignore:
       - 'docs/**'
       - 'README.md'
@@ -15,6 +16,7 @@ on:
   pull_request:
     branches:
       - main
+      - prepare-public2
     paths-ignore:
       - 'docs/**'
       - 'README.md'
@@ -37,6 +39,12 @@ jobs:
       - name: Pull swe-agent docker container
         run: |
           docker pull sweagent/swe-agent:latest
+      - name: Pull enigma docker container
+        run: |
+          docker pull sweagent/enigma:latest
+      - name: Set up network for CTF challenges
+        run: |
+          docker network create ctfnet
       - name: Create keys.cfg
         run: |
           touch keys.cfg
@@ -49,7 +57,14 @@ jobs:
       - name: Run pytest
         uses: sjvrijn/pytest-last-failed@v2
         with:
-          pytest-args: '--exitfirst --cov'
+          pytest-args: '--cov'
+      - name: Upload logs & trajectories
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trajectories
+          path: |
+            trajectories/runner/
       - name: Explicitly convert coverage to xml
         run: coverage xml
       - name: Upload coverage reports to Codecov
