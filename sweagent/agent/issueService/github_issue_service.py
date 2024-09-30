@@ -15,6 +15,7 @@ from sweagent.utils.config import keys_config
 class GitHubIssueService(IssueService):
     def __init__(self, data_path):
         super().__init__(data_path)
+        default_logger.debug(f"GitHub Url: {self.data_path}")
 
         self._github_token: str = keys_config.get("GITHUB_TOKEN", "")  # type: ignore
 

@@ -31,7 +31,9 @@ class ProblemStatementResults:
 class ChallengeData:
     def __init__(
         self, 
-        challenge: CtfChallengesCategories, 
+        challenge: object, 
+        name: str,
+        description: str,
         files: list = [],
         points: int = 10,
         docker_compose: str | None = None,
@@ -40,12 +42,17 @@ class ChallengeData:
         file_path: str = ""
     ):
         self.challenge = challenge
+        self.name = name
+        self.description = description
         self.files = files
         self.points = points
         self.docker_compose = docker_compose
         self.port = port
         self.server_name = server_name
         self.file_path = file_path
+        self.category_enum = CtfChallengesCategories[challenge['category'].upper()]
+        self.category_code_raw = challenge['category']
+        self.category_friendly = self.category_enum.value
 
 class IssueService(ABC):
     def __init__(self, data_path):
