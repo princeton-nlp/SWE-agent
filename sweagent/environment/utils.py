@@ -881,7 +881,7 @@ def get_instances(
     ):
         ib = InstanceBuilder(token=token)
         ib.set_problem_statement(problem_statement_results)
-        if(Path(file_path).name == "challenge.json"):
+        if Path(file_path).name == "challenge.json":
             ib.set_problem_statement_from_challenge_json(file_path)
 
         if repo_path:
