@@ -8,11 +8,12 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypedDict
+import traceback
 
 from simple_parsing.helpers.fields import field
 from simple_parsing.helpers.flatten import FlattenedAccess
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
-from tenacity import RetryError
+from tenacity import RetryErrors
 
 from sweagent.agent.commands import Command, ParseCommand
 from sweagent.agent.history_processors import HistoryProcessor
@@ -843,7 +844,7 @@ class Agent:
         except KeyboardInterrupt:
             raise
         except Exception as e:
-            self.logger.warning("Failed to set environment variables")
+            self.logger.warning(f"Failed to set environment variables: {traceback.format_exc()}")
             raise e
         command_files = list()
         for file in self.config.command_files:

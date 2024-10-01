@@ -730,7 +730,7 @@ class SWEEnv(gym.Env):
             except KeyboardInterrupt:
                 raise
             except Exception as e:
-                self.logger.warning("Failed to stop interactive session: %s", str(e))
+                self.logger.warning("Failed to stop interactive session: %s", traceback.format_exc())
                 self.interactive_session = None
             else:
                 self.logger.info("Interactive session stopped")
@@ -747,7 +747,7 @@ class SWEEnv(gym.Env):
             try:
                 self.container_obj = docker.from_env().containers.get(self.container_name)
             except Exception as e:
-                self.logger.warning(f"Failed to get fresh container object: {e}", exc_info=True)
+                self.logger.warning(f"Failed to get fresh container object: {traceback.format_exc()}", exc_info=True)
             if self.container_obj.status not in {"paused", "exited", "dead", "stopping"}:
                 try:
                     self.container_obj.pause()

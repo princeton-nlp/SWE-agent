@@ -6,6 +6,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+import traceback
 
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 
@@ -137,7 +138,7 @@ class SimpleSummarizer(SummarizeFunction):
             ), APIStats()
         except Exception as e:
             self.logger.warning(
-                f"Unhandled exception occurred when trying to summarize observation for input {input}: {e}"
+                f"Unhandled exception occurred when trying to summarize observation for input {input}: {traceback.format_exc()}"
             )
             return observation, APIStats()
 
@@ -237,6 +238,6 @@ class LMSummarizer(SummarizeFunction):
             ), APIStats()
         except Exception as e:
             self.logger.warning(
-                f"Unhandled exception occurred when trying to summarize observation for input {input}: {e}"
+                f"Unhandled exception occurred when trying to summarize observation for input {input}: {traceback.format_exc()}"
             )
             return observation, APIStats()
