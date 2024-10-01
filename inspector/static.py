@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import json
 import logging
+import traceback
 from argparse import ArgumentParser
 from pathlib import Path
-import traceback
 
 import yaml
 from tqdm.auto import tqdm
@@ -79,7 +79,7 @@ def _load_file(file_name, gold_patches, test_patches):
             return history_content
         else:
             return "No history content found."
-    except Exception as e:
+    except Exception:
         return f"Error loading content. {traceback.format_exc()}"
 
 

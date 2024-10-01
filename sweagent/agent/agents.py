@@ -4,6 +4,7 @@ import copy
 import json
 import re
 import time
+import traceback
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
