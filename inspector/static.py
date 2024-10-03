@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import traceback
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -41,7 +42,7 @@ try:
         STYLE_SHEET = infile.read()
 except Exception as e:
     style_file = Path(__file__).parent / "style.css"
-    logger.error(f"Failed to load style sheet from {style_file}: {e}")
+    logger.error(f"Failed to load style sheet from {style_file}: {traceback.format_exc()}")
     raise e
 
 
@@ -78,8 +79,8 @@ def _load_file(file_name, gold_patches, test_patches):
             return history_content
         else:
             return "No history content found."
-    except Exception as e:
-        return f"Error loading content. {e}"
+    except Exception:
+        return f"Error loading content. {traceback.format_exc()}"
 
 
 def _make_file_path_tree(file_path):

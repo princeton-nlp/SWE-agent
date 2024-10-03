@@ -4,6 +4,7 @@ import copy
 import json
 import re
 import time
+import traceback
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -843,7 +844,7 @@ class Agent:
         except KeyboardInterrupt:
             raise
         except Exception as e:
-            self.logger.warning("Failed to set environment variables")
+            self.logger.warning(f"Failed to set environment variables: {traceback.format_exc()}")
             raise e
         command_files = list()
         for file in self.config.command_files:
