@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://www.swe-agent.com/">
-    <img src="assets/swe-agent-banner.png" alt="swe-agent.com" />
+    <img src="assets/swe-agent-banner.png" alt="SWE-agent website banner" />
   </a>
 </p>
 
@@ -17,14 +17,14 @@
 
 **SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can resolve issues in real GitHub repositories and more.**
 
-On [SWE-bench][], SWE-agent resolves 12.47% of issues of the full test set and 23% of issues of SWE-bench lite.
+On [SWE-bench][], SWE-agent resolves 12.47% of issues in the full test set and 23% of issues in SWE-bench lite.
 [SWE-agent EnIGMA][enigma] solves more than **3x more** challenges of the offensive cybersecurity [NYU CTF benchmark][nyu-ctf] than the previous SOTA agent.
 
 [enigma]: https://enigma-agent.github.io/
 [SWE-bench]: https://github.com/princeton-nlp/SWE-bench
 [nyu-ctf]: https://arxiv.org/abs/2406.05590
 
-We accomplish our results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, view, edit and execute code files. We call this an **Agent-Computer Interface (ACI)**.
+We achieve these results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, view, edit, and execute code files. We call this an **Agent-Computer Interface (ACI)**.
 Read more about it in our [paper](https://arxiv.org/abs/2405.15793)!
 
 SWE-agent is built and maintained by researchers from Princeton University.
@@ -33,9 +33,9 @@ SWE-agent is built and maintained by researchers from Princeton University.
 
 ## 🚀 Get started!
 
-👉 Try SWE-agent in your browser: [![Open in GitHub Codespaces](https://img.shields.io/badge/Open_in_GitHub_Codespaces-gray?logo=github)](https://codespaces.new/princeton-nlp/SWE-agent) ([more information](https://princeton-nlp.github.io/SWE-agent/installation/codespaces/))
+👉 **Try SWE-agent in your browser:** [![Open in GitHub Codespaces](https://img.shields.io/badge/Open_in_GitHub_Codespaces-gray?logo=github)](https://codespaces.new/princeton-nlp/SWE-agent) ([more information](https://princeton-nlp.github.io/SWE-agent/installation/codespaces/))
 
-Read our [documentation][docs] to learn more:
+Read our [documentation][docs] to learn more.
 
 * [Installation](https://princeton-nlp.github.io/SWE-agent/installation/)
 * [Command line usage](https://princeton-nlp.github.io/SWE-agent/usage/cl_tutorial/)
