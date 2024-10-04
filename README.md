@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="#enigma"><img src="https://github.com/user-attachments/assets/70ba3fdf-ee7b-474f-8fdc-de4ffde51eef" height="35px"></a>
+  <a href="#enigma"><img src="https://github.com/user-attachments/assets/70ba3fdf-ee7b-474f-8fdc-de4ffde51eef" height="35px" width="300px"></a>
 </p>
 
 <p align="center">
@@ -82,7 +82,7 @@ If you found this work helpful, please consider citing it using the following:
 }
 ```
 
-If you used the offensive cybersecurity capabilities in SWE-agent (EnIGMA), please also consider citing:
+If you utilize the offensive cybersecurity capabilities in SWE-agent (EnIGMA), please cite:
 ```bibtex
 @misc{abramovich2024enigmaenhancedinteractivegenerative,
       title={EnIGMA: Enhanced Interactive Generative Model Agent for CTF Challenges},
@@ -97,7 +97,7 @@ If you used the offensive cybersecurity capabilities in SWE-agent (EnIGMA), plea
 
 
 ## 🪪 License <a name="license"></a>
-MIT. Check `LICENSE`.
+MIT. See `LICENSE`.
 
 <div align="center">
 
@@ -111,3 +111,4 @@ MIT. Check `LICENSE`.
 [![Markdown links](https://github.com/princeton-nlp/SWE-agent/actions/workflows/check-links.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/check-links.yaml)
 
 </div>
+We❤️you!
