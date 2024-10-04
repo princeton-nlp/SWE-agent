@@ -282,7 +282,6 @@ def main(data_path, directory, port):
             with Path.open(Path(data_path)) as f:
                 data = json.load(f)
     elif "args.yaml" in os.listdir(directory):
-        # with Path.open(os.path.join(directory, "args.yaml")) as file:
         with Path.open(Path(directory) / "args.yaml") as file:
             args = yaml.safe_load(file)
         if "environment" in args and "data_path" in args["environment"]:
