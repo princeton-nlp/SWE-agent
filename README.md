@@ -24,7 +24,7 @@ On [SWE-bench][], SWE-agent resolves 12.47% of issues of the full test set and 2
 [SWE-bench]: https://github.com/princeton-nlp/SWE-bench
 [nyu-ctf]: https://arxiv.org/abs/2406.05590
 
-We accomplish our results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, view, edit and execute code files. We call this an **Agent-Computer Interface (ACI)**.
+We accomplish our results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, and view, edit, and execute code files. We call this an **Agent-Computer Interface (ACI)**.
 Read more about it in our [paper](https://arxiv.org/abs/2405.15793)!
 
 SWE-agent is built and maintained by researchers from Princeton University.
@@ -48,7 +48,7 @@ showcases our research findings and provides a hands-on tutorial on how to insta
 use, and configure SWE-agent:
 
 <div align="center">
-<a href="https://youtu.be/d9gcXpiiDao"><img src="assets/wb_stream_youtube.png" style="width: 600px"/></a>
+<a href="https://youtu.be/d9gcXpiiDao"><img src="assets/wb_stream_youtube.png" style="width: 800px; max-width: 100%; margin-top:10px;/></a>
 </div>
 
 [docs]: https://princeton-nlp.github.io/SWE-agent/
@@ -111,3 +111,8 @@ MIT. Check `LICENSE`.
 [![Markdown links](https://github.com/princeton-nlp/SWE-agent/actions/workflows/check-links.yaml/badge.svg)](https://github.com/princeton-nlp/SWE-agent/actions/workflows/check-links.yaml)
 
 </div>
+## 💫 Contributors
+
+<a href="https://github.com/princeton-nlp/swe-agent/graphs/contributors">
+  <img alt="contributors" src="https://contrib.rocks/image?repo=princeton-nlp/swe-agent"/>
+</a>
