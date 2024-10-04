@@ -849,7 +849,7 @@ class Agent:
         command_files = list()
         for file in self.config.command_files:
             datum = dict()
-            with open(file) as f:
+            with Path.open(Path(file)) as f:
                 contents = f.read()
             datum["contents"] = contents
             filename = Path(file).name

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 from argparse import ArgumentParser
 from pathlib import Path
 from typing import Any
@@ -34,20 +33,20 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
     # Open trajectory file, extract responses as actions
     if traj_path.endswith(".yaml"):
         traj_data = dict()
-        with open(traj_path) as f:
+        with Path.open(Path(traj_path)) as f:
             traj_data["history"] = yaml.safe_load(f)
     else:
-        with open(traj_path) as file:
+        with Path.open(Path(traj_path)) as file:
             traj_data = json.load(file)
     actions = [x["content"] for x in traj_data["history"] if x["role"] == "assistant"]
     instance_id = traj_path.split("/")[-1].split(".")[0]
-    with open(replay_action_trajs_path, "w") as f:
+    with Path.open(Path(replay_action_trajs_path), "w") as f:
         print(json.dumps({instance_id: actions}), file=f, end="\n", flush=True)
 
     # Get data_path from args.yaml
     if data_path is None:
-        args_path = os.path.join(os.path.dirname(traj_path), "args.yaml")
-        with open(args_path) as f:
+        args_path = Path(traj_path).parent / "args.yaml"
+        with Path.open(args_path) as f:
             args = yaml.safe_load(f)
         data_path = args["environment"]["data_path"]
 
@@ -58,7 +57,7 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
         """
         data = [d for d in data if d["instance_id"] == instance_id]
         tmp_path = instance_id + ".jsonl"
-        with open(tmp_path, "w") as f:
+        with Path.open(Path(tmp_path), "w") as f:
             for d in data:
                 print(json.dumps(d), file=f, end="\n", flush=True)
         return tmp_path
@@ -74,7 +73,7 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
         is_other = True
         is_ctf = True
     elif data_path.endswith(".json"):
-        with open(data_path) as file:
+        with Path.open(Path(data_path)) as file:
             data = json.load(file)
         replay_task_instances_path = create_task_instances_tmp_file(data)
     else:
@@ -107,9 +106,9 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
     script_args = runscript.get_args(run_args)
     runscript.main(script_args)
 
-    os.remove(replay_action_trajs_path)
+    Path.unlink(Path(replay_action_trajs_path))
     if not is_other:
-        os.remove(replay_task_instances_path)
+        Path.unlink(Path(replay_task_instances_path))
 
 
 def main(

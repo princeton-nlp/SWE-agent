@@ -77,7 +77,7 @@ class ParseCommand(metaclass=ParseCommandMeta):
 
 class ParseCommandBash(ParseCommand):
     def parse_command_file(self, path: str) -> list[Command]:
-        with open(path) as file:
+        with Path.open(Path(path)) as file:
             contents = file.read()
         if contents.strip().startswith("#!"):
             commands = self.parse_script(path, contents)

@@ -456,7 +456,7 @@ class SWEEnv(gym.Env):
         """
         assert self.record is not None
         path_to_patch = "test.patch"
-        with open(path_to_patch, "w") as f:
+        with Path.open(Path(path_to_patch), "w") as f:
             f.write(self.record["test_patch"])
         subprocess.run(
             f"docker cp {path_to_patch} {self.container_name}:/root/test.patch",
@@ -467,7 +467,7 @@ class SWEEnv(gym.Env):
             input="git apply /root/test.patch",
             error_msg="Failed to apply test patch correctly",
         )
-        os.remove(path_to_patch)
+        Path.unlink(Path(path_to_patch))
 
     def _get_edited_files_with_context(self, patch: str) -> dict[str, str]:
         """Get the edited files with context from the patch"""

@@ -165,6 +165,8 @@ select = [
     "PT",
     # flake8-simplify (SIM)
     "SIM201",
+    # flake8-use-pathlib
+    "PTH",
 ]
 ignore = [
     # flake8-return

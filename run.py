@@ -484,7 +484,7 @@ class Main:
                 "challenge_path": challenge["file_path"],
             }
             datum.update(challenge_datum)
-        with open(output_file, "a+") as fp:
+        with Path.open(output_file, "a+") as fp:
             print(json.dumps(datum), file=fp, flush=True)
         logger.info(f"Saved predictions to {output_file}")
 

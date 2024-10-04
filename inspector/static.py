@@ -38,8 +38,7 @@ TEMPLATE = """
 """
 
 try:
-    with open(Path(__file__).parent / "style.css") as infile:
-        STYLE_SHEET = infile.read()
+    STYLE_SHEET = Path(Path(__file__).parent / "style.css").read_text()
 except Exception as e:
     style_file = Path(__file__).parent / "style.css"
     logger.error(f"Failed to load style sheet from {style_file}: {traceback.format_exc()}")
@@ -100,9 +99,9 @@ def save_static_viewer(file_path):
     if "args.yaml" in list(map(lambda x: x.name, file_path.parent.iterdir())):
         args = yaml.safe_load(Path(file_path.parent / "args.yaml").read_text())
         if "environment" in args and "data_path" in args["environment"]:
-            data_path = Path(__file__).parent.parent / args["environment"]["data_path"]
+            data_path: Path = Path(__file__).parent.parent / args["environment"]["data_path"]
             if data_path.exists():
-                with open(data_path) as f:
+                with Path.open(data_path) as f:
                     data = json.load(f)
             if not isinstance(data, list) or not data or "patch" not in data[0] or "test_patch" not in data[0]:
                 data = []
@@ -118,7 +117,7 @@ def save_static_viewer(file_path):
     )
     data = TEMPLATE.format(file_content=content, style_sheet=style_sheet, file_path_tree=file_path_tree)
     output_file = file_path.with_suffix(".html")
-    with open(output_file, "w+") as outfile:
+    with Path.open(output_file, "w+") as outfile:
         print(data, file=outfile)
     logger.info(f"Saved static viewer to {output_file}")
 

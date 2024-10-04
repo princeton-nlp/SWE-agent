@@ -100,24 +100,24 @@ def copy_file_to_container(container: Container, contents: str, container_path: 
 
         # Create a TAR archive in memory containing the temporary file
         with tempfile.NamedTemporaryFile():
-            with open(temp_file_name, "rb") as temp_file:
+            with Path.open(Path(temp_file_name), "rb") as temp_file:
                 # Prepare the TAR archive
                 with BytesIO() as tar_stream:
                     with tarfile.open(fileobj=tar_stream, mode="w") as tar:
-                        tar_info = tarfile.TarInfo(name=os.path.basename(container_path))
-                        tar_info.size = os.path.getsize(temp_file_name)
+                        tar_info = tarfile.TarInfo(name=Path(container_path).name)
+                        tar_info.size = Path.stat(Path(temp_file_name)).st_size
                         tar.addfile(tarinfo=tar_info, fileobj=temp_file)
                     tar_stream.seek(0)
                     # Copy the TAR stream to the container
-                    container.put_archive(path=os.path.dirname(container_path), data=tar_stream.read())
+                    container.put_archive(path=str(Path(container_path).parent), data=tar_stream.read())
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         logger.error(traceback.format_exc())
     finally:
         # Cleanup: Remove the temporary file if it was created
-        if temp_file_name and os.path.exists(temp_file_name):
-            os.remove(temp_file_name)
+        if temp_file_name and Path.exists(Path(temp_file_name)):
+            Path.unlink(Path(temp_file_name))
 
 
 def copy_anything_to_container(container: Container, host_path: str, container_path: str) -> None:
@@ -945,7 +945,7 @@ def get_instances(
         raise ValueError(msg)
 
     # If file_path is a directory, attempt load from disk
-    if os.path.isdir(file_path):
+    if Path.is_dir(Path(file_path)):
         try:
             dataset_or_dict = load_from_disk(file_path)
             if isinstance(dataset_or_dict, dict):
@@ -961,7 +961,7 @@ def get_instances(
 
     # If file_path is a file, load the file
     if file_path.endswith(".json"):
-        with open(file_path) as file:
+        with Path.open(Path(file_path)) as file:
             return postproc_instance_list(json.load(file))
     if file_path.endswith(".jsonl"):
         return postproc_instance_list([json.loads(x) for x in Path(file_path).read_text().splitlines(keepends=True)])

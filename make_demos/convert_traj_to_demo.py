@@ -53,12 +53,12 @@ def save_demo(data, file, traj_path):
     yaml.dump(data, buffer)
     content = buffer.getvalue()
     header = DEMO_COMMENT.format(traj_path=traj_path)
-    with open(file, "w") as f:
+    with Path.open(file, "w") as f:
         f.write(f"{header}\n{content}")
 
 
 def convert_traj_to_action_demo(traj_path: str, output_file: str = None, include_user: bool = False):
-    with open(traj_path) as file:
+    with Path.open(Path(traj_path)) as file:
         traj = json.load(file)
 
     history = traj["history"]

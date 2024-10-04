@@ -139,7 +139,7 @@ def append_results(traj_path: Path, instance_id: str, content, results, results_
 
 
 def load_content(file_name, gold_patches, test_patches) -> dict[str, Any]:
-    with open(file_name) as infile:
+    with Path.open(Path(file_name)) as infile:
         content = json.load(infile)
     results_file = Path(file_name).parent / "results.json"
     results = load_results(results_file)
@@ -147,7 +147,7 @@ def load_content(file_name, gold_patches, test_patches) -> dict[str, Any]:
     scorecards_file = Path(file_name).parent / "scorecards.json"
     scorecards = None
     if scorecards_file.exists():
-        with open(scorecards_file) as infile:
+        with Path.open(scorecards_file) as infile:
             scorecards = json.load(infile)
 
     content = append_exit(content)  # accommodate new and old format
@@ -171,7 +171,7 @@ def load_results(results_path: Path) -> dict[str, Any] | None:
     """
     if not results_path.exists():
         return None
-    with open(results_path) as infile:
+    with Path.open(results_path) as infile:
         results = json.load(infile)
     # Different versions of the code used "not_generated" or "no_generation".
     # Let's standardize this here
@@ -260,7 +260,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(json.dumps(files).encode())
 
     def check_for_updates(self):
-        current_mod_times = {str(file): os.path.getmtime(file) for file in Path(self.traj_dir).glob("**/*.traj")}
+        current_mod_times = {str(file): Path.stat(file).st_mtime for file in Path(self.traj_dir).glob("**/*.traj")}
         if current_mod_times != Handler.file_mod_times:
             Handler.file_mod_times = current_mod_times
             self.send_response(200)  # Send response that there's an update
@@ -279,15 +279,16 @@ def main(data_path, directory, port):
         if data_path.endswith(".jsonl"):
             data = [json.loads(x) for x in Path(data_path).read_text().splitlines(keepends=True)]
         elif data_path.endswith(".json"):
-            with open(data_path) as f:
+            with Path.open(Path(data_path)) as f:
                 data = json.load(f)
     elif "args.yaml" in os.listdir(directory):
-        with open(os.path.join(directory, "args.yaml")) as file:
+        # with Path.open(os.path.join(directory, "args.yaml")) as file:
+        with Path.open(Path(directory) / "args.yaml") as file:
             args = yaml.safe_load(file)
         if "environment" in args and "data_path" in args["environment"]:
-            data_path = os.path.join(Path(__file__).parent, "..", args["environment"]["data_path"])
-            if os.path.exists(data_path):
-                with open(data_path) as f:
+            data_path = Path(__file__).parent / ".." / args["environment"]["data_path"]
+            if Path.exists(data_path):
+                with Path.open(data_path) as f:
                     data = json.load(f)
 
     gold_patches = {d["instance_id"]: d["patch"] if "patch" in d else None for d in data}
