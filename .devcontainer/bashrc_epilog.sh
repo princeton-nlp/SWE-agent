@@ -1,5 +1,5 @@
 
-if [ -z "$(docker images -q sweagent/swe-agent 2> /dev/null)" ]; then                             ─╯
+if [ -z "$(docker images -q sweagent/swe-agent 2> /dev/null)" ]; then
   echo "⚠️ Please wait for the postCreateCommand to start and finish (a new window will appear shortly) ⚠️"
 fi
 
