@@ -1,3 +1,5 @@
+# SWE-Agent
+
 <p align="center">
   <a href="https://www.swe-agent.com/">
     <img src="assets/swe-agent-banner.png" alt="swe-agent.com" />
