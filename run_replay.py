@@ -46,7 +46,7 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
 
     # Get data_path from args.yaml
     if data_path is None:
-        args_path = os.path.join(os.path.dirname(traj_path), "args.yaml")
+        args_path = Path(traj_path).parent / "args.yaml"
         with open(args_path) as f:
             args = yaml.safe_load(f)
         data_path = args["environment"]["data_path"]

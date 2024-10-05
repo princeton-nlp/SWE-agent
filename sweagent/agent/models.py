@@ -3,7 +3,6 @@ from __future__ import annotations
 import copy
 import json
 import logging
-import os
 from collections import defaultdict
 from dataclasses import dataclass, fields
 from pathlib import Path
@@ -917,7 +916,7 @@ class ReplayModel(BaseModel):
     def __init__(self, args: ModelArguments, commands: list[Command]):
         super().__init__(args, commands)
 
-        if self.args.replay_path is None or not os.path.exists(self.args.replay_path):
+        if self.args.replay_path is None or not Path(self.args.replay_path).exists():
             msg = "--replay_path must point to a file that exists to run a replay policy"
             raise ValueError(msg)
 

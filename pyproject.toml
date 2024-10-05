@@ -165,6 +165,23 @@ select = [
     "PT",
     # flake8-simplify (SIM)
     "SIM201",
+    # flake8-use-pathlib
+    "PTH100",
+    "PTH110",
+    "PTH111",
+    "PTH112",
+    "PTH113",
+    "PTH114",
+    "PTH117",
+    "PTH118",
+    "PTH119",
+    "PTH120",
+    "PTH121",
+    "PTH122",
+    "PTH202",
+    "PTH203",
+    "PTH204",
+    "PTH205",
 ]
 ignore = [
     # flake8-return
