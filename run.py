@@ -430,8 +430,8 @@ class Main:
                     logger.warning("**************************************************")
                     logger.warning("Found existing args.yaml with different arguments!")
                     logger.warning("**************************************************")
-            except Exception as e:
-                logger.warning(f"Failed to load existing args.yaml: {e}")
+            except Exception:
+                logger.warning(f"Failed to load existing args.yaml: {traceback.format_exc()}")
 
         with log_path.open("w") as f:
             self.args.dump_yaml(f)

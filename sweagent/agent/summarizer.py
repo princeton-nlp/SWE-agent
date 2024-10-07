@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import textwrap
+import traceback
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
@@ -135,9 +136,9 @@ class SimpleSummarizer(SummarizeFunction):
             return textwrap.dedent(self._warning_message.format(command_file_name=command_file_name)) + env.communicate(
                 f"open {command_file_name}"
             ), APIStats()
-        except Exception as e:
+        except Exception:
             self.logger.warning(
-                f"Unhandled exception occurred when trying to summarize observation for input {input}: {e}"
+                f"Unhandled exception occurred when trying to summarize observation for input {input}: {traceback.format_exc()}"
             )
             return observation, APIStats()
 
@@ -235,8 +236,8 @@ class LMSummarizer(SummarizeFunction):
             return textwrap.dedent(
                 self._warning_message_summarization_failed.format(command_file_name=command_file_name)
             ), APIStats()
-        except Exception as e:
+        except Exception:
             self.logger.warning(
-                f"Unhandled exception occurred when trying to summarize observation for input {input}: {e}"
+                f"Unhandled exception occurred when trying to summarize observation for input {input}: {traceback.format_exc()}"
             )
             return observation, APIStats()
