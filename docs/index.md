@@ -16,7 +16,7 @@ SWE-agent turns LMs (e.g. GPT-4) into agents that can
     Learn more about the project goals and academic research.
 
     [:octicons-arrow-right-24: Learn more](background/index.md)
-    
+
 
 -   :material-download:{ .lg .middle } __Installation__
 
@@ -62,7 +62,7 @@ SWE-agent turns LMs (e.g. GPT-4) into agents that can
 
     [:octicons-arrow-right-24: Learn more](background/index.md#enigma)
 
-    
+
 -   :material-newspaper:{ .lg .middle } __Changelog__
 
     ---
@@ -70,5 +70,5 @@ SWE-agent turns LMs (e.g. GPT-4) into agents that can
     See what's new in SWE-agent.
 
     [:octicons-arrow-right-24: Read the changelog](installation/changelog.md)
-    
+
 </div>
