@@ -16,15 +16,7 @@ SWE-agent turns LMs (e.g. GPT-4) into agents that can
     Learn more about the project goals and academic research.
 
     [:octicons-arrow-right-24: Learn more](background/index.md)
-
-
--   :material-hat-fedora:{ .lg .middle } __EnIGMA__
-
-    ---
-
-    <span class="enigma">EnIGMA</span> turns SWE-agent into an offensive cybersecurity expert.
-
-    [:octicons-arrow-right-24: Learn more](background/index.md#enigma)
+    
 
 -   :material-download:{ .lg .middle } __Installation__
 
@@ -43,13 +35,6 @@ SWE-agent turns LMs (e.g. GPT-4) into agents that can
 
     [:octicons-arrow-right-24: Tutorials, tips and tricks](usage/index.md)
 
--   :material-newspaper:{ .lg .middle } __Changelog__
-
-    ---
-
-    See what's new in SWE-agent.
-
-    [:octicons-arrow-right-24: Read the changelog](installation/changelog.md)
 
 -   :material-cog:{ .lg .middle } __Configuration__
 
@@ -67,4 +52,23 @@ SWE-agent turns LMs (e.g. GPT-4) into agents that can
     Dig into SWE-agent's code and build your own agent!
 
     [:octicons-arrow-right-24: Development information](reference/index.md)
+
+
+-   :material-hat-fedora:{ .lg .middle } __EnIGMA__
+
+    ---
+
+    <span class="enigma">EnIGMA</span> turns SWE-agent into an offensive cybersecurity expert.
+
+    [:octicons-arrow-right-24: Learn more](background/index.md#enigma)
+
+    
+-   :material-newspaper:{ .lg .middle } __Changelog__
+
+    ---
+
+    See what's new in SWE-agent.
+
+    [:octicons-arrow-right-24: Read the changelog](installation/changelog.md)
+    
 </div>
