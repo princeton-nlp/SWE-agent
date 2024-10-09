@@ -56,9 +56,9 @@ use, and configure SWE-agent:
 ## 🕵️ SWE-agent for offensive cybersecurity (EnIGMA) <a name="enigma"></a>
 <img src="https://github.com/user-attachments/assets/5128cc06-7a28-4a37-b950-e4e58bc00823" height="80px"></img>
 
-[SWE-agent: EnIGMA][enigma] (Enhanced Interactive Generative Model Agent) is a mode for solving offensive cybersecurity challenges.
-EnIGMA achieves SOTA on multiple cybersecurity benchmarks (see [leaderboard](https://enigma-agent.github.io/#results)).
-The EnIGMA project introduced multiple novelties that are available to all use cases of SWE-agent, such as [Interactive Agent Tools](https://princeton-nlp.github.io/SWE-agent/background/iat/) and a [Summarizer](https://princeton-nlp.github.io/SWE-agent/config/summarizers/) to handle long outputs.
+[SWE-agent: EnIGMA][enigma] is a mode for solving offensive cybersecurity (capture the flag) challenges.
+EnIGMA achieves state-of-the-art results on multiple cybersecurity benchmarks (see [leaderboard](https://enigma-agent.github.io/#results)).
+The EnIGMA project introduced multiple features that are available in all modes of SWE-agent, such as the [debugger and server connection tools](https://princeton-nlp.github.io/SWE-agent/background/iat/) and a [summarizer](https://princeton-nlp.github.io/SWE-agent/config/summarizers/) to handle long outputs.
 
 <img src="https://github.com/user-attachments/assets/a3bdcc06-9193-4368-b612-c7cf94a9482c" height="200px"></img>
 
