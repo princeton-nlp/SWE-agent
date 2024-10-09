@@ -35,11 +35,11 @@ For in-depth information, read our [paper](https://arxiv.org/abs/2405.15793). If
 
 ## SWE-agent <span class="enigma">EnIGMA</span> <a name="enigma"></a>
 
-SWE-agent <span class="enigma">EnIGMA</span> (Enhanced Interactive Generative Model Agent) adds advanced **offensive cybersecurity capabilities**.
+SWE-agent <span class="enigma">EnIGMA</span> adds advanced **offensive cybersecurity capabilities**.
 
-On [NYU CTF benchmark](https://github.com/NYU-LLM-CTF/LLM_CTF_Database), EnIGMA solves **13.5%** of the capture the flag (CTF) challenges, achieving the state-of-the-art performance on the full test set of 200 challenges (leaderboard), **surpassing previous agents by more than 3x** ([leaderboard](https://enigma-agent.github.io/#leaderboard)).
+On the [NYU CTF benchmark](https://github.com/NYU-LLM-CTF/LLM_CTF_Database), EnIGMA solves **13.5%** of the capture the flag (CTF) challenges, achieving the state-of-the-art performance on the full test set of 200 challenges, **surpassing previous agents by more than 3x** ([leaderboard](https://enigma-agent.github.io/#results)).
 
-We accomplish our results by extending the [🤖 ACIs](../background/aci.md) first introduced in SWE-agent, to the cybersecurity domain. We establish the novel [**:gear: Interactive Agent Tools** (IATs)](iat.md) concept, which enables our agent to use interactive tools such as a debugger, in a multiprocess way such that the agent still has access to the main shell.
+We accomplish our results by extending the [🤖 ACIs](../background/aci.md) concept first introduced in SWE-agent, to the cybersecurity domain. We establish the novel [**:gear: Interactive Agent Tools** (IATs)](iat.md) concept, which enables our agent to use interactive tools such as a debugger, in a multitasking way such that the agent still has access to the main shell while using the debugger.
 
 We also use a new **Summarizer** concept integrated into the agent to deal with long context. Read more about our different summarizers [here](../config/summarizers.md).
 
