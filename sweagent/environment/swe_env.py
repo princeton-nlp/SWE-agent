@@ -31,6 +31,8 @@ from sweagent.agent.interactive_commands import (
     INTERACTIVE_SESSIONS_CONFIG,
     InteractiveSession,
     InteractiveSessionConfig,
+    get_interactive_commands,
+    get_interactive_session,
 )
 from sweagent.environment.utils import (
     PROCESS_DONE_MARKER_END,
@@ -46,10 +48,8 @@ from sweagent.environment.utils import (
     get_docker_compose,
     get_gh_issue_data,
     get_instances,
-    get_interactive_session,
     image_exists,
     parse_gh_issue_url,
-    read_session_with_timeout,
     read_with_timeout,
     read_with_timeout_experimental,
     terminate_docker_compose,
@@ -480,21 +480,13 @@ class SWEEnv(gym.Env):
             out[f"edited_files{context_length}"] = value
         return out
 
-    def _get_only_one_interactive_error_message_observation(self) -> str:
-        """Return a warning message about having to quit the existing interactive session before
-        starting a new one.
-        """
-        assert self.interactive_session  # mypy
-        exit_command = self.args.interactive_sessions_config[self.interactive_session.name].exit_command
-        return f"Interactive session already open. Please close the current interactive session: {self.interactive_session.name} with the command: `{exit_command}`"
-
     def _terminate_interactive_session(self, session_name: str):
         if not self.interactive_session:
             # Maybe fixing #772
             return
         try:
             self.interactive_session.session_process.terminate()
-            self.communicate(self.args.interactive_sessions_config[session_name].exit_command)
+            self.communicate(self.interactive_session.config.exit_command)
         except Exception as e:
             msg = (
                 f"Failed to terminate interactive session {session_name}: {e}."
@@ -518,7 +510,7 @@ class SWEEnv(gym.Env):
                 are detected, this is the same as the input observation.
                 Else, only the output from the interactive commands is returned.
         """
-        session_name, interactive_commands = self.get_interactive_commands(observation)
+        session_name, interactive_commands = get_interactive_commands(observation, logger=self.logger)
         if session_name is None:
             return observation
         if (
@@ -526,20 +518,22 @@ class SWEEnv(gym.Env):
             and self.interactive_session is not None
             and self.interactive_session.name != session_name
         ):
-            return self._get_only_one_interactive_error_message_observation()
+            return self.interactive_session._get_only_one_interactive_error_message_observation()
 
         observation = ""
         for command in interactive_commands:
             if command == "START":
                 # Start the session if previous session does not exist
                 if self.interactive_session is not None:
-                    return self._get_only_one_interactive_error_message_observation()
+                    return self.interactive_session._get_only_one_interactive_error_message_observation()
                 assert self.container_name is not None
                 self.interactive_session = get_interactive_session(
-                    self.container_name,
-                    "/" + self._repo_name,
-                    session_name,
-                    self.args.interactive_sessions_config[session_name].cmdline,
+                    ctr_name=self.container_name,
+                    ctr_obj=self.container_obj,
+                    cwd="/" + self._repo_name,
+                    session_name=session_name,
+                    config=self.args.interactive_sessions_config[session_name],
+                    logger=self.logger,
                 )
             elif command == "STOP":
                 if self.interactive_session is None:
@@ -560,43 +554,14 @@ class SWEEnv(gym.Env):
                     observation = f"Interactive session {session_name} was unexpectedly closed! Please start it again using `{start_command}`"
                     self._terminate_interactive_session(session_name=session_name)
                 else:
-                    try:
-                        observation += self.communicate_session(
-                            command,
-                            self.args.interactive_sessions_config[session_name].terminal_prompt_pattern,
-                            AGENT_ACTION_TIMEOUT,
-                            AGENT_ACTION_NO_OUTPUT_TIMEOUT,
-                        )
-                    except TimeoutError as e:
-                        try:
-                            observation = self.interrupt_interactive(session_name=session_name)
-                            observation += "\nEXECUTION TIMED OUT"
-                            observation += (
-                                f" BECAUSE NO OUTPUT WAS PRODUCED FOR MORE THAN {AGENT_ACTION_NO_OUTPUT_TIMEOUT} SECONDS.\nPLEASE REFINE YOUR RUNNING COMMAND SO IT WILL PRODUCE OUTPUT IN THE SPECIFIED TIME FRAME."
-                                if isinstance(e, NoOutputTimeoutError)
-                                else f" BECAUSE THE COMMAND WAS RUNNING FOR MORE THAN {AGENT_ACTION_TIMEOUT} SECONDS."
-                            )
-                        except Exception as e:
-                            observation += (
-                                "\nEXECUTION TIMED OUT AND INTERRUPT FAILED. TERMINATING INTERACTIVE SESSION."
-                            )
-                            self.logger.warning(f"Failed to interrupt container: {e}\nTERMINATING INTERACTIVE SESSION.")
-                            self._terminate_interactive_session(session_name=session_name)
-                            return observation
-                    except RuntimeError as e:
-                        observation += e.args[1] if len(e.args) > 1 else ""
-                        observation += "\nCOMMAND FAILED TO EXECUTE. TERMINATING INTERACTIVE SESSION."
-                        self.logger.warning(f"Failed to execute command: {e}\nTERMINATING INTERACTIVE SESSION.")
+                    _observation, terminate = self.interactive_session.communicate_with_handling(
+                        command,
+                        timeout_duration=AGENT_ACTION_TIMEOUT,
+                        no_output_timeout_duration=AGENT_ACTION_NO_OUTPUT_TIMEOUT,
+                    )
+                    observation += _observation
+                    if terminate:
                         self._terminate_interactive_session(session_name=session_name)
-                        return observation
-                    except BrokenPipeError as e:
-                        observation += "\nBROKEN PIPE ERROR. TERMINATING INTERACTIVE SESSION."
-                        self.logger.error(f"Broken pipe error: {e}\nTERMINATING INTERACTIVE SESSION.")
-                        self._terminate_interactive_session(session_name=session_name)
-                        return observation
-                    except Exception:
-                        observation += "\nEXECUTION FAILED OR COMMAND MALFORMED"
-                        self.logger.exception("Unknown exception")
                     observation += "\n"
         return observation
 
@@ -1082,58 +1047,6 @@ class SWEEnv(gym.Env):
             raise RuntimeError(msg)
         return logs
 
-    def communicate_session(
-        self,
-        input: str,
-        terminal_pattern: str,
-        timeout_duration: int | float = 25,
-        no_output_timeout_duration: int | float = 25,
-    ) -> str:
-        """
-        Sends input to interactive_session and returns output
-
-        Args:
-            input: input to send to session
-            terminal_pattern: pattern indicating the session's output termination (e.g., "(gdb) " in gdb)
-            timeout_duration: duration to wait for output
-
-        Returns:
-            output: output from session
-        """
-        assert self.interactive_session is not None
-        self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
-
-        try:
-            cmd = input if input.endswith("\n") else input + "\n"
-            os.write(self.interactive_session.session_process.stdin.fileno(), cmd.encode())  # type: ignore
-            time.sleep(0.03)
-            self.interactive_session.session_process.stdin.flush()  # type: ignore
-        except BrokenPipeError:
-            traceback.print_exc()
-            self.logger.error("Failed to communicate with session. Check docker logs for more information.")
-            msg = "Failed to communicate with session"
-            raise RuntimeError(msg)
-
-        self.logger.debug(f"Command: {input}")
-        # if command is to quit the current interactive session, sleep for termination then exit with no observation
-        if (
-            input.strip()
-            in self.args.interactive_sessions_config[self.interactive_session.name].quit_commands_in_session
-        ):
-            time.sleep(1)
-            return ""
-
-        try:
-            buffer = read_session_with_timeout(
-                self.interactive_session.session_process, terminal_pattern, timeout_duration, no_output_timeout_duration
-            )
-        except Exception:
-            msg = f"Read with timeout failed on input:\n---\n{input}\n---"
-            self.logger.error(msg)
-            raise
-        self.logger.log(logging.TRACE, "Output:\n%s", buffer)  # type: ignore
-        return buffer
-
     def get_available_actions(self) -> list[str]:
         """
         Returns list of available actions in current environment state
@@ -1196,47 +1109,6 @@ class SWEEnv(gym.Env):
             )
 
         return True
-
-    def get_interactive_commands(self, output: str) -> tuple[str | None, list[str]]:
-        """
-        Function for extracting interactive session commands from dummy output
-        of interactive command wrappers that were run in the environment.
-
-        Args:
-            output: observation
-
-        Returns:
-            session: session name for the commands or None if no commands found.
-            commands: list of commands extracted from observation.
-        """
-        pattern = r"\<\<INTERACTIVE\|\|(.*)\|\|INTERACTIVE\>\>"
-        session_pattern = r"SESSION=(.*)"
-        session_name = ""
-        commands = []
-        n_lines_ignored = 0
-        for line in output.split("\n"):
-            match = re.search(pattern, line, re.DOTALL)
-            if match is None:
-                if line.strip():
-                    n_lines_ignored += 1
-                continue
-            command = match.group(1)
-            match = re.search(session_pattern, command, re.DOTALL)
-            if match is None:
-                commands.append(command)
-            else:
-                session_name = match.group(1)
-        if not session_name:
-            if commands:
-                self.logger.error(
-                    f"No session name found even though interactive " f"commands {commands!r} were found."
-                )
-            return None, []
-
-        if n_lines_ignored:
-            self.logger.error(f"Ignored {n_lines_ignored} lines when parsing interactive commands.")
-
-        return session_name, commands
 
     def get_submission(self, output: str) -> str | None:
         """
@@ -1492,22 +1364,6 @@ class SWEEnv(gym.Env):
             else:
                 msg = f"Invalid command type: {command['type']}"
                 raise ValueError(msg)
-
-    def interrupt_interactive(self, session_name: str) -> str:
-        """
-        Send interrupt signal to interactive session several times to see if we can communicate with the process again.
-        """
-        assert self.container_obj is not None
-        for _ in range(self.args.interactive_sessions_config[session_name].signal_for_interrupt_limit):
-            self.container_obj.exec_run(f"pkill -SIGINT {session_name}")
-        return read_session_with_timeout(
-            self.interactive_session.session_process,
-            terminal_pattern=self.args.interactive_sessions_config[session_name].terminal_prompt_pattern,
-            timeout_duration=self.args.interactive_sessions_config[session_name].timeout_duration_on_interrupt,
-            no_output_timeout_duration=self.args.interactive_sessions_config[
-                session_name
-            ].timeout_duration_on_interrupt,
-        )
 
     def interrupt(self) -> str:
         """

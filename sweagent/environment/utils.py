@@ -24,7 +24,6 @@ from unidiff import PatchSet
 import docker
 import docker.types
 from docker.models.containers import Container
-from sweagent.agent.interactive_commands import InteractiveSession
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
@@ -441,19 +440,6 @@ def get_docker_compose(docker_compose_path: Path) -> Path:
     if error:
         logger.error(f"Unexpected compose setup error: {error}")
     return docker_compose_path
-
-
-def get_interactive_session(ctr_name: str, cwd: str, session_name: str, cmdline: str, *args) -> InteractiveSession:
-    """
-    Starts a new interactive session on the given container name.
-    Returns a subprocess.Popen object that is available for further read/writes for submitting commands and reading output.
-    """
-    startup_cmd = ["docker", "exec", "-i", "-w", cwd, ctr_name, cmdline, *args]
-    logger.debug(f"Starting interactive session {session_name} with command: {shlex.join(startup_cmd)}")
-    session = subprocess.Popen(startup_cmd, stdin=PIPE, stdout=PIPE, stderr=STDOUT, text=True, bufsize=1)
-    time.sleep(DOCKER_START_UP_DELAY)
-    _ = read_with_timeout(session, lambda: list(), timeout_duration=1)
-    return InteractiveSession(name=session_name, session_process=session)
 
 
 def _get_container_mounts_list(container_mounts: list[str]) -> list[docker.types.Mount]:
