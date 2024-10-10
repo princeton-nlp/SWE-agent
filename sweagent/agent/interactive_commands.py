@@ -229,10 +229,14 @@ class InteractiveSession:
 
 def get_interactive_session(
     ctr_name: str, ctr_obj, cwd: str, session_name: str, config: InteractiveSessionConfig, logger: logging.Logger
-) -> InteractiveSession:
+) -> tuple[str, InteractiveSession]:
     """
     Starts a new interactive session on the given container name.
     Returns a subprocess.Popen object that is available for further read/writes for submitting commands and reading output.
+
+    Returns:
+        observation: observation from starting the interactive session
+        session: InteractiveSession object
     """
     startup_cmd = [
         "docker",
@@ -248,8 +252,8 @@ def get_interactive_session(
         startup_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
     )
     time.sleep(DOCKER_START_UP_DELAY)
-    _ = read_with_timeout(session, lambda: list(), timeout_duration=1)
-    return InteractiveSession(
+    observation = read_with_timeout(session, lambda: list(), timeout_duration=1)
+    return observation, InteractiveSession(
         name=session_name,
         session_process=session,
         config=config,

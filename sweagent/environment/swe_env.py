@@ -527,7 +527,7 @@ class SWEEnv(gym.Env):
                 if self.interactive_session is not None:
                     return self.interactive_session._get_only_one_interactive_error_message_observation()
                 assert self.container_name is not None
-                self.interactive_session = get_interactive_session(
+                _observation, self.interactive_session = get_interactive_session(
                     ctr_name=self.container_name,
                     ctr_obj=self.container_obj,
                     cwd="/" + self._repo_name,
@@ -535,6 +535,7 @@ class SWEEnv(gym.Env):
                     config=self.args.interactive_sessions_config[session_name],
                     logger=self.logger,
                 )
+                observation += _observation
             elif command == "STOP":
                 if self.interactive_session is None:
                     observation = f"Interactive session {session_name!r} is not running, so it cannot be stopped!"
