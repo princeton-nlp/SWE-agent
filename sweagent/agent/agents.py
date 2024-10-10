@@ -827,6 +827,9 @@ class Agent:
         self.set_environment_vars(env, self.config.env_variables)
 
     def set_environment_vars(self, env: SWEEnv, env_variables: dict[str, Any]) -> None:
+        """Sets environment variables in the container and for example makes sure
+        that all the commands are available in the PATH on the container.
+        """
         assert self.config is not None  # mypy
         commands_to_execute = (
             [self.config.state_command.code]

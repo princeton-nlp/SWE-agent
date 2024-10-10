@@ -12,7 +12,7 @@ class InteractiveDummyCommand:
 
     def send(self, input: str):
         print(f"Received input: {input}")
-        time.sleep(2)
+        time.sleep(0.5)
 
     def stop(self):
         print("Stopped interactive dummy command")
