@@ -537,21 +537,21 @@ class SWEEnv(gym.Env):
                 )
             elif command == "STOP":
                 if self.interactive_session is None:
-                    observation = f"Interactive session {session_name} is not running, so it cannot be stopped!"
+                    observation = f"Interactive session {session_name!r} is not running, so it cannot be stopped!"
                 else:
                     if self.interactive_session.session_process.poll() is None:
                         self.logger.warning("Session did not quit successfully, terminating.")
                         self.interactive_session.session_process.terminate()
-                    observation = f"Interactive session {session_name} stopped successfully"
+                    observation = f"Interactive session {session_name!r} stopped successfully"
                     self.interactive_session = None
             else:
                 if self.interactive_session is None:
                     self.logger.warning("Tried to run interactive commands without starting session")
                     start_command = self.args.interactive_sessions_config[session_name].start_command
-                    observation = f"Interactive session {session_name} is not running! please start it first using `{start_command}`"
+                    observation = f"Interactive session {session_name!r} is not running! please start it first using `{start_command}`"
                 elif self.interactive_session and self.interactive_session.session_process.poll() is not None:
                     start_command = self.args.interactive_sessions_config[session_name].start_command
-                    observation = f"Interactive session {session_name} was unexpectedly closed! Please start it again using `{start_command}`"
+                    observation = f"Interactive session {session_name!r} was unexpectedly closed! Please start it again using `{start_command}`"
                     self._terminate_interactive_session(session_name=session_name)
                 else:
                     _observation, terminate = self.interactive_session.communicate_with_handling(
