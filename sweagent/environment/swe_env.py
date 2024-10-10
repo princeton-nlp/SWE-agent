@@ -504,12 +504,14 @@ class SWEEnv(gym.Env):
         self.interactive_session = None
 
     def _handle_interactive_commands(self, observation: str) -> str:
-        """Handle interactive commands in the environment
+        """Handle interactive commands in the environment, essentially substituting dummy
+        output for the actual output of the interactive commands.
 
         Args:
-            observation: Output from running the interactive command standsin in the
-                environment. This output will caught and interpreted and then we
-                will run the actual commands in the interactive session.
+            observation: Output from running the interactive command wrappers in the
+                environment. They will returns some dummy output that will be caught and then
+                we will run the actual commands in the interactive session and return the
+                actual output.
 
         Returns:
             observation: The observation shown to the model. If no interactive commands
@@ -532,6 +534,7 @@ class SWEEnv(gym.Env):
                 # Start the session if previous session does not exist
                 if self.interactive_session is not None:
                     return self._get_only_one_interactive_error_message_observation()
+                assert self.container_name is not None
                 self.interactive_session = get_interactive_session(
                     self.container_name,
                     "/" + self._repo_name,
@@ -701,6 +704,8 @@ class SWEEnv(gym.Env):
                 observation = submission if submission.strip() != "" else None
                 return observation, 0, True, info
             else:
+                # Currently only validating CTF challenges
+                assert self.challenge is not None
                 self.logger.warning(f"Wrong submission found: {submission} (real flag is {self.challenge['flag']})")
                 observation = "Wrong flag!"
                 return observation, 0, False, info
@@ -816,6 +821,7 @@ class SWEEnv(gym.Env):
         image_name_sanitized = image_name_sanitized.replace(":", "-")
         return f"{image_name_sanitized}-{hash_object.hexdigest()[:10]}"
 
+    # ctf
     def _init_docker_network(self) -> None:
         """
         Add the "ctfnet" network interface for all the containers used for CTF challenges
@@ -824,12 +830,13 @@ class SWEEnv(gym.Env):
         if self.challenge is not None:
             attach_network_interface_to_container(self.container_name)
 
+    # ctf
     def _init_docker_compose(self) -> None:
         """
         Handles docker compose initialization for challenge with docker compose file.
         """
         if self.challenge is not None and self.challenge.get("docker_compose") is not None:
-            self.docker_compose = get_docker_compose(self.challenge.get("docker_compose"))
+            self.docker_compose = get_docker_compose(self.challenge["docker_compose"])
             self.logger.info("🌱 Initialized docker compose for challenge")
 
     def _init_container(self, cached_image: str | None = None) -> None:
@@ -915,9 +922,9 @@ class SWEEnv(gym.Env):
             self.returncode = None
             cmd = input if input.endswith("\n") else input + "\n"
             cmd += command_suffix
-            os.write(self.container.stdin.fileno(), cmd.encode())
+            os.write(self.container.stdin.fileno(), cmd.encode())  # type: ignore
             time.sleep(0.03)
-            self.container.stdin.flush()
+            self.container.stdin.flush()  # type: ignore
         except BrokenPipeError:
             traceback.print_exc()
             self.logger.error("Failed to communicate with container. Check docker logs for more information.")
@@ -974,9 +981,9 @@ class SWEEnv(gym.Env):
         try:
             self.returncode = None
             cmd = input if input.endswith("\n") else input + "\n"
-            os.write(self.container.stdin.fileno(), cmd.encode())
+            os.write(self.container.stdin.fileno(), cmd.encode())  # type: ignore
             time.sleep(0.1)
-            self.container.stdin.flush()
+            self.container.stdin.flush()  # type: ignore
         except BrokenPipeError:
             traceback.print_exc()
             self.logger.error("Failed to communicate with container. Check docker logs for more information.")
@@ -984,9 +991,9 @@ class SWEEnv(gym.Env):
             raise RuntimeError(msg)
         try:
             buffer = read_with_timeout(self.container, self.get_pids, timeout_duration)
-            self.container.stdin.write("echo $?\n")
+            self.container.stdin.write("echo $?\n")  # type: ignore
             time.sleep(0.1)
-            self.container.stdin.flush()
+            self.container.stdin.flush()  # type: ignore
             exit_code = read_with_timeout(self.container, self.get_pids, 5).strip()
         except Exception as e:
             self.logger.error(f"Read with timeout failed on input:\n---\n{input}\n---")
@@ -1027,6 +1034,7 @@ class SWEEnv(gym.Env):
         Returns:
             output: output from container
         """
+        assert self.container is not None
         if no_output_timeout_duration is None:
             no_output_timeout_duration = timeout_duration
         if input.strip() != "exit":
@@ -1097,9 +1105,9 @@ class SWEEnv(gym.Env):
 
         try:
             cmd = input if input.endswith("\n") else input + "\n"
-            os.write(self.interactive_session.session_process.stdin.fileno(), cmd.encode())
+            os.write(self.interactive_session.session_process.stdin.fileno(), cmd.encode())  # type: ignore
             time.sleep(0.03)
-            self.interactive_session.session_process.stdin.flush()
+            self.interactive_session.session_process.stdin.flush()  # type: ignore
         except BrokenPipeError:
             traceback.print_exc()
             self.logger.error("Failed to communicate with session. Check docker logs for more information.")
@@ -1134,7 +1142,7 @@ class SWEEnv(gym.Env):
         """
         return []
 
-    def get_pids(self, all_pids: bool = False) -> list[str]:
+    def get_pids(self, all_pids: bool = False) -> list[tuple[str, str]]:
         """
         Gets list of processes running inside docker container
 
@@ -1145,6 +1153,7 @@ class SWEEnv(gym.Env):
         Returns:
             list of PIDs
         """
+        assert self.container_obj is not None
         pids = self.container_obj.exec_run("ps -eo pid,comm,ppid --no-headers").output.decode().split("\n")
         pids = [x.split() for x in pids if x]
         if not all_pids:
@@ -1159,9 +1168,10 @@ class SWEEnv(gym.Env):
             ]
         return pids
 
+    # ctf
     def validate_submission(self, submission: str) -> bool:
         """
-        Function for validating submission for CTF challegnes.
+        Function for validating submission for CTF challenges.
 
         Args:
             submission: extracted submission
@@ -1189,7 +1199,8 @@ class SWEEnv(gym.Env):
 
     def get_interactive_commands(self, output: str) -> tuple[str | None, list[str]]:
         """
-        Function for extracting interactive session commands.
+        Function for extracting interactive session commands from dummy output
+        of interactive command wrappers that were run in the environment.
 
         Args:
             output: observation
@@ -1482,10 +1493,11 @@ class SWEEnv(gym.Env):
                 msg = f"Invalid command type: {command['type']}"
                 raise ValueError(msg)
 
-    def interrupt_interactive(self, session_name: str) -> None:
+    def interrupt_interactive(self, session_name: str) -> str:
         """
         Send interrupt signal to interactive session several times to see if we can communicate with the process again.
         """
+        assert self.container_obj is not None
         for _ in range(self.args.interactive_sessions_config[session_name].signal_for_interrupt_limit):
             self.container_obj.exec_run(f"pkill -SIGINT {session_name}")
         return read_session_with_timeout(
@@ -1609,7 +1621,7 @@ class SWEEnv(gym.Env):
         body += "\n\n" + format_trajectory_markdown(trajectory)
         api = GhApi(token=self._github_token)
         if not _dry_run:
-            pr_info = api.pulls.create(
+            pr_info = api.pulls.create(  # type: ignore
                 owner=owner,
                 repo=repo,
                 title=f"SWE-agent[bot] PR to fix: {issue.title}",

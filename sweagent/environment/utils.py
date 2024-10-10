@@ -445,7 +445,7 @@ def get_docker_compose(docker_compose_path: Path) -> Path:
 
 def get_interactive_session(ctr_name: str, cwd: str, session_name: str, cmdline: str, *args) -> InteractiveSession:
     """
-    Starts a new interacitve session on the given container name.
+    Starts a new interactive session on the given container name.
     Returns a subprocess.Popen object that is available for further read/writes for submitting commands and reading output.
     """
     startup_cmd = ["docker", "exec", "-i", "-w", cwd, ctr_name, cmdline, *args]
