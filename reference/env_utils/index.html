@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.39">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.40">
     
     
       
@@ -3373,19 +3373,19 @@ The first line is line 1.</p>
                 <span class="c1"># Prepare the TAR archive</span>
                 <span class="k">with</span> <span class="n">BytesIO</span><span class="p">()</span> <span class="k">as</span> <span class="n">tar_stream</span><span class="p">:</span>
                     <span class="k">with</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">fileobj</span><span class="o">=</span><span class="n">tar_stream</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">tar</span><span class="p">:</span>
-                        <span class="n">tar_info</span> <span class="o">=</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">TarInfo</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">container_path</span><span class="p">))</span>
-                        <span class="n">tar_info</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">temp_file_name</span><span class="p">)</span>
+                        <span class="n">tar_info</span> <span class="o">=</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">TarInfo</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="n">container_path</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                        <span class="n">tar_info</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">temp_file_name</span><span class="p">)</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">st_size</span>
                         <span class="n">tar</span><span class="o">.</span><span class="n">addfile</span><span class="p">(</span><span class="n">tarinfo</span><span class="o">=</span><span class="n">tar_info</span><span class="p">,</span> <span class="n">fileobj</span><span class="o">=</span><span class="n">temp_file</span><span class="p">)</span>
                     <span class="n">tar_stream</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
                     <span class="c1"># Copy the TAR stream to the container</span>
-                    <span class="n">container</span><span class="o">.</span><span class="n">put_archive</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">container_path</span><span class="p">),</span> <span class="n">data</span><span class="o">=</span><span class="n">tar_stream</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+                    <span class="n">container</span><span class="o">.</span><span class="n">put_archive</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="n">container_path</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">tar_stream</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
 
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;An error occurred: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
     <span class="k">finally</span><span class="p">:</span>
         <span class="c1"># Cleanup: Remove the temporary file if it was created</span>
-        <span class="k">if</span> <span class="n">temp_file_name</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">temp_file_name</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">temp_file_name</span> <span class="ow">and</span> <span class="n">Path</span><span class="p">(</span><span class="n">temp_file_name</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
             <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">temp_file_name</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -4088,7 +4088,7 @@ for return format</p>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
     <span class="c1"># If file_path is a directory, attempt load from disk</span>
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">Path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">dataset_or_dict</span> <span class="o">=</span> <span class="n">load_from_disk</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_or_dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
