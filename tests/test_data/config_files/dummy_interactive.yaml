@@ -1,0 +1,60 @@
+system_template: |-
+  SETTING
+
+  COMMANDS:
+  {command_docs}
+instance_template: |-
+  (Open file: {open_file})
+  (Current directory: {working_dir})
+  (Interactive session: {interactive_session})
+  bash-$
+next_step_template: |-
+  {observation}
+  (Open file: {open_file})
+  (Current directory: {working_dir})
+  (Interactive session: {interactive_session})
+  bash-$
+next_step_no_output_template: |-
+  Your command ran successfully and did not produce any output.
+  (Open file: {open_file})
+  (Current directory: {working_dir})
+  (Interactive session: {interactive_session})
+  bash-$
+state_command:
+  name: state
+  code: |
+    state() {
+      local working_dir="$PWD";
+      local open_file="n/a";
+      local interactive_session="${INTERACTIVE_SESSION:-n/a}";
+      if [ ! -z $CURRENT_FILE ]; then
+          open_file=$(realpath $CURRENT_FILE);
+      fi
+
+      echo '{"open_file": "'$open_file'", "working_dir": "'$working_dir'", "interactive_session": "'$interactive_session'"}'
+    };
+parse_function: ThoughtActionParser
+env_variables:
+  WINDOW: 100
+  OVERLAP: 2
+  CURRENT_LINE: 0
+  CURRENT_FILE: ''
+  SEARCH_RESULTS: ()
+  SEARCH_FILES: ()
+  SEARCH_INDEX: 0
+command_files:
+- config/commands/defaults.sh
+- tests/test_commands/interactive_dummy_wrapper.sh
+- tests/test_commands/_interactive_dummy.py
+parse_command: ParseCommandDetailed
+history_processor: Last5Observations
+blocklist:
+- vim
+- vi
+- emacs
+- nano
+- nohup
+- gdb
+blocklist_error_template: |
+  Interactive operation '{name}' is not supported by this environment.
+  Please consider using one of the interactive commands available to you in this environment.

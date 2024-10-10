@@ -46,6 +46,13 @@ INTERACTIVE_SESSIONS_CONFIG = {
         exit_command="connect_stop",
         quit_commands_in_session=["quit"],
     ),
+    "dummy": InteractiveSessionConfig(
+        cmdline="/root/commands/_interactive_dummy",
+        terminal_prompt_pattern="(dummy) ",
+        start_command="dummy_start",
+        exit_command="dummy_stop",
+        quit_commands_in_session=["stop"],
+    ),
 }
 
 
@@ -125,9 +132,9 @@ class InteractiveSession:
 
         try:
             cmd = input if input.endswith("\n") else input + "\n"
-            os.write(self.interactive_session.session_process.stdin.fileno(), cmd.encode())  # type: ignore
+            os.write(self.session_process.stdin.fileno(), cmd.encode())  # type: ignore
             time.sleep(0.03)
-            self.interactive_session.session_process.stdin.flush()  # type: ignore
+            self.session_process.stdin.flush()  # type: ignore
         except BrokenPipeError:
             traceback.print_exc()
             self.logger.error("Failed to communicate with session. Check docker logs for more information.")
