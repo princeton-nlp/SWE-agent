@@ -104,19 +104,19 @@ def copy_file_to_container(container: Container, contents: str, container_path: 
                 # Prepare the TAR archive
                 with BytesIO() as tar_stream:
                     with tarfile.open(fileobj=tar_stream, mode="w") as tar:
-                        tar_info = tarfile.TarInfo(name=os.path.basename(container_path))
-                        tar_info.size = os.path.getsize(temp_file_name)
+                        tar_info = tarfile.TarInfo(name=Path(container_path).name)
+                        tar_info.size = Path(temp_file_name).stat().st_size
                         tar.addfile(tarinfo=tar_info, fileobj=temp_file)
                     tar_stream.seek(0)
                     # Copy the TAR stream to the container
-                    container.put_archive(path=os.path.dirname(container_path), data=tar_stream.read())
+                    container.put_archive(path=Path(container_path).parent, data=tar_stream.read())
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         logger.error(traceback.format_exc())
     finally:
         # Cleanup: Remove the temporary file if it was created
-        if temp_file_name and os.path.exists(temp_file_name):
+        if temp_file_name and Path(temp_file_name).exists():
             os.remove(temp_file_name)
 
 
@@ -945,7 +945,7 @@ def get_instances(
         raise ValueError(msg)
 
     # If file_path is a directory, attempt load from disk
-    if os.path.isdir(file_path):
+    if Path(file_path).is_dir():
         try:
             dataset_or_dict = load_from_disk(file_path)
             if isinstance(dataset_or_dict, dict):

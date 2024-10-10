@@ -260,7 +260,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(json.dumps(files).encode())
 
     def check_for_updates(self):
-        current_mod_times = {str(file): os.path.getmtime(file) for file in Path(self.traj_dir).glob("**/*.traj")}
+        current_mod_times = {str(file): file.stat().st_mtime for file in Path(self.traj_dir).glob("**/*.traj")}
         if current_mod_times != Handler.file_mod_times:
             Handler.file_mod_times = current_mod_times
             self.send_response(200)  # Send response that there's an update
@@ -282,11 +282,11 @@ def main(data_path, directory, port):
             with open(data_path) as f:
                 data = json.load(f)
     elif "args.yaml" in os.listdir(directory):
-        with open(os.path.join(directory, "args.yaml")) as file:
+        with open(Path(directory) / "args.yaml") as file:
             args = yaml.safe_load(file)
         if "environment" in args and "data_path" in args["environment"]:
-            data_path = os.path.join(Path(__file__).parent, "..", args["environment"]["data_path"])
-            if os.path.exists(data_path):
+            data_path = Path(__file__).parent.parent / args["environment"]["data_path"]
+            if data_path.exists:
                 with open(data_path) as f:
                     data = json.load(f)
 
