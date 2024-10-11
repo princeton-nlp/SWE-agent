@@ -82,7 +82,7 @@ If you found this work helpful, please consider citing it using the following:
 }
 ```
 
-If you used the offensive cybersecurity capabilities in SWE-agent (EnIGMA), please also consider citing:
+If you used the summarizer, interactive commands or the offensive cybersecurity capabilities in SWE-agent, please also consider citing:
 ```bibtex
 @misc{abramovich2024enigmaenhancedinteractivegenerative,
       title={EnIGMA: Enhanced Interactive Generative Model Agent for CTF Challenges},
