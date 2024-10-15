@@ -21,16 +21,16 @@ class SummarizerConfig(FrozenSerializable):
     """The configuration for the summarizer"""
 
     function: str = "Identity"
-    window_length: int | None = 105
+    window_length: int = 105
     template: str | None = None
     model: ModelArguments | None = None
     system_template: str | None = None
     instance_template: str | None = None
 
     def __post_init__(self):
-        object.__setattr__(self, "function", SummarizeFunction.get(self.function, self.window_length))
+        object.__setattr__(self, "function", SummarizeFunction.get(self.function, self.window_length))  # type: ignore
         if isinstance(self.model, dict):
-            object.__setattr__(self, "model", ModelArguments.from_dict(self.summarizer_model))
+            object.__setattr__(self, "model", ModelArguments.from_dict(self.summarizer_model))  # type: ignore
 
 
 # ABSTRACT BASE CLASSES
@@ -59,7 +59,7 @@ class SummarizeFunction(metaclass=SummarizeFunctionMeta):
     We use get to generate the right summarizer based on the name of the summarizer.
     """
 
-    def __init__(self, window_length: int | None):
+    def __init__(self, window_length: int):
         self._window_length = window_length
         self.logger = get_logger("summarizer")
 
@@ -74,7 +74,8 @@ class SummarizeFunction(metaclass=SummarizeFunctionMeta):
         return "".join(c if c.isalnum() else "_" for c in action)[:50]
 
     @staticmethod
-    def _upload_file_to_container(file_content: bytes, file_path_on_container: str, env: SWEEnv):
+    def _upload_file_to_container(file_content: str, file_path_on_container: str, env: SWEEnv):
+        assert env.container_obj is not None
         env.communicate(f'mkdir -p "{Path(file_path_on_container).parent}"')
         with tempfile.NamedTemporaryFile() as fp:
             fp.write(file_content.encode("utf-8"))
@@ -123,7 +124,7 @@ class SimpleSummarizer(SummarizeFunction):
         "search_dir",
     ]
 
-    def __call__(self, input: str, observation: str, env: SWEEnv, model: type[BaseModel]) -> tuple[str, APIStats]:
+    def __call__(self, input: str, observation: str, env: SWEEnv, model: BaseModel) -> tuple[str, APIStats]:
         try:
             if (
                 any(input.startswith(s) for s in self.block_list_input)
