@@ -176,10 +176,10 @@ class AgentConfig(FrozenSerializable):
             "history_processor",
             HistoryProcessor.get(self.history_processor, **self.history_processor_args),
         )
-        if "WINDOW" in self.env_variables and self.summarizer_config.window_length is not None:
+        if "WINDOW" in self.env_variables:
             window_size = self.env_variables["WINDOW"]
             if self.summarizer_config.window_length < int(window_size):
-                msg = f"Summarizer window length is set to {self.summarizer_config.window_length} which is less then the defined window length {window_size}"
+                msg = f"Summarizer window length is set to {self.summarizer_config.window_length} which is less than the window length {window_size}"
                 raise ValueError(msg)
         object.__setattr__(
             self,
