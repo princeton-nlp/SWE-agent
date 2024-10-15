@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.40">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.41">
     
     
       
@@ -24,7 +24,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.8c3ca2c6.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.0253249f.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
@@ -1945,6 +1945,11 @@
 
 
 
+
+
+
+
+
   <div class="doc doc-children">
 
 
@@ -1969,6 +1974,11 @@
 
 
         <p>Agent handles the behaviour of the model and how it interacts with the environment.</p>
+
+
+
+
+
 
               <details class="quote">
                 <summary>Source code in <code>sweagent/agent/agents.py</code></summary>
@@ -4039,7 +4049,9 @@ the environment and is also what is being used when replaying the trajectory</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>observation</code></td>
+            <td>
+                <code>observation</code>
+            </td>
             <td>
                   <code>str | None</code>
             </td>
@@ -4053,7 +4065,9 @@ the environment and is also what is being used when replaying the trajectory</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>available_actions</code></td>
+            <td>
+                <code>available_actions</code>
+            </td>
             <td>
                   <code>list[str]</code>
             </td>
@@ -4067,7 +4081,9 @@ the environment and is also what is being used when replaying the trajectory</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>state</code></td>
+            <td>
+                <code>state</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -4611,9 +4627,11 @@ Return the final value of the specified return type.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>setup_args</code></td>
             <td>
-                  <code>dict[str, <span title="typing.Any">Any</span>]</code>
+                <code>setup_args</code>
+            </td>
+            <td>
+                  <code>dict[str, Any]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4625,9 +4643,11 @@ Return the final value of the specified return type.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>env</code></td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="sweagent.environment.swe_env.SWEEnv" href="../env/#sweagent.environment.swe_env.SWEEnv">SWEEnv</a></code>
+                <code>env</code>
+            </td>
+            <td>
+                  <code>SWEEnv</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4639,7 +4659,9 @@ Return the final value of the specified return type.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>observation</code></td>
+            <td>
+                <code>observation</code>
+            </td>
             <td>
                   <code>str | None</code>
             </td>
@@ -4653,9 +4675,11 @@ Return the final value of the specified return type.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>traj_dir</code></td>
             <td>
-                  <code><span title="pathlib.Path">Path</span> | None</code>
+                <code>traj_dir</code>
+            </td>
+            <td>
+                  <code>Path | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4667,7 +4691,9 @@ Return the final value of the specified return type.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>return_type</code></td>
+            <td>
+                <code>return_type</code>
+            </td>
             <td>
                   <code>str</code>
             </td>
@@ -4683,9 +4709,11 @@ other values are for internal usage with subroutines.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>init_model_stats</code></td>
             <td>
-                  <code><span title="sweagent.agent.models.APIStats">APIStats</span> | None</code>
+                <code>init_model_stats</code>
+            </td>
+            <td>
+                  <code>APIStats | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5092,9 +5120,11 @@ formatting the system message and adding demonstrations to the history.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code>instance_args</code></td>
             <td>
-                  <code>dict[str, <span title="typing.Any">Any</span>]</code>
+                <code>instance_args</code>
+            </td>
+            <td>
+                  <code>dict[str, Any]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5464,10 +5494,15 @@ formatting the system message and adding demonstrations to the history.</p>
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><span title="simple_parsing.helpers.flatten.FlattenedAccess">FlattenedAccess</span></code>, <code><span title="simple_parsing.helpers.serialization.serializable.FrozenSerializable">FrozenSerializable</span></code></p>
+              Bases: <code>FlattenedAccess</code>, <code>FrozenSerializable</code></p>
 
 
         <p>Configure the agent's behaviour (templates, parse functions, blocklists, ...).</p>
+
+
+
+
+
 
               <details class="quote">
                 <summary>Source code in <code>sweagent/agent/agents.py</code></summary>
@@ -5553,6 +5588,11 @@ formatting the system message and adding demonstrations to the history.</p>
 
 
     <div class="doc doc-contents ">
+
+
+
+
+
 
 
               <details class="quote">
@@ -5803,7 +5843,7 @@ it's best to use this as little as possible.</p>
     <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.indexes", "content.action.edit", "navigation.footer", "content.code.copy", "content.footnote.tooltips", "header.autohide", "announce.dismiss"], "search": "../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.525ec568.min.js"></script>
+      <script src="../../assets/javascripts/bundle.83f73b43.min.js"></script>
       
     
   <script id="init-glightbox">const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
