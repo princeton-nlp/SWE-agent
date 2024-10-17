@@ -1041,11 +1041,9 @@ class Agent:
             the info dictionary and the trajectory (list of dictionaries).
         """
         assert env.record is not None
-        assert env.container_obj is not None
-        if env.container_obj.id != self.last_container_id:
-            self.logger.info(f"Initializing agent settings for container {env.container_obj.id}")
-            self.init_environment_vars(env)
-            self.last_container_id = env.container_obj.id
+        # if env.container_obj.id != self.last_container_id:
+        # self.logger.info(f"Initializing agent settings for container {env.container_obj.id}")
+        self.init_environment_vars(env)
         # Re-initialize primary
         self.setup(setup_args, init_model_stats)
         self.config.summarizer_config.function.setup(setup_args, self.config)

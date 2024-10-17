@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import datetime
+import asyncio
 import hashlib
-import json
 import logging
 import os
 import random
@@ -22,10 +21,9 @@ from git import Repo
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 from swebench.harness.constants import MAP_REPO_VERSION_TO_SPECS
 from swebench.harness.utils import get_environment_yml, get_requirements
+from swerex.deployment.docker import DockerDeployment
+from swerex.runtime.abstract import Action, CreateSessionRequest, UploadRequest, WriteFileRequest
 
-import docker
-import docker.errors
-import docker.models.containers
 from sweagent import REPO_ROOT
 from sweagent.agent.interactive_commands import (
     INTERACTIVE_SESSIONS_CONFIG,
@@ -35,23 +33,16 @@ from sweagent.agent.interactive_commands import (
     get_interactive_session,
 )
 from sweagent.environment.utils import (
-    PROCESS_DONE_MARKER_END,
-    PROCESS_DONE_MARKER_START,
     InvalidGithubURL,
     NoOutputTimeoutError,
     PatchFormatter,
     attach_network_interface_to_container,
-    copy_anything_to_container,
     copy_file_to_container,
     format_trajectory_markdown,
-    get_container,
     get_docker_compose,
     get_gh_issue_data,
     get_instances,
-    image_exists,
     parse_gh_issue_url,
-    read_with_timeout,
-    read_with_timeout_experimental,
     terminate_docker_compose,
 )
 from sweagent.types import AgentInfo
@@ -201,8 +192,6 @@ class SWEEnv(gym.Env):
 
         # Establish connection with execution container
         self.image_name = args.image_name
-        self.container_obj: docker.models.containers.Container | None = None
-        self.container: subprocess.Popen | None = None
         self.docker_compose: Path | None = None
         self.challenge: dict[str, Any] | None = None
         self._reset_container()
@@ -246,7 +235,7 @@ class SWEEnv(gym.Env):
         Returns:
             folder name of clone
         """
-        assert self.container_obj is not None
+        # assert self.container_obj is not None
         assert self.record is not None  # mypy
         for hook in self.hooks:
             hook.on_copy_repo_started(repo_type=self.record["repo_type"], repo_path=self.record["repo"])
@@ -257,16 +246,20 @@ class SWEEnv(gym.Env):
                 )
                 for file_name in self.record["challenge"]["files"]:
                     self.logger.debug(f"Copying file {file_name} to container")
-                    copy_anything_to_container(
-                        self.container_obj,
-                        str(Path(self.record["repo"].removeprefix("local://")) / file_name),
-                        "/" + self._repo_name,
+                    source_file_name = Path(self.record["repo"].removeprefix("local://")) / file_name
+                    target_file_name = Path("/") / self._repo_name / file_name
+                    asyncio.run(
+                        self.deployment.runtime.upload(
+                            UploadRequest(source_path=str(source_file_name), target_path=str(target_file_name))
+                        )
                     )
             else:
-                copy_anything_to_container(
-                    self.container_obj,
-                    self.record["repo"].removeprefix("local://"),
-                    "/" + self._repo_name,
+                asyncio.run(
+                    self.deployment.runtime.upload(
+                        UploadRequest(
+                            source_path=self.record["repo"].removeprefix("local://"), target_path="/" + self._repo_name
+                        )
+                    )
                 )
             self.communicate_with_handling(
                 input=f"chown -R root:root {self._repo_name}",
@@ -347,21 +340,6 @@ class SWEEnv(gym.Env):
         ### Reset Container ###
         self._init_docker_compose()
 
-        if self.args.cache_task_images:
-            cached_image = self._get_cached_task_image_name()
-            if image_exists(cached_image):
-                self.logger.info(f"Restore environment from cached image {cached_image}")
-                self.close()  # stop current container
-                self._init_container(cached_image=cached_image)
-                self.communicate("export $(xargs </.env)")
-                envs = self.communicate("env")
-                self.logger.debug(f"Environment variables restored from the image:\n{envs}\n")
-                if apply_test_patch:
-                    self._apply_test_patch()
-                return None, info
-            else:
-                self.logger.info(f"Cached image {cached_image} not found, rebuilding task environment...")
-
         # Init docker network
         self._init_docker_network()
 
@@ -369,6 +347,7 @@ class SWEEnv(gym.Env):
         self.communicate(input="cd /")
         folders = self.communicate(input="ls").split("\n")
         if self._repo_name not in folders:
+            print("copying repo")
             self._copy_repo()
 
         self._reset_repository()
@@ -394,14 +373,6 @@ class SWEEnv(gym.Env):
             self.install_env()
         # Install mypy for linting purposes
         self.communicate_with_handling("pip install flake8", error_msg="Failed to install flake8 (lint library)")
-
-        if self.args.cache_task_images:
-            envs = self.communicate("env")
-            self.logger.debug(f"Environment variables to save:\n{envs}\n")
-            self.communicate("env >> /.env")
-            assert self.container_obj is not None  # mypy
-            self.container_obj.commit(cached_image)
-            self.logger.info(f"Container with environment {self.container_obj.id} cached as image {cached_image}")
 
         if apply_test_patch:
             self._apply_test_patch()
@@ -454,6 +425,8 @@ class SWEEnv(gym.Env):
         """
         Apply test patch for oracle setting
         """
+        # needs updating, but do we really need this?
+        raise NotImplementedError()
         assert self.record is not None
         path_to_patch = "test.patch"
         with open(path_to_patch, "w") as f:
@@ -685,79 +658,13 @@ class SWEEnv(gym.Env):
         Handle environment shutdown
         """
         self.logger.info("Beginning environment shutdown...")
-        try:
-            self.communicate(input="exit")
-        except KeyboardInterrupt:
-            raise
-        except:
-            self.logger.warning("Errors when exiting container", exc_info=True)
-        assert self.container is not None  # mypy
-        self.container.terminate()
-        if self.docker_compose is not None:
-            terminate_docker_compose(self.docker_compose)
-        if self.interactive_session is not None:
-            try:
-                self.interactive_session.session_process.terminate()
-            except KeyboardInterrupt:
-                raise
-            except Exception:
-                self.logger.warning("Failed to stop interactive session: %s", traceback.format_exc())
-                self.interactive_session = None
-            else:
-                self.logger.info("Interactive session stopped")
-                self.interactive_session = None
-        if self.container_obj is None:
-            pass
-        elif self.persistent:
-            # stopping is Podman specific, but doesn't hurt to include
-            # https://stackoverflow.com/a/32428199/
-            # Want to avoid https://github.com/princeton-nlp/SWE-agent/issues/496
-            # Note that container_obj.status might not be updated throughout the container
-            # lifecycle, so let's get the container_obj again
-            assert self.container_name
-            try:
-                self.container_obj = docker.from_env().containers.get(self.container_name)
-            except Exception:
-                self.logger.warning(f"Failed to get fresh container object: {traceback.format_exc()}", exc_info=True)
-            if self.container_obj.status not in {"paused", "exited", "dead", "stopping"}:
-                try:
-                    self.container_obj.pause()
-                except Exception:
-                    self.logger.warning("Failed to pause container.", exc_info=True)
-                except KeyboardInterrupt:
-                    raise
-                else:
-                    self.logger.info("Agent container paused")
-            else:
-                self.logger.info(f"Agent container status: {self.container_obj.status}")
-        else:
-            try:
-                self.container_obj.remove(force=True)
-            except KeyboardInterrupt:
-                raise
-            except docker.errors.NotFound:
-                # We already tried to exit the container, so it's actually good if
-                # it's not found
-                pass
-            except Exception:
-                self.logger.warning("Failed to remove container", exc_info=True)
-            else:
-                self.logger.info("Agent container stopped")
+        asyncio.run(self.deployment.stop())
         for hook in self.hooks:
             hook.on_close()
 
     # MARK: Helper functions #
 
     def _reset_container(self) -> None:
-        if self.container is not None:
-            try:
-                self.container.terminate()
-            except KeyboardInterrupt:
-                raise
-            except:
-                self.logger.warning("Failed to terminate container", exc_info=True)
-            else:
-                self.logger.debug("Terminated container")
         if self.docker_compose is not None:
             try:
                 terminate_docker_compose(self.docker_compose)
@@ -772,28 +679,15 @@ class SWEEnv(gym.Env):
 
     def reset_container(self) -> None:
         self.close()
-        self.container = None
-        self.container_obj = None
         self._reset_container()
-
-    @staticmethod
-    def _get_container_name(image_name: str) -> str:
-        """Return name of container"""
-        process_id = str(os.getpid())
-        current_time = str(datetime.datetime.now())
-        unique_string = current_time + process_id
-        hash_object = hashlib.sha256(unique_string.encode())
-        image_name_sanitized = image_name.replace("/", "-")
-        image_name_sanitized = image_name_sanitized.replace(":", "-")
-        return f"{image_name_sanitized}-{hash_object.hexdigest()[:10]}"
 
     # ctf
     def _init_docker_network(self) -> None:
         """
         Add the "ctfnet" network interface for all the containers used for CTF challenges
         """
-        assert self.container_name is not None
         if self.challenge is not None:
+            assert self.container_name is not None
             attach_network_interface_to_container(self.container_name)
 
     # ctf
@@ -810,54 +704,15 @@ class SWEEnv(gym.Env):
         Handles container initialization. Defines container name and creates it.
         If cached_image is provided, it will use that image name instead of the default.
         """
-        image_name = self.image_name
-        if cached_image is not None:
-            image_name = cached_image
-            self.logger.info(f"Using cached image: {image_name}")
-        if self.persistent:
-            assert self.container_name is not None
-        else:
-            # Make sure that we get a new container name just in case removing didn't work.
-            # Might be a fix for https://github.com/princeton-nlp/SWE-agent/issues/451
-            self.container_name = self._get_container_name(image_name)
-        self.container, self.parent_pids = get_container(
-            self.container_name, image_name, persistent=self.persistent, container_mounts=self.container_mounts
-        )
-        try:
-            client = docker.from_env(timeout=600)
-        except docker.errors.DockerException as e:
-            if "Error while fetching server API version" in str(e):
-                msg = "Docker is not running. Please start Docker and try again."
-            else:
-                msg = "Unknown docker exception occurred. Are you sure docker is running?"
-            raise RuntimeError(msg) from e
-        t0 = time.time()
-        self.container_obj = None
-        while time.time() - t0 < 60:
-            try:
-                self.container_obj = client.containers.get(self.container_name)
-            except docker.errors.NotFound:
-                self.logger.debug("Couldn't find container. Let's wait and retry.")
-                time.sleep(1)
-            else:
-                break
-        else:
-            print(f"{self.persistent=}")
-            available_containers = client.containers.list(all=True)
-            available_containers_info = json.dumps([str(c.attrs) for c in available_containers], indent=2)
-            print(available_containers_info)
-            msg = "Failed to get container object."
-            raise RuntimeError(msg)
+        self.deployment = DockerDeployment(image_name=self.image_name)
+        asyncio.run(self.deployment.start())
+        asyncio.run(self.deployment.runtime.create_session(CreateSessionRequest(startup_source=["/root/.bashrc"])))
         self.logger.info("🌱 Environment Initialized")
 
     def _init_scripts(self):
         """
         Initialize custom commands within container
         """
-        self.communicate_with_handling(
-            "source /root/.bashrc",
-            error_msg="Failed to source .bashrc",
-        )
         self.communicate_with_handling(
             "mkdir -p /root/commands",
             error_msg="Failed to create commands directory",
@@ -870,60 +725,6 @@ class SWEEnv(gym.Env):
             "export PATH=$PATH:/root/commands",
             error_msg="Failed to add commands directory to PATH",
         )
-
-    def _communicate_experimental(
-        self,
-        input: str,
-        timeout_duration: int | float = 25,
-        no_output_timeout_duration: int | float = 25,
-    ) -> str:
-        """Experimental version of `_communicate`"""
-        assert self.container is not None
-        # Sleep to ensure that the exit code is in the last line
-        # See https://github.com/princeton-nlp/SWE-agent/issues/595
-        command_suffix = (
-            f'EXITSTATUS="$?"; sleep 0.01; echo {PROCESS_DONE_MARKER_START}$EXITSTATUS{PROCESS_DONE_MARKER_END}\n'
-        )
-        try:
-            self.returncode = None
-            cmd = input if input.endswith("\n") else input + "\n"
-            cmd += command_suffix
-            os.write(self.container.stdin.fileno(), cmd.encode())  # type: ignore
-            time.sleep(0.03)
-            self.container.stdin.flush()  # type: ignore
-        except BrokenPipeError:
-            traceback.print_exc()
-            self.logger.error("Failed to communicate with container. Check docker logs for more information.")
-            msg = "Failed to communicate with container"
-            raise RuntimeError(msg)
-
-        try:
-            buffer, exit_code = read_with_timeout_experimental(
-                self.container, timeout_duration, no_output_timeout_duration
-            )
-        except Exception:
-            msg = f"Read with timeout failed on input:\n---\n{input}\n---"
-            self.logger.error(msg)
-            raise
-        if exit_code == "$EXITSTATUS":
-            # this sometimes happens if the command badly fails
-            # for example if you just try to run python with no arguments
-            # in this case, the error message is usually also garbage, so let's set
-            # something new.
-            # See https://github.com/princeton-nlp/SWE-agent/issues/630
-            buffer = (
-                "Unkknown error occurred when running the command. Please double check syntax "
-                "and that you're not running an interactive command."
-            )
-            self.logger.warning("Couldn't get real exit code. Setting it to 999")
-            exit_code = 999
-        elif not exit_code.isdigit():
-            # this sometimes happens if the command is being killed, for example radare2
-            # we set the error to 998 in that case
-            self.logger.warning("Couldn't get real exit code. Setting it to 998")
-            exit_code = 998
-        self.returncode = int(exit_code)
-        return buffer
 
     def _communicate(
         self,
@@ -938,48 +739,10 @@ class SWEEnv(gym.Env):
             timeout_duration: duration to wait for output
             no_output_timeout_duration: duration to wait when the process stopped produce any output
         """
-        assert self.container is not None
-        communicate_method = keys_config.get(
-            "SWE_AGENT_COMMUNICATE_METHOD", default="end-marker", choices=["end-marker", "processes"]
-        )
-        if communicate_method == "end-marker":
-            return self._communicate_experimental(input, timeout_duration, no_output_timeout_duration)
-        try:
-            self.returncode = None
-            cmd = input if input.endswith("\n") else input + "\n"
-            os.write(self.container.stdin.fileno(), cmd.encode())  # type: ignore
-            time.sleep(0.1)
-            self.container.stdin.flush()  # type: ignore
-        except BrokenPipeError:
-            traceback.print_exc()
-            self.logger.error("Failed to communicate with container. Check docker logs for more information.")
-            msg = "Failed to communicate with container"
-            raise RuntimeError(msg)
-        try:
-            buffer = read_with_timeout(self.container, self.get_pids, timeout_duration)
-            self.container.stdin.write("echo $?\n")  # type: ignore
-            time.sleep(0.1)
-            self.container.stdin.flush()  # type: ignore
-            exit_code = read_with_timeout(self.container, self.get_pids, 5).strip()
-        except Exception as e:
-            self.logger.error(f"Read with timeout failed on input:\n---\n{input}\n---")
-            raise e
-        if not exit_code.isdigit():
-            msg = f"Failed to get exit code. Output:\n---\n{buffer}\n---"
-            raise RuntimeError(msg)
-        self.returncode = int(exit_code)
-        return buffer
-
-    def _check_syntax(self, input: str) -> tuple[str, bool]:
-        """
-        Check syntax of command.
-
-        Returns:
-            output: Output of the command
-            success: whether the exit code was 0
-        """
-        output = self._communicate(f"/bin/bash -n <<'EOF'\n{input}\nEOF\n")
-        return output, self.returncode == 0
+        self.returncode = None
+        r = asyncio.run(self.deployment.runtime.run_in_session(Action(command=input, timeout=timeout_duration)))
+        self.returncode = r.exit_code
+        return r.output
 
     def communicate(
         self,
@@ -1000,14 +763,10 @@ class SWEEnv(gym.Env):
         Returns:
             output: output from container
         """
-        assert self.container is not None
         if no_output_timeout_duration is None:
             no_output_timeout_duration = timeout_duration
         if input.strip() != "exit":
             self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
-            output, valid = self._check_syntax(input)
-            if not valid:
-                return output  # shows syntax errors
             output = self._communicate(
                 input,
                 timeout_duration=timeout_duration,
@@ -1023,7 +782,7 @@ class SWEEnv(gym.Env):
                 self._communicate(input, timeout_duration=5, no_output_timeout_duration=5)
             return output
         else:
-            self.container.terminate()
+            asyncio.run(self.deployment.stop())
             self.returncode = 0
             self.communicate_output = ""
             return ""
@@ -1055,32 +814,6 @@ class SWEEnv(gym.Env):
         Currently not in use.
         """
         return []
-
-    def get_pids(self, all_pids: bool = False) -> list[tuple[str, str]]:
-        """
-        Gets list of processes running inside docker container
-
-        Args:
-            all_pids: whether to return all pids, or whether to exclude ps
-                and parent PIDs
-
-        Returns:
-            list of PIDs
-        """
-        assert self.container_obj is not None
-        pids = self.container_obj.exec_run("ps -eo pid,comm,ppid --no-headers").output.decode().split("\n")
-        pids = [x.split() for x in pids if x]
-        if not all_pids:
-            # Get just the PIDs of processes that are descendants of parent_pids and not others
-            pids = [
-                (x[0], x[1])
-                for x in pids
-                if x[1] != "ps"
-                and x[0] not in self.parent_pids
-                and x[1] != getattr(self.interactive_session, "name", None)
-                and x[2] in self.parent_pids
-            ]
-        return pids
 
     # ctf
     def validate_submission(self, submission: str) -> bool:
@@ -1345,7 +1078,9 @@ class SWEEnv(gym.Env):
         for command in commands:
             name = command["name"]
             contents = command["contents"]
-            copy_file_to_container(self.container_obj, contents, f"/root/commands/{name}")
+            asyncio.run(
+                self.deployment.runtime.write_file(WriteFileRequest(content=contents, path=f"/root/commands/{name}"))
+            )
             if command["type"] == "source_file":
                 self.communicate_with_handling(
                     f"source /root/commands/{name}",
@@ -1365,33 +1100,6 @@ class SWEEnv(gym.Env):
             else:
                 msg = f"Invalid command type: {command['type']}"
                 raise ValueError(msg)
-
-    def interrupt(self) -> str:
-        """
-        Send interrupt signal to container and exhaust stdout buffer with a communicate call
-        """
-        assert self.container is not None
-        assert self.container_obj is not None
-        pids = self.get_pids()
-        for pid, _ in pids:
-            # Sending signal several times ensures that the process is dead
-            for _ in range(3):
-                self.container_obj.exec_run(f"kill -9 {pid}")
-        observation = ""
-        try:
-            observation += read_with_timeout(self.container, self.get_pids, 20)
-        except TimeoutError:
-            pass
-        try:
-            # This is a workaround because of bash behaviour
-            # when sometimes we get the prints of Killed after we press some "Enter" in stdin
-            self.communicate(input="echo 'interrupted'", timeout_duration=5)
-            output = self.communicate(input="echo 'interrupted'", timeout_duration=5)
-            assert output.strip().endswith("interrupted"), "container health check failed"
-        except TimeoutError:
-            msg = "Failed to interrupt container"
-            raise RuntimeError(msg)
-        return observation
 
     def open_pr(self, *, trajectory, _dry_run: bool = False) -> None:
         """Create PR to repository
@@ -1502,5 +1210,6 @@ class SWEEnv(gym.Env):
         Returns:
             file_contents: Contents of file as string
         """
+        # todo: Just use the runtime for this instead
         path_in_container = f"/{self._repo_name}/{path}"
         return self.communicate(f"cat {str(path_in_container)}")
