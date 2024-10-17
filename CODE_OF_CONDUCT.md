@@ -33,8 +33,8 @@ Examples of unacceptable behavior include:
 
 ## Enforcement Responsibilities
 
-Community leaders are responsible for clarifying and enforcing our standards of acceptable 
-behavior and will take appropriate and fair corrective actions in response to any behavior 
+Community leaders are responsible for clarifying and enforcing our standards of acceptable
+behavior and will take appropriate and fair corrective actions in response to any behavior
 they deem inappropriate, threatening, offensive, or harmful.
 
 Community leaders have the right and responsibility to remove, edit, or reject
@@ -46,8 +46,8 @@ decisions when appropriate.
 
 This Code of Conduct applies within all community spaces, and also applies when
 an individual is officially representing the community in public spaces.
-Examples of representing our community include using an official email address, 
-posting via an official social media account, or acting as an appointed 
+Examples of representing our community include using an official email address,
+posting via an official social media account, or acting as an appointed
 representative at online or offline events.
 
 ## Enforcement
@@ -81,8 +81,8 @@ actions.
 
 **Consequence**: A warning with consequences for continued behavior. No
 interaction with the people involved, including unsolicited interaction with
-those enforcing the Code of Conduct, for a specified period of time. This includes 
-avoiding interactions in community spaces and external channels like social media. 
+those enforcing the Code of Conduct, for a specified period of time. This includes
+avoiding interactions in community spaces and external channels like social media.
 Violating these terms may lead to a temporary or permanent ban.
 
 ### 3. Temporary Ban
