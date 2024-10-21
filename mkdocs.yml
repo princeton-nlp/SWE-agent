@@ -5,6 +5,7 @@ theme:
   icon:
     repo: fontawesome/brands/github
   logo: assets/swe-agent.svg
+  favicon: assets/swe-agent.svg
   palette:
     - media: "(prefers-color-scheme)"
       toggle:
