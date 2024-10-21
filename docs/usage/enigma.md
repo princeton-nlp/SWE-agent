@@ -31,8 +31,8 @@ python run.py \
   --model_name gpt4 \
   --ctf \
   --image_name sweagent/enigma:latest \
-  --data_path ../LLM_CTF_Database/2018/CSAW-Finals/misc/leaked_flag/challenge.json \
-  --repo_path ../LLM_CTF_Database/2018/CSAW-Finals/misc/leaked_flag \
+  --data_path ../NYU_CTF_Bench/test/2018/CSAW-Finals/misc/leaked_flag/challenge.json \
+  --repo_path ../NYU_CTF_Bench/test/2018/CSAW-Finals/misc/leaked_flag/ \
   --config_file config/default_ctf.yaml \
   --per_instance_cost_limit 2.00
 ```
