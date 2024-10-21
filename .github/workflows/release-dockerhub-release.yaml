@@ -15,7 +15,7 @@ jobs:
             username: sweagent
             password: ${{ secrets.DOCKERHUB_TOKEN }}
         - name: Checkout code
-          uses: actions/checkout@v2
+          uses: actions/checkout@v4
         - name: Get release name
           run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/v}" >> $GITHUB_ENV
         - name: Run release script
