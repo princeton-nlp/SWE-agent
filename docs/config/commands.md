@@ -29,7 +29,7 @@ Every command subscribes to the following skeleton code.
 * The minimal documentation requirements are `signature` and `docstring`.
 * If you'd like multiple commands to make modifications to a similar body of functions, we recommend using global variables.
     * For instance, in `config/commands/default.sh`, you'll see we define the `CURRENT_LINE` variable for the file viewer. This variable is modified across multiple commands, including `open`, `goto`, `scroll_up`, `scroll_down`, and `edit`.
-    * You can also leverage third party libraries (check out how we do linting enabled `edit` in `config/commands/edit_linting.sh`).
+    * You can also third-party libraries (check out how we enable linting in `config/commands/edit_linting.sh`).
 * To show effects of the command, print to standard output (i.e. `echo`). SWE-agent is implemented such that it does not look for a return value from these commands.
 * The following environment variables are used to persist information between commands:
     * `CURRENT_FILE`: File that is currently open
