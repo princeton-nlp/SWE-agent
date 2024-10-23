@@ -1468,7 +1468,7 @@ To see examples of command implementations, open the <code>.sh</code> and <code>
 <li>The minimal documentation requirements are <code>signature</code> and <code>docstring</code>.</li>
 <li>If you'd like multiple commands to make modifications to a similar body of functions, we recommend using global variables.<ul>
 <li>For instance, in <code>config/commands/default.sh</code>, you'll see we define the <code>CURRENT_LINE</code> variable for the file viewer. This variable is modified across multiple commands, including <code>open</code>, <code>goto</code>, <code>scroll_up</code>, <code>scroll_down</code>, and <code>edit</code>.</li>
-<li>You can also leverage third party libraries (check out how we do linting enabled <code>edit</code> in <code>config/commands/edit_linting.sh</code>).</li>
+<li>You can also third-party libraries (check out how we enable linting in <code>config/commands/edit_linting.sh</code>).</li>
 </ul>
 </li>
 <li>To show effects of the command, print to standard output (i.e. <code>echo</code>). SWE-agent is implemented such that it does not look for a return value from these commands.</li>

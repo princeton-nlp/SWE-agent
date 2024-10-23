@@ -1443,7 +1443,7 @@
 
 <h1 id="changing-the-demonstrations">Changing the demonstrations</h1>
 <p>An important way to show LMs how to use commands and interact with the environment is through providing a demonstration - which is basically a completed <a href="../../usage/trajectories/">trajectory</a> that the LM can learn from.</p>
-<p>For simplicity we only ingest demonstrations in the from of a trajectory file. However, since trajectory files are usually JSON, you can convert them to yaml using the <code>make_demos/convert_traj_to_demo.py</code> script to be more human-readable and easier to edit.</p>
+<p>For simplicity we only ingest demonstrations in the form of a trajectory file. However, since trajectory files are usually JSON, you can convert them to yaml using the <code>make_demos/convert_traj_to_demo.py</code> script to be more human-readable and easier to edit.</p>
 <p>Demo (yaml) files are stored in the <code>make_demos/demos</code> directory by default and consist primarily of the sequence of actions that an LM would need to take to complete a task. It's important that your demo have the proper format to be parsed by SWE-agent and your config.</p>
 <h2 id="manually-creating-a-custom-trajectory">Manually creating a custom trajectory <a name="manual"></a></h2>
 <p>You can manually generate a trajectory by running the agent with <code>--model_name human_thought</code>.
