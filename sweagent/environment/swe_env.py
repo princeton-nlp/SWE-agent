@@ -294,6 +294,7 @@ class SWEEnv(gym.Env):
                 input=f"git clone {clone_url} {self._repo_name}",
                 error_msg="Failed to clone repository from conservative method",
                 timeout_duration=LONG_TIMEOUT,
+                redact_command_trace=True,
             )
         else:
             base_commit = self.record["base_commit"]
@@ -988,6 +989,7 @@ class SWEEnv(gym.Env):
         no_output_timeout_duration: int | float | None = None,
         *,
         set_last_action: bool = False,
+        redact_command_trace: bool = False,
     ) -> str:
         """
         Sends input to container and returns output
@@ -996,7 +998,8 @@ class SWEEnv(gym.Env):
             input: input to send to container
             timeout_duration: duration to wait for output
             set_last_action: whether to set the LAST_ACTION environment variable
-
+            redact_command_trace: Whether to redact the command that is being run when logging
+                it to trace level
         Returns:
             output: output from container
         """
@@ -1004,7 +1007,10 @@ class SWEEnv(gym.Env):
         if no_output_timeout_duration is None:
             no_output_timeout_duration = timeout_duration
         if input.strip() != "exit":
-            self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
+            if redact_command_trace:
+                self.logger.log(logging.TRACE, "Input:\nREDACTED")  # type: ignore
+            else:
+                self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
             output, valid = self._check_syntax(input)
             if not valid:
                 return output  # shows syntax errors
@@ -1028,7 +1034,9 @@ class SWEEnv(gym.Env):
             self.communicate_output = ""
             return ""
 
-    def communicate_with_handling(self, input: str, error_msg: str, timeout_duration: int | float = 25) -> str:
+    def communicate_with_handling(
+        self, input: str, error_msg: str, timeout_duration: int | float = 25, *, redact_command_trace: bool = False
+    ) -> str:
         """
         Wrapper for communicate function that raises error if return code is non-zero
 
@@ -1036,11 +1044,13 @@ class SWEEnv(gym.Env):
             input: input to send to container
             error_msg: error message to raise if return code is non-zero
             timeout_duration: duration to wait for output
+            redact_command_trace: Whether to redact the command that is being run when logging
+                it to trace level
 
         Returns:
             output: output from container
         """
-        logs = self.communicate(input, timeout_duration=timeout_duration)
+        logs = self.communicate(input, timeout_duration=timeout_duration, redact_command_trace=redact_command_trace)
         if self.returncode != 0:
             self.logger.error(f"{error_msg}: {logs}")
             self.close()
