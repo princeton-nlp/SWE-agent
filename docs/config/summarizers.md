@@ -11,7 +11,7 @@ The summarizer configuration is defined within the main [configuration](config.m
 ```yaml
 summarizer_config:
   function: Reference to functionality of the summarizer. Can be one of SimpleSummarizer, LMSummarizer or Identity
-  window_length: Threshold of the line count limit. Observation output exceeding these number, will be summarized.
+  window_length: Threshold of the line count limit. Observation output exceeding this number will be summarized.
   system_template: |-
     First `system` message shown to the LMSummarizer.
     This has no effect in other summarizer functionalities.
