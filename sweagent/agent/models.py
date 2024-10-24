@@ -320,9 +320,13 @@ class OpenAIModel(BaseModel):
                 temperature=self.args.temperature,
                 top_p=self.args.top_p,
             )
-        except BadRequestError:
-            msg = f"Context window ({self.model_metadata['max_context']} tokens) exceeded"
-            raise ContextWindowExceededError(msg)
+        except BadRequestError as e:
+            logger.exception("BadRequestError")
+            if "context window" in str(e) or getattr(e, "error", {}).get("code") == "context_length_exceeded":
+                msg = f"Context window ({self.model_metadata['max_context']} tokens) exceeded"
+                raise ContextWindowExceededError(msg) from e
+            else:
+                raise e
         # Calculate + update costs, return response
         input_tokens = response.usage.prompt_tokens
         output_tokens = response.usage.completion_tokens
