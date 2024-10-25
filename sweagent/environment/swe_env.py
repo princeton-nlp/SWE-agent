@@ -154,7 +154,6 @@ class SWEEnv(gym.Env):
         t0 = time.perf_counter()
         self.args = args
         self.base_commit: str | None = None
-        self.communicate_output: str | None = None
         self.container_name: str | None = args.container_name
         self.install_environment = args.install_environment
         self.logger = get_logger("SWEEnv")
@@ -372,7 +371,7 @@ class SWEEnv(gym.Env):
         if self.install_environment:
             self.install_env()
         # Install mypy for linting purposes
-        self.communicate_with_handling("pip install flake8", error_msg="Failed to install flake8 (lint library)")
+        # self.communicate_with_handling("pip install flake8", error_msg="Failed to install flake8 (lint library)")
 
         if apply_test_patch:
             self._apply_test_patch()
@@ -773,7 +772,6 @@ class SWEEnv(gym.Env):
                 no_output_timeout_duration=no_output_timeout_duration,
             )
             self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
-            self.communicate_output = output
             if set_last_action:
                 # Cannot merge this with last command, because of multiline command
                 # handling.
@@ -784,7 +782,6 @@ class SWEEnv(gym.Env):
         else:
             asyncio.run(self.deployment.stop())
             self.returncode = 0
-            self.communicate_output = ""
             return ""
 
     def communicate_with_handling(self, input: str, error_msg: str, timeout_duration: int | float = 25) -> str:
