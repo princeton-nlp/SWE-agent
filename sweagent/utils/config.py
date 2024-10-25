@@ -25,8 +25,8 @@ def convert_path_to_abspath(path: Path | str) -> Path:
     return path.resolve()
 
 
-def convert_paths_to_abspath(paths: list[Path | str]) -> list[Path]:
-    return [convert_path_to_abspath(p) for p in paths]
+def convert_paths_to_abspath(paths: list[Path] | list[str]) -> list[str]:
+    return [str(convert_path_to_abspath(p)) for p in paths]
 
 
 class Config:

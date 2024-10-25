@@ -26,7 +26,7 @@ class SummarizerConfig:
     instance_template: str | None = None
 
     def __post_init__(self):
-        object.__setattr__(self, "function", SummarizeFunction.get(self.function, self.window_length))  # type: ignore
+        # object.__setattr__(self, "function", SummarizeFunction.get(self.function, self.window_length))  # type: ignore
         if isinstance(self.model, dict):
             object.__setattr__(self, "model", ModelArguments.from_dict(self.summarizer_model))  # type: ignore
 

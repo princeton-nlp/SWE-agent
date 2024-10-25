@@ -14,6 +14,7 @@ from simple_parsing.helpers.fields import field
 from tenacity import RetryError
 
 from sweagent.agent.commands import Command, ParseCommand
+from sweagent.agent.history_processors import HistoryProcessor
 from sweagent.agent.models import (
     APIStats,
     ContextWindowExceededError,
@@ -22,7 +23,8 @@ from sweagent.agent.models import (
     get_model,
 )
 from sweagent.agent.parsing import FormatError, ParseFunction
-from sweagent.agent.summarizer import SummarizerConfig
+
+# from sweagent.agent.summarizer import SummarizerConfig
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.types import AgentInfo, History, HistoryItem, Trajectory, TrajectoryStep
 from sweagent.utils.config import convert_paths_to_abspath
@@ -53,13 +55,13 @@ class AgentConfig:
     demonstration_template: str | None = None
     # Paths to demonstrations. If path is not absolute, it is assumed to be
     # relative to the SWE_AGENT_CONFIG_ROOT (if set) or the SWE-agent repository root
-    demonstrations: list[str | Path] = field(default_factory=list)
+    demonstrations: list[str] = field(default_factory=list)
     put_demos_in_history: bool = False  # if True, add demonstration to history instead of as a single message
     # defaults to format_error_template in ParseFunction
     format_error_template: str = None  # type: ignore
     # Paths to command files. If path is not absolute, it is assumed to be
     # relative to the SWE_AGENT_CONFIG_ROOT (if set) or the SWE-agent repository root
-    command_files: list[str | Path] = field(default_factory=list)
+    command_files: list[str] = field(default_factory=list)
     env_variables: dict[str, str] = field(default_factory=dict)
     util_functions: list[str] = field(default_factory=list)
     submit_command: str = "submit"
@@ -68,7 +70,7 @@ class AgentConfig:
     history_processor: Any = "DefaultHistoryProcessor"
     history_processor_args: dict[str, Any] = field(default_factory=dict)
     command_docs: str = None  # type: ignore
-    summarizer_config: SummarizerConfig = field(default_factory=SummarizerConfig)
+    # summarizer_config: SummarizerConfig = field(default_factory=SummarizerConfig)
     blocklist_error_template: str = "Interactive operation '{name}' is not supported by this environment"
     blocklist: tuple[str, ...] = (
         "vim",
@@ -109,15 +111,16 @@ class AgentConfig:
     # _subroutines: dict[str, Subroutine] = field(default_factory=dict)
     # subroutine_types: list[Subroutine] = field(default_factory=list)
     model: ModelArguments = field(default_factory=lambda: ModelArguments(model_name="gpt4"))
+    multi_line_command_endings: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self):
-        object.__setattr__(self, "command_files", convert_paths_to_abspath(self.command_files))
-        object.__setattr__(self, "demonstrations", convert_paths_to_abspath(self.demonstrations))
+        self.command_files = convert_paths_to_abspath(self.command_files)
+        self.demonstrations = convert_paths_to_abspath(self.demonstrations)
 
         if self.next_step_template is None:
-            object.__setattr__(self, "next_step_template", self.instance_template)
+            self.next_step_template = self.instance_template
         if self.next_step_no_output_template is None:
-            object.__setattr__(self, "next_step_no_output_template", self.next_step_template)
+            self.next_step_no_output_template = self.next_step_template
 
         # object.__setattr__(self, "parse_command", ParseCommand.get(self.parse_command))
         parse_command = ParseCommand.get(self.parse_command)
@@ -169,11 +172,11 @@ class AgentConfig:
         #     "history_processor",
         #     HistoryProcessor.get(self.history_processor, **self.history_processor_args),
         # )
-        if "WINDOW" in self.env_variables:
-            window_size = self.env_variables["WINDOW"]
-            if self.summarizer_config.window_length < int(window_size):
-                msg = f"Summarizer window length is set to {self.summarizer_config.window_length} which is less than the window length {window_size}"
-                raise ValueError(msg)
+        # if "WINDOW" in self.env_variables:
+        # window_size = self.env_variables["WINDOW"]
+        # if self.summarizer_config.window_length < int(window_size):
+        #     msg = f"Summarizer window length is set to {self.summarizer_config.window_length} which is less than the window length {window_size}"
+        #     raise ValueError(msg)
         object.__setattr__(
             self,
             "block_unless_regex",
@@ -236,9 +239,9 @@ class Agent:
         self._args = args
         # self.model = get_model(args.model, args.config._commands + args.config.subroutine_types)
         self.model = get_model(args.model, args._commands)
-        self.summarizer_model = get_model(
-            args.summarizer_config.model if args.summarizer_config.model is not None else args.model
-        )
+        # self.summarizer_model = get_model(
+        #     args.summarizer_config.model if args.summarizer_config.model is not None else args.model
+        # )
         self.config = args
         assert self.config is not None  # mypy
         self.system_args = {
@@ -269,6 +272,11 @@ class Agent:
         #: Variables to be referenced in the templates that are forwarded from one
         #: solution attempt to the next
         self._forwarded_vars: dict[str, Any] = {}
+
+        self._history_processor = HistoryProcessor.get(
+            self.config.history_processor, **self.config.history_processor_args
+        )
+        self._parse_function = ParseFunction.get(self.config.parse_function)
 
     @property
     def history(self) -> History:
@@ -413,7 +421,7 @@ class Agent:
     @property
     def local_history(self) -> list[dict[str, str]]:
         """Return the history of the agent since the last reset."""
-        return self.config.history_processor([entry for entry in self.history if entry["agent"] == self.name])
+        return self._history_processor([entry for entry in self.history if entry["agent"] == self.name])
 
     def _get_total_stats(self) -> APIStats:
         """Combine model stats of different attempts"""
@@ -464,9 +472,6 @@ class Agent:
                 k: v
                 for k, v in self.command_patterns.items()
                 if k in self.config.multi_line_command_endings or k == self.config.submit_command
-            }
-            patterns += {
-                k: v for k, v in self.subroutine_patterns.items() if k in self.config.multi_line_command_endings
             }
         elif pattern_type == "multi_line_no_subroutines":
             patterns = {k: v for k, v in self.command_patterns.items() if k in self.config.multi_line_command_endings}
@@ -718,7 +723,7 @@ class Agent:
         elif self.model.args.model_name == "human_thought":
             thought, action = ParseFunction.get("ThoughtActionParser")(
                 output,
-                self.config._commands + self.config.subroutine_types,
+                self.config._commands,
                 strict=False,
             )
             return thought, action, output
@@ -727,9 +732,9 @@ class Agent:
 
         while format_fails + blocklist_fails <= 2:
             try:
-                thought, action = self.config.parse_function(
+                thought, action = self._parse_function(
                     output,
-                    self.config._commands + self.config.subroutine_types,
+                    self.config._commands,
                     strict=False,
                 )
             except KeyboardInterrupt:
@@ -808,6 +813,8 @@ class Agent:
             self.logger.warning(f"Failed to set environment variables: {traceback.format_exc()}")
             raise e
         command_files = list()
+        print(self.config.command_files)
+        print([type(f) for f in self.config.command_files])
         for file in self.config.command_files:
             datum = dict()
             with open(file) as f:
@@ -874,18 +881,18 @@ class Agent:
         self.model.stats.replace(sub_agent.model.stats)
         return sub_agent_output
 
-    def _update_summarizer_stats(self, cost: APIStats):
-        """Update stats for summarizer"""
-        self.model.stats += cost
-        if "summarizer" not in self.info:
-            self.info["summarizer"] = {
-                "model_stats": APIStats().to_dict(),
-                "n_calls": 0,
-            }
-        total_cost = APIStats(**self.info["summarizer"]["model_stats"])
-        total_cost += cost
-        self.info["summarizer"]["model_stats"] = total_cost.to_dict()
-        self.info["summarizer"]["n_calls"] += 1
+    # def _update_summarizer_stats(self, cost: APIStats):
+    #     """Update stats for summarizer"""
+    #     self.model.stats += cost
+    #     if "summarizer" not in self.info:
+    #         self.info["summarizer"] = {
+    #             "model_stats": APIStats().to_dict(),
+    #             "n_calls": 0,
+    #         }
+    #     total_cost = APIStats(**self.info["summarizer"]["model_stats"])
+    #     total_cost += cost
+    #     self.info["summarizer"]["model_stats"] = total_cost.to_dict()
+    #     self.info["summarizer"]["n_calls"] += 1
 
     def _run_sub_action(self, sub_action: SubAction) -> tuple[str | None, bool]:
         """Execute a sub-action. If the sub-action is a command, execute it.
@@ -902,10 +909,10 @@ class Agent:
             for hook in self.hooks:
                 hook.on_sub_action_started(sub_action=sub_action)
             observation, _, done, _info = self._env.step(sub_action["action"])
-            observation, additional_cost = self.config.summarizer_config.function(  # type: ignore
-                sub_action["action"], observation, self._env, self.summarizer_model
-            )
-            self._update_summarizer_stats(additional_cost)
+            # observation, additional_cost = self.config.summarizer_config.function(  # type: ignore
+            #     sub_action["action"], observation, self._env, self.summarizer_model
+            # )
+            # self._update_summarizer_stats(additional_cost)
             self.info.update(_info)
             for hook in self.hooks:
                 hook.on_sub_action_executed(obs=observation, done=done)
@@ -1004,7 +1011,8 @@ class Agent:
         self.init_environment_vars(env)
         # Re-initialize primary
         self.setup(setup_args, init_model_stats)
-        self.config.summarizer_config.function.setup(setup_args, self.config)
+        # self._summarizer =
+        # self.config.summarizer_config.function.setup(setup_args, self.config)
 
         # Save/reset some attributes
         self.trajectory = Trajectory()

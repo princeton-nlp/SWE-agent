@@ -82,11 +82,6 @@ class EnvironmentArguments:
     verbose: bool = False
     # Do not use attempt to use a repository mirror from https://github.com/swe-bench.
     no_mirror: bool = False
-    # Cache task images to speed up task initialization. This means that the environment will be saved as a
-    # docker image for every repository, base commit, and setup combination. This uses quite a bit of disk space
-    # but speeds up task initialization significantly when running over multiple issues from the same repository
-    # (or using different models for the same issues).
-    cache_task_images: bool = False
     # Custom environment setup. Currently only used when data_path points to a single issue.
     # This needs to be either a string pointing to a yaml file (with yaml, yml file extension)
     # or a shell script (with sh extension).
@@ -104,12 +99,6 @@ class EnvironmentArguments:
     def __post_init__(self):
         if self.timeout is not None:
             default_logger.warning("The 'timeout' argument is deprecated and has no effect.")
-        if self.cache_task_images and self.container_name:
-            msg = (
-                "Not allowed to use persistent container with caching task images "
-                "(probably doesn't make sense and takes excessive space)."
-            )
-            raise ValueError(msg)
         if self.container_name is not None and self.container_name.strip() == "":
             msg = "Set container_name to None if you don't want to use a persistent container."
             raise ValueError(msg)
@@ -928,6 +917,7 @@ class SWEEnv(gym.Env):
         """
         Creates conda environment and installs third party dependencies to allow code execution
         """
+        return
         t0 = time.perf_counter()
         for hook in self.hooks:
             hook.on_install_env_started()
