@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import logging
+from argparse import ArgumentParser
 
-from sweagent import CONFIG_DIR
+from omegaconf import OmegaConf
+
 from sweagent.utils.log import add_file_handler, get_logger
 
 try:
@@ -35,13 +37,10 @@ from pathlib import Path
 
 import yaml
 from rich.markdown import Markdown
-from simple_parsing import parse
-from simple_parsing.helpers.flatten import FlattenedAccess
-from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 from swebench.harness.constants import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
 from unidiff import PatchSet
 
-from sweagent.agent.agents import Agent, AgentArguments
+from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.agent.models import ModelArguments
 from sweagent.environment.swe_env import EnvironmentArguments, SWEEnv
 from sweagent.environment.utils import (
@@ -70,8 +69,8 @@ logger = get_logger("swe-agent-run")
 logging.getLogger("simple_parsing").setLevel(logging.WARNING)
 
 
-@dataclass(frozen=True)
-class ActionsArguments(FlattenedAccess, FrozenSerializable):
+@dataclass
+class ActionsArguments:
     """Run real-life actions (opening PRs, etc.) if we can solve the issue."""
 
     # Open a PR with the patch if we can solve the issue
@@ -91,12 +90,12 @@ class ActionsArguments(FlattenedAccess, FrozenSerializable):
             raise ValueError(msg)
 
 
-@dataclass(frozen=True)
-class ScriptArguments(FlattenedAccess, FrozenSerializable):
+@dataclass
+class ScriptArguments:
     """Configure the control flow of the run.py script"""
 
     environment: EnvironmentArguments
-    agent: AgentArguments
+    agent: AgentConfig
     actions: ActionsArguments
     # Only run instances that completely match this regex
     instance_filter: str = ".*"
@@ -111,13 +110,18 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
     # Run the agent in CTF mode (SWE-agent: EnIGMA)
     ctf: bool = False
 
-    @property
-    def run_name(self) -> str:
+    run_name: str = ""
+
+    def __post_init__(self):
+        if not self.run_name:
+            self.run_name = self._generate_run_name()
+
+    def _generate_run_name(self) -> str:
         """Generate a unique name for this run based on the arguments."""
         model_name = self.agent.model.model_name.replace(":", "-")
         data_stem = get_data_path_name(self.environment.data_path)
-        assert self.agent.config_file is not None  # mypy
-        config_stem = Path(self.agent.config_file).stem
+        # assert self.agent.config_file is not None  # mypy
+        # config_stem = Path(self.agent.config_file).stem
 
         temp = self.agent.model.temperature
         top_p = self.agent.model.top_p
@@ -126,7 +130,7 @@ class ScriptArguments(FlattenedAccess, FrozenSerializable):
         install_env = self.environment.install_environment
 
         return (
-            f"{model_name}__{data_stem}__{config_stem}__t-{temp:.2f}__p-{top_p:.2f}"
+            f"{model_name}__{data_stem}__t-{temp:.2f}__p-{top_p:.2f}"
             + f"__c-{per_instance_cost_limit:.2f}__install-{int(install_env)}"
             + (f"__{self.suffix}" if self.suffix else "")
         )
@@ -316,7 +320,8 @@ class Main:
         logger.info("Logging to %s", log_path)
         add_file_handler(log_path)
         if args.print_config:
-            logger.info(f"📙 Arguments: {args.dumps_yaml()}")
+            dump = OmegaConf.to_yaml(args)
+            logger.info(f"📙 Arguments: {dump}")
         self.args = args
         self.agent = Agent("primary", args.agent)
         self.env = SWEEnv(args.environment)
@@ -425,16 +430,17 @@ class Main:
 
         if log_path.exists():
             try:
-                other_args = self.args.load_yaml(log_path)
-                if self.args.dumps_yaml() != other_args.dumps_yaml():  # check yaml equality instead of object equality
+                other_args = OmegaConf.load(log_path)
+                if OmegaConf.to_yaml(self.args) != OmegaConf.to_yaml(
+                    other_args
+                ):  # check yaml equality instead of object equality
                     logger.warning("**************************************************")
                     logger.warning("Found existing args.yaml with different arguments!")
                     logger.warning("**************************************************")
             except Exception:
                 logger.warning(f"Failed to load existing args.yaml: {traceback.format_exc()}")
 
-        with log_path.open("w") as f:
-            self.args.dump_yaml(f)
+        log_path.write_text(OmegaConf.to_yaml(self.args))
 
     def should_skip(self, instance_id: str) -> bool:
         """Check if we should skip this instance based on the instance filter and skip_existing flag."""
@@ -506,7 +512,9 @@ def get_args(args=None) -> ScriptArguments:
             cache_task_images=False,
         ),
         skip_existing=True,
-        agent=AgentArguments(
+        agent=AgentConfig(
+            system_template="",
+            instance_template="",
             model=ModelArguments(
                 model_name="gpt4",
                 total_cost_limit=0.0,
@@ -514,12 +522,32 @@ def get_args(args=None) -> ScriptArguments:
                 temperature=0.0,
                 top_p=0.95,
             ),
-            config_file=CONFIG_DIR / "default.yaml",
         ),
         actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
         ctf=False,
     )
 
+    default_config = OmegaConf.structured(defaults)
+
+    parser = ArgumentParser(
+        description=Markdown(__doc__),
+        formatter_class=RichHelpFormatter,
+    )
+    parser.add_argument("--config", type=str, action="append", default=[])
+    parser.add_argument("overrides", nargs="*")
+
+    args = parser.parse_args(args)
+
+    cfg_files = [OmegaConf.load(f) for f in args.config]
+
+    for _f in cfg_files:
+        print(OmegaConf.to_yaml(_f))
+
+    overrides = OmegaConf.from_dotlist(args.overrides)
+
+    cfg = OmegaConf.merge(default_config, *cfg_files, overrides)
+
+    # todo: Do we need this?
     # Nicer yaml dumping of multiline strings
     def multiline_representer(dumper, data):
         """configures yaml for dumping multiline strings
@@ -531,14 +559,7 @@ def get_args(args=None) -> ScriptArguments:
 
     yaml.add_representer(str, multiline_representer)
 
-    return parse(
-        ScriptArguments,
-        default=defaults,
-        add_config_path_arg=False,
-        args=args,
-        formatter_class=RichHelpFormatter,
-        description=Markdown(__doc__),
-    )
+    return cfg  # type: ignore
 
 
 def main(args: ScriptArguments):

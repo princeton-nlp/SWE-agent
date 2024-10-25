@@ -11,7 +11,7 @@ import together
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
 from groq import Groq
 from openai import AzureOpenAI, BadRequestError, OpenAI
-from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
+from simple_parsing.helpers.serialization.serializable import Serializable
 from tenacity import (
     retry,
     retry_if_not_exception_type,
@@ -28,8 +28,8 @@ logger = get_logger("api_models")
 _MAX_RETRIES = int(keys_config.get("SWE_AGENT_MODEL_MAX_RETRIES", 10))
 
 
-@dataclass(frozen=True)
-class ModelArguments(FrozenSerializable):
+@dataclass
+class ModelArguments:
     """Arguments configuring the model and its behavior."""
 
     # Name of the model to use

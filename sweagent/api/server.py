@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from omegaconf import OmegaConf
+
 try:
     import flask  # noqa
 except ImportError as e:
@@ -26,7 +28,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO
 
 from sweagent import CONFIG_DIR, PACKAGE_DIR
-from sweagent.agent.agents import AgentArguments
+from sweagent.agent.agents import AgentConfig
 from sweagent.agent.models import ModelArguments
 from sweagent.api.hooks import AgentUpdateHook, EnvUpdateHook, MainUpdateHook, WebUpdate
 from sweagent.api.utils import AttrDict, ThreadWithExc
@@ -149,6 +151,7 @@ def run():
     test_run: bool = run.extra.test_run
     if test_run:
         model_name = "instant_empty_submit"
+    agent_config = OmegaConf.load(CONFIG_DIR / "default_from_url.yaml")
     defaults = ScriptArguments(
         suffix="",
         environment=EnvironmentArguments(
@@ -161,21 +164,20 @@ def run():
             repo_path=run.environment.repo_path,
             environment_setup=environment_setup,
         ),
+        agent=AgentConfig(),
         skip_existing=False,
-        agent=AgentArguments(
-            model=ModelArguments(
-                model_name=model_name,
-                total_cost_limit=0.0,
-                per_instance_cost_limit=3.0,
-                temperature=0.0,
-                top_p=0.95,
-            ),
-            config_file=CONFIG_DIR / "default_from_url.yaml",
-        ),
         actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
         raise_exceptions=True,
     )
-    thread = MainThread(defaults, wu)
+    defaults.agent.model = ModelArguments(
+        model_name=model_name,
+        total_cost_limit=0.0,
+        per_instance_cost_limit=3.0,
+        temperature=0.0,
+        top_p=0.95,
+    )
+    config = ScriptArguments(**OmegaConf.merge(agent_config, defaults).to_container())
+    thread = MainThread(config, wu)
     THREADS[session_id] = thread
     thread.start()
     return "Commands are being executed", 202

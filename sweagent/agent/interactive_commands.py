@@ -10,8 +10,6 @@ import traceback
 from dataclasses import dataclass, field
 from typing import Any
 
-from simple_parsing.helpers.serialization.serializable import FrozenSerializable
-
 from sweagent.environment.utils import (
     DOCKER_START_UP_DELAY,
     NoOutputTimeoutError,
@@ -20,8 +18,8 @@ from sweagent.environment.utils import (
 )
 
 
-@dataclass(frozen=True)
-class InteractiveSessionConfig(FrozenSerializable):
+@dataclass
+class InteractiveSessionConfig:
     cmdline: str
     terminal_prompt_pattern: str
     start_command: str

@@ -18,7 +18,6 @@ import gymnasium as gym
 import yaml
 from ghapi.all import GhApi
 from git import Repo
-from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 from swebench.harness.constants import MAP_REPO_VERSION_TO_SPECS
 from swebench.harness.utils import get_environment_yml, get_requirements
 from swerex.deployment.docker import DockerDeployment
@@ -56,8 +55,8 @@ PATH_TO_REQS = "/root/requirements.txt"
 PATH_TO_ENV_YML = "/root/environment.yml"
 
 
-@dataclass(frozen=True)
-class EnvironmentArguments(FrozenSerializable):
+@dataclass
+class EnvironmentArguments:
     """Configure data sources and setup instructions for the environment in which we solve the tasks."""
 
     # Source of issue statement/problem statement. To run over a batch of issues: Path to a data file

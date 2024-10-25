@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import dataclasses
-import time
 from pathlib import Path
 from unittest import mock
 
 import pytest
 import yaml
 
-import docker
-import docker.errors
 from sweagent import CONFIG_DIR
 from sweagent.environment.swe_env import EnvHook, EnvironmentArguments
 
@@ -34,33 +31,6 @@ def test_init_swe_env_non_persistent(test_env_args):
     test_env_args = dataclasses.replace(test_env_args, container_name=None)
     with swe_env_context(test_env_args) as env:
         env.reset()
-
-
-@pytest.mark.slow
-def test_init_swe_env_cached_task_image(test_env_args):
-    test_env_args = dataclasses.replace(test_env_args, cache_task_images=True, container_name=None)
-    start = time.perf_counter()
-    with swe_env_context(test_env_args) as env:
-        env.reset()
-    duration_no_cache = time.perf_counter() - start
-    start = time.perf_counter()
-    # now it should be cached, so let's run again
-    image_prefix = None
-    with swe_env_context(test_env_args) as env:
-        env.reset()
-        image_prefix = env.cached_image_prefix
-    assert image_prefix
-    duration_cache = time.perf_counter() - start
-    assert duration_cache < duration_no_cache
-    # Retrieve all images with a prefix "prefix"
-    client = docker.from_env()
-    # Remove the images
-    for image in client.images.list():
-        if not image.tags:
-            continue
-        if not image.tags[0].startswith(image_prefix):
-            continue
-        client.images.remove(image.id)
 
 
 @pytest.mark.slow
@@ -147,20 +117,6 @@ def test_open_pr(test_env_args):
     with swe_env_context(test_env_args) as env:
         env.reset()
         env.open_pr(_dry_run=True, trajectory=[])
-
-
-@pytest.mark.slow
-def test_interrupt_close(test_env_args):
-    with swe_env_context(test_env_args) as env:
-        env.reset()
-        env.interrupt()
-
-
-@pytest.mark.slow
-def test_communicate_old(test_env_args):
-    with mock.patch.dict("os.environ", {"SWE_AGENT_COMMUNICATE_METHOD": "processes"}):
-        with swe_env_context(test_env_args) as env:
-            env.reset()
 
 
 @pytest.mark.slow

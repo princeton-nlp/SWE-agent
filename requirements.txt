@@ -20,3 +20,4 @@ flask
 flask-cors
 flask-socketio
 groq
+omegaconf

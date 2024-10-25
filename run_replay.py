@@ -84,16 +84,12 @@ def process_single_traj(traj_path: str, config_file: str, data_path: str, suffix
 
     # Call run.py via subprocess
     run_args = [
-        "--config_file",
+        "--config",
         config_file,
-        "--data_path",
-        replay_task_instances_path,
-        "--install_environment",
-        "True",
-        "--model_name",
-        "replay",
-        "--replay_path",
-        replay_action_trajs_path,
+        f"environment.data_path={replay_task_instances_path}",
+        "environment.install_environment=True",
+        "agent.model.model_name=replay",
+        f"agent.model.replay_path={replay_action_trajs_path}",
         *forward_args,
     ]
     if is_other:

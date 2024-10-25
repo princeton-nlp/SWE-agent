@@ -8,19 +8,17 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from simple_parsing.helpers.serialization.serializable import FrozenSerializable
-
 from sweagent.agent.models import APIStats, BaseModel, ContextWindowExceededError, ModelArguments
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.environment.utils import copy_anything_to_container
 from sweagent.utils.log import get_logger
 
 
-@dataclass(frozen=True)
-class SummarizerConfig(FrozenSerializable):
+@dataclass
+class SummarizerConfig:
     """The configuration for the summarizer"""
 
-    function: str = "Identity"
+    function: Any = "Identity"
     window_length: int = 105
     template: str | None = None
     model: ModelArguments | None = None

@@ -6,11 +6,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
-from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 
 
-@dataclass(frozen=True)
-class AssistantMetadata(FrozenSerializable):
+@dataclass
+class AssistantMetadata:
     """Pass observations to the assistant, and get back a response."""
 
     system_template: str | None = None
@@ -19,16 +18,16 @@ class AssistantMetadata(FrozenSerializable):
 
 # TODO: first can be used for two-stage actions
 # TODO: eventually might control high-level control flow
-@dataclass(frozen=True)
-class ControlMetadata(FrozenSerializable):
+@dataclass
+class ControlMetadata:
     """TODO: should be able to control high-level control flow after calling this command"""
 
     next_step_template: str | None = None
     next_step_action_template: str | None = None
 
 
-@dataclass(frozen=True)
-class Command(FrozenSerializable):
+@dataclass
+class Command:
     code: str
     name: str
     docstring: str | None = None

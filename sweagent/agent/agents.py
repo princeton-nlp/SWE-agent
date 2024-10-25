@@ -11,12 +11,9 @@ from pathlib import Path
 from typing import Any, TypedDict
 
 from simple_parsing.helpers.fields import field
-from simple_parsing.helpers.flatten import FlattenedAccess
-from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 from tenacity import RetryError
 
 from sweagent.agent.commands import Command, ParseCommand
-from sweagent.agent.history_processors import HistoryProcessor
 from sweagent.agent.models import (
     APIStats,
     ContextWindowExceededError,
@@ -32,8 +29,8 @@ from sweagent.utils.config import convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 
 
-@dataclass(frozen=True)
-class Subroutine(FrozenSerializable):
+@dataclass
+class Subroutine:
     name: str
     agent_file: str
     # one of "action", "observation", "response", "state", "thought"
@@ -46,10 +43,10 @@ class Subroutine(FrozenSerializable):
     agent_args: Any | None = None
 
 
-@dataclass(frozen=True)
-class AgentConfig(FrozenSerializable):
-    system_template: str
-    instance_template: str
+@dataclass
+class AgentConfig:
+    system_template: str = ""
+    instance_template: str = ""
     next_step_template: str | None = None  # defaults to instance_template
     next_step_no_output_template: str | None = None  # defaults to next_step_template
     strategy_template: str | None = None
@@ -66,9 +63,9 @@ class AgentConfig(FrozenSerializable):
     env_variables: dict[str, str] = field(default_factory=dict)
     util_functions: list[str] = field(default_factory=list)
     submit_command: str = "submit"
-    parse_function: str = "ThoughtActionParser"
-    parse_command: str = "ParseCommandBash"
-    history_processor: str = "DefaultHistoryProcessor"
+    parse_function: Any = "ThoughtActionParser"
+    parse_command: Any = "ParseCommandBash"
+    history_processor: Any = "DefaultHistoryProcessor"
     history_processor_args: dict[str, Any] = field(default_factory=dict)
     command_docs: str = None  # type: ignore
     summarizer_config: SummarizerConfig = field(default_factory=SummarizerConfig)
@@ -100,15 +97,18 @@ class AgentConfig(FrozenSerializable):
     )
     block_unless_regex: dict[str, str] = field(default_factory=dict)
     # Should extract environment state in a json readable form
-    state_command: Command = Command(
-        name="state",
-        code="""state() {
+    state_command: Command = field(
+        default_factory=lambda: Command(
+            name="state",
+            code="""state() {
             echo '{"working_dir": "'$(realpath --relative-to=$ROOT/.. $PWD)'"}';
         };""",
+        )
     )
     _commands: list[Command] = field(default_factory=list)
-    _subroutines: dict[str, Subroutine] = field(default_factory=dict)
-    subroutine_types: list[Subroutine] = field(default_factory=list)
+    # _subroutines: dict[str, Subroutine] = field(default_factory=dict)
+    # subroutine_types: list[Subroutine] = field(default_factory=list)
+    model: ModelArguments = field(default_factory=lambda: ModelArguments(model_name="gpt4"))
 
     def __post_init__(self):
         object.__setattr__(self, "command_files", convert_paths_to_abspath(self.command_files))
@@ -119,9 +119,10 @@ class AgentConfig(FrozenSerializable):
         if self.next_step_no_output_template is None:
             object.__setattr__(self, "next_step_no_output_template", self.next_step_template)
 
-        object.__setattr__(self, "parse_command", ParseCommand.get(self.parse_command))
+        # object.__setattr__(self, "parse_command", ParseCommand.get(self.parse_command))
+        parse_command = ParseCommand.get(self.parse_command)
         for file in self.command_files:
-            commands = self.parse_command.parse_command_file(file)
+            commands = parse_command.parse_command_file(file)
 
             util_functions = [command for command in commands if command.name.startswith("_")]
             commands = [command for command in commands if not command.name.startswith("_")]
@@ -129,38 +130,30 @@ class AgentConfig(FrozenSerializable):
             object.__setattr__(self, "util_functions", self.util_functions + util_functions)
             object.__setattr__(self, "_commands", self._commands + commands)
 
-        for subroutine in self.subroutine_types:
-            if subroutine.name == "submit":
-                msg = "Cannot use 'submit' as a subroutine name"
-                raise ValueError(msg)
-            agent_args = AgentArguments(
-                model=subroutine.model,
-                config_file=subroutine.agent_file,
-            )
-            object.__setattr__(subroutine, "agent_args", agent_args)
-            object.__setattr__(self, "_subroutines", {**self._subroutines, subroutine.name: subroutine})
-
         multi_line_command_endings = {
             command.name: command.end_name
-            for command in [*self._commands, *self._subroutines.values()]
+            # for command in [*self._commands, *self._subroutines.values()]
+            for command in self._commands
             if command.end_name is not None
         }
         object.__setattr__(self, "multi_line_command_endings", multi_line_command_endings)
         object.__setattr__(
             self,
             "command_docs",
-            self.parse_command.generate_command_docs(
+            parse_command.generate_command_docs(
                 self._commands,
-                self.subroutine_types,
+                [],
+                # self.subroutine_types,
                 **self.env_variables,
             ),
         )
-        object.__setattr__(self, "parse_function", ParseFunction.get(self.parse_function))
+        # object.__setattr__(self, "parse_function", ParseFunction.get(self.parse_function))
+        parse_function = ParseFunction.get(self.parse_function)
         if self.format_error_template is None:
             object.__setattr__(
                 self,
                 "format_error_template",
-                self.parse_function.format_error_template,
+                parse_function.format_error_template,
             )
         object.__setattr__(
             self,
@@ -171,11 +164,11 @@ class AgentConfig(FrozenSerializable):
             if command.name == self.submit_command:
                 object.__setattr__(self, "submit_command_end_name", command.end_name)
                 break
-        object.__setattr__(
-            self,
-            "history_processor",
-            HistoryProcessor.get(self.history_processor, **self.history_processor_args),
-        )
+        # object.__setattr__(
+        #     self,
+        #     "history_processor",
+        #     HistoryProcessor.get(self.history_processor, **self.history_processor_args),
+        # )
         if "WINDOW" in self.env_variables:
             window_size = self.env_variables["WINDOW"]
             if self.summarizer_config.window_length < int(window_size):
@@ -186,32 +179,6 @@ class AgentConfig(FrozenSerializable):
             "block_unless_regex",
             {"radare2": r"\b(?:radare2)\b.*\s+-c\s+.*", "r2": r"\b(?:radare2)\b.*\s+-c\s+.*"},
         )
-
-
-@dataclass(frozen=True)
-class AgentArguments(FlattenedAccess, FrozenSerializable):
-    """Configure the agent's behaviour (templates, parse functions, blocklists, ...)."""
-
-    model: ModelArguments = None
-
-    # Policy can only be set via config yaml file from command line
-    config_file: Path | None = None
-    config: AgentConfig | None = field(default=None, cmd=False)
-
-    def __post_init__(self):
-        if self.config is None and self.config_file is not None:
-            # If unassigned, we load the config from the file to store its contents with the overall arguments
-            config = AgentConfig.load_yaml(self.config_file)
-            object.__setattr__(self, "config", config)
-        assert self.config is not None  # mypy
-        for subroutine in getattr(self.config, "subroutines", {}).values():
-            model_args = subroutine.model
-            object.__setattr__(
-                model_args,
-                "per_instance_cost_limit",
-                self.model.per_instance_cost_limit,
-            )
-            object.__setattr__(model_args, "total_cost_limit", self.model.total_cost_limit)
 
 
 class AgentHook:
@@ -263,15 +230,16 @@ class SubAction(TypedDict):
 class Agent:
     """Agent handles the behaviour of the model and how it interacts with the environment."""
 
-    def __init__(self, name: str, args: AgentArguments):
+    def __init__(self, name: str, args: AgentConfig):
         self.name = name
         # todo: currently only used to get the model name, so might remove this later
         self._args = args
-        self.model = get_model(args.model, args.config._commands + args.config.subroutine_types)
+        # self.model = get_model(args.model, args.config._commands + args.config.subroutine_types)
+        self.model = get_model(args.model, args._commands)
         self.summarizer_model = get_model(
-            args.config.summarizer_config.model if args.config.summarizer_config.model is not None else args.model
+            args.summarizer_config.model if args.summarizer_config.model is not None else args.model
         )
-        self.config = args.config
+        self.config = args
         assert self.config is not None  # mypy
         self.system_args = {
             "command_docs": self.config.command_docs,
@@ -601,16 +569,6 @@ class Agent:
                 pat = re.compile(rf"^\s*({command.name})\s*(.*?)$", re.MULTILINE)
                 self.command_patterns[command.name] = pat
         self.subroutine_patterns = dict()
-        for _, subroutine in self.config._subroutines.items():
-            if subroutine.end_name is None:
-                pat = re.compile(rf"^\s*({subroutine.name})\s*(.*?)$", re.MULTILINE)
-                self.subroutine_patterns[subroutine.name,] = pat
-            else:
-                pat = re.compile(
-                    rf"^\s*({subroutine.name})\s*(.*?)^({subroutine.end_name})\s*$",
-                    re.DOTALL | re.MULTILINE,
-                )
-                self.subroutine_patterns[subroutine.name] = pat
         if hasattr(self.config, "submit_command_end_name"):
             submit_pat = re.compile(
                 rf"^\s*({self.config.submit_command})\s*(.*?)^({self.config.submit_command_end_name})\s*$",

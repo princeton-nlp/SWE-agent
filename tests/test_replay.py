@@ -83,7 +83,7 @@ def test_model_replay_from_json(test_trajectories_path, test_data_sources_path):
         str(data_path),
         "--config_file",
         "config/default.yaml",
-        "--raise_exceptions",
+        "raise_exceptions=True",
     ]
     args, remaining_args = get_args(args)
     main(**vars(args), forward_args=remaining_args)
