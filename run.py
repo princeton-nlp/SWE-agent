@@ -42,7 +42,7 @@ from unidiff import PatchSet
 
 from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.agent.models import ModelArguments
-from sweagent.environment.swe_env import EnvironmentArguments, SWEEnv
+from sweagent.environment.swe_env import DeploymentConfig, EnvironmentArguments, SWEEnv
 from sweagent.environment.utils import (
     InvalidGithubURL,
     extract_flag_format,
@@ -504,7 +504,7 @@ def get_args(args=None) -> ScriptArguments:
     defaults = ScriptArguments(
         suffix="",
         environment=EnvironmentArguments(
-            image_name="sweagent/swe-agent:latest",
+            deployment=DeploymentConfig(),
             data_path="princeton-nlp/SWE-bench_Lite",
             split="dev",
             verbose=True,

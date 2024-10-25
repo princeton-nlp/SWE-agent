@@ -20,7 +20,7 @@ from ghapi.all import GhApi
 from git import Repo
 from swebench.harness.constants import MAP_REPO_VERSION_TO_SPECS
 from swebench.harness.utils import get_environment_yml, get_requirements
-from swerex.deployment.docker import DockerDeployment
+from swerex.deployment import get_deployment
 from swerex.runtime.abstract import Action, CreateSessionRequest, UploadRequest, WriteFileRequest
 
 from sweagent import REPO_ROOT
@@ -28,8 +28,6 @@ from sweagent.agent.interactive_commands import (
     INTERACTIVE_SESSIONS_CONFIG,
     InteractiveSession,
     InteractiveSessionConfig,
-    get_interactive_commands,
-    get_interactive_session,
 )
 from sweagent.environment.utils import (
     InvalidGithubURL,
@@ -56,15 +54,24 @@ PATH_TO_ENV_YML = "/root/environment.yml"
 
 
 @dataclass
+class DeploymentConfig:
+    """Configuration for the deployment of the environment"""
+
+    type: str = "docker"
+    kwargs: dict[str, Any] = field(default_factory=lambda: {"image": "sweagent/swe-agent:latest"})
+
+
+@dataclass
 class EnvironmentArguments:
     """Configure data sources and setup instructions for the environment in which we solve the tasks."""
 
     # Source of issue statement/problem statement. To run over a batch of issues: Path to a data file
     # (`json`, `jsonl`) or directory. To run over single issue: github issue url or path to markdown file
     # with problem statement or problem statement as text prefixed with `text://`.
-    data_path: str
-    # Name of the docker image to use for the environment. Defaults to sweagent/swe-agent:latest
-    image_name: str = "sweagent/swe-agent:latest"
+    data_path: str = ""
+
+    deployment: DeploymentConfig = field(default_factory=DeploymentConfig)
+
     # When running over SWE-bench issues: Specify the split to use.
     split: str = "dev"
     # Specify a branch name or a commit hash to checkout before running the task.
@@ -178,7 +185,6 @@ class SWEEnv(gym.Env):
         self.logger.info(f"💽 Loaded dataset from {self.data_path}")
 
         # Establish connection with execution container
-        self.image_name = args.image_name
         self.docker_compose: Path | None = None
         self.challenge: dict[str, Any] | None = None
         self._reset_container()
@@ -470,61 +476,62 @@ class SWEEnv(gym.Env):
                 are detected, this is the same as the input observation.
                 Else, only the output from the interactive commands is returned.
         """
-        session_name, interactive_commands = get_interactive_commands(observation, logger=self.logger)
-        if session_name is None:
-            return observation
-        if (
-            session_name is not None
-            and self.interactive_session is not None
-            and self.interactive_session.name != session_name
-        ):
-            return self.interactive_session._get_only_one_interactive_error_message_observation()
-
-        observation = ""
-        for command in interactive_commands:
-            if command == "START":
-                # Start the session if previous session does not exist
-                if self.interactive_session is not None:
-                    return self.interactive_session._get_only_one_interactive_error_message_observation()
-                assert self.container_name is not None
-                _observation, self.interactive_session = get_interactive_session(
-                    ctr_name=self.container_name,
-                    ctr_obj=self.container_obj,
-                    cwd="/" + self._repo_name,
-                    session_name=session_name,
-                    config=self.args.interactive_sessions_config[session_name],
-                    logger=self.logger,
-                )
-                observation += _observation
-            elif command == "STOP":
-                if self.interactive_session is None:
-                    observation = f"Interactive session {session_name!r} is not running, so it cannot be stopped!"
-                else:
-                    if self.interactive_session.session_process.poll() is None:
-                        self.logger.warning("Session did not quit successfully, terminating.")
-                        self.interactive_session.session_process.terminate()
-                    observation = f"Interactive session {session_name!r} stopped successfully"
-                    self.interactive_session = None
-            else:
-                if self.interactive_session is None:
-                    self.logger.warning("Tried to run interactive commands without starting session")
-                    start_command = self.args.interactive_sessions_config[session_name].start_command
-                    observation = f"Interactive session {session_name!r} is not running! please start it first using `{start_command}`"
-                elif self.interactive_session and self.interactive_session.session_process.poll() is not None:
-                    start_command = self.args.interactive_sessions_config[session_name].start_command
-                    observation = f"Interactive session {session_name!r} was unexpectedly closed! Please start it again using `{start_command}`"
-                    self._terminate_interactive_session(session_name=session_name)
-                else:
-                    _observation, terminate = self.interactive_session.communicate_with_handling(
-                        command,
-                        timeout_duration=AGENT_ACTION_TIMEOUT,
-                        no_output_timeout_duration=AGENT_ACTION_NO_OUTPUT_TIMEOUT,
-                    )
-                    observation += _observation
-                    if terminate:
-                        self._terminate_interactive_session(session_name=session_name)
-                    observation += "\n"
         return observation
+        # session_name, interactive_commands = get_interactive_commands(observation, logger=self.logger)
+        # if session_name is None:
+        #     return observation
+        # if (
+        #     session_name is not None
+        #     and self.interactive_session is not None
+        #     and self.interactive_session.name != session_name
+        # ):
+        #     return self.interactive_session._get_only_one_interactive_error_message_observation()
+
+        # observation = ""
+        # for command in interactive_commands:
+        #     if command == "START":
+        #         # Start the session if previous session does not exist
+        #         if self.interactive_session is not None:
+        #             return self.interactive_session._get_only_one_interactive_error_message_observation()
+        #         assert self.container_name is not None
+        #         _observation, self.interactive_session = get_interactive_session(
+        #             ctr_name=self.container_name,
+        #             ctr_obj=self.container_obj,
+        #             cwd="/" + self._repo_name,
+        #             session_name=session_name,
+        #             config=self.args.interactive_sessions_config[session_name],
+        #             logger=self.logger,
+        #         )
+        #         observation += _observation
+        #     elif command == "STOP":
+        #         if self.interactive_session is None:
+        #             observation = f"Interactive session {session_name!r} is not running, so it cannot be stopped!"
+        #         else:
+        #             if self.interactive_session.session_process.poll() is None:
+        #                 self.logger.warning("Session did not quit successfully, terminating.")
+        #                 self.interactive_session.session_process.terminate()
+        #             observation = f"Interactive session {session_name!r} stopped successfully"
+        #             self.interactive_session = None
+        #     else:
+        #         if self.interactive_session is None:
+        #             self.logger.warning("Tried to run interactive commands without starting session")
+        #             start_command = self.args.interactive_sessions_config[session_name].start_command
+        #             observation = f"Interactive session {session_name!r} is not running! please start it first using `{start_command}`"
+        #         elif self.interactive_session and self.interactive_session.session_process.poll() is not None:
+        #             start_command = self.args.interactive_sessions_config[session_name].start_command
+        #             observation = f"Interactive session {session_name!r} was unexpectedly closed! Please start it again using `{start_command}`"
+        #             self._terminate_interactive_session(session_name=session_name)
+        #         else:
+        #             _observation, terminate = self.interactive_session.communicate_with_handling(
+        #                 command,
+        #                 timeout_duration=AGENT_ACTION_TIMEOUT,
+        #                 no_output_timeout_duration=AGENT_ACTION_NO_OUTPUT_TIMEOUT,
+        #             )
+        #             observation += _observation
+        #             if terminate:
+        #                 self._terminate_interactive_session(session_name=session_name)
+        #             observation += "\n"
+        # return observation
 
     def step(self, action: str) -> tuple[str | None, int, bool, AgentInfo]:
         """
@@ -585,7 +592,7 @@ class SWEEnv(gym.Env):
         except TimeoutError as e:
             try:
                 observation += e.args[1] if len(e.args) > 1 else ""
-                observation += self.interrupt()
+                # observation += self.interrupt()
                 observation += "\nEXECUTION TIMED OUT"
                 observation += (
                     f" BECAUSE NO OUTPUT WAS PRODUCED FOR MORE THAN {AGENT_ACTION_NO_OUTPUT_TIMEOUT} SECONDS.\nPLEASE REFINE YOUR RUNNING COMMAND SO IT WILL PRODUCE OUTPUT IN THE SPECIFIED TIME FRAME."
@@ -691,7 +698,7 @@ class SWEEnv(gym.Env):
         Handles container initialization. Defines container name and creates it.
         If cached_image is provided, it will use that image name instead of the default.
         """
-        self.deployment = DockerDeployment(image_name=self.image_name)
+        self.deployment = get_deployment(self.args.deployment.type, **self.args.deployment.kwargs)  # type: ignore
         asyncio.run(self.deployment.start())
         asyncio.run(self.deployment.runtime.create_session(CreateSessionRequest(startup_source=["/root/.bashrc"])))
         self.logger.info("🌱 Environment Initialized")

@@ -32,7 +32,7 @@ from sweagent.agent.agents import AgentConfig
 from sweagent.agent.models import ModelArguments
 from sweagent.api.hooks import AgentUpdateHook, EnvUpdateHook, MainUpdateHook, WebUpdate
 from sweagent.api.utils import AttrDict, ThreadWithExc
-from sweagent.environment.swe_env import EnvironmentArguments
+from sweagent.environment.swe_env import DeploymentConfig, EnvironmentArguments
 
 # baaaaaaad
 sys.path.append(str(PACKAGE_DIR.parent))
@@ -155,7 +155,7 @@ def run():
     defaults = ScriptArguments(
         suffix="",
         environment=EnvironmentArguments(
-            image_name="sweagent/swe-agent:latest",
+            deployment=DeploymentConfig(),
             data_path=run.environment.data_path,
             base_commit=run.environment.base_commit,
             split="dev",
