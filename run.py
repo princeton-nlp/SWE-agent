@@ -45,7 +45,6 @@ from sweagent.agent.models import ModelArguments
 from sweagent.environment.swe_env import DeploymentConfig, EnvironmentArguments, SWEEnv
 from sweagent.environment.utils import (
     InvalidGithubURL,
-    extract_flag_format,
     get_associated_commit_urls,
     get_data_path_name,
     get_gh_issue_data,
@@ -370,17 +369,17 @@ class Main:
             tests = "\n".join([f"- {x}" for x in self.env.record["FAIL_TO_PASS"]])
 
         setup_args = {"issue": issue, "files": files, "test_files": test_files, "tests": tests}
-        challenge = self.env.challenge
-        if challenge is not None:
-            setup_args["flag_format"] = extract_flag_format(challenge["flag"])
-            setup_args["name"] = challenge["name"]
-            setup_args["description"] = challenge["description"]
-            setup_args["category_friendly"] = challenge["category_friendly"]
-            setup_args["points"] = challenge["points"]
-            setup_args["files"] = challenge["files"] or "No files included in this challenge."
-            setup_args["box"] = challenge.get("server_name")
-            setup_args["port"] = challenge.get("port")
-            setup_args["server_description"] = challenge.get("server_description")
+        # challenge = self.env.challenge
+        # if challenge is not None:
+        #     setup_args["flag_format"] = extract_flag_format(challenge["flag"])
+        #     setup_args["name"] = challenge["name"]
+        #     setup_args["description"] = challenge["description"]
+        #     setup_args["category_friendly"] = challenge["category_friendly"]
+        #     setup_args["points"] = challenge["points"]
+        #     setup_args["files"] = challenge["files"] or "No files included in this challenge."
+        #     setup_args["box"] = challenge.get("server_name")
+        #     setup_args["port"] = challenge.get("port")
+        #     setup_args["server_description"] = challenge.get("server_description")
         info, trajectory = self.agent.run(
             setup_args=setup_args,
             env=self.env,
@@ -388,6 +387,7 @@ class Main:
             traj_dir=self.traj_dir,
             return_type="info_trajectory",
         )
+        challenge = None
         self._save_predictions(instance_id, info, challenge)
         for hook in self.hooks:
             hook.on_instance_completed(info=info, trajectory=trajectory)

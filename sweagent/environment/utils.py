@@ -3,17 +3,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import platform
 import re
-import shlex
-import subprocess
-import tarfile
-import tempfile
-import time
-import traceback
-from io import BytesIO
 from pathlib import Path
-from subprocess import PIPE, STDOUT
 from typing import Any, Callable
 
 from datasets import load_dataset, load_from_disk
@@ -21,9 +12,6 @@ from ghapi.all import GhApi
 from git import InvalidGitRepositoryError, Repo
 from unidiff import PatchSet
 
-import docker
-import docker.types
-from docker.models.containers import Container
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
@@ -73,131 +61,6 @@ def is_github_repo_url(data_path: str) -> bool:
     return GITHUB_REPO_URL_PATTERN.search(data_path) is not None
 
 
-# TODO: Why not just use copy_anything_to_container?
-def copy_file_to_container(container: Container, contents: str, container_path: str) -> None:
-    """
-    Copies a given string into a Docker container at a specified path.
-
-    Args:
-        container: Docker SDK container object.
-        contents: The string to copy into the container.
-        container_path: The path inside the container where the string should be copied to.
-
-    Returns:
-        None
-    """
-    temp_file_name = None
-
-    try:
-        # Create a temporary file
-        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            temp_file_name = temp_file.name
-            # Write the string to the temporary file and ensure it's written to disk
-            temp_file.write(contents.encode("utf-8"))
-            temp_file.flush()
-            os.fsync(temp_file.fileno())
-
-        # Create a TAR archive in memory containing the temporary file
-        with tempfile.NamedTemporaryFile():
-            with open(temp_file_name, "rb") as temp_file:
-                # Prepare the TAR archive
-                with BytesIO() as tar_stream:
-                    with tarfile.open(fileobj=tar_stream, mode="w") as tar:
-                        tar_info = tarfile.TarInfo(name=Path(container_path).name)
-                        tar_info.size = Path(temp_file_name).stat().st_size
-                        tar.addfile(tarinfo=tar_info, fileobj=temp_file)
-                    tar_stream.seek(0)
-                    # Copy the TAR stream to the container
-                    container.put_archive(path=Path(container_path).parent, data=tar_stream.read())
-
-    except Exception as e:
-        logger.error(f"An error occurred: {e}")
-        logger.error(traceback.format_exc())
-    finally:
-        # Cleanup: Remove the temporary file if it was created
-        if temp_file_name and Path(temp_file_name).exists():
-            os.remove(temp_file_name)
-
-
-def copy_anything_to_container(container: Container, host_path: str, container_path: str) -> None:
-    """Copy files or directories from host to container
-
-    Note: Will need to set ownership on the copied files in the container.
-    """
-    if not Path(host_path).exists():
-        msg = f"Path {host_path} does not exist, cannot copy it to container."
-        raise FileNotFoundError(msg)
-    cmd = ["docker", "cp", host_path, f"{container.id}:{container_path}"]
-    logger.debug(f"Copying {host_path} to container at {container_path} with command: {shlex.join(cmd)}")
-    try:
-        subprocess.run(cmd, check=True)
-    except subprocess.CalledProcessError as e:
-        msg = f"Error copying {host_path} to container at {container_path}: {e}"
-        raise RuntimeError(msg) from e
-
-
-def read_with_timeout(container: subprocess.Popen, pid_func: Callable, timeout_duration: int | float) -> str:
-    """
-    Read data from a subprocess with a timeout.
-    This function uses a file descriptor to read data from the subprocess in a non-blocking way.
-
-    Args:
-        container: The subprocess container.
-        pid_func: A function that returns a list of process IDs (except the PID of the main process).
-        timeout_duration: The timeout duration in seconds.
-
-    Returns:
-        output: The data read from the subprocess, stripped of trailing newline characters.
-
-    Raises:
-        TimeoutError: If the timeout duration is reached while reading from the subprocess.
-    """
-    buffer = b""
-    fd = container.stdout.fileno()
-    end_time = time.time() + timeout_duration
-
-    # Select is not available on windows
-    is_windows = platform.system() == "Windows"
-    if not is_windows:
-        import select
-    else:
-        os.set_blocking(fd, False)
-
-    def ready_to_read(fd) -> bool:
-        if is_windows:
-            # We can't do the extra check
-            return True
-        return bool(select.select([fd], [], [], 0.01)[0])
-
-    while time.time() < end_time:
-        pids = pid_func()
-        if len(pids) > 0:
-            # There are still PIDs running
-            time.sleep(0.05)
-            continue
-        if ready_to_read(fd):
-            data = os.read(fd, 4096)
-            if data:
-                buffer += data
-        else:
-            # No more data to read
-            break
-        time.sleep(0.05)  # Prevents CPU hogging
-
-    if container.poll() is not None:
-        msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {buffer.decode()}"
-        raise RuntimeError(msg)
-    if time.time() >= end_time:
-        msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {buffer.decode()}\nRunning PIDs: {pids}"
-        raise TimeoutError(msg)
-
-    decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
-    return "\n".join(line for line in decoded.splitlines())
-
-
-PROCESS_DONE_MARKER_START = "///PROCESS-DONE:"
-PROCESS_DONE_MARKER_END = ":PROCESS-DONE///"
-PROCESS_DONE_REGEX = re.compile(rf"{PROCESS_DONE_MARKER_START}(.+?){PROCESS_DONE_MARKER_END}")
 DECODED_BUFFER_FAILURE_THRESHOLD = 0.1
 
 
@@ -214,423 +77,74 @@ def _check_for_too_many_non_unicode_bytes(buffer: bytes):
     raise UnicodeError(msg)
 
 
-def read_with_timeout_experimental(
-    container: subprocess.Popen, timeout_duration: int | float, no_output_timeout_duration: int | float
-) -> tuple[str, str]:
-    """
-    Read data from a subprocess with a timeout.
-    This function uses a file descriptor to read data from the subprocess in a non-blocking way.
-
-    NOTE: This is an experimental implementation that is faster than `read_with_timeout`, but
-    has not been thoroughly tested.
-
-    Args:
-        container: The subprocess container.
-        timeout_duration: The timeout duration in seconds.
-        no_output_timeout_duration: The timeout duration to wait if no output is produced, in seconds.
-
-    Returns:
-        Output and exit code, both as strings (!)
-
-    Raises:
-        TimeoutError: If the timeout duration is reached while reading from the subprocess.
-    """
-    buffer = b""
-    fd = container.stdout.fileno()
-    start_time = time.time()
-    end_time = start_time + timeout_duration
-    end_time_no_output = start_time + no_output_timeout_duration
-
-    # Select is not available on windows
-    is_windows = platform.system() == "Windows"
-    if not is_windows:
-        import select
-    else:
-        os.set_blocking(fd, False)
-
-    def ready_to_read(fd) -> bool:
-        if is_windows:
-            # We can't do the extra check
-            return True
-        return bool(select.select([fd], [], [], 0.01)[0])
-
-    process_done = False
-
-    while time.time() < min(end_time, end_time_no_output):
-        if ready_to_read(fd):
-            try:
-                data = os.read(fd, 4096)
-            except BlockingIOError:
-                logger.error("BlockingIOError while reading from subprocess.", exc_info=True)
-                break
-            if data:
-                end_time_no_output = time.time() + no_output_timeout_duration
-                buffer += data
-                if PROCESS_DONE_MARKER_START in buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n"):
-                    process_done = True
-                    break
-        time.sleep(0.01)  # Prevents CPU hogging
-
-    decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
-    body = "\n".join(line for line in decoded.splitlines() if not line.startswith(PROCESS_DONE_MARKER_START))
-
-    if container.poll() is not None:
-        msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {decoded}"
-        raise RuntimeError(msg, body)
-
-    current_time = time.time()
-    if not process_done and current_time >= min(end_time, end_time_no_output):
-        if current_time >= end_time:
-            msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {decoded}"
-            raise TimeoutError(msg, body)
-        else:
-            msg = f"No output timeout reached while reading from subprocess.\nCurrent buffer: {decoded}"
-            raise NoOutputTimeoutError(msg, body)
-
-    _check_for_too_many_non_unicode_bytes(buffer=buffer)
-    _results = PROCESS_DONE_REGEX.search(decoded)
-    if _results is None:
-        msg = f"Could not find process done marker in last line: {decoded=}, {body=}"
-        raise ValueError(msg)
-    exit_code = _results.group(1)
-    return body.replace(f"{PROCESS_DONE_MARKER_START}{exit_code}{PROCESS_DONE_MARKER_END}", ""), exit_code
+# def terminate_docker_compose(docker_compose_path: Path) -> None:
+#     terminate_cmd = [
+#         "docker",
+#         "compose",
+#         "-f",
+#         str(docker_compose_path),
+#         "down",
+#     ]
+#     logger.debug("Terminating docker-compose with command: %s", shlex.join(terminate_cmd))
+#     compose = subprocess.Popen(
+#         terminate_cmd,
+#         stdin=PIPE,
+#         stdout=PIPE,
+#         stderr=STDOUT,
+#         text=True,
+#         bufsize=1,  # line buffered
+#     )
+#     _, error = compose.communicate(timeout=DOCKER_COMPOSE_TERMINATION_DELAY)
+#     if error:
+#         logger.error(f"Unexpected compose termination error: {error}")
 
 
-def read_session_with_timeout(
-    session: subprocess.Popen,
-    terminal_pattern: str,
-    timeout_duration: int | float,
-    no_output_timeout_duration: int | float,
-) -> str:
-    """
-    Read data from a subprocess with a timeout.
-    This function uses a file descriptor to read data from the subprocess in a non-blocking way.
-
-    Args:
-        session: The session subprocess.
-        terminal_pattern: the terminal pattern to indicate end of output.
-        timeout_duration: The timeout duration in seconds.
-
-    Returns:
-        Output
-
-    Raises:
-        TimeoutError: If the timeout duration is reached while reading from the subprocess.
-    """
-    buffer = b""
-    fd = session.stdout.fileno()
-    start_time = time.time()
-    end_time = start_time + timeout_duration
-    end_time_no_output = start_time + no_output_timeout_duration
-
-    # Select is not available on windows
-    import select
-
-    def ready_to_read(fd) -> bool:
-        return bool(select.select([fd], [], [], 0.01)[0])
-
-    command_done = False
-    while time.time() < min(end_time, end_time_no_output) and session.poll() is None:
-        if ready_to_read(fd):
-            try:
-                data = os.read(fd, 4096)
-            except BlockingIOError:
-                logger.error("BlockingIOError while reading from subprocess.", exc_info=True)
-                break
-            if data:
-                end_time_no_output = time.time() + no_output_timeout_duration
-                buffer += data
-                if terminal_pattern in buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n"):
-                    command_done = True
-                    break
-        time.sleep(0.01)  # Prevents CPU hogging
-
-    decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
-    body = "\n".join(line for line in decoded.splitlines() if not line.startswith(terminal_pattern))
-
-    if session.poll() is not None:
-        msg = f"Subprocess exited unexpectedly.\nCurrent buffer: {decoded}"
-        raise RuntimeError(msg, body)
-    current_time = time.time()
-    if not command_done and current_time >= min(end_time, end_time_no_output):
-        if current_time >= end_time:
-            msg = f"Timeout reached while reading from subprocess.\nCurrent buffer: {decoded}"
-            raise TimeoutError(msg, body)
-        else:
-            msg = f"No output timeout reached while reading from subprocess.\nCurrent buffer: {decoded}"
-            raise NoOutputTimeoutError(msg, body)
-
-    return body
+# def attach_network_interface_to_container(container_name: str) -> None:
+#     cmd = [
+#         "docker",
+#         "network",
+#         "connect",
+#         "ctfnet",
+#         container_name,
+#     ]
+#     logger.debug("Attaching NIC to container with command: %s", shlex.join(cmd))
+#     compose = subprocess.Popen(
+#         cmd,
+#         stdin=PIPE,
+#         stdout=PIPE,
+#         stderr=STDOUT,
+#         text=True,
+#         bufsize=1,  # line buffered
+#     )
+#     _, error = compose.communicate(timeout=DOCKER_START_UP_DELAY)
+#     if error:
+#         logger.error(f"Unexpected compose setup error: {error}")
+#         raise RuntimeError(error)
 
 
-def get_background_pids(container_obj: Container):
-    pids = container_obj.exec_run("ps -eo pid,comm --no-headers").output.decode().split("\n")
-    pids = [x.split() for x in pids if x]
-    pids = [x for x in pids if x[1] not in {"ps"} and x[0] != "1"]
-    bash_pids = [x for x in pids if x[1] == "bash"]
-    other_pids = [x for x in pids if x[1] not in {"bash"}]
-    return bash_pids, other_pids
-
-
-def terminate_docker_compose(docker_compose_path: Path) -> None:
-    terminate_cmd = [
-        "docker",
-        "compose",
-        "-f",
-        str(docker_compose_path),
-        "down",
-    ]
-    logger.debug("Terminating docker-compose with command: %s", shlex.join(terminate_cmd))
-    compose = subprocess.Popen(
-        terminate_cmd,
-        stdin=PIPE,
-        stdout=PIPE,
-        stderr=STDOUT,
-        text=True,
-        bufsize=1,  # line buffered
-    )
-    _, error = compose.communicate(timeout=DOCKER_COMPOSE_TERMINATION_DELAY)
-    if error:
-        logger.error(f"Unexpected compose termination error: {error}")
-
-
-def attach_network_interface_to_container(container_name: str) -> None:
-    cmd = [
-        "docker",
-        "network",
-        "connect",
-        "ctfnet",
-        container_name,
-    ]
-    logger.debug("Attaching NIC to container with command: %s", shlex.join(cmd))
-    compose = subprocess.Popen(
-        cmd,
-        stdin=PIPE,
-        stdout=PIPE,
-        stderr=STDOUT,
-        text=True,
-        bufsize=1,  # line buffered
-    )
-    _, error = compose.communicate(timeout=DOCKER_START_UP_DELAY)
-    if error:
-        logger.error(f"Unexpected compose setup error: {error}")
-        raise RuntimeError(error)
-
-
-def get_docker_compose(docker_compose_path: Path) -> Path:
-    startup_cmd = [
-        "docker",
-        "compose",
-        "-f",
-        str(docker_compose_path),
-        "up",
-        "-d",
-        "--force-recreate",
-    ]
-    logger.debug("Starting docker-compose with command: %s", shlex.join(startup_cmd))
-    compose = subprocess.Popen(
-        startup_cmd,
-        stdin=PIPE,
-        stdout=PIPE,
-        stderr=STDOUT,
-        text=True,
-        bufsize=1,  # line buffered
-    )
-    _, error = compose.communicate(timeout=DOCKER_COMPOSE_STARTUP_DELAY)
-    if error:
-        logger.error(f"Unexpected compose setup error: {error}")
-    return docker_compose_path
-
-
-def _get_container_mounts_list(container_mounts: list[str]) -> list[docker.types.Mount]:
-    try:
-        for i in range(len(container_mounts)):
-            path = Path(container_mounts[i]).absolute()
-            if path.is_dir():
-                container_mounts[i] = docker.types.Mount(source=str(path), target=f"/{path.name}")
-        return container_mounts
-    except Exception:
-        logger.warning("Failed to process container mounts, skipping mount.")
-        return []
-
-
-def _get_non_persistent_container(
-    ctr_name: str, image_name: str, container_mounts: list[str]
-) -> tuple[subprocess.Popen, set[str]]:
-    startup_cmd = [
-        "docker",
-        "run",
-        "-i",
-        "--rm",
-        *[item for mount in container_mounts for item in ("-v", f"{Path(mount).absolute()}:/{Path(mount).name}")],
-        "--name",
-        ctr_name,
-        image_name,
-        "/bin/bash",
-        "-l",
-    ]
-    logger.debug("Starting container with command: %s", shlex.join(startup_cmd))
-    container = subprocess.Popen(
-        startup_cmd,
-        stdin=PIPE,
-        stdout=PIPE,
-        stderr=STDOUT,
-        text=True,
-        bufsize=1,  # line buffered
-    )
-    time.sleep(DOCKER_START_UP_DELAY)
-    # try to read output from container setup (usually an error), timeout if no output
-    output = read_with_timeout(container, lambda: list(), timeout_duration=2)
-    if output:
-        logger.error(f"Unexpected container setup output: {output}")
-    # bash PID is always 1 for non-persistent containers
-    return container, {
-        "1",
-    }
-
-
-def _get_persistent_container(
-    ctr_name: str, image_name: str, container_mounts: list[str], persistent: bool = False
-) -> tuple[subprocess.Popen, set[str]]:
-    client = docker.from_env()
-    containers = client.containers.list(all=True, filters={"name": ctr_name})
-    if ctr_name in [c.name for c in containers]:
-        container_obj = client.containers.get(ctr_name)
-        if container_obj.status in {"created"}:
-            container_obj.start()
-        elif container_obj.status in {"running"}:
-            pass
-        elif container_obj.status in {"exited"}:
-            container_obj.restart()
-        elif container_obj.status in {"paused"}:
-            container_obj.unpause()
-        else:
-            msg = f"Unexpected container status: {container_obj.status}"
-            raise RuntimeError(msg)
-    else:
-        container_mounts = _get_container_mounts_list(container_mounts)
-        container_obj = client.containers.run(
-            image_name,
-            command="/bin/bash -l -m",
-            name=ctr_name,
-            stdin_open=True,
-            tty=True,
-            detach=True,
-            auto_remove=not persistent,
-            mounts=container_mounts,
-        )
-        container_obj.start()
-    startup_cmd = [
-        "docker",
-        "exec",
-        "-i",
-        ctr_name,
-        "/bin/bash",
-        "-l",
-    ]
-    logger.debug("Starting container with command: %s", shlex.join(startup_cmd))
-    container = subprocess.Popen(
-        startup_cmd,
-        stdin=PIPE,
-        stdout=PIPE,
-        stderr=STDOUT,
-        text=True,
-        bufsize=1,  # line buffered
-    )
-    time.sleep(DOCKER_START_UP_DELAY)
-    # try to read output from container setup (usually an error), timeout if no output
-    output = read_with_timeout(container, lambda: list(), timeout_duration=2)
-    if output:
-        logger.error(f"Unexpected container setup output: {output}")
-    # Get the process IDs of the container
-    # There should be at least a head process and possibly one child bash process
-    bash_pids, other_pids = get_background_pids(container_obj)
-    total_time_slept = DOCKER_START_UP_DELAY
-    # Let's wait for a maximum of 5 x DOCKER_START_UP_DELAY seconds
-    # and then check again.
-    while len(bash_pids) > 1 or len(other_pids) > 0:
-        time.sleep(1)
-        total_time_slept += 1
-        bash_pids, other_pids = get_background_pids(container_obj)
-        if total_time_slept > 5 * DOCKER_START_UP_DELAY:
-            break
-    bash_pid = 1
-    if len(bash_pids) == 1:
-        bash_pid = bash_pids[0][0]
-    elif len(bash_pids) > 1 or len(other_pids) > 0:
-        msg = (
-            "Detected alien processes attached or running. Please ensure that no other agents "
-            f"are running on this container. PIDs: {bash_pids}, {other_pids}"
-        )
-        raise RuntimeError(msg)
-    return container, {str(bash_pid), "1"}
-
-
-def get_container(
-    ctr_name: str, image_name: str, container_mounts: list[str], persistent: bool = False
-) -> tuple[subprocess.Popen, set]:
-    """
-    Get a container object for a given container name and image name
-
-    Arguments:
-        ctr_name (str): Name of container
-        image_name (str): Name of image
-        persistent (bool): Whether to use a persistent container or not
-    Returns:
-        Container object
-    """
-    if not image_exists(image_name):
-        msg = (
-            f"Image {image_name} not found. Please ensure it is built and available. "
-            "Please double-check that you followed all installation/setup instructions from the "
-            "readme."
-        )
-        raise RuntimeError(msg)
-
-    if persistent:
-        return _get_persistent_container(ctr_name, image_name, container_mounts=container_mounts)
-    else:
-        return _get_non_persistent_container(ctr_name, image_name, container_mounts=container_mounts)
-
-
-def image_exists(image_name: str) -> bool:
-    """
-    Check that the image exists and give some better error messages.
-
-    Arguments:
-        image_name: Name of image
-    Returns:
-        bool: True if image exists
-    """
-    try:
-        client = docker.from_env()
-    except docker.errors.DockerException as e:
-        docker_not_running = any(
-            (
-                "connection aborted" in str(e).lower(),
-                "connection refused" in str(e).lower(),
-                "error while fetching server api version" in str(e).lower(),
-            ),
-        )
-        if docker_not_running:
-            msg = (
-                "Probably the Docker daemon is not running. Please start the Docker daemon and try again. "
-                "If Docker issues persist, please check out https://princeton-nlp.github.io/SWE-agent/installation/tips/"
-            )
-            raise RuntimeError(msg) from e
-        raise
-    filterred_images = client.images.list(filters={"reference": image_name})
-    if len(filterred_images) == 0:
-        return False
-    elif len(filterred_images) > 1:
-        RuntimeError(f"Multiple images found for {image_name}, that's weird.")
-    attrs = filterred_images[0].attrs
-    if attrs is not None:
-        logger.info(
-            f"Found image {image_name} with tags: {attrs['RepoTags']}, created: {attrs['Created']} "
-            f"for {attrs['Os']} {attrs['Architecture']}.",
-        )
-    return True
+# def get_docker_compose(docker_compose_path: Path) -> Path:
+#     startup_cmd = [
+#         "docker",
+#         "compose",
+#         "-f",
+#         str(docker_compose_path),
+#         "up",
+#         "-d",
+#         "--force-recreate",
+#     ]
+#     logger.debug("Starting docker-compose with command: %s", shlex.join(startup_cmd))
+#     compose = subprocess.Popen(
+#         startup_cmd,
+#         stdin=PIPE,
+#         stdout=PIPE,
+#         stderr=STDOUT,
+#         text=True,
+#         bufsize=1,  # line buffered
+#     )
+#     _, error = compose.communicate(timeout=DOCKER_COMPOSE_STARTUP_DELAY)
+#     if error:
+#         logger.error(f"Unexpected compose setup error: {error}")
+#     return docker_compose_path
 
 
 def get_commit(api: GhApi, owner: str, repo: str, ref: str | None = None):

@@ -32,20 +32,6 @@ from sweagent.utils.log import get_logger
 
 
 @dataclass
-class Subroutine:
-    name: str
-    agent_file: str
-    # one of "action", "observation", "response", "state", "thought"
-    return_type: str = None  # type: ignore
-    init_observation: str | None = None
-    end_name: str | None = None
-    signature: str | None = None
-    docstring: str | None = None
-    model: ModelArguments | None = None
-    agent_args: Any | None = None
-
-
-@dataclass
 class AgentConfig:
     system_template: str = ""
     instance_template: str = ""
@@ -852,35 +838,6 @@ class Agent:
             env_vars[var] = env.communicate(f"echo ${var}").strip()
         return env_vars
 
-    def call_subroutine(self, agent_name: str, sub_action: SubAction, env: SWEEnv):
-        """Call subroutine"""
-        assert self.config is not None  # mypy
-        env_vars = self.get_environment_vars(env)
-        cwd = env.communicate("pwd -P").strip()
-        init_observation = self.config._subroutines[agent_name].init_observation
-        if init_observation is not None:
-            obs, _, _, _ = env.step(init_observation.format(args=sub_action["args"]))
-        else:
-            obs = None
-        if env.returncode != 0:
-            self._append_history(HistoryItem({"role": "user", "content": obs, "agent": agent_name}))
-            msg = f"Nonzero return code: {env.returncode} for init_observation in {agent_name}.\n{obs}"
-            raise RuntimeError(msg)
-        return_type = self.config._subroutines[agent_name].return_type
-        sub_agent = Agent(agent_name, self.config._subroutines[agent_name].agent_args)
-        sub_agent_output = sub_agent.run(
-            {"issue": sub_action["args"]},
-            env,
-            observation=obs,
-            return_type=return_type,
-            init_model_stats=self.model.stats,
-        )
-        self.history += sub_agent.history
-        self.set_environment_vars(env, env_vars)
-        env.communicate(f"cd {cwd}")
-        self.model.stats.replace(sub_agent.model.stats)
-        return sub_agent_output
-
     # def _update_summarizer_stats(self, cost: APIStats):
     #     """Update stats for summarizer"""
     #     self.model.stats += cost
@@ -896,7 +853,6 @@ class Agent:
 
     def _run_sub_action(self, sub_action: SubAction) -> tuple[str | None, bool]:
         """Execute a sub-action. If the sub-action is a command, execute it.
-        If it is a subroutine, call the subroutine.
 
         Returns:
             observation: Observation
@@ -904,26 +860,21 @@ class Agent:
         """
         assert self._env is not None
         assert self.config is not None
-        if sub_action["agent"] == self.name or sub_action["cmd_name"] == self.config.submit_command:
-            # Normal command, not a subroutine
-            for hook in self.hooks:
-                hook.on_sub_action_started(sub_action=sub_action)
-            observation, _, done, _info = self._env.step(sub_action["action"])
-            # observation, additional_cost = self.config.summarizer_config.function(  # type: ignore
-            #     sub_action["action"], observation, self._env, self.summarizer_model
-            # )
-            # self._update_summarizer_stats(additional_cost)
-            self.info.update(_info)
-            for hook in self.hooks:
-                hook.on_sub_action_executed(obs=observation, done=done)
-            if sub_action["cmd_name"] == self.config.submit_command:
-                done = True
-        else:
-            agent_name = sub_action["agent"]
-            sub_agent_output = self.call_subroutine(agent_name, sub_action, self._env)
-            observation = sub_agent_output
-            assert isinstance(observation, str) or observation is None
-            done = False
+
+        # Normal command, not a subroutine
+        for hook in self.hooks:
+            hook.on_sub_action_started(sub_action=sub_action)
+        observation, _, done, _info = self._env.step(sub_action["action"])
+        # observation, additional_cost = self.config.summarizer_config.function(  # type: ignore
+        #     sub_action["action"], observation, self._env, self.summarizer_model
+        # )
+        # self._update_summarizer_stats(additional_cost)
+        self.info.update(_info)
+        for hook in self.hooks:
+            hook.on_sub_action_executed(obs=observation, done=done)
+        if sub_action["cmd_name"] == self.config.submit_command:
+            done = True
+
         return observation, done
 
     def _run_step(self, observation: str | None) -> tuple[str | None, bool]:

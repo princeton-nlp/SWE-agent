@@ -1,50 +1,40 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import logging
-import os
 import random
 import re
 import shlex
-import subprocess
 import time
-import traceback
 from dataclasses import dataclass, field
 from pathlib import Path, PurePath
 from typing import Any
 
 import gymnasium as gym
-import yaml
 from ghapi.all import GhApi
 from git import Repo
-from swebench.harness.constants import MAP_REPO_VERSION_TO_SPECS
-from swebench.harness.utils import get_environment_yml, get_requirements
 from swerex.deployment import get_deployment
 from swerex.runtime.abstract import Action, CreateSessionRequest, UploadRequest, WriteFileRequest
 
 from sweagent import REPO_ROOT
-from sweagent.agent.interactive_commands import (
-    INTERACTIVE_SESSIONS_CONFIG,
-    InteractiveSession,
-    InteractiveSessionConfig,
-)
+
+# from sweagent.agent.interactive_commands import (
+#     INTERACTIVE_SESSIONS_CONFIG,
+#     InteractiveSession,
+#     InteractiveSessionConfig,
+# )
 from sweagent.environment.utils import (
     InvalidGithubURL,
     NoOutputTimeoutError,
     PatchFormatter,
-    attach_network_interface_to_container,
-    copy_file_to_container,
     format_trajectory_markdown,
-    get_docker_compose,
     get_gh_issue_data,
     get_instances,
     parse_gh_issue_url,
-    terminate_docker_compose,
 )
 from sweagent.types import AgentInfo
 from sweagent.utils.config import keys_config
-from sweagent.utils.log import default_logger, get_logger
+from sweagent.utils.log import get_logger
 
 LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500))
 AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
@@ -77,14 +67,8 @@ class EnvironmentArguments:
     # Specify a branch name or a commit hash to checkout before running the task.
     # Only used when running over a single problem statement/issue.
     base_commit: str | None = None
-    # Use a persistent container with this name. After every task, the container will be paused, but not removed.
-    # This is useful for speedup when running multiple tasks from the same repositories in a row, as the repositories
-    # will have already been cloned and the conda environments will have been installed.
-    container_name: str | None = None
     # Try to install the environment before running the task.
     install_environment: bool = True
-    # No effect, kept for backwards compatibility.
-    timeout: int | None = None
     # Enable environment logger.
     verbose: bool = False
     # Do not use attempt to use a repository mirror from https://github.com/swe-bench.
@@ -97,18 +81,9 @@ class EnvironmentArguments:
     # Only used when running on single issue. Path to local repository or github repository.
     repo_path: str = ""
     # Interactive command configuration
-    interactive_sessions_config: dict[str, InteractiveSessionConfig] = field(
-        default_factory=lambda: INTERACTIVE_SESSIONS_CONFIG
-    )
-    # Container mounts - additional folders to mount into the environment (useful for caching)
-    container_mounts: list[str] = field(default_factory=list)
-
-    def __post_init__(self):
-        if self.timeout is not None:
-            default_logger.warning("The 'timeout' argument is deprecated and has no effect.")
-        if self.container_name is not None and self.container_name.strip() == "":
-            msg = "Set container_name to None if you don't want to use a persistent container."
-            raise ValueError(msg)
+    # interactive_sessions_config: dict[str, InteractiveSessionConfig] = field(
+    # default_factory=lambda: INTERACTIVE_SESSIONS_CONFIG
+    # )
 
 
 class EnvHook:
@@ -149,11 +124,8 @@ class SWEEnv(gym.Env):
         t0 = time.perf_counter()
         self.args = args
         self.base_commit: str | None = None
-        self.container_name: str | None = args.container_name
         self.install_environment = args.install_environment
         self.logger = get_logger("SWEEnv")
-        self.persistent = args.container_name is not None
-        self.container_mounts = args.container_mounts
         self.returncode: None | int = None
         if not self.args.verbose:
             # fixme: This creates problems if we have multiple instances of this class
@@ -185,27 +157,17 @@ class SWEEnv(gym.Env):
         self.logger.info(f"💽 Loaded dataset from {self.data_path}")
 
         # Establish connection with execution container
-        self.docker_compose: Path | None = None
-        self.challenge: dict[str, Any] | None = None
+        # self.docker_compose: Path | None = None
+        # self.challenge: dict[str, Any] | None = None
         self._reset_container()
 
-        self.interactive_session: InteractiveSession | None = None
+        # self.interactive_session: InteractiveSession | None = None
 
         self.idx = 0
         self.clean_multi_line_functions = lambda x: x
         self.hooks: list[EnvHook] = []
 
         self.logger.debug("Environment initialization took %.2f seconds", time.perf_counter() - t0)
-
-    def _get_cached_task_image_name(self) -> str:
-        assert self.record is not None
-        inputs: list[str] = [
-            self.record["repo"],
-            self.record["base_commit"],
-            self.args.environment_setup or "no_setup",
-        ]
-        tag = hashlib.sha256("".join(inputs).encode()).hexdigest()[:50]
-        return f"{self.cached_image_prefix}{tag}"
 
     def add_hook(self, hook: EnvHook):
         """Add `EnvHook` to the environment.
@@ -271,7 +233,7 @@ class SWEEnv(gym.Env):
             self.logger.info("Trying to clone from non-mirror...")
             clone_url = f"https://{token_prefix}github.com/{self.record['repo']}.git"
         clone_method = keys_config.get("SWE_AGENT_CLONE_METHOD", default="shallow", choices=["shallow", "full"])
-        if len(self.data) > 1 or self.persistent:
+        if len(self.data) > 1:
             msg = "Falling back to full cloning method due to multiple instances or persistent container"
             clone_method = "full"
             self.logger.debug(msg)
@@ -300,7 +262,7 @@ class SWEEnv(gym.Env):
             )
         return self._repo_name
 
-    def reset(self, index: int | None = None, apply_test_patch: bool = False) -> tuple[str | None, dict]:
+    def reset(self, index: int | None = None) -> tuple[str | None, dict]:
         """
         Function to reset container between each task instance.
 
@@ -327,14 +289,14 @@ class SWEEnv(gym.Env):
         # Set query, gold command
         self.base_commit = self.record["base_commit"]
         self.query = self.record["problem_statement"]
-        self.challenge = self.record.get("challenge")
+        # self.challenge = self.record.get("challenge")
         self.reward = None
 
         ### Reset Container ###
-        self._init_docker_compose()
+        # self._init_docker_compose()
 
         # Init docker network
-        self._init_docker_network()
+        # self._init_docker_network()
 
         # Clone repository if not already cloned
         self.communicate(input="cd /")
@@ -362,13 +324,11 @@ class SWEEnv(gym.Env):
             )
 
         # Call install environment helper function if specified
-        if self.install_environment:
-            self.install_env()
+        # if self.install_environment:
+        self.on_environment_startup()
         # Install mypy for linting purposes
         # self.communicate_with_handling("pip install flake8", error_msg="Failed to install flake8 (lint library)")
 
-        if apply_test_patch:
-            self._apply_test_patch()
         # Write any metadata to info if necessary
         return None, info
 
@@ -379,13 +339,13 @@ class SWEEnv(gym.Env):
             f"cd /{self._repo_name}",
             "export ROOT=$(pwd -P)",
         ]
-        if self.challenge is None:
-            startup_commands += [
-                "git status",
-                "git restore .",
-                f"git reset --hard {self.base_commit}",
-                "git clean -fdxq",
-            ]
+        # if self.challenge is None:
+        startup_commands += [
+            "git status",
+            "git restore .",
+            f"git reset --hard {self.base_commit}",
+            "git clean -fdxq",
+        ]
         self.communicate_with_handling(
             input=" && ".join(startup_commands),
             error_msg="Failed to clean repository",
@@ -414,27 +374,6 @@ class SWEEnv(gym.Env):
         self._reset_repository()
         self._reset_environment_variables()
 
-    def _apply_test_patch(self):
-        """
-        Apply test patch for oracle setting
-        """
-        # needs updating, but do we really need this?
-        raise NotImplementedError()
-        assert self.record is not None
-        path_to_patch = "test.patch"
-        with open(path_to_patch, "w") as f:
-            f.write(self.record["test_patch"])
-        subprocess.run(
-            f"docker cp {path_to_patch} {self.container_name}:/root/test.patch",
-            shell=True,
-            check=False,
-        )
-        self.communicate_with_handling(
-            input="git apply /root/test.patch",
-            error_msg="Failed to apply test patch correctly",
-        )
-        os.remove(path_to_patch)
-
     def _get_edited_files_with_context(self, patch: str) -> dict[str, str]:
         """Get the edited files with context from the patch"""
         pf = PatchFormatter(patch, read_method=self.read_file) if patch else None
@@ -446,20 +385,20 @@ class SWEEnv(gym.Env):
             out[f"edited_files{context_length}"] = value
         return out
 
-    def _terminate_interactive_session(self, session_name: str):
-        if not self.interactive_session:
-            # Maybe fixing #772
-            return
-        try:
-            self.interactive_session.session_process.terminate()
-            self.communicate(self.interactive_session.config.exit_command)
-        except Exception as e:
-            msg = (
-                f"Failed to terminate interactive session {session_name}: {e}."
-                "\nHere's the full traceback\n" + traceback.format_exc()
-            )
-            self.logger.warning(msg)
-        self.interactive_session = None
+    # def _terminate_interactive_session(self, session_name: str):
+    #     if not self.interactive_session:
+    #         # Maybe fixing #772
+    #         return
+    #     try:
+    #         self.interactive_session.session_process.terminate()
+    #         self.communicate(self.interactive_session.config.exit_command)
+    #     except Exception as e:
+    #         msg = (
+    #             f"Failed to terminate interactive session {session_name}: {e}."
+    #             "\nHere's the full traceback\n" + traceback.format_exc()
+    #         )
+    #         self.logger.warning(msg)
+    #     self.interactive_session = None
 
     def _handle_interactive_commands(self, observation: str) -> str:
         """Handle interactive commands in the environment, essentially substituting dummy
@@ -629,19 +568,19 @@ class SWEEnv(gym.Env):
         # Record submission and end episode if `submit` keyword found
         submission = self.get_submission(observation)
         if submission is not None:
-            if self.validate_submission(submission):
-                self.logger.info(f"Found submission: {submission}")
-                info["exit_status"] = "submitted"
-                info["submission"] = submission if submission.strip() != "" else None
-                info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
-                observation = submission if submission.strip() != "" else None
-                return observation, 0, True, info
-            else:
-                # Currently only validating CTF challenges
-                assert self.challenge is not None
-                self.logger.warning(f"Wrong submission found: {submission} (real flag is {self.challenge['flag']})")
-                observation = "Wrong flag!"
-                return observation, 0, False, info
+            # if self.validate_submission(submission):
+            self.logger.info(f"Found submission: {submission}")
+            info["exit_status"] = "submitted"
+            info["submission"] = submission if submission.strip() != "" else None
+            info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
+            observation = submission if submission.strip() != "" else None
+            return observation, 0, True, info
+            # else:
+            #     # Currently only validating CTF challenges
+            #     assert self.challenge is not None
+            #     self.logger.warning(f"Wrong submission found: {submission} (real flag is {self.challenge['flag']})")
+            #     observation = "Wrong flag!"
+            #     return observation, 0, False, info
 
         observation = self._handle_interactive_commands(observation)
 
@@ -659,15 +598,15 @@ class SWEEnv(gym.Env):
     # MARK: Helper functions #
 
     def _reset_container(self) -> None:
-        if self.docker_compose is not None:
-            try:
-                terminate_docker_compose(self.docker_compose)
-            except KeyboardInterrupt:
-                raise
-            except:
-                self.logger.warning("Failed to terminate docker compose", exc_info=True)
-            else:
-                self.logger.debug("Terminated docker compose")
+        # if self.docker_compose is not None:
+        #     try:
+        #         terminate_docker_compose(self.docker_compose)
+        #     except KeyboardInterrupt:
+        #         raise
+        #     except:
+        #         self.logger.warning("Failed to terminate docker compose", exc_info=True)
+        #     else:
+        #         self.logger.debug("Terminated docker compose")
         self._init_container()
         self._init_scripts()
 
@@ -676,22 +615,22 @@ class SWEEnv(gym.Env):
         self._reset_container()
 
     # ctf
-    def _init_docker_network(self) -> None:
-        """
-        Add the "ctfnet" network interface for all the containers used for CTF challenges
-        """
-        if self.challenge is not None:
-            assert self.container_name is not None
-            attach_network_interface_to_container(self.container_name)
+    # def _init_docker_network(self) -> None:
+    #     """
+    #     Add the "ctfnet" network interface for all the containers used for CTF challenges
+    #     """
+    #     if self.challenge is not None:
+    #         assert self.container_name is not None
+    #         attach_network_interface_to_container(self.container_name)
 
     # ctf
-    def _init_docker_compose(self) -> None:
-        """
-        Handles docker compose initialization for challenge with docker compose file.
-        """
-        if self.challenge is not None and self.challenge.get("docker_compose") is not None:
-            self.docker_compose = get_docker_compose(self.challenge["docker_compose"])
-            self.logger.info("🌱 Initialized docker compose for challenge")
+    # def _init_docker_compose(self) -> None:
+    #     """
+    #     Handles docker compose initialization for challenge with docker compose file.
+    #     """
+    #     if self.challenge is not None and self.challenge.get("docker_compose") is not None:
+    #         self.docker_compose = get_docker_compose(self.challenge["docker_compose"])
+    #         self.logger.info("🌱 Initialized docker compose for challenge")
 
     def _init_container(self, cached_image: str | None = None) -> None:
         """
@@ -808,33 +747,33 @@ class SWEEnv(gym.Env):
         return []
 
     # ctf
-    def validate_submission(self, submission: str) -> bool:
-        """
-        Function for validating submission for CTF challenges.
+    # def validate_submission(self, submission: str) -> bool:
+    #     """
+    #     Define this function if you can check whether a submission is correct.
 
-        Args:
-            submission: extracted submission
+    #     Args:
+    #         submission: extracted submission
 
-        Returns:
-            validation of the submission found against known flag
-        """
-        submission = submission.strip()
+    #     Returns:
+    #         validation of the submission found against known flag
+    #     """
+    #     submission = submission.strip()
 
-        def wrap(s: str) -> str:
-            return f"flag{{{s}}}"
+    # def wrap(s: str) -> str:
+    #     return f"flag{{{s}}}"
 
-        if self.challenge is not None:
-            assert "flag" in self.challenge
-            solution = self.challenge["flag"]
-            return any(
-                (
-                    submission == solution,
-                    wrap(submission) == solution,
-                    submission == wrap(solution),
-                )
-            )
+    # if self.challenge is not None:
+    #     assert "flag" in self.challenge
+    #     solution = self.challenge["flag"]
+    #     return any(
+    #         (
+    #             submission == solution,
+    #             wrap(submission) == solution,
+    #             submission == wrap(solution),
+    #         )
+    #     )
 
-        return True
+    # return True
 
     def get_submission(self, output: str) -> str | None:
         """
@@ -852,217 +791,11 @@ class SWEEnv(gym.Env):
             return None
         return match.group(1)
 
-    def run_shell_script(self, script_path: Path, *, location: str) -> None:
-        """Run custom script supplied by user at `script_path`
-
-        Args:
-            script_path: path to script file
-            location: location of script file 'host' or 'container'
-        """
-        if location == "host":
-            return self._run_shell_script_host(script_path)
-        elif location == "container":
-            raise NotImplementedError
-        msg = f"Invalid 'location': {location}"
-        raise ValueError(msg)
-
-    def _run_shell_script_host(self, script_path: Path) -> None:
-        """Run shell script file (located on host) in container"""
-        if not script_path.is_file():
-            msg = f"Script not found at {script_path}"
-            raise FileNotFoundError(msg)
-        shell_commands = Path(script_path).read_text().splitlines(keepends=True)
-        for i, cmd in enumerate(shell_commands):
-            self.communicate_with_handling(
-                cmd,
-                error_msg=f"Failed to execute line {i}.",
-                timeout_duration=LONG_TIMEOUT,
-            )
-
-    def _get_install_configs(self) -> dict | None:
-        """Return config for environment setup"""
-        assert self.record is not None  # mypy
-        if (
-            self.record["problem_statement_source"] != "swe-bench" or self.record["repo_type"] == "local"
-        ) and self.args.environment_setup is None:
-            self.logger.warning(
-                "install_environment is set to True, but the data path is a GitHub URL "
-                "without an environment config file (environment_config key/flag). "
-                "Skipping conda environment installation.",
-            )
-            return None
-        if self.args.environment_setup is not None:
-            assert isinstance(self.args.environment_setup, (str, os.PathLike))
-            if Path(self.args.environment_setup).suffix in [".yml", ".yaml"]:
-                try:
-                    return yaml.safe_load(Path(self.args.environment_setup).read_text())
-                except Exception as e:
-                    msg = "Environment config file needs to be a yaml file"
-                    raise ValueError(msg) from e
-            elif Path(self.args.environment_setup).suffix == ".sh":
-                return {
-                    "shell_script_path": self.args.environment_setup,
-                }
-            else:
-                msg = "Environment config file needs to be a yaml file or shell script"
-                raise ValueError(msg)
-        else:
-            try:
-                return MAP_REPO_VERSION_TO_SPECS[self.record["repo"]][str(self.record["version"])]
-            except KeyError as e:
-                msg = (
-                    "Tried to look up install configs in swe-bench, but failed. "
-                    "You can set a custom environment config with the environment_config key/flag."
-                )
-                raise ValueError(msg) from e
-
-    def _conda_environment_exists(self, env_name: str) -> bool:
-        env_check = self.communicate(f"conda env list | grep {env_name}", timeout_duration=LONG_TIMEOUT)
-        return env_check.strip() != ""
-
-    def install_env(self) -> None:
+    def on_environment_startup(self) -> None:
         """
         Creates conda environment and installs third party dependencies to allow code execution
         """
-        return
-        t0 = time.perf_counter()
-        for hook in self.hooks:
-            hook.on_install_env_started()
-        install_configs = self._get_install_configs()
-        if not install_configs:
-            return
-        if "shell_script_path" in install_configs:
-            assert len(install_configs) == 1
-            self.run_shell_script(Path(install_configs["shell_script_path"]), location="host")
-            return
-        assert self.record is not None  # mypy
-        # Create environment if does not exist yet
-        env_name = f"{self._repo_name}__{self.record['version']}"
-        if not self._conda_environment_exists(env_name):
-            self.logger.info(f"{env_name} conda env not found, creating...")
-            packages = install_configs.get("packages", "")
-            if packages == "requirements.txt":
-                # Create conda environment
-                self.communicate_with_handling(
-                    f"conda create -n {env_name} python={install_configs['python']} -y",
-                    error_msg="Failed to create conda environment",
-                    timeout_duration=LONG_TIMEOUT,
-                )
-                self.logger.debug("Created conda environment")
-                # Write reqs to requirements.txt in docker container
-                content_reqs = get_requirements(self.record)
-                copy_file_to_container(self.container_obj, content_reqs, PATH_TO_REQS)
-                # Create conda environment + install reqs
-                self.communicate_with_handling(
-                    f"conda activate {env_name}",
-                    error_msg="Failed to activate conda environment",
-                )
-                self.communicate_with_handling(
-                    f"pip install -r {PATH_TO_REQS}",
-                    error_msg="Failed to install requirements.txt",
-                    timeout_duration=LONG_TIMEOUT,
-                )
-                self.logger.debug("Installed requirements from requirements.txt")
-                self.communicate(f"rm {PATH_TO_REQS}")
-            elif packages == "environment.yml":
-                # Write environment.yml to file
-                content_env_yml = get_environment_yml(self.record, env_name)
-                # Hotfix for
-                if not install_configs.get("no_use_env"):
-                    content_env_yml += f'\n  - python={install_configs["python"]}\n'
-                copy_file_to_container(self.container_obj, content_env_yml, PATH_TO_ENV_YML)
-                if install_configs.get("no_use_env"):
-                    # Create conda environment
-                    self.communicate_with_handling(
-                        f"conda create -c conda-forge -n {env_name} python={install_configs['python']} -y",
-                        error_msg="Failed to create conda environment",
-                        timeout_duration=LONG_TIMEOUT,
-                    )
-                    self.logger.debug("Created conda environment")
-                    # Install packages
-                    self.communicate_with_handling(
-                        f"conda env update -f {PATH_TO_ENV_YML}",
-                        error_msg="Failed to install environment.yml",
-                        timeout_duration=LONG_TIMEOUT,
-                    )
-                    self.logger.debug("Installed packages from environment.yml")
-                else:
-                    # Create environment + install packages
-                    self.communicate_with_handling(
-                        f"conda env create --file {PATH_TO_ENV_YML}",
-                        error_msg="Failed to create conda environment with environment.yml",
-                        timeout_duration=LONG_TIMEOUT,
-                    )
-                    self.logger.debug("Created conda environment with environment.yml")
-                self.communicate(f"rm {PATH_TO_ENV_YML}")
-            else:
-                python_env = f"python{install_configs['python']}"
-                if self._conda_environment_exists(python_env):
-                    self.communicate_with_handling(
-                        f"conda create --name {env_name} --clone {python_env}",
-                        error_msg="Failed to clone conda environment",
-                        timeout_duration=LONG_TIMEOUT,
-                    )
-                    self.logger.debug("Cloned python conda environment")
-                else:
-                    self.logger.debug(f"Could not find {python_env}, creating new environment")
-                    self.communicate_with_handling(
-                        f"conda create -n {env_name} python={install_configs['python']} -y",
-                        error_msg="Failed to create conda environment",
-                        timeout_duration=LONG_TIMEOUT,
-                    )
-                self.communicate_with_handling(
-                    f"conda activate {env_name}",
-                    error_msg="Failed to activate conda environment",
-                )
-                if packages.strip():
-                    self.communicate_with_handling(
-                        f"conda install {packages} -y",
-                        error_msg="Failed to install packages",
-                        timeout_duration=LONG_TIMEOUT,
-                    )
-                    self.logger.debug("Installed conda packages")
-            # Install extra pip packages if specified
-            if install_configs.get("pip_packages"):
-                self.communicate_with_handling(
-                    f"source activate {env_name} && pip install {' '.join(install_configs['pip_packages'])}",
-                    error_msg="Failed to install pip packages",
-                    timeout_duration=LONG_TIMEOUT,
-                )
-                self.logger.debug("Installed extra pip dependencies")
-
-        # Activate environment
-        self.communicate_with_handling(f"conda activate {env_name}", error_msg="Failed to activate conda environment")
-
-        # Install repo at base commit
-        if install_configs.get("pre_install"):
-            self.logger.info("Running pre-install commands...")
-            for pre_install_cmd in install_configs["pre_install"]:
-                self.communicate_with_handling(
-                    pre_install_cmd,
-                    error_msg="Pre-install commands failed to execute successfully",
-                    timeout_duration=LONG_TIMEOUT,
-                )
-            self.logger.debug("Ran pre-install commands")
-        self.logger.info(f"Installing {self._repo_name} at base commit...")
-        if install_configs.get("install"):
-            install_cmd = install_configs["install"]
-            self.communicate_with_handling(
-                install_cmd,
-                error_msg="Install command failed to execute successfully",
-                timeout_duration=LONG_TIMEOUT,
-            )
-            self.logger.debug("Ran install command")
-        if install_configs.get("post_install"):
-            self.logger.info("Running post-install commands...")
-            for post_install_cmd in install_configs["post_install"]:
-                self.communicate_with_handling(
-                    post_install_cmd,
-                    error_msg="Post-install commands failed to execute successfully",
-                )
-            self.logger.debug("Ran post-install commands")
-
-        self.logger.info("Installation step took %.2f seconds", time.perf_counter() - t0)
+        pass
 
     def add_commands(self, commands: list[dict]) -> None:
         """
