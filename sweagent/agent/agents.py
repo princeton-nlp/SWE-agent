@@ -116,8 +116,8 @@ class AgentConfig:
             util_functions = [command for command in commands if command.name.startswith("_")]
             commands = [command for command in commands if not command.name.startswith("_")]
 
-            object.__setattr__(self, "util_functions", self.util_functions + util_functions)
-            object.__setattr__(self, "_commands", self._commands + commands)
+            self.util_functions.extend(util_functions)
+            self._commands.extend(commands)
 
         multi_line_command_endings = {
             command.name: command.end_name
@@ -125,33 +125,21 @@ class AgentConfig:
             for command in self._commands
             if command.end_name is not None
         }
-        object.__setattr__(self, "multi_line_command_endings", multi_line_command_endings)
-        object.__setattr__(
-            self,
-            "command_docs",
-            parse_command.generate_command_docs(
-                self._commands,
-                [],
-                # self.subroutine_types,
-                **self.env_variables,
-            ),
+        self.multi_line_command_endings = multi_line_command_endings
+        self.command_docs = parse_command.generate_command_docs(
+            self._commands,
+            [],
+            # self.subroutine_types,
+            **self.env_variables,
         )
         # object.__setattr__(self, "parse_function", ParseFunction.get(self.parse_function))
         parse_function = ParseFunction.get(self.parse_function)
         if self.format_error_template is None:
-            object.__setattr__(
-                self,
-                "format_error_template",
-                parse_function.format_error_template,
-            )
-        object.__setattr__(
-            self,
-            "format_error_template",
-            self.format_error_template.format(**self.__dict__),
-        )
+            self.format_error_template = parse_function.format_error_template
+        self.format_error_template = self.format_error_template.format(**self.__dict__)
         for command in self._commands:
             if command.name == self.submit_command:
-                object.__setattr__(self, "submit_command_end_name", command.end_name)
+                self.submit_command_end_name = command.end_name
                 break
         # object.__setattr__(
         #     self,
@@ -163,11 +151,10 @@ class AgentConfig:
         # if self.summarizer_config.window_length < int(window_size):
         #     msg = f"Summarizer window length is set to {self.summarizer_config.window_length} which is less than the window length {window_size}"
         #     raise ValueError(msg)
-        object.__setattr__(
-            self,
-            "block_unless_regex",
-            {"radare2": r"\b(?:radare2)\b.*\s+-c\s+.*", "r2": r"\b(?:radare2)\b.*\s+-c\s+.*"},
-        )
+        self.block_unless_regex = {
+            "radare2": r"\b(?:radare2)\b.*\s+-c\s+.*",
+            "r2": r"\b(?:radare2)\b.*\s+-c\s+.*",
+        }
 
 
 class AgentHook:
