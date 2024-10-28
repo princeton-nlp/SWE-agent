@@ -116,8 +116,6 @@ class SWEEnv(gym.Env):
     """Gym environment for SWE-bench. This class should handle all communication with the docker container."""
 
     name = "swe_main"
-    # This prefix will be prepended to the image name when caching task images
-    cached_image_prefix = "swe-agent-task-env-"
 
     def __init__(self, args: EnvironmentArguments):
         super().__init__()
@@ -400,77 +398,77 @@ class SWEEnv(gym.Env):
     #         self.logger.warning(msg)
     #     self.interactive_session = None
 
-    def _handle_interactive_commands(self, observation: str) -> str:
-        """Handle interactive commands in the environment, essentially substituting dummy
-        output for the actual output of the interactive commands.
+    # def _handle_interactive_commands(self, observation: str) -> str:
+    #     """Handle interactive commands in the environment, essentially substituting dummy
+    #     output for the actual output of the interactive commands.
 
-        Args:
-            observation: Output from running the interactive command wrappers in the
-                environment. They will returns some dummy output that will be caught and then
-                we will run the actual commands in the interactive session and return the
-                actual output.
+    #     Args:
+    #         observation: Output from running the interactive command wrappers in the
+    #             environment. They will returns some dummy output that will be caught and then
+    #             we will run the actual commands in the interactive session and return the
+    #             actual output.
 
-        Returns:
-            observation: The observation shown to the model. If no interactive commands
-                are detected, this is the same as the input observation.
-                Else, only the output from the interactive commands is returned.
-        """
-        return observation
-        # session_name, interactive_commands = get_interactive_commands(observation, logger=self.logger)
-        # if session_name is None:
-        #     return observation
-        # if (
-        #     session_name is not None
-        #     and self.interactive_session is not None
-        #     and self.interactive_session.name != session_name
-        # ):
-        #     return self.interactive_session._get_only_one_interactive_error_message_observation()
+    #     Returns:
+    #         observation: The observation shown to the model. If no interactive commands
+    #             are detected, this is the same as the input observation.
+    #             Else, only the output from the interactive commands is returned.
+    #     """
+    # return observation
+    # session_name, interactive_commands = get_interactive_commands(observation, logger=self.logger)
+    # if session_name is None:
+    #     return observation
+    # if (
+    #     session_name is not None
+    #     and self.interactive_session is not None
+    #     and self.interactive_session.name != session_name
+    # ):
+    #     return self.interactive_session._get_only_one_interactive_error_message_observation()
 
-        # observation = ""
-        # for command in interactive_commands:
-        #     if command == "START":
-        #         # Start the session if previous session does not exist
-        #         if self.interactive_session is not None:
-        #             return self.interactive_session._get_only_one_interactive_error_message_observation()
-        #         assert self.container_name is not None
-        #         _observation, self.interactive_session = get_interactive_session(
-        #             ctr_name=self.container_name,
-        #             ctr_obj=self.container_obj,
-        #             cwd="/" + self._repo_name,
-        #             session_name=session_name,
-        #             config=self.args.interactive_sessions_config[session_name],
-        #             logger=self.logger,
-        #         )
-        #         observation += _observation
-        #     elif command == "STOP":
-        #         if self.interactive_session is None:
-        #             observation = f"Interactive session {session_name!r} is not running, so it cannot be stopped!"
-        #         else:
-        #             if self.interactive_session.session_process.poll() is None:
-        #                 self.logger.warning("Session did not quit successfully, terminating.")
-        #                 self.interactive_session.session_process.terminate()
-        #             observation = f"Interactive session {session_name!r} stopped successfully"
-        #             self.interactive_session = None
-        #     else:
-        #         if self.interactive_session is None:
-        #             self.logger.warning("Tried to run interactive commands without starting session")
-        #             start_command = self.args.interactive_sessions_config[session_name].start_command
-        #             observation = f"Interactive session {session_name!r} is not running! please start it first using `{start_command}`"
-        #         elif self.interactive_session and self.interactive_session.session_process.poll() is not None:
-        #             start_command = self.args.interactive_sessions_config[session_name].start_command
-        #             observation = f"Interactive session {session_name!r} was unexpectedly closed! Please start it again using `{start_command}`"
-        #             self._terminate_interactive_session(session_name=session_name)
-        #         else:
-        #             _observation, terminate = self.interactive_session.communicate_with_handling(
-        #                 command,
-        #                 timeout_duration=AGENT_ACTION_TIMEOUT,
-        #                 no_output_timeout_duration=AGENT_ACTION_NO_OUTPUT_TIMEOUT,
-        #             )
-        #             observation += _observation
-        #             if terminate:
-        #                 self._terminate_interactive_session(session_name=session_name)
-        #             observation += "\n"
-        # return observation
+    # observation = ""
+    # for command in interactive_commands:
+    #     if command == "START":
+    #         # Start the session if previous session does not exist
+    #         if self.interactive_session is not None:
+    #             return self.interactive_session._get_only_one_interactive_error_message_observation()
+    #         assert self.container_name is not None
+    #         _observation, self.interactive_session = get_interactive_session(
+    #             ctr_name=self.container_name,
+    #             ctr_obj=self.container_obj,
+    #             cwd="/" + self._repo_name,
+    #             session_name=session_name,
+    #             config=self.args.interactive_sessions_config[session_name],
+    #             logger=self.logger,
+    #         )
+    #         observation += _observation
+    #     elif command == "STOP":
+    #         if self.interactive_session is None:
+    #             observation = f"Interactive session {session_name!r} is not running, so it cannot be stopped!"
+    #         else:
+    #             if self.interactive_session.session_process.poll() is None:
+    #                 self.logger.warning("Session did not quit successfully, terminating.")
+    #                 self.interactive_session.session_process.terminate()
+    #             observation = f"Interactive session {session_name!r} stopped successfully"
+    #             self.interactive_session = None
+    #     else:
+    #         if self.interactive_session is None:
+    #             self.logger.warning("Tried to run interactive commands without starting session")
+    #             start_command = self.args.interactive_sessions_config[session_name].start_command
+    #             observation = f"Interactive session {session_name!r} is not running! please start it first using `{start_command}`"
+    #         elif self.interactive_session and self.interactive_session.session_process.poll() is not None:
+    #             start_command = self.args.interactive_sessions_config[session_name].start_command
+    #             observation = f"Interactive session {session_name!r} was unexpectedly closed! Please start it again using `{start_command}`"
+    #             self._terminate_interactive_session(session_name=session_name)
+    #         else:
+    #             _observation, terminate = self.interactive_session.communicate_with_handling(
+    #                 command,
+    #                 timeout_duration=AGENT_ACTION_TIMEOUT,
+    #                 no_output_timeout_duration=AGENT_ACTION_NO_OUTPUT_TIMEOUT,
+    #             )
+    #             observation += _observation
+    #             if terminate:
+    #                 self._terminate_interactive_session(session_name=session_name)
+    #             observation += "\n"
+    # return observation
 
     def step(self, action: str) -> tuple[str | None, int, bool, AgentInfo]:
         """
@@ -582,7 +580,7 @@ class SWEEnv(gym.Env):
             #     observation = "Wrong flag!"
             #     return observation, 0, False, info
 
-        observation = self._handle_interactive_commands(observation)
+        # observation = self._handle_interactive_commands(observation)
 
         return observation, 0, False, info
 
