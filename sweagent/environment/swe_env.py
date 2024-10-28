@@ -6,13 +6,13 @@ import random
 import re
 import shlex
 import time
-from dataclasses import dataclass, field
 from pathlib import Path, PurePath
-from typing import Any
+from typing import Any, Literal
 
 import gymnasium as gym
 from ghapi.all import GhApi
 from git import Repo
+from pydantic import BaseModel, Field
 from swerex.deployment import get_deployment
 from swerex.runtime.abstract import Action, CreateSessionRequest, UploadRequest, WriteFileRequest
 
@@ -39,20 +39,17 @@ from sweagent.utils.log import get_logger
 LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500))
 AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
 AGENT_ACTION_NO_OUTPUT_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_NO_OUTPUT_TIMEOUT", AGENT_ACTION_TIMEOUT))
-PATH_TO_REQS = "/root/requirements.txt"
-PATH_TO_ENV_YML = "/root/environment.yml"
 
 
-@dataclass
-class DeploymentConfig:
+class DockerDeploymentConfig(BaseModel):
     """Configuration for the deployment of the environment"""
 
-    type: str = "docker"
-    kwargs: dict[str, Any] = field(default_factory=lambda: {"image": "sweagent/swe-agent:latest"})
+    image: str = "sweagent/swe-agent:latest"
+
+    type: Literal["docker"] = "docker"
 
 
-@dataclass
-class EnvironmentArguments:
+class EnvironmentArguments(BaseModel):
     """Configure data sources and setup instructions for the environment in which we solve the tasks."""
 
     # Source of issue statement/problem statement. To run over a batch of issues: Path to a data file
@@ -60,7 +57,7 @@ class EnvironmentArguments:
     # with problem statement or problem statement as text prefixed with `text://`.
     data_path: str = ""
 
-    deployment: DeploymentConfig = field(default_factory=DeploymentConfig)
+    deployment: DockerDeploymentConfig = Field(..., discriminator="type", default_factory=DockerDeploymentConfig)
 
     # When running over SWE-bench issues: Specify the split to use.
     split: str = "dev"
@@ -635,7 +632,8 @@ class SWEEnv(gym.Env):
         Handles container initialization. Defines container name and creates it.
         If cached_image is provided, it will use that image name instead of the default.
         """
-        self.deployment = get_deployment(self.args.deployment.type, **self.args.deployment.kwargs)  # type: ignore
+        kwargs = {k: v for k, v in self.args.deployment.model_dump().items() if k != "type"}
+        self.deployment = get_deployment(self.args.deployment.type, **kwargs)  # type: ignore
         asyncio.run(self.deployment.start())
         asyncio.run(self.deployment.runtime.create_session(CreateSessionRequest(startup_source=["/root/.bashrc"])))
         self.logger.info("🌱 Environment Initialized")

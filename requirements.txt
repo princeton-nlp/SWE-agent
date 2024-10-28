@@ -21,3 +21,4 @@ flask-cors
 flask-socketio
 groq
 omegaconf
+pydantic

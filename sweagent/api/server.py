@@ -170,7 +170,7 @@ def run():
         raise_exceptions=True,
     )
     defaults.agent.model = ModelArguments(
-        model_name=model_name,
+        name=model_name,
         total_cost_limit=0.0,
         per_instance_cost_limit=3.0,
         temperature=0.0,

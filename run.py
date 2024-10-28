@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import logging
 from argparse import ArgumentParser
-
-from omegaconf import OmegaConf
+from pprint import pprint
 
 from sweagent.utils.log import add_file_handler, get_logger
 
@@ -31,18 +30,19 @@ except ImportError:
     msg = "Please install the rich_argparse package with `pip install rich_argparse`."
     raise ImportError(msg)
 import datetime
-from dataclasses import dataclass
 from getpass import getuser
 from pathlib import Path
 
 import yaml
+from pydantic import BaseModel, Field
+from pydantic_settings import BaseSettings, CliApp
 from rich.markdown import Markdown
 from swebench.harness.constants import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
 from unidiff import PatchSet
 
 from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.agent.models import ModelArguments
-from sweagent.environment.swe_env import DeploymentConfig, EnvironmentArguments, SWEEnv
+from sweagent.environment.swe_env import DockerDeploymentConfig, EnvironmentArguments, SWEEnv
 from sweagent.environment.utils import (
     InvalidGithubURL,
     get_associated_commit_urls,
@@ -68,8 +68,7 @@ logger = get_logger("swe-agent-run")
 logging.getLogger("simple_parsing").setLevel(logging.WARNING)
 
 
-@dataclass
-class ActionsArguments:
+class ActionsArguments(BaseModel):
     """Run real-life actions (opening PRs, etc.) if we can solve the issue."""
 
     # Open a PR with the patch if we can solve the issue
@@ -83,19 +82,18 @@ class ActionsArguments:
     # OBSOLETE. Do not use, will raise error. Please specify --repo_path instead.
     push_gh_repo_url: str = ""
 
-    def __post_init__(self):
+    def model_post_init(self, __context):
         if self.push_gh_repo_url:
             msg = "push_gh_repo_url is obsolete. Use repo_path instead"
             raise ValueError(msg)
 
 
-@dataclass
-class ScriptArguments:
+class ScriptArguments(BaseSettings):
     """Configure the control flow of the run.py script"""
 
-    environment: EnvironmentArguments
-    agent: AgentConfig
-    actions: ActionsArguments
+    environment: EnvironmentArguments = Field(..., default_factory=EnvironmentArguments)
+    agent: AgentConfig = Field(..., default_factory=AgentConfig)
+    actions: ActionsArguments = Field(..., default_factory=ActionsArguments)
     # Only run instances that completely match this regex
     instance_filter: str = ".*"
     # Skip instances with existing trajectories
@@ -111,13 +109,13 @@ class ScriptArguments:
 
     run_name: str = ""
 
-    def __post_init__(self):
+    def model_post_init(self, __context):
         if not self.run_name:
             self.run_name = self._generate_run_name()
 
     def _generate_run_name(self) -> str:
         """Generate a unique name for this run based on the arguments."""
-        model_name = self.agent.model.model_name.replace(":", "-")
+        model_name = self.agent.model.name.replace(":", "-")
         data_stem = get_data_path_name(self.environment.data_path)
         # assert self.agent.config_file is not None  # mypy
         # config_stem = Path(self.agent.config_file).stem
@@ -319,7 +317,7 @@ class Main:
         logger.info("Logging to %s", log_path)
         add_file_handler(log_path)
         if args.print_config:
-            dump = OmegaConf.to_yaml(args)
+            dump = yaml.dump(args.model_dump())
             logger.info(f"📙 Arguments: {dump}")
         self.args = args
         self.agent = Agent("primary", args.agent)
@@ -430,17 +428,15 @@ class Main:
 
         if log_path.exists():
             try:
-                other_args = OmegaConf.load(log_path)
-                if OmegaConf.to_yaml(self.args) != OmegaConf.to_yaml(
-                    other_args
-                ):  # check yaml equality instead of object equality
+                other_args = ScriptArguments.model_validate(yaml.safe_load(log_path.read_text()))
+                if other_args != self.args:
                     logger.warning("**************************************************")
                     logger.warning("Found existing args.yaml with different arguments!")
                     logger.warning("**************************************************")
             except Exception:
                 logger.warning(f"Failed to load existing args.yaml: {traceback.format_exc()}")
 
-        log_path.write_text(OmegaConf.to_yaml(self.args))
+        log_path.write_text(yaml.dump(self.args.model_dump()))
 
     def should_skip(self, instance_id: str) -> bool:
         """Check if we should skip this instance based on the instance filter and skip_existing flag."""
@@ -501,10 +497,12 @@ def get_args(args=None) -> ScriptArguments:
     Args:
         args: Optional list of arguments to parse. If not provided, uses sys.argv.
     """
-    defaults = ScriptArguments(
+    # The defaults if no config file is provided
+    # Otherwise, the configs from the respective classes will be used
+    no_config_defaults = ScriptArguments(
         suffix="",
         environment=EnvironmentArguments(
-            deployment=DeploymentConfig(),
+            deployment=DockerDeploymentConfig(),
             data_path="princeton-nlp/SWE-bench_Lite",
             split="dev",
             verbose=True,
@@ -515,7 +513,7 @@ def get_args(args=None) -> ScriptArguments:
             system_template="",
             instance_template="",
             model=ModelArguments(
-                model_name="gpt4",
+                name="gpt4",
                 total_cost_limit=0.0,
                 per_instance_cost_limit=3.0,
                 temperature=0.0,
@@ -526,25 +524,28 @@ def get_args(args=None) -> ScriptArguments:
         ctf=False,
     )
 
-    default_config = OmegaConf.structured(defaults)
-
     parser = ArgumentParser(
         description=Markdown(__doc__),
         formatter_class=RichHelpFormatter,
     )
     parser.add_argument("--config", type=str, action="append", default=[])
-    parser.add_argument("overrides", nargs="*")
 
-    args = parser.parse_args(args)
+    args, remaining_args = parser.parse_known_args(args)
 
-    cfg_files = [OmegaConf.load(f) for f in args.config]
+    config_merged = {}
+    if args.config:
+        for _f in args.config:
+            _loaded = yaml.safe_load(Path(_f).read_text())
+            config_merged.update(_loaded)
+    else:
+        config_merged = no_config_defaults.model_dump()
 
-    for _f in cfg_files:
-        print(OmegaConf.to_yaml(_f))
-
-    overrides = OmegaConf.from_dotlist(args.overrides)
-
-    cfg = OmegaConf.merge(default_config, *cfg_files, overrides)
+    # args = ScriptArguments.model_validate(config_merged)
+    print("Config merged")
+    pprint(config_merged)
+    args = ScriptArguments.model_validate(config_merged)
+    args = CliApp.run(ScriptArguments, remaining_args, **config_merged)
+    # args = CliApp.run(ScriptArguments, remaining_args, model_init_data=config_merged)
 
     # todo: Do we need this?
     # Nicer yaml dumping of multiline strings
@@ -558,7 +559,7 @@ def get_args(args=None) -> ScriptArguments:
 
     yaml.add_representer(str, multiline_representer)
 
-    return cfg  # type: ignore
+    return args
 
 
 def main(args: ScriptArguments):

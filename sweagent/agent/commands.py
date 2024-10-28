@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
+from pydantic import BaseModel
 
 
-@dataclass
-class AssistantMetadata:
+class AssistantMetadata(BaseModel):
     """Pass observations to the assistant, and get back a response."""
 
     system_template: str | None = None
@@ -18,16 +18,14 @@ class AssistantMetadata:
 
 # TODO: first can be used for two-stage actions
 # TODO: eventually might control high-level control flow
-@dataclass
-class ControlMetadata:
+class ControlMetadata(BaseModel):
     """TODO: should be able to control high-level control flow after calling this command"""
 
     next_step_template: str | None = None
     next_step_action_template: str | None = None
 
 
-@dataclass
-class Command:
+class Command(BaseModel):
     code: str
     name: str
     docstring: str | None = None
@@ -139,7 +137,7 @@ class ParseCommandBash(ParseCommand):
                                 signature += f" <{param}>"
                             else:
                                 signature += f" [<{param}>]"
-                command = Command.from_dict(
+                command = Command.model_validate(
                     {
                         "code": code,
                         "docstring": docstring,

@@ -11,6 +11,7 @@ import together
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
 from groq import Groq
 from openai import AzureOpenAI, BadRequestError, OpenAI
+from pydantic import BaseModel as PydanticBaseModel
 from simple_parsing.helpers.serialization.serializable import Serializable
 from tenacity import (
     retry,
@@ -28,12 +29,11 @@ logger = get_logger("api_models")
 _MAX_RETRIES = int(keys_config.get("SWE_AGENT_MODEL_MAX_RETRIES", 10))
 
 
-@dataclass
-class ModelArguments:
+class ModelArguments(PydanticBaseModel):
     """Arguments configuring the model and its behavior."""
 
     # Name of the model to use
-    model_name: str
+    name: str = "gpt4"
     # Cost limit for every instance (task)
     per_instance_cost_limit: float = 0.0
     # Total cost limit
@@ -92,34 +92,32 @@ class BaseModel:
         self.stats = APIStats()
 
         # Map `model_name` to API-compatible name `api_model`
-        self.api_model = (
-            self.SHORTCUTS[self.args.model_name] if self.args.model_name in self.SHORTCUTS else self.args.model_name
-        )
+        self.api_model = self.SHORTCUTS[self.args.name] if self.args.name in self.SHORTCUTS else self.args.name
 
         # Map model name to metadata (cost, context info)
         MODELS = {
             **{dest: self.MODELS[src] for dest, src in self.SHORTCUTS.items()},
             **self.MODELS,
         }
-        if args.model_name in MODELS:
-            self.model_metadata = MODELS[args.model_name]
-        elif args.model_name.startswith("ft:"):
-            ft_model = args.model_name.split(":")[1]
+        if args.name in MODELS:
+            self.model_metadata = MODELS[args.name]
+        elif args.name.startswith("ft:"):
+            ft_model = args.name.split(":")[1]
             self.model_metadata = MODELS[ft_model]
-        elif args.model_name.startswith("ollama:"):
-            self.api_model = args.model_name.split("ollama:", 1)[1]
+        elif args.name.startswith("ollama:"):
+            self.api_model = args.name.split("ollama:", 1)[1]
             self.model_metadata = self.MODELS[self.api_model]
-        elif args.model_name.startswith("azure:"):
-            azure_model = args.model_name.split("azure:", 1)[1]
+        elif args.name.startswith("azure:"):
+            azure_model = args.name.split("azure:", 1)[1]
             self.model_metadata = MODELS[azure_model]
-        elif args.model_name.startswith("bedrock:"):
-            self.api_model = args.model_name.split("bedrock:", 1)[1]
+        elif args.name.startswith("bedrock:"):
+            self.api_model = args.name.split("bedrock:", 1)[1]
             self.model_metadata = MODELS[self.api_model]
-        elif args.model_name.startswith("groq:"):
-            self.api_model = args.model_name.split("groq:", 1)[1]
+        elif args.name.startswith("groq:"):
+            self.api_model = args.name.split("groq:", 1)[1]
             self.model_metadata = MODELS[self.api_model]
         else:
-            msg = f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}"
+            msg = f"Unregistered model ({args.name}). Add model name to MODELS metadata to {self.__class__}"
             raise ValueError(msg)
 
     def reset_stats(self, other: APIStats | None = None):
@@ -271,7 +269,7 @@ class OpenAIModel(BaseModel):
         self._setup_client()
 
     def _setup_client(self):
-        if self.args.model_name.startswith("azure"):
+        if self.args.name.startswith("azure"):
             logger.warning(
                 "The --model CLI argument is ignored when using the Azure GPT endpoint. "
                 "The model is determined by the AZURE_OPENAI_DEPLOYMENT key/"
@@ -989,35 +987,35 @@ def get_model(args: ModelArguments, commands: list[Command] | None = None):
     """
     if commands is None:
         commands = []
-    if args.model_name == "instant_empty_submit":
+    if args.name == "instant_empty_submit":
         return InstantEmptySubmitTestModel(args, commands)
-    if args.model_name == "human":
+    if args.name == "human":
         return HumanModel(args, commands)
-    if args.model_name == "human_thought":
+    if args.name == "human_thought":
         return HumanThoughtModel(args, commands)
-    if args.model_name == "replay":
+    if args.name == "replay":
         return ReplayModel(args, commands)
     elif (
-        args.model_name.startswith("gpt")
-        or args.model_name.startswith("ft:gpt")
-        or args.model_name.startswith("azure:gpt")
-        or args.model_name in OpenAIModel.SHORTCUTS
+        args.name.startswith("gpt")
+        or args.name.startswith("ft:gpt")
+        or args.name.startswith("azure:gpt")
+        or args.name in OpenAIModel.SHORTCUTS
     ):
         return OpenAIModel(args, commands)
-    elif args.model_name.startswith("claude"):
+    elif args.name.startswith("claude"):
         return AnthropicModel(args, commands)
-    elif args.model_name.startswith("bedrock"):
+    elif args.name.startswith("bedrock"):
         return BedrockModel(args, commands)
-    elif args.model_name.startswith("ollama"):
+    elif args.name.startswith("ollama"):
         return OllamaModel(args, commands)
-    elif args.model_name.startswith("deepseek"):
+    elif args.name.startswith("deepseek"):
         return DeepSeekModel(args, commands)
-    elif args.model_name in TogetherModel.SHORTCUTS:
+    elif args.name in TogetherModel.SHORTCUTS:
         return TogetherModel(args, commands)
-    elif args.model_name in GroqModel.SHORTCUTS:
+    elif args.name in GroqModel.SHORTCUTS:
         return GroqModel(args, commands)
-    elif args.model_name == "instant_empty_submit":
+    elif args.name == "instant_empty_submit":
         return InstantEmptySubmitTestModel(args, commands)
     else:
-        msg = f"Invalid model name: {args.model_name}"
+        msg = f"Invalid model name: {args.name}"
         raise ValueError(msg)

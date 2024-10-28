@@ -114,7 +114,7 @@ def test_script_args():
         skip_existing=False,
         agent=AgentConfig(
             model=ModelArguments(
-                model_name="instant_empty_submit",
+                name="instant_empty_submit",
             ),
         ),
         actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),

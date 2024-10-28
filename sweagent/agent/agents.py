@@ -6,10 +6,10 @@ import re
 import time
 import traceback
 from collections import defaultdict
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypedDict
 
+from pydantic import BaseModel
 from simple_parsing.helpers.fields import field
 from tenacity import RetryError
 
@@ -31,8 +31,7 @@ from sweagent.utils.config import convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 
 
-@dataclass
-class AgentConfig:
+class AgentConfig(BaseModel):
     system_template: str = ""
     instance_template: str = ""
     next_step_template: str | None = None  # defaults to instance_template
@@ -48,7 +47,7 @@ class AgentConfig:
     # Paths to command files. If path is not absolute, it is assumed to be
     # relative to the SWE_AGENT_CONFIG_ROOT (if set) or the SWE-agent repository root
     command_files: list[str] = field(default_factory=list)
-    env_variables: dict[str, str] = field(default_factory=dict)
+    env_variables: dict[str, Any] = field(default_factory=dict)
     util_functions: list[str] = field(default_factory=list)
     submit_command: str = "submit"
     parse_function: Any = "ThoughtActionParser"
@@ -83,7 +82,12 @@ class AgentConfig:
         "nano",
         "su",
     )
-    block_unless_regex: dict[str, str] = field(default_factory=dict)
+    block_unless_regex: dict[str, str] = field(
+        default_factory=lambda: {
+            "radare2": r"\b(?:radare2)\b.*\s+-c\s+.*",
+            "r2": r"\b(?:radare2)\b.*\s+-c\s+.*",
+        }
+    )
     # Should extract environment state in a json readable form
     state_command: Command = field(
         default_factory=lambda: Command(
@@ -93,13 +97,25 @@ class AgentConfig:
         };""",
         )
     )
-    _commands: list[Command] = field(default_factory=list)
     # _subroutines: dict[str, Subroutine] = field(default_factory=dict)
     # subroutine_types: list[Subroutine] = field(default_factory=list)
-    model: ModelArguments = field(default_factory=lambda: ModelArguments(model_name="gpt4"))
+    model: ModelArguments = field(default_factory=lambda: ModelArguments(name="gpt4"))
     multi_line_command_endings: dict[str, str] = field(default_factory=dict)
+    submit_command_end_name: str | None = None
 
-    def __post_init__(self):
+    @property
+    def commands(self) -> list[Command]:
+        _commands = []
+        parse_command = ParseCommand.get(self.parse_command)
+        for file in self.command_files:
+            commands = parse_command.parse_command_file(file)
+            util_functions = [command for command in commands if command.name.startswith("_")]
+            commands = [command for command in commands if not command.name.startswith("_")]
+            self.util_functions.extend(util_functions)
+            _commands.extend(commands)
+        return _commands
+
+    def model_post_init(self, __context):
         self.command_files = convert_paths_to_abspath(self.command_files)
         self.demonstrations = convert_paths_to_abspath(self.demonstrations)
 
@@ -110,6 +126,7 @@ class AgentConfig:
 
         # object.__setattr__(self, "parse_command", ParseCommand.get(self.parse_command))
         parse_command = ParseCommand.get(self.parse_command)
+        _commands = []
         for file in self.command_files:
             commands = parse_command.parse_command_file(file)
 
@@ -117,17 +134,17 @@ class AgentConfig:
             commands = [command for command in commands if not command.name.startswith("_")]
 
             self.util_functions.extend(util_functions)
-            self._commands.extend(commands)
+            _commands.extend(commands)
 
         multi_line_command_endings = {
             command.name: command.end_name
             # for command in [*self._commands, *self._subroutines.values()]
-            for command in self._commands
+            for command in _commands
             if command.end_name is not None
         }
         self.multi_line_command_endings = multi_line_command_endings
         self.command_docs = parse_command.generate_command_docs(
-            self._commands,
+            _commands,
             [],
             # self.subroutine_types,
             **self.env_variables,
@@ -137,7 +154,7 @@ class AgentConfig:
         if self.format_error_template is None:
             self.format_error_template = parse_function.format_error_template
         self.format_error_template = self.format_error_template.format(**self.__dict__)
-        for command in self._commands:
+        for command in _commands:
             if command.name == self.submit_command:
                 self.submit_command_end_name = command.end_name
                 break
@@ -151,10 +168,6 @@ class AgentConfig:
         # if self.summarizer_config.window_length < int(window_size):
         #     msg = f"Summarizer window length is set to {self.summarizer_config.window_length} which is less than the window length {window_size}"
         #     raise ValueError(msg)
-        self.block_unless_regex = {
-            "radare2": r"\b(?:radare2)\b.*\s+-c\s+.*",
-            "r2": r"\b(?:radare2)\b.*\s+-c\s+.*",
-        }
 
 
 class AgentHook:
@@ -211,7 +224,7 @@ class Agent:
         # todo: currently only used to get the model name, so might remove this later
         self._args = args
         # self.model = get_model(args.model, args.config._commands + args.config.subroutine_types)
-        self.model = get_model(args.model, args._commands)
+        self.model = get_model(args.model, args.commands)
         # self.summarizer_model = get_model(
         #     args.summarizer_config.model if args.summarizer_config.model is not None else args.model
         # )
@@ -536,7 +549,7 @@ class Agent:
     def _parse_command_patterns(self) -> None:
         assert self.config is not None  # mypy
         self.command_patterns = dict()
-        for command in self.config._commands:
+        for command in self.config.commands:
             if command.end_name is not None:
                 pat = re.compile(
                     rf"^\s*({command.name})\s*(.*?)^({command.end_name})\s*$",
@@ -691,12 +704,12 @@ class Agent:
             output: raw model output
         """
         # Condition for handling outputs with no thought (just action)
-        if self.model.args.model_name == "human":
+        if self.model.args.name == "human":
             return "", output, output
-        elif self.model.args.model_name == "human_thought":
+        elif self.model.args.name == "human_thought":
             thought, action = ParseFunction.get("ThoughtActionParser")(
                 output,
-                self.config._commands,
+                self.config.commands,
                 strict=False,
             )
             return thought, action, output
@@ -707,7 +720,7 @@ class Agent:
             try:
                 thought, action = self._parse_function(
                     output,
-                    self.config._commands,
+                    self.config.commands,
                     strict=False,
                 )
             except KeyboardInterrupt:
