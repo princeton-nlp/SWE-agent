@@ -51,6 +51,8 @@ class AgentInfo(TypedDict, total=False):
     edited_files70: str
     # only if summarizer is used
     summarizer: dict
+    swe_agent_hash: str
+    swe_agent_version: str
 
 
 @dataclass

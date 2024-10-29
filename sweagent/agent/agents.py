@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from simple_parsing.helpers.fields import field
 from tenacity import RetryError
 
+from sweagent import __version__, get_agent_commit_hash
 from sweagent.agent.commands import Command, ParseCommand
 from sweagent.agent.history_processors import HistoryProcessor
 from sweagent.agent.models import (
@@ -968,6 +969,8 @@ class Agent:
         self.trajectory = Trajectory()
         self._env = env
         self.info = AgentInfo()
+        self.info["swe_agent_hash"] = get_agent_commit_hash()
+        self.info["swe_agent_version"] = __version__
         self.traj_dir = traj_dir
 
         self.logger.info("Trajectory will be saved to %s", self.traj_path)

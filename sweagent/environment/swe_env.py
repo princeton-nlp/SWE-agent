@@ -10,13 +10,10 @@ from pathlib import Path, PurePath
 from typing import Any, Literal
 
 import gymnasium as gym
-from git import Repo
 from pydantic import BaseModel, Field
 from swerex.deployment import get_deployment
 from swerex.deployment.abstract import AbstractDeployment
 from swerex.runtime.abstract import BashAction, Command, CreateBashSessionRequest, UploadRequest, WriteFileRequest
-
-from sweagent import REPO_ROOT
 
 # from sweagent.agent.interactive_commands import (
 #     INTERACTIVE_SESSIONS_CONFIG,
@@ -197,6 +194,7 @@ class EnvHook:
         """Called when the environment is closed"""
 
 
+# todo: Do we really need to inherit from gym.Env?
 class SWEEnv(gym.Env):
     """Gym environment for SWE-bench. This class should handle all communication with the docker container."""
 
@@ -208,16 +206,6 @@ class SWEEnv(gym.Env):
         self.args = args
         self.logger = get_logger("SWEEnv")
         self.returncode: None | int = None
-
-        # : The commit hash of the swe-agent repository
-        self.commit_sha = None
-        try:
-            repo = Repo(REPO_ROOT, search_parent_directories=True)
-            self.commit_sha = repo.head.object.hexsha
-        except KeyboardInterrupt:
-            raise
-        except Exception as e:
-            self.logger.exception("Failed to get commit hash for this repo: %s", str(e))
 
         # Establish connection with execution container
         # self.docker_compose: Path | None = None
@@ -280,7 +268,6 @@ class SWEEnv(gym.Env):
             info: additional information (e.g. debugging information)
         """
         info = {}
-        info["commit_sha"] = self.commit_sha
 
         ### Reset Container ###
         # self._init_docker_compose()

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from git import Repo
+
 __version__ = "0.7.0"
 
 from logging import WARNING, getLogger
@@ -17,7 +19,26 @@ CONFIG_DIR = PACKAGE_DIR.parent / "config"
 assert CONFIG_DIR.is_dir()
 
 
+def get_agent_commit_hash() -> str:
+    repo = Repo(REPO_ROOT, search_parent_directories=True)
+    return repo.head.object.hexsha
+
+
+def get_agent_version_info() -> str:
+    try:
+        hash = get_agent_commit_hash()
+    except Exception:
+        hash = "unknown"
+    return f"This is SWE-agent version {__version__} with commit hash {hash}."
+
+
+getLogger("swe-agent").info(get_agent_version_info())
+
+
 __all__ = [
     "PACKAGE_DIR",
     "CONFIG_DIR",
+    "get_agent_commit_hash",
+    "get_agent_version_info",
+    "__version__",
 ]
