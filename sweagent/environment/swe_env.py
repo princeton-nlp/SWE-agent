@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import re
 import shlex
 import time
 import uuid
 from pathlib import Path, PurePath
-from typing import Any, Literal
+from typing import Any, Literal, Self
 
 import gymnasium as gym
+import pydantic
+from git import InvalidGitRepositoryError, Repo
 from pydantic import BaseModel, Field
 from swerex.deployment import get_deployment
 from swerex.deployment.abstract import AbstractDeployment
@@ -23,6 +26,8 @@ from swerex.runtime.abstract import BashAction, Command, CreateBashSessionReques
 from sweagent.environment.utils import (
     NoOutputTimeoutError,
     PatchFormatter,
+    get_problem_statement_from_github_issue,
+    parse_gh_issue_url,
 )
 from sweagent.types import AgentInfo
 from sweagent.utils.config import keys_config
@@ -55,10 +60,12 @@ DeploymentConfig = DockerDeploymentConfig | ModalDeploymentConfig
 
 
 class EmptyInstanceConfig(BaseModel):
-    problem_statement: str = ""
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     type: Literal["empty"] = "empty"
     """Discriminator for serialization. Do not change."""
+
+    def get_problem_statement(self) -> str:
+        return ""
 
 
 class TextInstanceConfig(BaseModel):
@@ -67,6 +74,19 @@ class TextInstanceConfig(BaseModel):
 
     type: Literal["text"] = "text"
     """Discriminator for serialization. Do not change."""
+
+    def get_problem_statement(self) -> str:
+        return self.problem_statement
+
+
+class TextFileInstanceConfig(BaseModel):
+    path: str = ""
+
+    type: Literal["text_file"] = "text_file"
+    """Discriminator for serialization. Do not change."""
+
+    def get_problem_statement(self) -> str:
+        return Path(self.path).read_text()
 
 
 class GithubInstanceConfig(BaseModel):
@@ -80,9 +100,9 @@ class GithubInstanceConfig(BaseModel):
         org, repo, issue = self.issue_url.split("/")[-3:]
         return f"{org}__{repo}__{issue}"
 
-    @property
-    def problem_statement(self) -> str:
-        return "retrieved problem statement"
+    def get_problem_statement(self) -> str:
+        owner, repo, issue_number = parse_gh_issue_url(self.issue_url)
+        return get_problem_statement_from_github_issue(owner, repo, issue_number, token=keys_config.get("GITHUB_TOKEN"))
 
 
 InstanceConfig = TextInstanceConfig | GithubInstanceConfig | EmptyInstanceConfig
@@ -98,6 +118,18 @@ class LocalRepoConfig(BaseModel):
     @property
     def repo_name(self) -> str:
         return Path(self.path).resolve().name.replace(" ", "-").replace("'", "")
+
+    @pydantic.model_validator(mode="after")
+    def check_valid_repo(self) -> Self:
+        try:
+            repo = Repo(self.path, search_parent_directories=True)
+        except InvalidGitRepositoryError as e:
+            msg = f"Could not find git repository at {self.path=}."
+            raise ValueError(msg) from e
+        if repo.is_dirty() and "PYTEST_CURRENT_TEST" not in os.environ:
+            msg = f"Local git repository {self.path} is dirty. Please commit or stash changes."
+            raise ValueError(msg)
+        return self
 
     def copy(self, deployment: AbstractDeployment):
         asyncio.run(deployment.runtime.upload(UploadRequest(source_path=self.path, target_path=f"/{self.repo_name}")))
@@ -205,12 +237,14 @@ class SWEEnv(gym.Env):
         t0 = time.perf_counter()
         self.args = args
         self.logger = get_logger("SWEEnv")
+        # todo: get rid of this
         self.returncode: None | int = None
 
         # Establish connection with execution container
         # self.docker_compose: Path | None = None
         # self.challenge: dict[str, Any] | None = None
-        self._reset_container()
+        self._init_container()
+        self._init_scripts()
 
         # self.interactive_session: InteractiveSession | None = None
 
@@ -563,22 +597,10 @@ class SWEEnv(gym.Env):
 
     # MARK: Helper functions #
 
-    def _reset_container(self) -> None:
-        # if self.docker_compose is not None:
-        #     try:
-        #         terminate_docker_compose(self.docker_compose)
-        #     except KeyboardInterrupt:
-        #         raise
-        #     except:
-        #         self.logger.warning("Failed to terminate docker compose", exc_info=True)
-        #     else:
-        #         self.logger.debug("Terminated docker compose")
-        self._init_container()
-        self._init_scripts()
-
     def reset_container(self) -> None:
         self.close()
-        self._reset_container()
+        self._init_container()
+        self._init_scripts()
 
     # ctf
     # def _init_docker_network(self) -> None:
@@ -598,7 +620,9 @@ class SWEEnv(gym.Env):
     #         self.docker_compose = get_docker_compose(self.challenge["docker_compose"])
     #         self.logger.info("🌱 Initialized docker compose for challenge")
 
-    def _init_container(self, cached_image: str | None = None) -> None:
+    def _init_container(
+        self,
+    ) -> None:
         """
         Handles container initialization. Defines container name and creates it.
         If cached_image is provided, it will use that image name instead of the default.
@@ -630,14 +654,11 @@ class SWEEnv(gym.Env):
         self,
         input: str,
         timeout_duration: int | float = 25,
+        *,
         no_output_timeout_duration: int | float = 25,
     ) -> str:
-        """Runs command in container and returns output
-
-        Args:
-            input: command to run in container
-            timeout_duration: duration to wait for output
-            no_output_timeout_duration: duration to wait when the process stopped produce any output
+        """Runs command in container and returns output.
+        This is the internal version of `communicate` that does not handle the "exit" command etc.
         """
         self.returncode = None
         r = asyncio.run(self.deployment.runtime.run_in_session(BashAction(command=input, timeout=timeout_duration)))
@@ -648,16 +669,16 @@ class SWEEnv(gym.Env):
         self,
         input: str,
         timeout_duration: int | float = 25,
-        no_output_timeout_duration: int | float | None = None,
         *,
+        no_output_timeout_duration: int | float | None = None,
         set_last_action: bool = False,
     ) -> str:
-        """
-        Sends input to container and returns output
+        """Sends input to container and returns output
 
         Args:
             input: input to send to container
             timeout_duration: duration to wait for output
+            no_output_timeout_duration: duration to wait when the process stopped produce any output
             set_last_action: whether to set the LAST_ACTION environment variable
 
         Returns:
@@ -665,25 +686,26 @@ class SWEEnv(gym.Env):
         """
         if no_output_timeout_duration is None:
             no_output_timeout_duration = timeout_duration
-        if input.strip() != "exit":
-            self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
-            output = self._communicate(
-                input,
-                timeout_duration=timeout_duration,
-                no_output_timeout_duration=no_output_timeout_duration,
-            )
-            self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
-            if set_last_action:
-                # Cannot merge this with last command, because of multiline command
-                # handling.
-                last_action_string = shlex.quote(input.strip())
-                input = f"export LAST_ACTION={last_action_string}"
-                self._communicate(input, timeout_duration=5, no_output_timeout_duration=5)
-            return output
-        else:
+
+        if input.strip() == "exit":
             asyncio.run(self.deployment.stop())
             self.returncode = 0
             return ""
+
+        self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
+        output = self._communicate(
+            input,
+            timeout_duration=timeout_duration,
+            no_output_timeout_duration=no_output_timeout_duration,
+        )
+        self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
+        if set_last_action:
+            # Cannot merge this with last command, because of multiline command
+            # handling.
+            last_action_string = shlex.quote(input.strip())
+            input = f"export LAST_ACTION={last_action_string}"
+            self._communicate(input, timeout_duration=5, no_output_timeout_duration=5)
+        return output
 
     def communicate_with_handling(self, input: str, error_msg: str, timeout_duration: int | float = 25) -> str:
         """
