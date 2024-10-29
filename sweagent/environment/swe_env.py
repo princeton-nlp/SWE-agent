@@ -5,12 +5,13 @@ import logging
 import re
 import shlex
 import time
+import uuid
 from pathlib import Path, PurePath
 from typing import Any, Literal
 
 import gymnasium as gym
 from git import Repo
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from swerex.deployment import get_deployment
 from swerex.runtime.abstract import BashAction, CreateBashSessionRequest, UploadRequest, WriteFileRequest
 
@@ -40,7 +41,7 @@ class DockerDeploymentConfig(BaseModel):
     image: str = "sweagent/swe-agent:latest"
 
     type: Literal["docker"] = "docker"
-    """Sentinel value. Do not change."""
+    """Discriminator for serialization. Do not change."""
 
 
 class ModalDeploymentConfig(BaseModel):
@@ -49,33 +50,62 @@ class ModalDeploymentConfig(BaseModel):
     modal_username: str = "test"
 
     type: Literal["modal"] = "modal"
-    """Sentinel value. Do not change."""
+    """Discriminator for serialization. Do not change."""
 
 
 DeploymentConfig = DockerDeploymentConfig | ModalDeploymentConfig
 
 
-class InstanceConfig(BaseModel):
-    content: str = ""
+class EmptyInstanceConfig(BaseModel):
+    problem_statement: str = ""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    type: Literal["empty"] = "empty"
+    """Discriminator for serialization. Do not change."""
+
+
+class TextInstanceConfig(BaseModel):
+    problem_statement: str = ""
     id: str = ""
+
+    type: Literal["text"] = "text"
+    """Discriminator for serialization. Do not change."""
+
+
+class GithubInstanceConfig(BaseModel):
+    issue_url: str = ""
+
+    type: Literal["github"] = "github"
+    """Discriminator for serialization. Do not change."""
+
+    @property
+    def id(self) -> str:
+        org, repo, issue = self.issue_url.split("/")[-3:]
+        return f"{org}__{repo}__{issue}"
+
+    @property
+    def problem_statement(self) -> str:
+        return "retrieved problem statement"
+
+
+InstanceConfig = TextInstanceConfig | GithubInstanceConfig | EmptyInstanceConfig
 
 
 class LocalRepoConfig(BaseModel):
     path: str = ""
-    base_commit: str | None = None
+    base_commit: str = "HEAD"
 
     type: Literal["local"] = "local"
     """Discriminator for serialization. Do not change."""
 
     @property
     def repo_name(self) -> str:
-        return Path(self.path).name.replace(" ", "-").replace("'", "")
+        return Path(self.path).resolve().name.replace(" ", "-").replace("'", "")
 
 
 class GithubRepoConfig(BaseModel):
     url: str = ""
 
-    base_commit: str | None = None
+    base_commit: str = "HEAD"
 
     type: Literal["github"] = "github"
     """Discriminator for serialization. Do not change."""
@@ -99,7 +129,7 @@ RepoConfig = LocalRepoConfig | GithubRepoConfig
 class EnvironmentConfig(BaseModel):
     """Configure data sources and setup instructions for the environment in which we solve the tasks."""
 
-    instance: InstanceConfig = InstanceConfig()
+    instance: InstanceConfig = Field(default_factory=EmptyInstanceConfig)
     deployment: DeploymentConfig | None = None
     repo: RepoConfig | None = None
     startup_commands: list[str] = []
@@ -140,7 +170,6 @@ class SWEEnv(gym.Env):
         super().__init__()
         t0 = time.perf_counter()
         self.args = args
-        self.base_commit: str | None = None
         self.logger = get_logger("SWEEnv")
         self.returncode: None | int = None
 
@@ -183,31 +212,21 @@ class SWEEnv(gym.Env):
     #     """Name of the local copy of the repository"""
     #     return self.record["repo"].replace("/", "__").replace(" ", "-").replace("'", "")
 
-    def _copy_repo(self) -> str:
-        """Clone/copy repository/codebase in container
+    # todo: Ideally move that to the RepoClasses
+    def _copy_repo(self) -> None:
+        """Clone/copy repository/codebase in container"""
+        if self.args.repo is None:
+            return
 
-        Returns:
-            folder name of clone
-        """
+        folders = self.communicate(input="ls").split("\n")
+        if self.args.repo.repo_name in folders:
+            return
+
         # assert self.container_obj is not None
         for hook in self.hooks:
             if self.args.repo:
                 hook.on_copy_repo_started(self.args.repo)
         if isinstance(self.args.repo, LocalRepoConfig):
-            # if "challenge" in self.record:
-            #     self.communicate_with_handling(
-            #         input=f"mkdir {self._repo_name}", error_msg=f"Failed to create {self._repo_name} in container"
-            #     )
-            #     for file_name in self.record["challenge"]["files"]:
-            #         self.logger.debug(f"Copying file {file_name} to container")
-            #         source_file_name = Path(self.record["repo"].removeprefix("local://")) / file_name
-            #         target_file_name = Path("/") / self._repo_name / file_name
-            #         asyncio.run(
-            #             self.deployment.runtime.upload(
-            #                 UploadRequest(source_path=str(source_file_name), target_path=str(target_file_name))
-            #             )
-            #         )
-            # else:
             asyncio.run(
                 self.deployment.runtime.upload(
                     UploadRequest(source_path=self.args.repo.path, target_path="/" + self.args.repo.repo_name)
@@ -217,7 +236,7 @@ class SWEEnv(gym.Env):
                 input=f"chown -R root:root {self.args.repo.repo_name}",
                 error_msg="Failed to change permissions on copied repository",
             )
-            return self.args.repo.repo_name
+            return
         assert isinstance(self.args.repo, GithubRepoConfig)
         url = self.args.repo._get_url_with_token(self._github_token)
         clone_method = keys_config.get("SWE_AGENT_CLONE_METHOD", default="shallow", choices=["shallow", "full"])
@@ -244,7 +263,7 @@ class SWEEnv(gym.Env):
                 error_msg="Failed to clone repository with fast method",
                 timeout_duration=LONG_TIMEOUT,
             )
-        return self.args.repo.repo_name
+        return
 
     def reset(self) -> tuple[str | None, dict]:
         """
@@ -273,28 +292,25 @@ class SWEEnv(gym.Env):
 
         # Clone repository if not already cloned
         self.communicate(input="cd /")
-        folders = self.communicate(input="ls").split("\n")
-        if self.args.repo and self.args.repo.repo_name not in folders:
-            print("copying repo")
-            self._copy_repo()
+        self._copy_repo()
 
         self._reset_repository()
         self._reset_environment_variables()
 
         # Set up environment
-        self.communicate_with_handling(
-            "source /root/miniconda3/etc/profile.d/conda.sh",
-            error_msg="Failed to source conda",
-        )
+        # self.communicate_with_handling(
+        #     "source /root/miniconda3/etc/profile.d/conda.sh",
+        #     error_msg="Failed to source conda",
+        # )
 
-        system = self.communicate("uname -s").strip().lower()
-        arch = self.communicate("uname -m").strip().lower()
-        if system == "linux" and arch == "x86_64":
-            self.communicate_with_handling(
-                "apt update; apt install build-essential -y",
-                error_msg="Failed to install build-essential",
-                timeout_duration=LONG_TIMEOUT,
-            )
+        # system = self.communicate("uname -s").strip().lower()
+        # arch = self.communicate("uname -m").strip().lower()
+        # if system == "linux" and arch == "x86_64":
+        #     self.communicate_with_handling(
+        #         "apt update; apt install build-essential -y",
+        #         error_msg="Failed to install build-essential",
+        #         timeout_duration=LONG_TIMEOUT,
+        #     )
 
         # Call install environment helper function if specified
         # if self.install_environment:
@@ -317,7 +333,7 @@ class SWEEnv(gym.Env):
             startup_commands += [
                 "git status",
                 "git restore .",
-                f"git reset --hard {self.base_commit}",
+                f"git reset --hard {self.args.repo.base_commit}",
                 "git clean -fdxq",
             ]
             self.communicate_with_handling(
@@ -700,7 +716,7 @@ class SWEEnv(gym.Env):
         if self.returncode != 0:
             self.logger.error(f"{error_msg}: {logs}")
             self.close()
-            msg = f"{error_msg}: {logs}"
+            msg = f"{error_msg} (command: {input})"
             raise RuntimeError(msg)
         return logs
 

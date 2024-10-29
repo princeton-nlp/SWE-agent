@@ -39,7 +39,7 @@ class BasicMain:
         observation, info = self.env.reset()
         self.logger.info("Running agent")
         info, trajectory = self.agent.run(
-            setup_args={},
+            setup_args=self.args.env.instance.model_dump(),
             env=self.env,
             observation=observation,
             traj_dir=Path(self.args.traj_dir),

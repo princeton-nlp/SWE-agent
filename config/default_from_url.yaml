@@ -30,7 +30,7 @@ agent:
   instance_template: |-
     We're currently solving the following issue within our repository. Here's the issue text:
     ISSUE:
-    {issue}
+    {problem_statement}
 
     INSTRUCTIONS:
     Now, you're going to solve this issue on your own. Your terminal session has started and you're in the repository's root directory. You can use any bash commands or the special interface to help you. Edit all the files you need to and run any checks or tests that you want.

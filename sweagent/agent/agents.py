@@ -928,6 +928,7 @@ class Agent:
             hook.on_step_done(trajectory_step=trajectory_step, model_stats=model_stats)
         return observation, done
 
+    # todo: Get rid of setup_arts in this unspecified form
     def run(
         self,
         setup_args: dict[str, Any],
