@@ -4,8 +4,9 @@ import hashlib
 import json
 import os
 import re
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from datasets import load_dataset, load_from_disk
 from ghapi.all import GhApi
@@ -554,6 +555,9 @@ class PatchFormatter:
         For example `starts=[1, 5, 18]`, `stops=[10, 13, 20]`
         should return `starts=[1, 18]`, `stops=[13, 20]`
         """
+        if not starts:
+            assert not stops
+            return [], []
 
         intervals = sorted(zip(starts, stops))
         merged = []
@@ -578,6 +582,10 @@ class PatchFormatter:
                 The first line is line 1.
             linenos: Whether to include line numbers
         """
+        if not starts:
+            assert not stops
+            return ""
+
         assert len(starts) == len(stops)
         assert all(start >= 1 for start in starts)
         assert all(start < stop for start, stop in zip(starts, stops))
