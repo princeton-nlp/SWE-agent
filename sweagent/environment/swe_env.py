@@ -13,7 +13,8 @@ import gymnasium as gym
 from git import Repo
 from pydantic import BaseModel, Field
 from swerex.deployment import get_deployment
-from swerex.runtime.abstract import BashAction, CreateBashSessionRequest, UploadRequest, WriteFileRequest
+from swerex.deployment.abstract import AbstractDeployment
+from swerex.runtime.abstract import BashAction, Command, CreateBashSessionRequest, UploadRequest, WriteFileRequest
 
 from sweagent import REPO_ROOT
 
@@ -101,6 +102,13 @@ class LocalRepoConfig(BaseModel):
     def repo_name(self) -> str:
         return Path(self.path).resolve().name.replace(" ", "-").replace("'", "")
 
+    def copy(self, deployment: AbstractDeployment):
+        asyncio.run(deployment.runtime.upload(UploadRequest(source_path=self.path, target_path=f"/{self.repo_name}")))
+        r = asyncio.run(deployment.runtime.execute(Command(command=f"chown -R root:root {self.repo_name}", shell=True)))
+        if r.exit_code != 0:
+            msg = f"Failed to change permissions on copied repository (exit code: {r.exit_code}, stdout: {r.stdout}, stderr: {r.stderr})"
+            raise RuntimeError(msg)
+
 
 class GithubRepoConfig(BaseModel):
     url: str = ""
@@ -122,6 +130,33 @@ class GithubRepoConfig(BaseModel):
             return self.url
         _, _, url_no_protocol = self.url.partition("://")
         return f"https://{token}@{url_no_protocol}"
+
+    def copy(self, deployment: AbstractDeployment):
+        base_commit = self.base_commit
+        github_token = keys_config.get("GITHUB_TOKEN", "")
+        url = self._get_url_with_token(github_token)
+        r = asyncio.run(
+            deployment.runtime.execute(
+                Command(
+                    command=" && ".join(
+                        (
+                            f"mkdir {self.repo_name}",
+                            f"cd {self.repo_name}",
+                            "git init",
+                            f"git remote add origin {url}",
+                            f"git fetch --depth 1 origin {base_commit}",
+                            "git checkout FETCH_HEAD",
+                            "cd ..",
+                        )
+                    ),
+                    timeout=LONG_TIMEOUT,
+                    shell=True,
+                )
+            ),
+        )
+        if r.exit_code != 0:
+            msg = f"Failed to clone repository (exit code: {r.exit_code}, stdout: {r.stdout}, stderr: {r.stderr})"
+            raise RuntimeError(msg)
 
 
 RepoConfig = LocalRepoConfig | GithubRepoConfig
@@ -184,8 +219,6 @@ class SWEEnv(gym.Env):
         except Exception as e:
             self.logger.exception("Failed to get commit hash for this repo: %s", str(e))
 
-        self._github_token: str = keys_config.get("GITHUB_TOKEN", "")  # type: ignore
-
         # Establish connection with execution container
         # self.docker_compose: Path | None = None
         # self.challenge: dict[str, Any] | None = None
@@ -227,44 +260,8 @@ class SWEEnv(gym.Env):
         for hook in self.hooks:
             if self.args.repo:
                 hook.on_copy_repo_started(self.args.repo)
-        if isinstance(self.args.repo, LocalRepoConfig):
-            asyncio.run(
-                self.deployment.runtime.upload(
-                    UploadRequest(source_path=self.args.repo.path, target_path="/" + self.args.repo.repo_name)
-                )
-            )
-            self.communicate_with_handling(
-                input=f"chown -R root:root {self.args.repo.repo_name}",
-                error_msg="Failed to change permissions on copied repository",
-            )
-            return
-        assert isinstance(self.args.repo, GithubRepoConfig)
-        url = self.args.repo._get_url_with_token(self._github_token)
-        clone_method = keys_config.get("SWE_AGENT_CLONE_METHOD", default="shallow", choices=["shallow", "full"])
-        if clone_method == "full":
-            self.communicate_with_handling(
-                input=f"git clone {url} {self.args.repo.repo_name}",
-                error_msg="Failed to clone repository from conservative method",
-                timeout_duration=LONG_TIMEOUT,
-            )
-        else:
-            base_commit = self.args.repo.base_commit
-            self.communicate_with_handling(
-                input=" && ".join(
-                    (
-                        f"mkdir {self.args.repo.repo_name}",
-                        f"cd {self.args.repo.repo_name}",
-                        "git init",
-                        f"git remote add origin {url}",
-                        f"git fetch --depth 1 origin {base_commit}",
-                        "git checkout FETCH_HEAD",
-                        "cd ..",
-                    )
-                ),
-                error_msg="Failed to clone repository with fast method",
-                timeout_duration=LONG_TIMEOUT,
-            )
-        return
+
+        self.args.repo.copy(self.deployment)
 
     def reset(self) -> tuple[str | None, dict]:
         """
