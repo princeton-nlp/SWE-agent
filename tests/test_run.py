@@ -11,10 +11,11 @@ from typing import Any
 import pytest
 
 import docker
-from run import ActionsArguments, Main, MainHook, OpenPRHook, ScriptArguments
+from run import ActionsArguments, Main, ScriptArguments
 from sweagent.agent.agents import Agent, AgentConfig, AgentHook
 from sweagent.agent.models import ModelArguments
-from sweagent.environment.swe_env import EnvironmentArguments, SWEEnv
+from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
+from sweagent.main.hooks import MainHook, OpenPRHook
 
 
 @pytest.mark.slow
@@ -104,7 +105,7 @@ class RaisesExceptionHook(MainHook):
 def test_script_args():
     return ScriptArguments(
         suffix="",
-        environment=EnvironmentArguments(
+        environment=EnvironmentConfig(
             image_name="sweagent/swe-agent:latest",
             data_path="https://github.com/swe-agent/test-repo/issues/1",
             split="dev",

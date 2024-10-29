@@ -1,28 +1,22 @@
 from __future__ import annotations
 
+# try:
+#     import rich
+# except ModuleNotFoundError as e:
+#     msg = (
+#         "You probably either forgot to install the dependencies "
+#         "or forgot to activate your conda or virtual environment."
+#     )
+#     raise RuntimeError(msg) from e
+import json
 import logging
+import re
+import traceback
 from argparse import ArgumentParser
 from pprint import pprint
 
+from sweagent.main.hooks import MainHook
 from sweagent.utils.log import add_file_handler, get_logger
-
-try:
-    import rich
-except ModuleNotFoundError as e:
-    msg = (
-        "You probably either forgot to install the dependencies "
-        "or forgot to activate your conda or virtual environment."
-    )
-    raise RuntimeError(msg) from e
-import json
-import re
-import subprocess
-import traceback
-from typing import Any
-
-import rich.console
-import rich.markdown
-import rich.panel
 
 try:
     from rich_argparse import RichHelpFormatter
@@ -42,14 +36,7 @@ from unidiff import PatchSet
 
 from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.agent.models import ModelArguments
-from sweagent.environment.swe_env import DockerDeploymentConfig, EnvironmentArguments, SWEEnv
-from sweagent.environment.utils import (
-    InvalidGithubURL,
-    get_associated_commit_urls,
-    get_data_path_name,
-    get_gh_issue_data,
-    parse_gh_issue_url,
-)
+from sweagent.environment.swe_env import DockerDeploymentConfig, EnvironmentConfig, SWEEnv
 
 __doc__: str = """ Run inference. Usage examples:
 
@@ -91,7 +78,7 @@ class ActionsArguments(BaseModel):
 class ScriptArguments(BaseSettings):
     """Configure the control flow of the run.py script"""
 
-    environment: EnvironmentArguments = Field(..., default_factory=EnvironmentArguments)
+    environment: EnvironmentConfig = Field(..., default_factory=EnvironmentConfig)
     agent: AgentConfig = Field(..., default_factory=AgentConfig)
     actions: ActionsArguments = Field(..., default_factory=ActionsArguments)
     # Only run instances that completely match this regex
@@ -116,7 +103,8 @@ class ScriptArguments(BaseSettings):
     def _generate_run_name(self) -> str:
         """Generate a unique name for this run based on the arguments."""
         model_name = self.agent.model.name.replace(":", "-")
-        data_stem = get_data_path_name(self.environment.data_path)
+        # todo: Need to set this properly
+        data_stem = "todo"  # get_data_path_name(self.environment.data_path)
         # assert self.agent.config_file is not None  # mypy
         # config_stem = Path(self.agent.config_file).stem
 
@@ -124,188 +112,17 @@ class ScriptArguments(BaseSettings):
         top_p = self.agent.model.top_p
 
         per_instance_cost_limit = self.agent.model.per_instance_cost_limit
-        install_env = self.environment.install_environment
+        # install_env = self.environment.install_environment
 
         return (
             f"{model_name}__{data_stem}__t-{temp:.2f}__p-{top_p:.2f}"
-            + f"__c-{per_instance_cost_limit:.2f}__install-{int(install_env)}"
+            + f"__c-{per_instance_cost_limit:.2f}"
             + (f"__{self.suffix}" if self.suffix else "")
         )
 
 
 class _ContinueLoop(Exception):
     """Used for internal control flow"""
-
-
-class MainHook:
-    """Hook structure for the web server or other addons to interface with"""
-
-    @staticmethod
-    def _is_promising_patch(info: dict[str, Any]) -> bool:
-        """Do we actually believe that the patch will solve the issue?
-        Or are we just submitting the last patch we generated before hitting an error?
-        """
-        # The exit status can also be `submitted (exit_cost)` etc.
-        return info["exit_status"] == "submitted" and info.get("submission") is not None
-
-    def on_init(self, *, args: ScriptArguments, agent: Agent, env: SWEEnv, traj_dir: Path):
-        """Called when hook is initialized"""
-
-    def on_start(self):
-        """Called at the beginning of `Main.main`"""
-
-    def on_end(self):
-        """Called at the end of `Main.main`"""
-
-    def on_instance_start(self, *, index: int, instance: dict[str, Any]):
-        """Called at the beginning of each instance loop in `Main.run`"""
-
-    def on_instance_skipped(
-        self,
-    ):
-        """Called when an instance is skipped in `Main.run`"""
-
-    def on_instance_completed(self, *, info, trajectory):
-        """Called when an instance is completed in `Main.run`"""
-
-
-class SaveApplyPatchHook(MainHook):
-    """This hook saves patches to a separate directory and optionally applies them to a local repository."""
-
-    def on_init(self, *, args: ScriptArguments, agent: Agent, env: SWEEnv, traj_dir: Path):
-        self._traj_dir = traj_dir
-        self._apply_patch_locally = args.actions.apply_patch_locally
-        self._instance = None
-
-    def on_instance_start(self, *, index: int, instance: dict[str, Any]):
-        self._instance = instance
-
-    def on_instance_completed(self, *, info, trajectory):
-        assert self._instance is not None  # mypy
-        instance_id = self._instance["instance_id"]
-        patch_path = self._save_patch(instance_id, info)
-        if patch_path:
-            if not self._apply_patch_locally:
-                return
-            if not self._is_promising_patch(info):
-                return
-            assert self._instance  # mypy
-            if self._instance["repo_type"] != "local":
-                return
-            local_dir = Path(self._instance["repo"])
-            self._apply_patch(patch_path, local_dir)
-
-    @staticmethod
-    def _print_patch_message(patch_output_file: Path):
-        console = rich.console.Console()
-        msg = [
-            "SWE-agent has produced a patch that it believes will solve the issue you submitted!",
-            "Use the code snippet below to inspect or apply it!",
-        ]
-        panel = rich.panel.Panel.fit(
-            "\n".join(msg),
-            title="🎉 Submission successful 🎉",
-        )
-        console.print(panel)
-        content = [
-            "```bash",
-            "# The patch has been saved to your local filesystem at:",
-            f"PATCH_FILE_PATH='{patch_output_file.resolve()}'",
-            "# Inspect it:",
-            'cat "${PATCH_FILE_PATH}"',
-            "# Apply it to a local repository:",
-            "cd <your local repo root>",
-            'git apply "${PATCH_FILE_PATH}"',
-            "```",
-        ]
-        console.print(rich.markdown.Markdown("\n".join(content)))
-
-    def _save_patch(self, instance_id: str, info) -> Path | None:
-        """Create patch files that can be applied with `git am`.
-
-        Returns:
-            The path to the patch file, if it was saved. Otherwise, returns None.
-        """
-        patch_output_dir = self._traj_dir / "patches"
-        patch_output_dir.mkdir(exist_ok=True, parents=True)
-        patch_output_file = patch_output_dir / f"{instance_id}.patch"
-        if info.get("submission") is None:
-            logger.info("No patch to save.")
-            return None
-        model_patch = info["submission"]
-        patch_output_file.write_text(model_patch)
-        if self._is_promising_patch(info):
-            # Only print big congratulations if we actually believe
-            # the patch will solve the issue
-            self._print_patch_message(patch_output_file)
-        return patch_output_file
-
-    def _apply_patch(self, patch_file: Path, local_dir: Path) -> None:
-        """Apply a patch to a local directory."""
-
-        assert local_dir.is_dir()
-        assert patch_file.exists()
-        # The resolve() is important, because we're gonna run the cmd
-        # somewhere else
-        cmd = ["git", "apply", str(patch_file.resolve())]
-        try:
-            subprocess.run(cmd, cwd=local_dir, check=True)
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Failed to apply patch {patch_file} to {local_dir}: {e}")
-            return
-        logger.info(f"Applied patch {patch_file} to {local_dir}")
-
-
-class OpenPRHook(MainHook):
-    """This hook opens a PR if the issue is solved and the user has enabled the option."""
-
-    def on_init(self, *, args: ScriptArguments, agent: Agent, env: SWEEnv, traj_dir: Path):
-        self._env = env
-        self._token: str = env._github_token
-        self._data_path = args.environment.data_path
-        self._open_pr = args.actions.open_pr
-        self._skip_if_commits_reference_issue = args.actions.skip_if_commits_reference_issue
-
-    def on_instance_completed(self, *, info, trajectory):
-        if self._open_pr and self.should_open_pr(info):
-            self._env.open_pr(trajectory=trajectory)
-
-    def should_open_pr(self, info: dict[str, Any]) -> bool:
-        """Does opening a PR make sense?"""
-        if not info.get("submission"):
-            logger.info("Not opening PR because no submission was made.")
-            return False
-        if info["exit_status"] != "submitted":
-            logger.info("Not opening PR because exit status was %s and not submitted.", info["exit_status"])
-            return False
-        try:
-            issue = get_gh_issue_data(self._data_path, token=self._token)
-        except InvalidGithubURL:
-            logger.info("Currently only GitHub is supported to open PRs to. Skipping PR creation.")
-            return False
-        if issue.state != "open":
-            logger.info(f"Issue is not open (state={issue.state}. Skipping PR creation.")
-            return False
-        if issue.assignee:
-            logger.info("Issue is already assigned. Skipping PR creation. Be nice :)")
-            return False
-        if issue.locked:
-            logger.info("Issue is locked. Skipping PR creation.")
-            return False
-        org, repo, issue_number = parse_gh_issue_url(self._data_path)
-        associated_commits = get_associated_commit_urls(org, repo, issue_number, token=self._token)
-        if associated_commits:
-            commit_url_strs = ", ".join(associated_commits)
-            if self._skip_if_commits_reference_issue:
-                logger.info(f"Issue already has associated commits (see {commit_url_strs}). Skipping PR creation.")
-                return False
-            else:
-                logger.warning(
-                    "Proceeding with PR creation even though there are already commits "
-                    f"({commit_url_strs}) associated with the issue. Please only do this for your own repositories "
-                    "or after verifying that the existing commits do not fix the issue.",
-                )
-        return True
 
 
 class Main:
@@ -324,8 +141,8 @@ class Main:
         self.env = SWEEnv(args.environment)
         self._save_arguments()
         default_hooks = [
-            SaveApplyPatchHook(),
-            OpenPRHook(),
+            # SaveApplyPatchHook(),
+            # OpenPRHook(),
         ]
         self.hooks: list[MainHook] = []
         for hook in default_hooks:
@@ -479,13 +296,13 @@ class Main:
             KEY_INSTANCE_ID: instance_id,
             KEY_PREDICTION: model_patch,
         }
-        if challenge is not None:
-            challenge_datum = {
-                "challenge_name": challenge["name"],
-                "challenge_category": challenge["category"],
-                "challenge_path": challenge["file_path"],
-            }
-            datum.update(challenge_datum)
+        # if challenge is not None:
+        #     challenge_datum = {
+        #         "challenge_name": challenge["name"],
+        #         "challenge_category": challenge["category"],
+        #         "challenge_path": challenge["file_path"],
+        #     }
+        #     datum.update(challenge_datum)
         with open(output_file, "a+") as fp:
             print(json.dumps(datum), file=fp, flush=True)
         logger.info(f"Saved predictions to {output_file}")
@@ -501,12 +318,12 @@ def get_args(args=None) -> ScriptArguments:
     # Otherwise, the configs from the respective classes will be used
     no_config_defaults = ScriptArguments(
         suffix="",
-        environment=EnvironmentArguments(
+        environment=EnvironmentConfig(
             deployment=DockerDeploymentConfig(),
-            data_path="princeton-nlp/SWE-bench_Lite",
-            split="dev",
-            verbose=True,
-            install_environment=True,
+            # data_path="princeton-nlp/SWE-bench_Lite",
+            # split="dev",
+            # verbose=True,
+            # install_environment=True,
         ),
         skip_existing=True,
         agent=AgentConfig(
@@ -544,22 +361,20 @@ def get_args(args=None) -> ScriptArguments:
     print("Config merged")
     pprint(config_merged)
     args = ScriptArguments.model_validate(config_merged)
-    args = CliApp.run(ScriptArguments, remaining_args, **config_merged)
+    return CliApp.run(ScriptArguments, remaining_args, **config_merged)
     # args = CliApp.run(ScriptArguments, remaining_args, model_init_data=config_merged)
 
     # todo: Do we need this?
     # Nicer yaml dumping of multiline strings
-    def multiline_representer(dumper, data):
-        """configures yaml for dumping multiline strings
-        Ref: https://stackoverflow.com/questions/8640959/how-can-i-control-what-scalar-form-pyyaml-uses-for-my-data
-        """
-        if data.count("\n") > 0:  # check for multiline string
-            return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
-        return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+    # def multiline_representer(dumper, data):
+    #     """configures yaml for dumping multiline strings
+    #     Ref: https://stackoverflow.com/questions/8640959/how-can-i-control-what-scalar-form-pyyaml-uses-for-my-data
+    #     """
+    #     if data.count("\n") > 0:  # check for multiline string
+    #         return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+    #     return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 
-    yaml.add_representer(str, multiline_representer)
-
-    return args
+    # yaml.add_representer(str, multiline_representer)
 
 
 def main(args: ScriptArguments):

@@ -178,7 +178,7 @@ class ParseCommandBash(ParseCommand):
                         signature += f" [<{param}>]"
             code = contents
             return [
-                Command.from_dict(
+                Command.model_validate(
                     {
                         "code": code,
                         "docstring": docstring,

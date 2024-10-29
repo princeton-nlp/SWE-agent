@@ -15,7 +15,7 @@ name = "sweagent"
 dynamic = ["version", "dependencies"]
 description = "The official SWE-agent package - an open source Agent Computer Interface for running language models as software engineers."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {file = "LICENSE"}
 keywords = ["nlp", "agents", "code"]
 authors = [
@@ -114,7 +114,7 @@ exclude = [
 line-length = 120
 indent-width = 4
 
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
@@ -227,4 +227,4 @@ ACI = "ACI"
 aci = "aci"
 
 [tool.ruff.lint.isort]
-required-imports = ["from __future__ import annotations"]
+# required-imports = ["from __future__ import annotations"]

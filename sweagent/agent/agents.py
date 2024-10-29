@@ -302,8 +302,7 @@ class Agent:
         The path is reset for every new instance.
         """
         if self.traj_dir and self._env is not None:
-            assert self._env.record
-            return self.traj_dir / (self._env.record["instance_id"] + ".traj")
+            return self.traj_dir / (self._env.args.instance.id + ".traj")
         return None
 
     def add_hook(self, hook: AgentHook) -> None:
@@ -635,7 +634,7 @@ class Agent:
                     **self.instance_args,
                     **self.system_args,
                     **state_vars,
-                    observation=(observation if observation is not None else ""),
+                    observation=observation or "",
                     **self._forwarded_vars,
                 ),
             )
@@ -956,7 +955,6 @@ class Agent:
             If return_type is "info_trajectory", returns a tuple of
             the info dictionary and the trajectory (list of dictionaries).
         """
-        assert env.record is not None
         # if env.container_obj.id != self.last_container_id:
         # self.logger.info(f"Initializing agent settings for container {env.container_obj.id}")
         self.init_environment_vars(env)

@@ -12,7 +12,7 @@ from sweagent.environment.swe_env import EnvHook
 
 # baaaaaaad
 sys.path.append(str(PACKAGE_DIR.parent))
-from run import MainHook
+from sweagent.main.hooks import MainHook
 
 
 class StreamToSocketIO(io.StringIO):
