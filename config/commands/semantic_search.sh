@@ -17,7 +17,7 @@ semantic_search() {
     fi
 
     dir=$(realpath "$dir")
-    
+
     # Call Python script that handles the semantic search
     python3 config/commands/_semantic_search.py "$search_query" "$dir"
-} 
+}

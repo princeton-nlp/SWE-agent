@@ -21,33 +21,33 @@ def get_embedding(text, tokenizer, model):
 def semantic_search(query, directory):
     tokenizer, model = load_model()
     query_embedding = get_embedding(query, tokenizer, model)
-    
+
     results = []
     for root, _, files in os.walk(directory):
         for file in files:
             if file.startswith('.'):
                 continue
-                
+
             filepath = Path(root) / file
             try:
                 with open(filepath, 'r', encoding='utf-8') as f:
                     content = f.read()
-                
+
                 # Get embedding for file content
                 content_embedding = get_embedding(content[:512], tokenizer, model)  # Limit content length
-                
+
                 # Calculate similarity
                 similarity = np.dot(query_embedding, content_embedding) / (
                     np.linalg.norm(query_embedding) * np.linalg.norm(content_embedding)
                 )
-                
+
                 results.append((filepath, similarity))
             except:
                 continue
-    
+
     # Sort by similarity and return top results
     results.sort(key=lambda x: x[1], reverse=True)
-    
+
     # Print top 5 results
     print(f"\nTop semantic matches for query: '{query}'")
     for filepath, score in results[:5]:
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python _semantic_search.py <query> <directory>")
         sys.exit(1)
-        
+
     query = sys.argv[1]
     directory = sys.argv[2]
-    semantic_search(query, directory) 
+    semantic_search(query, directory)
