@@ -120,7 +120,8 @@ class GithubRepoConfig(BaseModel):
         """Prepend github token to URL"""
         if "@" in self.url:
             return self.url
-        return f"https://{token}@{self.url}"
+        _, _, url_no_protocol = self.url.partition("://")
+        return f"https://{token}@{url_no_protocol}"
 
 
 RepoConfig = LocalRepoConfig | GithubRepoConfig
@@ -249,7 +250,7 @@ class SWEEnv(gym.Env):
         else:
             base_commit = self.args.repo.base_commit
             self.communicate_with_handling(
-                input="&&".join(
+                input=" && ".join(
                     (
                         f"mkdir {self.args.repo.repo_name}",
                         f"cd {self.args.repo.repo_name}",
