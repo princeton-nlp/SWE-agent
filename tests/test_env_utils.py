@@ -8,14 +8,15 @@ import pytest
 
 from sweagent.environment.utils import (
     InvalidGithubURL,
-    format_trajectory_markdown,
-    get_associated_commit_urls,
     get_instances,
+)
+from sweagent.main.hooks.open_pr import _remove_triple_backticks, format_trajectory_markdown
+from sweagent.utils._github import (
+    get_associated_commit_urls,
     is_github_issue_url,
     is_github_repo_url,
     parse_gh_issue_url,
     parse_gh_repo_url,
-    remove_triple_backticks,
 )
 from sweagent.utils.config import keys_config
 
@@ -29,7 +30,7 @@ def test_format_trajectory_markdown(test_trajectory):
 
 
 def test_remove_triple_backticks():
-    assert remove_triple_backticks("```") == ""
+    assert _remove_triple_backticks("```") == ""
 
 
 def test_is_github_repo_url():

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
 import os
 import re
@@ -25,13 +26,12 @@ from swerex.runtime.abstract import BashAction, Command, CreateBashSessionReques
 # )
 from sweagent.environment.utils import (
     NoOutputTimeoutError,
-    PatchFormatter,
-    get_problem_statement_from_github_issue,
-    parse_gh_issue_url,
 )
 from sweagent.types import AgentInfo
+from sweagent.utils._github import get_problem_statement_from_github_issue, parse_gh_issue_url
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
+from sweagent.utils.patch_formatter import PatchFormatter
 
 LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500))
 AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
@@ -49,8 +49,6 @@ class DockerDeploymentConfig(BaseModel):
 
 class ModalDeploymentConfig(BaseModel):
     image: str = "sweagent/swe-agent:latest"
-
-    modal_username: str = "test"
 
     type: Literal["modal"] = "modal"
     """Discriminator for serialization. Do not change."""
@@ -70,10 +68,13 @@ class EmptyInstanceConfig(BaseModel):
 
 class TextInstanceConfig(BaseModel):
     problem_statement: str = ""
-    id: str = ""
 
     type: Literal["text"] = "text"
     """Discriminator for serialization. Do not change."""
+
+    @property
+    def id(self) -> str:
+        return hashlib.sha256(self.problem_statement.encode()).hexdigest()[:6]
 
     def get_problem_statement(self) -> str:
         return self.problem_statement
@@ -84,6 +85,10 @@ class TextFileInstanceConfig(BaseModel):
 
     type: Literal["text_file"] = "text_file"
     """Discriminator for serialization. Do not change."""
+
+    @property
+    def id(self) -> str:
+        return hashlib.sha256(self.get_problem_statement().encode()).hexdigest()[:6]
 
     def get_problem_statement(self) -> str:
         return Path(self.path).read_text()
@@ -98,7 +103,7 @@ class GithubInstanceConfig(BaseModel):
     @property
     def id(self) -> str:
         org, repo, issue = self.issue_url.split("/")[-3:]
-        return f"{org}__{repo}__{issue}"
+        return f"{org}__{repo}-i{issue}"
 
     def get_problem_statement(self) -> str:
         owner, repo, issue_number = parse_gh_issue_url(self.issue_url)

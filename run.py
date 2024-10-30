@@ -15,7 +15,7 @@ import traceback
 from argparse import ArgumentParser
 from pprint import pprint
 
-from sweagent.main.hooks import MainHook
+from sweagent.main.hooks.abstract import MainHook
 from sweagent.utils.log import add_file_handler, get_logger
 
 try:

@@ -6,7 +6,7 @@ from unittest import mock
 import pytest
 
 from sweagent import REPO_ROOT
-from sweagent.utils.config import Config, convert_path_to_abspath, convert_paths_to_abspath
+from sweagent.utils.config import Config, _convert_path_to_abspath, _convert_paths_to_abspath
 
 
 def test_config_retrieval_fails():
@@ -56,9 +56,9 @@ def test_retrieve_choices_config_file(tmp_path):
 
 
 def test_convert_path_to_abspath():
-    assert convert_path_to_abspath("sadf") == REPO_ROOT / "sadf"
-    assert convert_path_to_abspath("/sadf") == Path("/sadf")
+    assert _convert_path_to_abspath("sadf") == REPO_ROOT / "sadf"
+    assert _convert_path_to_abspath("/sadf") == Path("/sadf")
 
 
 def test_convert_paths_to_abspath():
-    assert convert_paths_to_abspath([Path("sadf"), "/sadf"]) == [REPO_ROOT / "sadf", Path("/sadf")]
+    assert _convert_paths_to_abspath([Path("sadf"), "/sadf"]) == [REPO_ROOT / "sadf", Path("/sadf")]

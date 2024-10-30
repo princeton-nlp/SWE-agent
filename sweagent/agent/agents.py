@@ -28,10 +28,11 @@ from sweagent.agent.parsing import FormatError, ParseFunction
 # from sweagent.agent.summarizer import SummarizerConfig
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.types import AgentInfo, History, HistoryItem, Trajectory, TrajectoryStep
-from sweagent.utils.config import convert_paths_to_abspath
+from sweagent.utils.config import _convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 
 
+# todo: factor out tools config and potentially try to only give it to SWEEnv. Agent should only need allow-lists and the final tools documentation
 class AgentConfig(BaseModel):
     system_template: str = ""
     instance_template: str = ""
@@ -117,8 +118,8 @@ class AgentConfig(BaseModel):
         return _commands
 
     def model_post_init(self, __context):
-        self.command_files = convert_paths_to_abspath(self.command_files)
-        self.demonstrations = convert_paths_to_abspath(self.demonstrations)
+        self.command_files = _convert_paths_to_abspath(self.command_files)
+        self.demonstrations = _convert_paths_to_abspath(self.demonstrations)
 
         if self.next_step_template is None:
             self.next_step_template = self.instance_template
@@ -217,6 +218,7 @@ class SubAction(TypedDict):
     args: str
 
 
+# todo: Can this class be split up into separate responsibilities?
 class Agent:
     """Agent handles the behaviour of the model and how it interacts with the environment."""
 
@@ -474,6 +476,7 @@ class Agent:
         matches = sorted(matches, key=lambda x: x.start())
         return matches[0]
 
+    #: todo: Should that be a utility function??
     def _guard_multiline_input(self, action: str) -> str:
         """Split action by multiline commands, then append the first line in each multiline command with "<< '{end_name}'".
         Multiline commands (which are specified by an end_name) are commands that span multiple lines and are terminated by a specific end_name.
@@ -504,6 +507,7 @@ class Agent:
                 rem_action = ""
         return "\n".join(parsed_action)
 
+    # todo: Do we still need that now that we don't have subroutines
     def split_actions(self, action: str, pattern_type="subroutine") -> list[SubAction]:
         """Split an action into a list of actions in a greedy manner, each of which is a subroutine call or a single command."""
         parsed_action: list[SubAction] = list()

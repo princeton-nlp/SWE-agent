@@ -15,7 +15,8 @@ from run import ActionsArguments, Main, ScriptArguments
 from sweagent.agent.agents import Agent, AgentConfig, AgentHook
 from sweagent.agent.models import ModelArguments
 from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
-from sweagent.main.hooks import MainHook, OpenPRHook
+from sweagent.main.hooks.abstract import MainHook
+from sweagent.main.hooks.open_pr import OpenPRHook
 
 
 @pytest.mark.slow

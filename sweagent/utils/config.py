@@ -11,7 +11,7 @@ from sweagent.utils.log import get_logger
 logger = get_logger("config")
 
 
-def convert_path_to_abspath(path: Path | str) -> Path:
+def _convert_path_to_abspath(path: Path | str) -> Path:
     """If path is not absolute, convert it to an absolute path
     using the SWE_AGENT_CONFIG_ROOT environment variable (if set) or
     REPO_ROOT as base.
@@ -25,8 +25,8 @@ def convert_path_to_abspath(path: Path | str) -> Path:
     return path.resolve()
 
 
-def convert_paths_to_abspath(paths: list[Path] | list[str]) -> list[str]:
-    return [str(convert_path_to_abspath(p)) for p in paths]
+def _convert_paths_to_abspath(paths: list[Path] | list[str]) -> list[str]:
+    return [str(_convert_path_to_abspath(p)) for p in paths]
 
 
 class Config:
