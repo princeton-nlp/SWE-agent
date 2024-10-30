@@ -12,11 +12,14 @@ from sweagent.environment.swe_env import EnvironmentInstanceConfig
 
 
 class AbstractInstanceSource(ABC):
+    """Anything that adheres to this standard can be used to load instances."""
+
     @abstractmethod
     def get_instance_configs(self) -> list[EnvironmentInstanceConfig]: ...
 
 
 def _load_file(path: Path) -> Any:
+    """Load files based on their extension."""
     if not path.exists():
         raise FileNotFoundError(path)
     if path.is_dir():
@@ -36,20 +39,27 @@ def _filter_instances(instances: list[EnvironmentInstanceConfig], filter: str) -
 
 
 class BatchInstance(BaseModel):
+    """A single instance in a batch of instances."""
+
     image_name: str
     problem_statement: str
     id: str
 
     def _to_env_config(self, deployment_kwargs: dict[str, Any]) -> EnvironmentInstanceConfig:
+        """Merge the deployment options into the BatchInstance object to get a full `EnvironmentInstanceConfig`."""
         deployment = TypeAdapter(DeploymentConfig).validate_python(dict(image=self.image_name, **deployment_kwargs))
         problem_statement = TextProblemStatement(problem_statement=self.problem_statement)
         return EnvironmentInstanceConfig(deployment=deployment, problem_statement=problem_statement, repo=None)
 
 
 class InstancesFromFile(BaseModel, AbstractInstanceSource):
+    """Load instances from a file."""
+
     path: Path
     instance_filter: str = ".*"
+
     deployment: dict[str, Any]
+    """Any options for one of the `DeploymentConfig` subclasses."""
 
     simple: Literal[True] = True
     """Convenience discriminator for (de)serialization/CLI. Do not change."""
@@ -64,11 +74,14 @@ class InstancesFromFile(BaseModel, AbstractInstanceSource):
 
 
 class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
+    """Load instances from HuggingFace."""
+
     dataset_name: str
     split: str
     instance_filter: str = ".*"
-    deployment: dict[str, Any]
 
+    deployment: dict[str, Any]
+    """Any options for one of the `DeploymentConfig` subclasses."""
     type: Literal["simple_huggingface"]
     """Discriminator for (de)serialization/CLI. Do not change."""
 
@@ -81,6 +94,10 @@ class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
 
 
 class ExpertInstancesFromFile(BaseModel, AbstractInstanceSource):
+    """Load instances from a file. The difference to `InstancesFromFile` is that the instances are configured as full
+    `EnvironmentInstanceConfig` objects, i.e., we could specify separate deployment configurations etc.
+    """
+
     path: Path
     instance_filter: str = ".*"
 
