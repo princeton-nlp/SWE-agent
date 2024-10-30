@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from omegaconf import OmegaConf
 
+from sweagent.environment.config.deployment import DeploymentConfig
+
 try:
     import flask  # noqa
 except ImportError as e:
@@ -32,7 +34,7 @@ from sweagent.agent.agents import AgentConfig
 from sweagent.agent.models import ModelArguments
 from sweagent.api.hooks import AgentUpdateHook, EnvUpdateHook, MainUpdateHook, WebUpdate
 from sweagent.api.utils import AttrDict, ThreadWithExc
-from sweagent.environment.swe_env import DeploymentConfig, EnvironmentConfig
+from sweagent.environment.swe_env import EnvironmentConfig
 
 # baaaaaaad
 sys.path.append(str(PACKAGE_DIR.parent))

@@ -15,6 +15,7 @@ import traceback
 from argparse import ArgumentParser
 from pprint import pprint
 
+from sweagent.environment.config.deployment import DockerDeploymentConfig
 from sweagent.main.hooks.abstract import MainHook
 from sweagent.utils.log import add_file_handler, get_logger
 
@@ -36,7 +37,7 @@ from unidiff import PatchSet
 
 from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.agent.models import ModelArguments
-from sweagent.environment.swe_env import DockerDeploymentConfig, EnvironmentConfig, SWEEnv
+from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
 
 __doc__: str = """ Run inference. Usage examples:
 

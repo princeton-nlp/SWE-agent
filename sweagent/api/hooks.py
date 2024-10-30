@@ -8,7 +8,7 @@ from flask_socketio import SocketIO
 from sweagent import PACKAGE_DIR
 from sweagent.agent.agents import AgentHook
 from sweagent.api.utils import strip_ansi_sequences
-from sweagent.environment.swe_env import EnvHook
+from sweagent.environment.hooks.abstract import EnvHook
 
 # baaaaaaad
 sys.path.append(str(PACKAGE_DIR.parent))

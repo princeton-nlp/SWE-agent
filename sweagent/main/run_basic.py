@@ -30,7 +30,7 @@ class BasicMain:
         self.args = args
         self.logger = get_logger("PlaygroundMain")
         self.logger.info("Initializing environment")
-        self.env = SWEEnv(args.env)
+        self.env = SWEEnv.from_config(args.env)
         self.logger.info("Initializing agent")
         self.agent = Agent("main", args.agent)
 

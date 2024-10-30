@@ -305,7 +305,7 @@ class Agent:
         The path is reset for every new instance.
         """
         if self.traj_dir and self._env is not None:
-            return self.traj_dir / (self._env.args.instance.id + ".traj")
+            return self.traj_dir / (self._env.instance.id + ".traj")
         return None
 
     def add_hook(self, hook: AgentHook) -> None:

@@ -1,34 +1,26 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import logging
-import os
 import re
 import shlex
-import time
-import uuid
-from pathlib import Path, PurePath
-from typing import Any, Literal, Self
+from pathlib import PurePath
+from typing import Any, Self
 
 import gymnasium as gym
-import pydantic
-from git import InvalidGitRepositoryError, Repo
 from pydantic import BaseModel, Field
 from swerex.deployment import get_deployment
 from swerex.deployment.abstract import AbstractDeployment
-from swerex.runtime.abstract import BashAction, Command, CreateBashSessionRequest, UploadRequest, WriteFileRequest
+from swerex.runtime.abstract import BashAction, CreateBashSessionRequest, WriteFileRequest
 
-# from sweagent.agent.interactive_commands import (
-#     INTERACTIVE_SESSIONS_CONFIG,
-#     InteractiveSession,
-#     InteractiveSessionConfig,
-# )
+from sweagent.environment.config.deployment import DeploymentConfig, DockerDeploymentConfig
+from sweagent.environment.config.instance import EmptyInstanceConfig, InstanceConfig
+from sweagent.environment.config.repo import RepoConfig
+from sweagent.environment.hooks.abstract import EnvHook
 from sweagent.environment.utils import (
     NoOutputTimeoutError,
 )
 from sweagent.types import AgentInfo
-from sweagent.utils._github import get_problem_statement_from_github_issue, parse_gh_issue_url
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 from sweagent.utils.patch_formatter import PatchFormatter
@@ -36,164 +28,6 @@ from sweagent.utils.patch_formatter import PatchFormatter
 LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500))
 AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
 AGENT_ACTION_NO_OUTPUT_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_NO_OUTPUT_TIMEOUT", AGENT_ACTION_TIMEOUT))
-
-
-class DockerDeploymentConfig(BaseModel):
-    """Configuration for the deployment of the environment"""
-
-    image: str = "sweagent/swe-agent:latest"
-
-    type: Literal["docker"] = "docker"
-    """Discriminator for serialization. Do not change."""
-
-
-class ModalDeploymentConfig(BaseModel):
-    image: str = "sweagent/swe-agent:latest"
-
-    type: Literal["modal"] = "modal"
-    """Discriminator for serialization. Do not change."""
-
-
-DeploymentConfig = DockerDeploymentConfig | ModalDeploymentConfig
-
-
-class EmptyInstanceConfig(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    type: Literal["empty"] = "empty"
-    """Discriminator for serialization. Do not change."""
-
-    def get_problem_statement(self) -> str:
-        return ""
-
-
-class TextInstanceConfig(BaseModel):
-    problem_statement: str = ""
-
-    type: Literal["text"] = "text"
-    """Discriminator for serialization. Do not change."""
-
-    @property
-    def id(self) -> str:
-        return hashlib.sha256(self.problem_statement.encode()).hexdigest()[:6]
-
-    def get_problem_statement(self) -> str:
-        return self.problem_statement
-
-
-class TextFileInstanceConfig(BaseModel):
-    path: str = ""
-
-    type: Literal["text_file"] = "text_file"
-    """Discriminator for serialization. Do not change."""
-
-    @property
-    def id(self) -> str:
-        return hashlib.sha256(self.get_problem_statement().encode()).hexdigest()[:6]
-
-    def get_problem_statement(self) -> str:
-        return Path(self.path).read_text()
-
-
-class GithubInstanceConfig(BaseModel):
-    issue_url: str = ""
-
-    type: Literal["github"] = "github"
-    """Discriminator for serialization. Do not change."""
-
-    @property
-    def id(self) -> str:
-        org, repo, issue = self.issue_url.split("/")[-3:]
-        return f"{org}__{repo}-i{issue}"
-
-    def get_problem_statement(self) -> str:
-        owner, repo, issue_number = parse_gh_issue_url(self.issue_url)
-        return get_problem_statement_from_github_issue(owner, repo, issue_number, token=keys_config.get("GITHUB_TOKEN"))
-
-
-InstanceConfig = TextInstanceConfig | GithubInstanceConfig | EmptyInstanceConfig
-
-
-class LocalRepoConfig(BaseModel):
-    path: str = ""
-    base_commit: str = "HEAD"
-
-    type: Literal["local"] = "local"
-    """Discriminator for serialization. Do not change."""
-
-    @property
-    def repo_name(self) -> str:
-        return Path(self.path).resolve().name.replace(" ", "-").replace("'", "")
-
-    @pydantic.model_validator(mode="after")
-    def check_valid_repo(self) -> Self:
-        try:
-            repo = Repo(self.path, search_parent_directories=True)
-        except InvalidGitRepositoryError as e:
-            msg = f"Could not find git repository at {self.path=}."
-            raise ValueError(msg) from e
-        if repo.is_dirty() and "PYTEST_CURRENT_TEST" not in os.environ:
-            msg = f"Local git repository {self.path} is dirty. Please commit or stash changes."
-            raise ValueError(msg)
-        return self
-
-    def copy(self, deployment: AbstractDeployment):
-        asyncio.run(deployment.runtime.upload(UploadRequest(source_path=self.path, target_path=f"/{self.repo_name}")))
-        r = asyncio.run(deployment.runtime.execute(Command(command=f"chown -R root:root {self.repo_name}", shell=True)))
-        if r.exit_code != 0:
-            msg = f"Failed to change permissions on copied repository (exit code: {r.exit_code}, stdout: {r.stdout}, stderr: {r.stderr})"
-            raise RuntimeError(msg)
-
-
-class GithubRepoConfig(BaseModel):
-    url: str = ""
-
-    base_commit: str = "HEAD"
-
-    type: Literal["github"] = "github"
-    """Discriminator for serialization. Do not change."""
-
-    @property
-    def repo_name(self) -> str:
-        # fixme: Need to replace ":" etc.
-        org, repo = self.url.split("/")[-2:]
-        return f"{org}__{repo}"
-
-    def _get_url_with_token(self, token: str) -> str:
-        """Prepend github token to URL"""
-        if "@" in self.url:
-            return self.url
-        _, _, url_no_protocol = self.url.partition("://")
-        return f"https://{token}@{url_no_protocol}"
-
-    def copy(self, deployment: AbstractDeployment):
-        base_commit = self.base_commit
-        github_token = keys_config.get("GITHUB_TOKEN", "")
-        url = self._get_url_with_token(github_token)
-        r = asyncio.run(
-            deployment.runtime.execute(
-                Command(
-                    command=" && ".join(
-                        (
-                            f"mkdir {self.repo_name}",
-                            f"cd {self.repo_name}",
-                            "git init",
-                            f"git remote add origin {url}",
-                            f"git fetch --depth 1 origin {base_commit}",
-                            "git checkout FETCH_HEAD",
-                            "cd ..",
-                        )
-                    ),
-                    timeout=LONG_TIMEOUT,
-                    shell=True,
-                )
-            ),
-        )
-        if r.exit_code != 0:
-            msg = f"Failed to clone repository (exit code: {r.exit_code}, stdout: {r.stdout}, stderr: {r.stderr})"
-            raise RuntimeError(msg)
-
-
-RepoConfig = LocalRepoConfig | GithubRepoConfig
 
 
 class EnvironmentConfig(BaseModel):
@@ -210,63 +44,56 @@ class EnvironmentConfig(BaseModel):
             self.deployment = DockerDeploymentConfig()
 
 
-class EnvHook:
-    """Hook to be used in `SWEEnv`.
-
-    Subclass this class, add functionality and add it with `SWEEEnv.add_hook(hook)`.
-    This allows to inject custom functionality at different stages of the environment
-    lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).
-    """
-
-    def on_init(self) -> None:
-        """Gets called when the hook is added"""
-
-    def on_copy_repo_started(self, repo: RepoConfig) -> None:
-        """Gets called when the repository is being cloned to the container"""
-
-    def on_install_env_started(self) -> None:
-        """Called when we start installing the environment"""
-
-    def on_close(self):
-        """Called when the environment is closed"""
-
-
 # todo: Do we really need to inherit from gym.Env?
 class SWEEnv(gym.Env):
     """Gym environment for SWE-bench. This class should handle all communication with the docker container."""
 
     name = "swe_main"
 
-    def __init__(self, args: EnvironmentConfig):
+    def __init__(
+        self,
+        *,
+        deployment: AbstractDeployment,
+        repo: RepoConfig | None,
+        instance: InstanceConfig,
+        startup_commands: list[str],
+    ):
         super().__init__()
-        t0 = time.perf_counter()
-        self.args = args
-        self.logger = get_logger("SWEEnv")
+        self.deployment = deployment
+        self.repo = repo
+        self.instance = instance
+        self._startup_commands = startup_commands
+        self.logger = get_logger("🌱 SWEEnv")
         # todo: get rid of this
         self.returncode: None | int = None
 
-        # Establish connection with execution container
-        # self.docker_compose: Path | None = None
-        # self.challenge: dict[str, Any] | None = None
+        # todo: There should be a start function, so I can call `add_hook` before anything happens
         self._init_container()
         self._init_scripts()
 
-        # self.interactive_session: InteractiveSession | None = None
-
-        self.idx = 0
         self.clean_multi_line_functions = lambda x: x
-        self.hooks: list[EnvHook] = []
+        self._hooks: list[EnvHook] = []
 
-        self.logger.debug("Environment initialization took %.2f seconds", time.perf_counter() - t0)
+    @classmethod
+    def from_config(cls, config: EnvironmentConfig) -> Self:
+        deployment_kwargs = {k: v for k, v in config.deployment.model_dump().items() if k != "type"}
+        deployment = get_deployment(config.deployment.type, **deployment_kwargs)  # type: ignore
+        return cls(
+            deployment=deployment, repo=config.repo, instance=config.instance, startup_commands=config.startup_commands
+        )
 
-    def add_hook(self, hook: EnvHook):
+    @property
+    def hooks(self) -> list[EnvHook]:
+        return self._hooks
+
+    def add_hook(self, hook: EnvHook) -> None:
         """Add `EnvHook` to the environment.
 
         This allows to inject custom functionality at different stages of the environment
         lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).
         """
         hook.on_init()
-        self.hooks.append(hook)
+        self._hooks.append(hook)
 
     # @property
     # def _repo_name(self) -> str:
@@ -276,19 +103,17 @@ class SWEEnv(gym.Env):
     # todo: Ideally move that to the RepoClasses
     def _copy_repo(self) -> None:
         """Clone/copy repository/codebase in container"""
-        if self.args.repo is None:
+        if self.repo is None:
             return
 
         folders = self.communicate(input="ls").split("\n")
-        if self.args.repo.repo_name in folders:
+        if self.repo.repo_name in folders:
             return
 
-        # assert self.container_obj is not None
         for hook in self.hooks:
-            if self.args.repo:
-                hook.on_copy_repo_started(self.args.repo)
+            hook.on_copy_repo_started(self.repo)
 
-        self.args.repo.copy(self.deployment)
+        self.repo.copy(self.deployment)
 
     def reset(self) -> tuple[str | None, dict]:
         """
@@ -347,17 +172,17 @@ class SWEEnv(gym.Env):
 
     def _reset_repository(self) -> None:
         """Clean repository of any modifications + Checkout base commit"""
-        if self.args.repo is not None:
+        if self.repo is not None:
             startup_commands = [
                 "echo -n > /root/files_to_edit.txt",
-                f"cd /{self.args.repo.repo_name}",
+                f"cd /{self.repo.repo_name}",
                 "export ROOT=$(pwd -P)",
             ]
             # if self.challenge is None:
             startup_commands += [
                 "git status",
                 "git restore .",
-                f"git reset --hard {self.args.repo.base_commit}",
+                f"git reset --hard {self.repo.base_commit}",
                 "git clean -fdxq",
             ]
             self.communicate_with_handling(
@@ -632,8 +457,6 @@ class SWEEnv(gym.Env):
         Handles container initialization. Defines container name and creates it.
         If cached_image is provided, it will use that image name instead of the default.
         """
-        kwargs = {k: v for k, v in self.args.deployment.model_dump().items() if k != "type"}
-        self.deployment = get_deployment(self.args.deployment.type, **kwargs)  # type: ignore
         asyncio.run(self.deployment.start())
         asyncio.run(self.deployment.runtime.create_session(CreateBashSessionRequest(startup_source=["/root/.bashrc"])))
         self.logger.info("🌱 Environment Initialized")
@@ -932,5 +755,5 @@ class SWEEnv(gym.Env):
             file_contents: Contents of file as string
         """
         # todo: Just use the runtime for this instead
-        path_in_container = f"/{self.args.repo.repo_name}/{path}"
+        path_in_container = f"/{self.repo.repo_name}/{path}"
         return self.communicate(f"cat {str(path_in_container)}")

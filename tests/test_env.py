@@ -8,7 +8,7 @@ import pytest
 import yaml
 
 from sweagent import CONFIG_DIR
-from sweagent.environment.swe_env import EnvHook
+from sweagent.environment.hooks.abstract import EnvHook
 
 from .conftest import swe_env_context
 
