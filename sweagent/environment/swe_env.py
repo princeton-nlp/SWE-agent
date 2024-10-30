@@ -13,7 +13,7 @@ from swerex.deployment.abstract import AbstractDeployment
 from swerex.runtime.abstract import BashAction, CreateBashSessionRequest, WriteFileRequest
 
 from sweagent.environment.config.deployment import DeploymentConfig, DockerDeploymentConfig
-from sweagent.environment.config.instance import EmptyInstanceConfig, InstanceConfig
+from sweagent.environment.config.problem_statement import EmptyProblemStatement, ProblemStatementConfig
 from sweagent.environment.config.repo import RepoConfig
 from sweagent.environment.hooks.abstract import EnvHook
 from sweagent.environment.utils import (
@@ -29,10 +29,10 @@ AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
 AGENT_ACTION_NO_OUTPUT_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_NO_OUTPUT_TIMEOUT", AGENT_ACTION_TIMEOUT))
 
 
-class EnvironmentConfig(BaseModel):
+class EnvironmentInstanceConfig(BaseModel):
     """Configure data sources and setup instructions for the environment in which we solve the tasks."""
 
-    instance: InstanceConfig = Field(default_factory=EmptyInstanceConfig)
+    problem_statement: ProblemStatementConfig = Field(default_factory=EmptyProblemStatement)
     deployment: DeploymentConfig | None = None
     repo: RepoConfig | None = None
     startup_commands: list[str] = []
@@ -54,7 +54,7 @@ class SWEEnv:
         deployment: AbstractDeployment,
         # todo: Should None be included in RepoConfig?
         repo: RepoConfig | None,
-        instance: InstanceConfig,
+        instance: ProblemStatementConfig,
         startup_commands: list[str],
         hooks: list[EnvHook] | None = None,
     ):
@@ -68,7 +68,9 @@ class SWEEnv:
         self.returncode: None | int = None
 
         self.clean_multi_line_functions = lambda x: x
-        self._hooks: list[EnvHook] = hooks or []
+        self._hooks: list[EnvHook] = []
+        for hook in hooks or []:
+            self.add_hook(hook)
 
     def start(self) -> None:
         """Start the environment"""
@@ -76,11 +78,14 @@ class SWEEnv:
         self._init_scripts()
 
     @classmethod
-    def from_config(cls, config: EnvironmentConfig) -> Self:
+    def from_config(cls, config: EnvironmentInstanceConfig) -> Self:
         deployment_kwargs = {k: v for k, v in config.deployment.model_dump().items() if k != "type"}
         deployment = get_deployment(config.deployment.type, **deployment_kwargs)  # type: ignore
         return cls(
-            deployment=deployment, repo=config.repo, instance=config.instance, startup_commands=config.startup_commands
+            deployment=deployment,
+            repo=config.repo,
+            instance=config.problem_statement,
+            startup_commands=config.startup_commands,
         )
 
     @property

@@ -1,12 +1,11 @@
-from pathlib import Path
 from typing import Any
 
-from run import ScriptArguments, logger
-from sweagent.agent.agents import Agent
-from sweagent.environment.swe_env import SWEEnv
+from pydantic import BaseModel
+
 from sweagent.environment.utils import InvalidGithubURL
-from sweagent.main.hooks.abstract import MainHook
+from sweagent.run.hooks.abstract import RunHook
 from sweagent.utils._github import get_associated_commit_urls, get_gh_issue_data, parse_gh_issue_url
+from sweagent.utils.log import get_logger
 
 # todo: Move this to run.py
 # def open_pr(self, *, trajectory, _dry_run: bool = False) -> None:
@@ -110,15 +109,25 @@ from sweagent.utils._github import get_associated_commit_urls, get_gh_issue_data
 #         )
 
 
-class OpenPRHook(MainHook):
+class OpenPRConfig(BaseModel):
+    # Option to be used with open_pr: Skip action if there are already commits claiming
+    # to fix the issue. Please only set this to False if you are sure the commits are
+    # not fixes or if this is your own repository!
+    skip_if_commits_reference_issue: bool = True
+
+
+class OpenPRHook(RunHook):
     """This hook opens a PR if the issue is solved and the user has enabled the option."""
 
-    def on_init(self, *, args: ScriptArguments, agent: Agent, env: SWEEnv, traj_dir: Path):
-        self._env = env
-        self._token: str = env._github_token
-        self._data_path = args.environment.data_path
-        self._open_pr = args.actions.open_pr
-        self._skip_if_commits_reference_issue = args.actions.skip_if_commits_reference_issue
+    def __init__(self, config: OpenPRConfig):
+        self.logger = get_logger("⚡️ OpenPRHook")
+        self._config = config
+
+    def on_init(self, *, run):
+        self._env = run.env
+        self._token: str = run.env._github_token
+        self._data_path = run.actions.data_path
+        self._open_pr = run.actions.open_pr
 
     def on_instance_completed(self, *, info, trajectory):
         if self._open_pr and self.should_open_pr(info):
@@ -127,34 +136,34 @@ class OpenPRHook(MainHook):
     def should_open_pr(self, info: dict[str, Any]) -> bool:
         """Does opening a PR make sense?"""
         if not info.get("submission"):
-            logger.info("Not opening PR because no submission was made.")
+            self.logger.info("Not opening PR because no submission was made.")
             return False
         if info["exit_status"] != "submitted":
-            logger.info("Not opening PR because exit status was %s and not submitted.", info["exit_status"])
+            self.logger.info("Not opening PR because exit status was %s and not submitted.", info["exit_status"])
             return False
         try:
             issue = get_gh_issue_data(self._data_path, token=self._token)
         except InvalidGithubURL:
-            logger.info("Currently only GitHub is supported to open PRs to. Skipping PR creation.")
+            self.logger.info("Currently only GitHub is supported to open PRs to. Skipping PR creation.")
             return False
         if issue.state != "open":
-            logger.info(f"Issue is not open (state={issue.state}. Skipping PR creation.")
+            self.logger.info(f"Issue is not open (state={issue.state}. Skipping PR creation.")
             return False
         if issue.assignee:
-            logger.info("Issue is already assigned. Skipping PR creation. Be nice :)")
+            self.logger.info("Issue is already assigned. Skipping PR creation. Be nice :)")
             return False
         if issue.locked:
-            logger.info("Issue is locked. Skipping PR creation.")
+            self.logger.info("Issue is locked. Skipping PR creation.")
             return False
         org, repo, issue_number = parse_gh_issue_url(self._data_path)
         associated_commits = get_associated_commit_urls(org, repo, issue_number, token=self._token)
         if associated_commits:
             commit_url_strs = ", ".join(associated_commits)
-            if self._skip_if_commits_reference_issue:
-                logger.info(f"Issue already has associated commits (see {commit_url_strs}). Skipping PR creation.")
+            if self._config.skip_if_commits_reference_issue:
+                self.logger.info(f"Issue already has associated commits (see {commit_url_strs}). Skipping PR creation.")
                 return False
             else:
-                logger.warning(
+                self.logger.warning(
                     "Proceeding with PR creation even though there are already commits "
                     f"({commit_url_strs}) associated with the issue. Please only do this for your own repositories "
                     "or after verifying that the existing commits do not fix the issue.",

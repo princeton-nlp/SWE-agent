@@ -12,7 +12,7 @@ from sweagent.environment.hooks.abstract import EnvHook
 
 # baaaaaaad
 sys.path.append(str(PACKAGE_DIR.parent))
-from sweagent.main.hooks.abstract import MainHook
+from sweagent.run.hooks.abstract import RunHook
 
 
 class StreamToSocketIO(io.StringIO):
@@ -95,7 +95,7 @@ class WebUpdate:
         self._emit("finish_run", {})
 
 
-class MainUpdateHook(MainHook):
+class MainUpdateHook(RunHook):
     def __init__(self, wu: WebUpdate):
         """This hooks into the Main class to update the web interface"""
         self._wu = wu

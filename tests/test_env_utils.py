@@ -10,7 +10,7 @@ from sweagent.environment.utils import (
     InvalidGithubURL,
     get_instances,
 )
-from sweagent.main.hooks.open_pr import _remove_triple_backticks, format_trajectory_markdown
+from sweagent.run.hooks.open_pr import _remove_triple_backticks, format_trajectory_markdown
 from sweagent.utils._github import (
     get_associated_commit_urls,
     is_github_issue_url,

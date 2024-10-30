@@ -1,12 +1,7 @@
-from pathlib import Path
 from typing import Any
 
-from run import ScriptArguments
-from sweagent.agent.agents import Agent
-from sweagent.environment.swe_env import SWEEnv
 
-
-class MainHook:
+class RunHook:
     """Hook structure for the web server or other addons to interface with"""
 
     @staticmethod
@@ -17,7 +12,7 @@ class MainHook:
         # The exit status can also be `submitted (exit_cost)` etc.
         return info["exit_status"] == "submitted" and info.get("submission") is not None
 
-    def on_init(self, *, args: ScriptArguments, agent: Agent, env: SWEEnv, traj_dir: Path):
+    def on_init(self, *, run):
         """Called when hook is initialized"""
 
     def on_start(self):

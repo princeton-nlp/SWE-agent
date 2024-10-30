@@ -16,7 +16,8 @@ from argparse import ArgumentParser
 from pprint import pprint
 
 from sweagent.environment.config.deployment import DockerDeploymentConfig
-from sweagent.main.hooks.abstract import MainHook
+from sweagent.run.hooks.abstract import RunHook
+from sweagent.run.run_single import RunSingleActionConfig
 from sweagent.utils.log import add_file_handler, get_logger
 
 try:
@@ -29,7 +30,7 @@ from getpass import getuser
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import Field
 from pydantic_settings import BaseSettings, CliApp
 from rich.markdown import Markdown
 from swebench.harness.constants import KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION
@@ -37,7 +38,7 @@ from unidiff import PatchSet
 
 from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.agent.models import ModelArguments
-from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
+from sweagent.environment.swe_env import EnvironmentInstanceConfig, SWEEnv
 
 __doc__: str = """ Run inference. Usage examples:
 
@@ -56,32 +57,12 @@ logger = get_logger("swe-agent-run")
 logging.getLogger("simple_parsing").setLevel(logging.WARNING)
 
 
-class ActionsArguments(BaseModel):
-    """Run real-life actions (opening PRs, etc.) if we can solve the issue."""
-
-    # Open a PR with the patch if we can solve the issue
-    open_pr: bool = False
-    # When working with local repository: Apply patch
-    apply_patch_locally: bool = False
-    # Option to be used with open_pr: Skip action if there are already commits claiming
-    # to fix the issue. Please only set this to False if you are sure the commits are
-    # not fixes or if this is your own repository!
-    skip_if_commits_reference_issue: bool = True
-    # OBSOLETE. Do not use, will raise error. Please specify --repo_path instead.
-    push_gh_repo_url: str = ""
-
-    def model_post_init(self, __context):
-        if self.push_gh_repo_url:
-            msg = "push_gh_repo_url is obsolete. Use repo_path instead"
-            raise ValueError(msg)
-
-
 class ScriptArguments(BaseSettings):
     """Configure the control flow of the run.py script"""
 
-    environment: EnvironmentConfig = Field(..., default_factory=EnvironmentConfig)
+    environment: EnvironmentInstanceConfig = Field(..., default_factory=EnvironmentInstanceConfig)
     agent: AgentConfig = Field(..., default_factory=AgentConfig)
-    actions: ActionsArguments = Field(..., default_factory=ActionsArguments)
+    actions: RunSingleActionConfig = Field(..., default_factory=RunSingleActionConfig)
     # Only run instances that completely match this regex
     instance_filter: str = ".*"
     # Skip instances with existing trajectories
@@ -145,11 +126,11 @@ class Main:
             # SaveApplyPatchHook(),
             # OpenPRHook(),
         ]
-        self.hooks: list[MainHook] = []
+        self.hooks: list[RunHook] = []
         for hook in default_hooks:
             self.add_hook(hook)
 
-    def add_hook(self, hook: MainHook):
+    def add_hook(self, hook: RunHook):
         hook.on_init(args=self.args, agent=self.agent, env=self.env, traj_dir=self.traj_dir)
         self.hooks.append(hook)
 
@@ -319,7 +300,7 @@ def get_args(args=None) -> ScriptArguments:
     # Otherwise, the configs from the respective classes will be used
     no_config_defaults = ScriptArguments(
         suffix="",
-        environment=EnvironmentConfig(
+        environment=EnvironmentInstanceConfig(
             deployment=DockerDeploymentConfig(),
             # data_path="princeton-nlp/SWE-bench_Lite",
             # split="dev",
@@ -338,7 +319,7 @@ def get_args(args=None) -> ScriptArguments:
                 top_p=0.95,
             ),
         ),
-        actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
+        actions=RunSingleActionConfig(open_pr=False, skip_if_commits_reference_issue=True),
         ctf=False,
     )
 

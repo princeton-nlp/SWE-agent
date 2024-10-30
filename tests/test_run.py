@@ -11,12 +11,13 @@ from typing import Any
 import pytest
 
 import docker
-from run import ActionsArguments, Main, ScriptArguments
+from run import Main, ScriptArguments
 from sweagent.agent.agents import Agent, AgentConfig, AgentHook
 from sweagent.agent.models import ModelArguments
-from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
-from sweagent.main.hooks.abstract import MainHook
-from sweagent.main.hooks.open_pr import OpenPRHook
+from sweagent.environment.swe_env import EnvironmentInstanceConfig, SWEEnv
+from sweagent.run.hooks.abstract import RunHook
+from sweagent.run.hooks.open_pr import OpenPRHook
+from sweagent.run.run_single import RunSingleActionConfig
 
 
 @pytest.mark.slow
@@ -96,7 +97,7 @@ def test_should_open_pr_success_has_pr_override(open_pr_hook_init_for_sop, info_
     assert hook.should_open_pr(info_dict)
 
 
-class RaisesExceptionHook(MainHook):
+class RaisesExceptionHook(RunHook):
     def on_instance_start(self, *, index: int, instance: dict[str, Any]):
         msg = "test exception"
         raise ValueError(msg)
@@ -106,7 +107,7 @@ class RaisesExceptionHook(MainHook):
 def test_script_args():
     return ScriptArguments(
         suffix="",
-        environment=EnvironmentConfig(
+        environment=EnvironmentInstanceConfig(
             image_name="sweagent/swe-agent:latest",
             data_path="https://github.com/swe-agent/test-repo/issues/1",
             split="dev",
@@ -119,7 +120,7 @@ def test_script_args():
                 name="instant_empty_submit",
             ),
         ),
-        actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
+        actions=RunSingleActionConfig(open_pr=False, skip_if_commits_reference_issue=True),
         raise_exceptions=True,
         print_config=False,
     )
@@ -135,7 +136,7 @@ def test_exception_raised(test_script_args: ScriptArguments):
 
 
 @pytest.mark.slow
-class CreateFakeLogFile(MainHook):
+class CreateFakeLogFile(RunHook):
     """Testing the skip functionality"""
 
     def on_init(self, *, args: ScriptArguments, agent: Agent, env: SWEEnv, traj_dir: Path):
@@ -160,7 +161,7 @@ def test_existing_corrupted_args(test_script_args: ScriptArguments):
 @pytest.mark.slow
 def test_main_hook(test_script_args: ScriptArguments):
     main = Main(test_script_args)
-    main.add_hook(MainHook())
+    main.add_hook(RunHook())
     main.main()
 
 

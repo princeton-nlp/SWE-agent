@@ -12,7 +12,7 @@ import pytest
 
 import docker
 import docker.errors
-from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
+from sweagent.environment.swe_env import EnvironmentInstanceConfig, SWEEnv
 
 # this is a hack and should be removed when we have a better solution
 _this_dir = Path(__file__).resolve().parent
@@ -76,13 +76,13 @@ def test_trajectory(test_trajectory_path):
 @pytest.fixture(scope="module")
 def test_env_args(
     tmpdir_factory,
-) -> Generator[EnvironmentConfig]:
+) -> Generator[EnvironmentInstanceConfig]:
     """This will use a persistent container"""
     local_repo_path = tmpdir_factory.getbasetemp() / "test-repo"
     clone_cmd = ["git", "clone", "https://github.com/swe-agent/test-repo", str(local_repo_path)]
     subprocess.run(clone_cmd, check=True)
     data_path = local_repo_path / "problem_statements" / "1.md"
-    test_env_args = EnvironmentConfig(
+    test_env_args = EnvironmentInstanceConfig(
         data_path=str(data_path),
         repo_path=str(local_repo_path),
         image_name="sweagent/swe-agent:latest",

@@ -4,18 +4,20 @@ from typing import Any
 
 import rich
 
-from run import ScriptArguments, logger
-from sweagent.agent.agents import Agent
-from sweagent.environment.swe_env import SWEEnv
-from sweagent.main.hooks.abstract import MainHook
+from sweagent.run.hooks.abstract import RunHook
+from sweagent.utils.log import get_logger
 
 
-class SaveApplyPatchHook(MainHook):
+class SaveApplyPatchHook(RunHook):
     """This hook saves patches to a separate directory and optionally applies them to a local repository."""
 
-    def on_init(self, *, args: ScriptArguments, agent: Agent, env: SWEEnv, traj_dir: Path):
-        self._traj_dir = traj_dir
-        self._apply_patch_locally = args.actions.apply_patch_locally
+    def __init__(self, apply_patch_locally: bool = False):
+        self.logger = get_logger("⚡️ SaveApplyPatchHook")
+        self._apply_patch_locally = apply_patch_locally
+
+    def on_init(self, *, run):
+        self._traj_dir = run.traj_dir
+        self._apply_patch_locally = run.actions.apply_patch_locally
         self._instance = None
 
     def on_instance_start(self, *, index: int, instance: dict[str, Any]):
@@ -71,7 +73,7 @@ class SaveApplyPatchHook(MainHook):
         patch_output_dir.mkdir(exist_ok=True, parents=True)
         patch_output_file = patch_output_dir / f"{instance_id}.patch"
         if info.get("submission") is None:
-            logger.info("No patch to save.")
+            self.logger.info("No patch to save.")
             return None
         model_patch = info["submission"]
         patch_output_file.write_text(model_patch)
@@ -92,6 +94,6 @@ class SaveApplyPatchHook(MainHook):
         try:
             subprocess.run(cmd, cwd=local_dir, check=True)
         except subprocess.CalledProcessError as e:
-            logger.error(f"Failed to apply patch {patch_file} to {local_dir}: {e}")
+            self.logger.error(f"Failed to apply patch {patch_file} to {local_dir}: {e}")
             return
-        logger.info(f"Applied patch {patch_file} to {local_dir}")
+        self.logger.info(f"Applied patch {patch_file} to {local_dir}")

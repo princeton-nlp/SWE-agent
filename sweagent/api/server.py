@@ -3,6 +3,7 @@ from __future__ import annotations
 from omegaconf import OmegaConf
 
 from sweagent.environment.config.deployment import DeploymentConfig
+from sweagent.run.run_single import RunSingleActionConfig
 
 try:
     import flask  # noqa
@@ -34,11 +35,11 @@ from sweagent.agent.agents import AgentConfig
 from sweagent.agent.models import ModelArguments
 from sweagent.api.hooks import AgentUpdateHook, EnvUpdateHook, MainUpdateHook, WebUpdate
 from sweagent.api.utils import AttrDict, ThreadWithExc
-from sweagent.environment.swe_env import EnvironmentConfig
+from sweagent.environment.swe_env import EnvironmentInstanceConfig
 
 # baaaaaaad
 sys.path.append(str(PACKAGE_DIR.parent))
-from run import ActionsArguments, Main, ScriptArguments
+from run import Main, ScriptArguments
 
 app = Flask(__name__, template_folder=Path(__file__).parent)
 CORS(app)
@@ -156,7 +157,7 @@ def run():
     agent_config = OmegaConf.load(CONFIG_DIR / "default_from_url.yaml")
     defaults = ScriptArguments(
         suffix="",
-        environment=EnvironmentConfig(
+        environment=EnvironmentInstanceConfig(
             deployment=DeploymentConfig(),
             data_path=run.environment.data_path,
             base_commit=run.environment.base_commit,
@@ -168,7 +169,7 @@ def run():
         ),
         agent=AgentConfig(),
         skip_existing=False,
-        actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
+        actions=RunSingleActionConfig(open_pr=False, skip_if_commits_reference_issue=True),
         raise_exceptions=True,
     )
     defaults.agent.model = ModelArguments(

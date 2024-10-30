@@ -1,60 +1,12 @@
-"""Run in human mode without any complicated env setup.
-This is mostly for debugging and development.
-"""
+"""Common functionality for the run scripts."""
 
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import Self
 
 import yaml
-from pydantic import Field
 from pydantic_settings import BaseSettings, CliApp
 
 from sweagent import CONFIG_DIR
-from sweagent.agent.agents import Agent, AgentConfig
-from sweagent.agent.models import ModelArguments
-from sweagent.environment.swe_env import EnvironmentInstanceConfig, SWEEnv
-from sweagent.utils.log import get_logger
-
-
-class BasicRunArguments(BaseSettings):
-    env: EnvironmentInstanceConfig = Field(default_factory=EnvironmentInstanceConfig)
-    agent: AgentConfig = AgentConfig(
-        model=ModelArguments(name="human"), next_step_template="Observation: {observation}"
-    )
-    traj_dir: str = "."
-
-
-# todo: add hooks
-class BasicMain:
-    def __init__(self, env: SWEEnv, agent: Agent, *, traj_dir: str = "."):
-        self.logger = get_logger("PlaygroundMain")
-        self.env = env
-        self.agent = agent
-        self.traj_dir = traj_dir
-
-    @classmethod
-    def from_config(cls, config: BasicRunArguments) -> Self:
-        return cls(env=SWEEnv.from_config(config.env), agent=Agent("main", config.agent), traj_dir=config.traj_dir)
-
-    def main(self):
-        self.logger.info("Starting environment")
-        self.env.start()
-        self.logger.info("Resetting environment")
-        observation, info = self.env.reset()
-        self.logger.info("Running agent")
-        info, trajectory = self.agent.run(
-            setup_args={"problem_statement": self.env.instance.get_problem_statement()},
-            env=self.env,
-            observation=observation,
-            traj_dir=Path(self.traj_dir),
-            return_type="info_trajectory",
-        )
-        self.logger.info("Done")
-
-
-def main(args: BasicRunArguments):
-    BasicMain.from_config(args).main()
 
 
 class BasicCLI:
@@ -108,7 +60,3 @@ class BasicCLI:
             print(yaml.dump(args.model_dump()))
             exit(0)
         return args
-
-
-if __name__ == "__main__":
-    main(BasicCLI(BasicRunArguments).get_args())  # type: ignore

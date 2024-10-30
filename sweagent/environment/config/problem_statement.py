@@ -9,7 +9,7 @@ from sweagent.utils._github import get_problem_statement_from_github_issue, pars
 from sweagent.utils.config import keys_config
 
 
-class EmptyInstanceConfig(BaseModel):
+class EmptyProblemStatement(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     type: Literal["empty"] = "empty"
     """Discriminator for serialization. Do not change."""
@@ -18,7 +18,7 @@ class EmptyInstanceConfig(BaseModel):
         return ""
 
 
-class TextInstanceConfig(BaseModel):
+class TextProblemStatement(BaseModel):
     problem_statement: str = ""
 
     type: Literal["text"] = "text"
@@ -32,7 +32,7 @@ class TextInstanceConfig(BaseModel):
         return self.problem_statement
 
 
-class TextFileInstanceConfig(BaseModel):
+class FileProblemStatement(BaseModel):
     path: str = ""
 
     type: Literal["text_file"] = "text_file"
@@ -46,7 +46,7 @@ class TextFileInstanceConfig(BaseModel):
         return Path(self.path).read_text()
 
 
-class GithubInstanceConfig(BaseModel):
+class GithubIssue(BaseModel):
     issue_url: str = ""
 
     type: Literal["github"] = "github"
@@ -62,4 +62,4 @@ class GithubInstanceConfig(BaseModel):
         return get_problem_statement_from_github_issue(owner, repo, issue_number, token=keys_config.get("GITHUB_TOKEN"))
 
 
-InstanceConfig = TextInstanceConfig | GithubInstanceConfig | EmptyInstanceConfig
+ProblemStatementConfig = TextProblemStatement | GithubIssue | EmptyProblemStatement
