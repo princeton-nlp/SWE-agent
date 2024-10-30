@@ -35,35 +35,7 @@ def _filter_instances(instances: list[EnvironmentInstanceConfig], filter: str) -
     return [instance for instance in instances if re.match(filter, instance.problem_statement.id)]
 
 
-class InstancesFromFile(BaseModel, AbstractInstanceSource):
-    path: Path
-    instance_filter: str = ".*"
-
-    type: Literal["file"]
-    """Discriminator for (de)serialization/CLI. Do not change."""
-
-    def get_instance_configs(self) -> list[EnvironmentInstanceConfig]:
-        instance_dicts = _load_file(self.path)
-        instances = [EnvironmentInstanceConfig(**instance_dict) for instance_dict in instance_dicts]
-        return _filter_instances(instances, self.instance_filter)
-
-
-class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
-    dataset_name: str
-    split: str
-    instance_filter: str = ".*"
-
-    type: Literal["huggingface"]
-    """Discriminator for (de)serialization/CLI. Do not change."""
-
-    def get_instance_configs(self) -> list[EnvironmentInstanceConfig]:
-        from datasets import load_dataset
-
-        instances = load_dataset(self.dataset_name, split=self.split)
-        return _filter_instances(instances, self.instance_filter)  # type: ignore
-
-
-class SimpleBatchInstance(BaseModel):
+class BatchInstance(BaseModel):
     image_name: str
     problem_statement: str
     id: str
@@ -74,7 +46,7 @@ class SimpleBatchInstance(BaseModel):
         return EnvironmentInstanceConfig(deployment=deployment, problem_statement=problem_statement, repo=None)
 
 
-class SimpleInstancesFromFile(BaseModel, AbstractInstanceSource):
+class InstancesFromFile(BaseModel, AbstractInstanceSource):
     path: Path
     instance_filter: str = ".*"
     deployment: dict[str, Any]
@@ -87,18 +59,15 @@ class SimpleInstancesFromFile(BaseModel, AbstractInstanceSource):
 
     def get_instance_configs(self) -> list[EnvironmentInstanceConfig]:
         instance_dicts = _load_file(self.path)
-        simple_instances = [SimpleBatchInstance(**instance_dict) for instance_dict in instance_dicts]
+        simple_instances = [BatchInstance(**instance_dict) for instance_dict in instance_dicts]
         return [instance._to_env_config(self.deployment) for instance in simple_instances]
 
 
-class SimpleInstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
+class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
     dataset_name: str
     split: str
     instance_filter: str = ".*"
     deployment: dict[str, Any]
-
-    simple: Literal[True] = True
-    """Convenience discriminator for (de)serialization/CLI. Do not change."""
 
     type: Literal["simple_huggingface"]
     """Discriminator for (de)serialization/CLI. Do not change."""
@@ -107,8 +76,21 @@ class SimpleInstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
         from datasets import load_dataset
 
         ds: list[dict[str, Any]] = load_dataset(self.dataset_name, split=self.split)  # type: ignore
-        simple_instances: list[SimpleBatchInstance] = [SimpleBatchInstance(**instance) for instance in ds]
+        simple_instances: list[BatchInstance] = [BatchInstance(**instance) for instance in ds]
         return [instance._to_env_config(self.deployment) for instance in simple_instances]
 
 
-InstanceSourceConfig = InstancesFromFile | InstancesFromHuggingFace | SimpleInstancesFromFile
+class ExpertInstancesFromFile(BaseModel, AbstractInstanceSource):
+    path: Path
+    instance_filter: str = ".*"
+
+    type: Literal["expert_file"]
+    """Discriminator for (de)serialization/CLI. Do not change."""
+
+    def get_instance_configs(self) -> list[EnvironmentInstanceConfig]:
+        instance_dicts = _load_file(self.path)
+        instances = [EnvironmentInstanceConfig(**instance_dict) for instance_dict in instance_dicts]
+        return _filter_instances(instances, self.instance_filter)
+
+
+InstanceSourceConfig = ExpertInstancesFromFile | InstancesFromHuggingFace | InstancesFromFile
