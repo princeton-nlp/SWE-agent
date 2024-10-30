@@ -7,7 +7,6 @@ import shlex
 from pathlib import PurePath
 from typing import Any, Self
 
-import gymnasium as gym
 from pydantic import BaseModel, Field
 from swerex.deployment import get_deployment
 from swerex.deployment.abstract import AbstractDeployment
@@ -44,8 +43,7 @@ class EnvironmentConfig(BaseModel):
             self.deployment = DockerDeploymentConfig()
 
 
-# todo: Do we really need to inherit from gym.Env?
-class SWEEnv(gym.Env):
+class SWEEnv:
     """Gym environment for SWE-bench. This class should handle all communication with the docker container."""
 
     name = "swe_main"
