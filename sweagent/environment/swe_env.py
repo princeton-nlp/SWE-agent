@@ -57,6 +57,7 @@ class SWEEnv(gym.Env):
         repo: RepoConfig | None,
         instance: InstanceConfig,
         startup_commands: list[str],
+        hooks: list[EnvHook] | None = None,
     ):
         super().__init__()
         self.deployment = deployment
@@ -72,7 +73,7 @@ class SWEEnv(gym.Env):
         self._init_scripts()
 
         self.clean_multi_line_functions = lambda x: x
-        self._hooks: list[EnvHook] = []
+        self._hooks: list[EnvHook] = hooks or []
 
     @classmethod
     def from_config(cls, config: EnvironmentConfig) -> Self:
@@ -92,8 +93,12 @@ class SWEEnv(gym.Env):
         This allows to inject custom functionality at different stages of the environment
         lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).
         """
-        hook.on_init()
+        hook.on_init(env=self)
         self._hooks.append(hook)
+
+    def _fire_hooks(self, hook_name: str, *args, **kwargs) -> None:
+        for hook in self.hooks:
+            getattr(hook, hook_name)(*args, **kwargs)
 
     # @property
     # def _repo_name(self) -> str:
@@ -110,9 +115,7 @@ class SWEEnv(gym.Env):
         if self.repo.repo_name in folders:
             return
 
-        for hook in self.hooks:
-            hook.on_copy_repo_started(self.repo)
-
+        self._fire_hooks("on_copy_repo_started", self.repo)
         self.repo.copy(self.deployment)
 
     def reset(self) -> tuple[str | None, dict]:
@@ -422,8 +425,7 @@ class SWEEnv(gym.Env):
         """
         self.logger.info("Beginning environment shutdown...")
         asyncio.run(self.deployment.stop())
-        for hook in self.hooks:
-            hook.on_close()
+        self._fire_hooks("on_close")
 
     # MARK: Helper functions #
 
@@ -612,7 +614,7 @@ class SWEEnv(gym.Env):
         """
         Creates conda environment and installs third party dependencies to allow code execution
         """
-        pass
+        self._fire_hooks("on_environment_startup")
 
     def add_commands(self, commands: list[dict]) -> None:
         """

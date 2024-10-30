@@ -313,10 +313,13 @@ class Agent:
         hook.on_init(agent=self)
         self.hooks.append(hook)
 
+    def _fire_hooks(self, hook_name: str, **kwargs) -> None:
+        for hook in self.hooks:
+            getattr(hook, hook_name)(**kwargs)
+
     def _append_history(self, item: HistoryItem) -> None:
         """Adds an item to the history."""
-        for hook in self.hooks:
-            hook.on_query_message_added(**item)
+        self._fire_hooks("on_query_message_added", **item)
         self.history.append(item)
 
     # todo: klieret: Long term: Might make more sense to reinitialize the agent class for every instance instead of this
@@ -340,8 +343,7 @@ class Agent:
 
         self.setup_attempt(init_model_stats=init_model_stats)
 
-        for hook in self.hooks:
-            hook.on_setup_done()
+        self._fire_hooks("on_setup_done")
 
     def setup_attempt(self, *, init_model_stats: APIStats | None = None) -> None:
         """Setup the agent for a new attempt. This includes resetting the model stats."""
@@ -649,8 +651,7 @@ class Agent:
         self.logger.info(f"🤖 MODEL INPUT\n{message}")
         self._append_history({"role": "user", "content": message, "agent": self.name})
 
-        for hook in self.hooks:
-            hook.on_model_query(query=self.local_history, agent=self.name)
+        self._fire_hooks("on_model_query", query=self.local_history, agent=self.name)
         return self.model.query(self.local_history)
 
     def retry_after_format_fail(self, output: str) -> str:
@@ -866,16 +867,14 @@ class Agent:
         assert self.config is not None
 
         # Normal command, not a subroutine
-        for hook in self.hooks:
-            hook.on_sub_action_started(sub_action=sub_action)
+        self._fire_hooks("on_sub_action_started", sub_action=sub_action)
         observation, _, done, _info = self._env.step(sub_action["action"])
         # observation, additional_cost = self.config.summarizer_config.function(  # type: ignore
         #     sub_action["action"], observation, self._env, self.summarizer_model
         # )
         # self._update_summarizer_stats(additional_cost)
         self.info.update(_info)
-        for hook in self.hooks:
-            hook.on_sub_action_executed(obs=observation, done=done)
+        self._fire_hooks("on_sub_action_executed", obs=observation, done=done)
         if sub_action["cmd_name"] == self.config.submit_command:
             done = True
 
@@ -892,14 +891,12 @@ class Agent:
         assert self.config is not None  # mypy
         assert self._env is not None
 
-        for hook in self.hooks:
-            hook.on_step_start()
+        self._fire_hooks("on_step_start")
 
         # fixme: This will probably fail if the state command is not set
         state = self._env.communicate(self.state_command) if self.state_command else None
         thought, action, output = self.forward(observation, self._env.get_available_actions(), state)
-        for hook in self.hooks:
-            hook.on_actions_generated(thought=thought, action=action, output=output)
+        self._fire_hooks("on_actions_generated", thought=thought, action=action, output=output)
         run_action: str = self._guard_multiline_input(action)
 
         # Loop over sub-actions (if any)
@@ -929,8 +926,7 @@ class Agent:
         self.trajectory.append(trajectory_step)
         model_stats: APIStats = self.model.stats
         self.info["model_stats"] = model_stats.to_dict()
-        for hook in self.hooks:
-            hook.on_step_done(trajectory_step=trajectory_step, model_stats=model_stats)
+        self._fire_hooks("on_step_done", trajectory_step=trajectory_step, model_stats=model_stats)
         return observation, done
 
     # todo: Get rid of setup_arts in this unspecified form
@@ -980,16 +976,14 @@ class Agent:
         self.logger.info("Trajectory will be saved to %s", self.traj_path)
 
         # Run action/observation loop
-        for hook in self.hooks:
-            hook.on_run_start()
+        self._fire_hooks("on_run_start")
         done = False
         while not done:
             observation, done = self._run_step(observation)
             self.save_trajectory()
             if done:
                 done = True
-        for hook in self.hooks:
-            hook.on_run_done(trajectory=self.trajectory, info=self.info)
+        self._fire_hooks("on_run_done", trajectory=self.trajectory, info=self.info)
 
         self.logger.info("Trajectory saved to %s", self.traj_path)
 

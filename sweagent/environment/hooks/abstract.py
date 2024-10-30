@@ -9,7 +9,7 @@ class EnvHook:
     lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).
     """
 
-    def on_init(self) -> None:
+    def on_init(self, *, env) -> None:
         """Gets called when the hook is added"""
 
     def on_copy_repo_started(self, repo: RepoConfig) -> None:
@@ -20,3 +20,6 @@ class EnvHook:
 
     def on_close(self):
         """Called when the environment is closed"""
+
+    def on_environment_startup(self) -> None:
+        """Called when the environment is started"""
