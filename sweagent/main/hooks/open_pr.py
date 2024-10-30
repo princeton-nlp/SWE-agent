@@ -8,6 +8,107 @@ from sweagent.environment.utils import InvalidGithubURL
 from sweagent.main.hooks.abstract import MainHook
 from sweagent.utils._github import get_associated_commit_urls, get_gh_issue_data, parse_gh_issue_url
 
+# todo: Move this to run.py
+# def open_pr(self, *, trajectory, _dry_run: bool = False) -> None:
+#     """Create PR to repository
+
+#     Args:
+#         trajectory: Trajectory of actions taken by the agent
+#         _dry_run: Whether to actually push anything or just simulate it
+#     """
+#     self.logger.info("Opening PR")
+#     # TODO: have better way of handling this
+#     # Adding random string suffix to avoid name conflicts if we had a previously failed run
+#     issue_url = self.args.data_path
+#     try:
+#         issue = get_gh_issue_data(issue_url, token=self._github_token)
+#     except InvalidGithubURL as e:
+#         msg = "Data path must be a github issue URL if --open_pr is set."
+#         raise ValueError(msg) from e
+#     branch_name = f"swe-agent-fix-#{issue.number}-" + str(random.random())[2:10]
+
+#     self.communicate_with_handling(
+#         input="rm -f model.patch",
+#         error_msg="Failed to remove model patch",
+#         timeout_duration=10,
+#     )
+#     self.communicate_with_handling(
+#         input=f"git checkout -b {branch_name}",
+#         error_msg="Failed to switch to new branch",
+#         timeout_duration=10,
+#     )
+#     self.communicate_with_handling(
+#         input="git add .",
+#         error_msg="Failed to add commits",
+#         timeout_duration=10,
+#     )
+#     dry_run_flag = "--allow-empty" if _dry_run else ""
+#     commit_msg = [
+#         shlex.quote("Fix: {issue.title}"),
+#         shlex.quote("Closes #{issue.number}"),
+#     ]
+#     self.communicate_with_handling(
+#         input=f"git commit -m {commit_msg[0]} -m  {commit_msg[1]} {dry_run_flag}",
+#         error_msg="Failed to commit changes",
+#         timeout_duration=10,
+#     )
+
+#     owner, repo, _ = parse_gh_issue_url(issue_url)
+#     # If `--repo_path` was specified with a different github URL, then the record will contain
+#     # the forking user
+#     assert self.record is not None
+#     if self.record["repo_type"] != "github":
+#         # We already validated that `--data_path` is a github issue URL
+#         # so this is the only case where we can reach here
+#         msg = "--repo_path must point to a github URL if --open_pr is set"
+#         raise ValueError(msg)
+#     forker, _ = self.record["repo"].split("/")
+#     head = branch_name
+#     remote = "origin"
+#     if forker != owner:
+#         head = f"{forker}:{branch_name}"
+#         token_prefix = ""
+#         if self._github_token:
+#             token_prefix = f"{self._github_token}@"
+#         fork_url = f"https://{token_prefix}github.com/{forker}/{repo}.git"
+#         self.logger.debug(f"Using fork: {fork_url}")
+#         self.communicate_with_handling(
+#             input=f"git remote add fork {fork_url}",
+#             error_msg="Failed to create new git remote",
+#             timeout_duration=10,
+#         )
+#         remote = "fork"
+#     dry_run_prefix = "echo " if _dry_run else ""
+#     self.communicate_with_handling(
+#         input=f"{dry_run_prefix} git push {remote} {branch_name}",
+#         error_msg=(
+#             "Failed to push branch to remote. Please check your token and permissions. "
+#             "You might want to push to a fork with the push_gh_repo_url option."
+#         ),
+#         timeout_duration=10,
+#     )
+#     body = (
+#         f"This is a PR opened by AI tool [SWE Agent](https://github.com/princeton-nlp/SWE-agent/) "
+#         f"to close [#{issue.number}]({issue_url}) ({issue.title}).\n\nCloses #{issue.number}."
+#     )
+#     body += "\n\n" + format_trajectory_markdown(trajectory)
+#     api = GhApi(token=self._github_token)
+#     if not _dry_run:
+#         pr_info = api.pulls.create(  # type: ignore
+#             owner=owner,
+#             repo=repo,
+#             title=f"SWE-agent[bot] PR to fix: {issue.title}",
+#             head=head,
+#             base="main",
+#             body=body,
+#             draft=True,
+#         )
+#         self.logger.info(
+#             f"🎉 PR created as a draft at {pr_info.html_url}. Please review it carefully, push "
+#             "any required changes onto the branch and then click "
+#             "'Ready for Review' to bring it to the attention of the maintainers.",
+#         )
+
 
 class OpenPRHook(MainHook):
     """This hook opens a PR if the issue is solved and the user has enabled the option."""

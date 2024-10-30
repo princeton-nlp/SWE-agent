@@ -52,6 +52,7 @@ class SWEEnv:
         self,
         *,
         deployment: AbstractDeployment,
+        # todo: Should None be included in RepoConfig?
         repo: RepoConfig | None,
         instance: InstanceConfig,
         startup_commands: list[str],
@@ -66,12 +67,13 @@ class SWEEnv:
         # todo: get rid of this
         self.returncode: None | int = None
 
-        # todo: There should be a start function, so I can call `add_hook` before anything happens
-        self._init_container()
-        self._init_scripts()
-
         self.clean_multi_line_functions = lambda x: x
         self._hooks: list[EnvHook] = hooks or []
+
+    def start(self) -> None:
+        """Start the environment"""
+        self._init_container()
+        self._init_scripts()
 
     @classmethod
     def from_config(cls, config: EnvironmentConfig) -> Self:
@@ -225,93 +227,8 @@ class SWEEnv:
             out[f"edited_files{context_length}"] = value
         return out
 
-    # def _terminate_interactive_session(self, session_name: str):
-    #     if not self.interactive_session:
-    #         # Maybe fixing #772
-    #         return
-    #     try:
-    #         self.interactive_session.session_process.terminate()
-    #         self.communicate(self.interactive_session.config.exit_command)
-    #     except Exception as e:
-    #         msg = (
-    #             f"Failed to terminate interactive session {session_name}: {e}."
-    #             "\nHere's the full traceback\n" + traceback.format_exc()
-    #         )
-    #         self.logger.warning(msg)
-    #     self.interactive_session = None
-
-    # def _handle_interactive_commands(self, observation: str) -> str:
-    #     """Handle interactive commands in the environment, essentially substituting dummy
-    #     output for the actual output of the interactive commands.
-
-    #     Args:
-    #         observation: Output from running the interactive command wrappers in the
-    #             environment. They will returns some dummy output that will be caught and then
-    #             we will run the actual commands in the interactive session and return the
-    #             actual output.
-
-    #     Returns:
-    #         observation: The observation shown to the model. If no interactive commands
-    #             are detected, this is the same as the input observation.
-    #             Else, only the output from the interactive commands is returned.
-    #     """
-    # return observation
-    # session_name, interactive_commands = get_interactive_commands(observation, logger=self.logger)
-    # if session_name is None:
-    #     return observation
-    # if (
-    #     session_name is not None
-    #     and self.interactive_session is not None
-    #     and self.interactive_session.name != session_name
-    # ):
-    #     return self.interactive_session._get_only_one_interactive_error_message_observation()
-
-    # observation = ""
-    # for command in interactive_commands:
-    #     if command == "START":
-    #         # Start the session if previous session does not exist
-    #         if self.interactive_session is not None:
-    #             return self.interactive_session._get_only_one_interactive_error_message_observation()
-    #         assert self.container_name is not None
-    #         _observation, self.interactive_session = get_interactive_session(
-    #             ctr_name=self.container_name,
-    #             ctr_obj=self.container_obj,
-    #             cwd="/" + self._repo_name,
-    #             session_name=session_name,
-    #             config=self.args.interactive_sessions_config[session_name],
-    #             logger=self.logger,
-    #         )
-    #         observation += _observation
-    #     elif command == "STOP":
-    #         if self.interactive_session is None:
-    #             observation = f"Interactive session {session_name!r} is not running, so it cannot be stopped!"
-    #         else:
-    #             if self.interactive_session.session_process.poll() is None:
-    #                 self.logger.warning("Session did not quit successfully, terminating.")
-    #                 self.interactive_session.session_process.terminate()
-    #             observation = f"Interactive session {session_name!r} stopped successfully"
-    #             self.interactive_session = None
-    #     else:
-    #         if self.interactive_session is None:
-    #             self.logger.warning("Tried to run interactive commands without starting session")
-    #             start_command = self.args.interactive_sessions_config[session_name].start_command
-    #             observation = f"Interactive session {session_name!r} is not running! please start it first using `{start_command}`"
-    #         elif self.interactive_session and self.interactive_session.session_process.poll() is not None:
-    #             start_command = self.args.interactive_sessions_config[session_name].start_command
-    #             observation = f"Interactive session {session_name!r} was unexpectedly closed! Please start it again using `{start_command}`"
-    #             self._terminate_interactive_session(session_name=session_name)
-    #         else:
-    #             _observation, terminate = self.interactive_session.communicate_with_handling(
-    #                 command,
-    #                 timeout_duration=AGENT_ACTION_TIMEOUT,
-    #                 no_output_timeout_duration=AGENT_ACTION_NO_OUTPUT_TIMEOUT,
-    #             )
-    #             observation += _observation
-    #             if terminate:
-    #                 self._terminate_interactive_session(session_name=session_name)
-    #             observation += "\n"
-    # return observation
-
+    # todo: Have a return type here
+    # todo: Break this up
     def step(self, action: str) -> tuple[str | None, int, bool, AgentInfo]:
         """
         Runs an action proposed by the agent in the environment and returns the corresponding output.
@@ -406,14 +323,6 @@ class SWEEnv:
             info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
             observation = submission if submission.strip() != "" else None
             return observation, 0, True, info
-            # else:
-            #     # Currently only validating CTF challenges
-            #     assert self.challenge is not None
-            #     self.logger.warning(f"Wrong submission found: {submission} (real flag is {self.challenge['flag']})")
-            #     observation = "Wrong flag!"
-            #     return observation, 0, False, info
-
-        # observation = self._handle_interactive_commands(observation)
 
         return observation, 0, False, info
 
@@ -431,24 +340,6 @@ class SWEEnv:
         self.close()
         self._init_container()
         self._init_scripts()
-
-    # ctf
-    # def _init_docker_network(self) -> None:
-    #     """
-    #     Add the "ctfnet" network interface for all the containers used for CTF challenges
-    #     """
-    #     if self.challenge is not None:
-    #         assert self.container_name is not None
-    #         attach_network_interface_to_container(self.container_name)
-
-    # ctf
-    # def _init_docker_compose(self) -> None:
-    #     """
-    #     Handles docker compose initialization for challenge with docker compose file.
-    #     """
-    #     if self.challenge is not None and self.challenge.get("docker_compose") is not None:
-    #         self.docker_compose = get_docker_compose(self.challenge["docker_compose"])
-    #         self.logger.info("🌱 Initialized docker compose for challenge")
 
     def _init_container(
         self,
@@ -563,35 +454,6 @@ class SWEEnv:
         """
         return []
 
-    # ctf
-    # def validate_submission(self, submission: str) -> bool:
-    #     """
-    #     Define this function if you can check whether a submission is correct.
-
-    #     Args:
-    #         submission: extracted submission
-
-    #     Returns:
-    #         validation of the submission found against known flag
-    #     """
-    #     submission = submission.strip()
-
-    # def wrap(s: str) -> str:
-    #     return f"flag{{{s}}}"
-
-    # if self.challenge is not None:
-    #     assert "flag" in self.challenge
-    #     solution = self.challenge["flag"]
-    #     return any(
-    #         (
-    #             submission == solution,
-    #             wrap(submission) == solution,
-    #             submission == wrap(solution),
-    #         )
-    #     )
-
-    # return True
-
     def get_submission(self, output: str) -> str | None:
         """
         Function for extracting diff patch submission at the end of an episode.
@@ -644,107 +506,7 @@ class SWEEnv:
                 msg = f"Invalid command type: {command['type']}"
                 raise ValueError(msg)
 
-    # todo: Move this to run.py
-    # def open_pr(self, *, trajectory, _dry_run: bool = False) -> None:
-    #     """Create PR to repository
-
-    #     Args:
-    #         trajectory: Trajectory of actions taken by the agent
-    #         _dry_run: Whether to actually push anything or just simulate it
-    #     """
-    #     self.logger.info("Opening PR")
-    #     # TODO: have better way of handling this
-    #     # Adding random string suffix to avoid name conflicts if we had a previously failed run
-    #     issue_url = self.args.data_path
-    #     try:
-    #         issue = get_gh_issue_data(issue_url, token=self._github_token)
-    #     except InvalidGithubURL as e:
-    #         msg = "Data path must be a github issue URL if --open_pr is set."
-    #         raise ValueError(msg) from e
-    #     branch_name = f"swe-agent-fix-#{issue.number}-" + str(random.random())[2:10]
-
-    #     self.communicate_with_handling(
-    #         input="rm -f model.patch",
-    #         error_msg="Failed to remove model patch",
-    #         timeout_duration=10,
-    #     )
-    #     self.communicate_with_handling(
-    #         input=f"git checkout -b {branch_name}",
-    #         error_msg="Failed to switch to new branch",
-    #         timeout_duration=10,
-    #     )
-    #     self.communicate_with_handling(
-    #         input="git add .",
-    #         error_msg="Failed to add commits",
-    #         timeout_duration=10,
-    #     )
-    #     dry_run_flag = "--allow-empty" if _dry_run else ""
-    #     commit_msg = [
-    #         shlex.quote("Fix: {issue.title}"),
-    #         shlex.quote("Closes #{issue.number}"),
-    #     ]
-    #     self.communicate_with_handling(
-    #         input=f"git commit -m {commit_msg[0]} -m  {commit_msg[1]} {dry_run_flag}",
-    #         error_msg="Failed to commit changes",
-    #         timeout_duration=10,
-    #     )
-
-    #     owner, repo, _ = parse_gh_issue_url(issue_url)
-    #     # If `--repo_path` was specified with a different github URL, then the record will contain
-    #     # the forking user
-    #     assert self.record is not None
-    #     if self.record["repo_type"] != "github":
-    #         # We already validated that `--data_path` is a github issue URL
-    #         # so this is the only case where we can reach here
-    #         msg = "--repo_path must point to a github URL if --open_pr is set"
-    #         raise ValueError(msg)
-    #     forker, _ = self.record["repo"].split("/")
-    #     head = branch_name
-    #     remote = "origin"
-    #     if forker != owner:
-    #         head = f"{forker}:{branch_name}"
-    #         token_prefix = ""
-    #         if self._github_token:
-    #             token_prefix = f"{self._github_token}@"
-    #         fork_url = f"https://{token_prefix}github.com/{forker}/{repo}.git"
-    #         self.logger.debug(f"Using fork: {fork_url}")
-    #         self.communicate_with_handling(
-    #             input=f"git remote add fork {fork_url}",
-    #             error_msg="Failed to create new git remote",
-    #             timeout_duration=10,
-    #         )
-    #         remote = "fork"
-    #     dry_run_prefix = "echo " if _dry_run else ""
-    #     self.communicate_with_handling(
-    #         input=f"{dry_run_prefix} git push {remote} {branch_name}",
-    #         error_msg=(
-    #             "Failed to push branch to remote. Please check your token and permissions. "
-    #             "You might want to push to a fork with the push_gh_repo_url option."
-    #         ),
-    #         timeout_duration=10,
-    #     )
-    #     body = (
-    #         f"This is a PR opened by AI tool [SWE Agent](https://github.com/princeton-nlp/SWE-agent/) "
-    #         f"to close [#{issue.number}]({issue_url}) ({issue.title}).\n\nCloses #{issue.number}."
-    #     )
-    #     body += "\n\n" + format_trajectory_markdown(trajectory)
-    #     api = GhApi(token=self._github_token)
-    #     if not _dry_run:
-    #         pr_info = api.pulls.create(  # type: ignore
-    #             owner=owner,
-    #             repo=repo,
-    #             title=f"SWE-agent[bot] PR to fix: {issue.title}",
-    #             head=head,
-    #             base="main",
-    #             body=body,
-    #             draft=True,
-    #         )
-    #         self.logger.info(
-    #             f"🎉 PR created as a draft at {pr_info.html_url}. Please review it carefully, push "
-    #             "any required changes onto the branch and then click "
-    #             "'Ready for Review' to bring it to the attention of the maintainers.",
-    #         )
-
+    # todo: Use the runtime for this instead
     def read_file(self, path: str | PurePath) -> str:
         """Read file contents from container
 

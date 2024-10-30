@@ -4,6 +4,7 @@ This is mostly for debugging and development.
 
 from argparse import ArgumentParser
 from pathlib import Path
+from typing import Self
 
 import yaml
 from pydantic import Field
@@ -26,30 +27,34 @@ class BasicRunArguments(BaseSettings):
 
 # todo: add hooks
 class BasicMain:
-    def __init__(self, args: BasicRunArguments):
-        self.args = args
+    def __init__(self, env: SWEEnv, agent: Agent, *, traj_dir: str = "."):
         self.logger = get_logger("PlaygroundMain")
-        self.logger.info("Initializing environment")
-        self.env = SWEEnv.from_config(args.env)
-        self.logger.info("Initializing agent")
-        self.agent = Agent("main", args.agent)
+        self.env = env
+        self.agent = agent
+        self.traj_dir = traj_dir
+
+    @classmethod
+    def from_config(cls, config: BasicRunArguments) -> Self:
+        return cls(env=SWEEnv.from_config(config.env), agent=Agent("main", config.agent), traj_dir=config.traj_dir)
 
     def main(self):
+        self.logger.info("Starting environment")
+        self.env.start()
         self.logger.info("Resetting environment")
         observation, info = self.env.reset()
         self.logger.info("Running agent")
         info, trajectory = self.agent.run(
-            setup_args={"problem_statement": self.args.env.instance.get_problem_statement()},
+            setup_args={"problem_statement": self.env.instance.get_problem_statement()},
             env=self.env,
             observation=observation,
-            traj_dir=Path(self.args.traj_dir),
+            traj_dir=Path(self.traj_dir),
             return_type="info_trajectory",
         )
         self.logger.info("Done")
 
 
 def main(args: BasicRunArguments):
-    BasicMain(args).main()
+    BasicMain.from_config(args).main()
 
 
 class BasicCLI:

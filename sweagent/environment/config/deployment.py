@@ -3,6 +3,11 @@ from typing import Literal
 from pydantic import BaseModel
 
 
+class LocalDeploymentConfig(BaseModel):
+    type: Literal["local"] = "local"
+    """Discriminator for serialization. Do not change."""
+
+
 class DockerDeploymentConfig(BaseModel):
     """Configuration for the deployment of the environment"""
 
@@ -19,4 +24,4 @@ class ModalDeploymentConfig(BaseModel):
     """Discriminator for serialization. Do not change."""
 
 
-DeploymentConfig = DockerDeploymentConfig | ModalDeploymentConfig
+DeploymentConfig = DockerDeploymentConfig | ModalDeploymentConfig | LocalDeploymentConfig
