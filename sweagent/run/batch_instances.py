@@ -47,6 +47,8 @@ class BatchInstance(BaseModel):
 
     def _to_env_config(self, deployment_kwargs: dict[str, Any]) -> EnvironmentInstanceConfig:
         """Merge the deployment options into the BatchInstance object to get a full `EnvironmentInstanceConfig`."""
+        # Combine image name and deployment options into a DeploymentConfig object. Because this can be one of many
+        # subclasses, we use a TypeAdapter to validate/instantiate the object.
         deployment = TypeAdapter(DeploymentConfig).validate_python(dict(image=self.image_name, **deployment_kwargs))
         problem_statement = TextProblemStatement(problem_statement=self.problem_statement)
         return EnvironmentInstanceConfig(deployment=deployment, problem_statement=problem_statement, repo=None)
@@ -93,6 +95,21 @@ class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
         return [instance._to_env_config(self.deployment) for instance in simple_instances]
 
 
+class SWEBenchInstances(BaseModel, AbstractInstanceSource):
+    """Load instances from SWE-bench."""
+
+    flavor: Literal["lite", "verified", "full"] = "lite"
+
+    deployment: dict[str, Any]
+    """Any options for one of the `DeploymentConfig` subclasses."""
+
+    type: Literal["swe_bench"]
+    """Discriminator for (de)serialization/CLI. Do not change."""
+
+    def get_instance_configs(self) -> list[EnvironmentInstanceConfig]:
+        raise NotImplementedError
+
+
 class ExpertInstancesFromFile(BaseModel, AbstractInstanceSource):
     """Load instances from a file. The difference to `InstancesFromFile` is that the instances are configured as full
     `EnvironmentInstanceConfig` objects, i.e., we could specify separate deployment configurations etc.
@@ -110,4 +127,4 @@ class ExpertInstancesFromFile(BaseModel, AbstractInstanceSource):
         return _filter_instances(instances, self.instance_filter)
 
 
-InstanceSourceConfig = ExpertInstancesFromFile | InstancesFromHuggingFace | InstancesFromFile
+InstanceSourceConfig = ExpertInstancesFromFile | InstancesFromHuggingFace | InstancesFromFile | SWEBenchInstances

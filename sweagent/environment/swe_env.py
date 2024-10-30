@@ -16,9 +16,6 @@ from sweagent.environment.config.deployment import DeploymentConfig, DockerDeplo
 from sweagent.environment.config.problem_statement import EmptyProblemStatement, ProblemStatementConfig
 from sweagent.environment.config.repo import RepoConfig
 from sweagent.environment.hooks.abstract import EnvHook
-from sweagent.environment.utils import (
-    NoOutputTimeoutError,
-)
 from sweagent.types import AgentInfo
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
@@ -262,6 +259,7 @@ class SWEEnv:
             observation = "Exited"
             info["exit_status"] = action
             return observation, 0, True, info
+        # todo: pull out a handle_exit_action function
         if action in {"exit_context", "exit_cost", "exit_error", "exit_format", "exit_api"}:
             try:
                 observation = self.communicate(input="submit")
@@ -290,23 +288,6 @@ class SWEEnv:
                 no_output_timeout_duration=AGENT_ACTION_NO_OUTPUT_TIMEOUT,
                 set_last_action=True,
             )
-        except TimeoutError as e:
-            try:
-                observation += e.args[1] if len(e.args) > 1 else ""
-                # observation += self.interrupt()
-                observation += "\nEXECUTION TIMED OUT"
-                observation += (
-                    f" BECAUSE NO OUTPUT WAS PRODUCED FOR MORE THAN {AGENT_ACTION_NO_OUTPUT_TIMEOUT} SECONDS.\nPLEASE REFINE YOUR RUNNING COMMAND SO IT WILL PRODUCE OUTPUT IN THE SPECIFIED TIME FRAME."
-                    if isinstance(e, NoOutputTimeoutError)
-                    else f" BECAUSE THE COMMAND WAS RUNNING FOR MORE THAN {AGENT_ACTION_TIMEOUT} SECONDS."
-                )
-            except RuntimeError as e:
-                observation += e.args[1] if len(e.args) > 1 else ""
-                observation += "\nEXECUTION TIMED OUT AND INTERRUPT FAILED. RESTARTING PROCESS."
-                info["exit_status"] = "early_exit"
-                self.logger.warning(f"Failed to interrupt container: {e}\nRESTARTING PROCESS.")
-                self.reset_container()
-                return observation, 0, True, info
         except RuntimeError as e:
             observation += e.args[1] if len(e.args) > 1 else ""
             observation += "\nCOMMAND FAILED TO EXECUTE. RESTARTING PROCESS."

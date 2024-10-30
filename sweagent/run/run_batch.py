@@ -1,5 +1,5 @@
-"""Run in human mode without any complicated env setup.
-This is mostly for debugging and development.
+"""
+Run on a batch of instances/issues. For example run on all of SWE-bench.
 """
 
 from pathlib import Path

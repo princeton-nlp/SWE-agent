@@ -1,6 +1,4 @@
-"""Run in human mode without any complicated env setup.
-This is mostly for debugging and development.
-"""
+"""Run on a single instance taken from github or similar."""
 
 from pathlib import Path
 from typing import Self
