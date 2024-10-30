@@ -17,7 +17,7 @@ class LocalRepoConfig(BaseModel):
     base_commit: str = "HEAD"
 
     type: Literal["local"] = "local"
-    """Discriminator for serialization. Do not change."""
+    """Discriminator for (de)serialization/CLI. Do not change."""
 
     @property
     def repo_name(self) -> str:
@@ -49,7 +49,7 @@ class GithubRepoConfig(BaseModel):
     base_commit: str = "HEAD"
 
     type: Literal["github"] = "github"
-    """Discriminator for serialization. Do not change."""
+    """Discriminator for (de)serialization/CLI. Do not change."""
 
     @property
     def repo_name(self) -> str:

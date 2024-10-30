@@ -2,34 +2,15 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
 from pathlib import Path
 from typing import Any
 
 from datasets import load_dataset, load_from_disk
 
-from sweagent.utils.config import keys_config
+from sweagent.utils._github import GITHUB_ISSUE_URL_PATTERN
 from sweagent.utils.log import get_logger
 
-DOCKER_START_UP_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 1))
-DOCKER_COMPOSE_TERMINATION_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 100))
-DOCKER_COMPOSE_STARTUP_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 600))
-GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
-GITHUB_REPO_URL_PATTERN = re.compile(r".*[/@]?github\.com\/([^/]+)\/([^/]+)")
-
-CTF_CHALLENGES_CATEGORIES = {
-    "rev": "reverse engineering",
-    "pwn": "binary exploitation",
-    "web": "web security",
-    "crypto": "cryptography",
-    "misc": "miscellaneous",
-    "forensics": "forensics",
-}
-
 logger = get_logger("env_utils")
-
-
-class NoOutputTimeoutError(TimeoutError): ...
 
 
 def get_data_path_name(data_path: str) -> str:
@@ -43,92 +24,6 @@ def get_data_path_name(data_path: str) -> str:
         owner, repo, _ = match.groups()
         return f"{owner}__{repo}"
     return Path(data_path).stem
-
-
-DECODED_BUFFER_FAILURE_THRESHOLD = 0.1
-
-
-def _check_for_too_many_non_unicode_bytes(buffer: bytes):
-    number_of_failures = int(DECODED_BUFFER_FAILURE_THRESHOLD * len(buffer))
-    start_byte = 0
-    for _ in range(number_of_failures):
-        try:
-            buffer[start_byte:].decode()
-            return
-        except UnicodeDecodeError as e:
-            start_byte = e.start + 1
-    msg = "Too many non-unicode characters in output of command."
-    raise UnicodeError(msg)
-
-
-# def terminate_docker_compose(docker_compose_path: Path) -> None:
-#     terminate_cmd = [
-#         "docker",
-#         "compose",
-#         "-f",
-#         str(docker_compose_path),
-#         "down",
-#     ]
-#     logger.debug("Terminating docker-compose with command: %s", shlex.join(terminate_cmd))
-#     compose = subprocess.Popen(
-#         terminate_cmd,
-#         stdin=PIPE,
-#         stdout=PIPE,
-#         stderr=STDOUT,
-#         text=True,
-#         bufsize=1,  # line buffered
-#     )
-#     _, error = compose.communicate(timeout=DOCKER_COMPOSE_TERMINATION_DELAY)
-#     if error:
-#         logger.error(f"Unexpected compose termination error: {error}")
-
-
-# def attach_network_interface_to_container(container_name: str) -> None:
-#     cmd = [
-#         "docker",
-#         "network",
-#         "connect",
-#         "ctfnet",
-#         container_name,
-#     ]
-#     logger.debug("Attaching NIC to container with command: %s", shlex.join(cmd))
-#     compose = subprocess.Popen(
-#         cmd,
-#         stdin=PIPE,
-#         stdout=PIPE,
-#         stderr=STDOUT,
-#         text=True,
-#         bufsize=1,  # line buffered
-#     )
-#     _, error = compose.communicate(timeout=DOCKER_START_UP_DELAY)
-#     if error:
-#         logger.error(f"Unexpected compose setup error: {error}")
-#         raise RuntimeError(error)
-
-
-# def get_docker_compose(docker_compose_path: Path) -> Path:
-#     startup_cmd = [
-#         "docker",
-#         "compose",
-#         "-f",
-#         str(docker_compose_path),
-#         "up",
-#         "-d",
-#         "--force-recreate",
-#     ]
-#     logger.debug("Starting docker-compose with command: %s", shlex.join(startup_cmd))
-#     compose = subprocess.Popen(
-#         startup_cmd,
-#         stdin=PIPE,
-#         stdout=PIPE,
-#         stderr=STDOUT,
-#         text=True,
-#         bufsize=1,  # line buffered
-#     )
-#     _, error = compose.communicate(timeout=DOCKER_COMPOSE_STARTUP_DELAY)
-#     if error:
-#         logger.error(f"Unexpected compose setup error: {error}")
-#     return docker_compose_path
 
 
 class InvalidGithubURL(ValueError): ...

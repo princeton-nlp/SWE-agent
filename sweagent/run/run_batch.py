@@ -9,9 +9,9 @@ from pydantic_settings import BaseSettings
 
 from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.agent.models import ModelArguments
-from sweagent.environment.config.instance_source import AbstractInstanceSource, InstanceSourceConfig
-from sweagent.environment.swe_env import SWEEnv
+from sweagent.environment.swe_env import EnvironmentInstanceConfig, SWEEnv
 from sweagent.run._common import BasicCLI
+from sweagent.run.batch_instances import InstanceSourceConfig
 from sweagent.run.hooks.abstract import RunHook
 from sweagent.utils.log import get_logger
 
@@ -28,7 +28,7 @@ class RunBatchConfig(BaseSettings):
 class RunBatch:
     def __init__(
         self,
-        instance_source: AbstractInstanceSource,
+        instances: list[EnvironmentInstanceConfig],
         agent: Agent,
         *,
         traj_dir: str = ".",
@@ -37,8 +37,8 @@ class RunBatch:
         """Note: When initializing this class, make sure to add the hooks that are required by your actions.
         See `from_config` for an example.
         """
-        self.logger = get_logger("PlaygroundMain")
-        self.instance_source = instance_source
+        self.logger = get_logger("🤠 Run")
+        self.instances = instances
         self.agent = agent
         self.traj_dir = traj_dir
         self._hooks = []
@@ -51,7 +51,11 @@ class RunBatch:
 
     @classmethod
     def from_config(cls, config: RunBatchConfig) -> Self:
-        return cls(instance_source=config.instances, agent=Agent("main", config.agent), traj_dir=config.traj_dir)
+        return cls(
+            instances=config.instances.get_instance_configs(),
+            agent=Agent("main", config.agent),
+            traj_dir=config.traj_dir,
+        )
 
     def add_hook(self, hook: RunHook) -> None:
         hook.on_init(run=self)
@@ -63,7 +67,7 @@ class RunBatch:
 
     def main(self):
         self._fire_hooks("on_start")
-        for instance in self.instance_source.get_instance_configs():
+        for instance in self.instances:
             self.logger.info("Starting environment")
             env = SWEEnv.from_config(instance)
             env.start()

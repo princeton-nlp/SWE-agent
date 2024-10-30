@@ -12,7 +12,7 @@ from sweagent.utils.config import keys_config
 class EmptyProblemStatement(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     type: Literal["empty"] = "empty"
-    """Discriminator for serialization. Do not change."""
+    """Discriminator for (de)serialization/CLI. Do not change."""
 
     def get_problem_statement(self) -> str:
         return ""
@@ -22,7 +22,7 @@ class TextProblemStatement(BaseModel):
     problem_statement: str = ""
 
     type: Literal["text"] = "text"
-    """Discriminator for serialization. Do not change."""
+    """Discriminator for (de)serialization/CLI. Do not change."""
 
     @property
     def id(self) -> str:
@@ -36,7 +36,7 @@ class FileProblemStatement(BaseModel):
     path: str = ""
 
     type: Literal["text_file"] = "text_file"
-    """Discriminator for serialization. Do not change."""
+    """Discriminator for (de)serialization/CLI. Do not change."""
 
     @property
     def id(self) -> str:
@@ -50,7 +50,7 @@ class GithubIssue(BaseModel):
     issue_url: str = ""
 
     type: Literal["github"] = "github"
-    """Discriminator for serialization. Do not change."""
+    """Discriminator for (de)serialization/CLI. Do not change."""
 
     @property
     def id(self) -> str:

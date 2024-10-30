@@ -1,11 +1,18 @@
+import re
+
 from ghapi.all import GhApi
 
-from sweagent.environment.utils import GITHUB_ISSUE_URL_PATTERN, GITHUB_REPO_URL_PATTERN, InvalidGithubURL
+from sweagent.environment.utils import InvalidGithubURL
+
+GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
 
 
 def is_github_issue_url(data_path: str) -> bool:
     """Check if data_path is an URL pointing to a github issue"""
     return GITHUB_ISSUE_URL_PATTERN.search(data_path) is not None
+
+
+GITHUB_REPO_URL_PATTERN = re.compile(r".*[/@]?github\.com\/([^/]+)\/([^/]+)")
 
 
 def is_github_repo_url(data_path: str) -> bool:
