@@ -5,16 +5,15 @@ import logging
 import re
 import shlex
 from pathlib import PurePath
-from typing import Any, Self
+from typing import Self
 
 from pydantic import BaseModel, Field
-from swerex.deployment import get_deployment
 from swerex.deployment.abstract import AbstractDeployment
 from swerex.runtime.abstract import BashAction, CreateBashSessionRequest, WriteFileRequest
 
 from sweagent.environment.config.deployment import DeploymentConfig, DockerDeploymentConfig
 from sweagent.environment.config.problem_statement import EmptyProblemStatement, ProblemStatementConfig
-from sweagent.environment.config.repo import RepoConfig
+from sweagent.environment.config.repo import AbstractRepoConfig, RepoConfig
 from sweagent.environment.hooks.abstract import EnvHook
 from sweagent.types import AgentInfo
 from sweagent.utils.config import keys_config
@@ -30,14 +29,9 @@ class EnvironmentInstanceConfig(BaseModel):
     """Configure data sources and setup instructions for the environment in which we solve the tasks."""
 
     problem_statement: ProblemStatementConfig = Field(default_factory=EmptyProblemStatement)
-    deployment: DeploymentConfig | None = None
+    deployment: DeploymentConfig = Field(default_factory=DockerDeploymentConfig)
     repo: RepoConfig | None = None
     startup_commands: list[str] = []
-
-    def model_post_init(self, __context: Any) -> None:
-        print("In model_post_init")
-        if self.deployment is None:
-            self.deployment = DockerDeploymentConfig()
 
 
 class SWEEnv:
@@ -50,17 +44,19 @@ class SWEEnv:
         *,
         deployment: AbstractDeployment,
         # todo: Should None be included in RepoConfig?
-        repo: RepoConfig | None,
+        repo: AbstractRepoConfig | None,
         problem_statement: ProblemStatementConfig,
         startup_commands: list[str],
         hooks: list[EnvHook] | None = None,
+        _catch_errors: bool = False,
     ):
         super().__init__()
+        self._catch_errors = _catch_errors
         self.deployment = deployment
         self.repo = repo
         self.problem_statement = problem_statement
         self._startup_commands = startup_commands
-        self.logger = get_logger("🌱 SWEEnv")
+        self.logger = get_logger("swe_env", emoji="🌱")
         # todo: get rid of this
         self.returncode: None | int = None
 
@@ -76,10 +72,8 @@ class SWEEnv:
 
     @classmethod
     def from_config(cls, config: EnvironmentInstanceConfig) -> Self:
-        deployment_kwargs = {k: v for k, v in config.deployment.model_dump().items() if k != "type"}
-        deployment = get_deployment(config.deployment.type, **deployment_kwargs)  # type: ignore
         return cls(
-            deployment=deployment,
+            deployment=config.deployment.get_deployment(),
             repo=config.repo,
             problem_statement=config.problem_statement,
             startup_commands=config.startup_commands,
@@ -289,6 +283,8 @@ class SWEEnv:
                 set_last_action=True,
             )
         except RuntimeError as e:
+            if not self._catch_errors:
+                raise
             observation += e.args[1] if len(e.args) > 1 else ""
             observation += "\nCOMMAND FAILED TO EXECUTE. RESTARTING PROCESS."
             info["exit_status"] = "early_exit"
@@ -296,6 +292,8 @@ class SWEEnv:
             self.reset_container()
             return observation, 0, True, info
         except Exception:
+            if not self._catch_errors:
+                raise
             observation += "\nEXECUTION FAILED OR COMMAND MALFORMED"
             self.logger.exception("Unknown exception")
 
@@ -336,7 +334,7 @@ class SWEEnv:
         """
         asyncio.run(self.deployment.start())
         asyncio.run(self.deployment.runtime.create_session(CreateBashSessionRequest(startup_source=["/root/.bashrc"])))
-        self.logger.info("🌱 Environment Initialized")
+        self.logger.info("Environment Initialized")
 
     def _init_scripts(self):
         """

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import subprocess
-from typing import Any
 
 import pytest
 
@@ -22,7 +21,7 @@ def test_run_cli_help():
 
 
 class RaisesExceptionHook(RunHook):
-    def on_instance_start(self, *, index: int, instance: dict[str, Any]):
+    def on_instance_start(self, *args, **kwargs):
         msg = "test exception"
         raise ValueError(msg)
 
@@ -32,7 +31,7 @@ def test_run_single_raises_exception():
     rs = RunSingle.from_config(RunSingleConfig())
     rs.add_hook(RaisesExceptionHook())
     with pytest.raises(ValueError, match="test exception"):
-        rs.main()
+        rs.run()
 
 
 @pytest.fixture
@@ -54,4 +53,4 @@ def test_run_instant_empty_submit(agent_config_with_commands):
         agent=ac,
     )
     rs = RunSingle.from_config(rsc)
-    rs.main()
+    rs.run()

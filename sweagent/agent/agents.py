@@ -218,6 +218,7 @@ class SubAction(TypedDict):
     args: str
 
 
+# todo: separate out from_config. In particular separate out model (as a class, etc.)
 # todo: Can this class be split up into separate responsibilities?
 class Agent:
     """Agent handles the behaviour of the model and how it interacts with the environment."""
@@ -241,7 +242,7 @@ class Agent:
         self._parse_command_patterns()
         self.last_container_id = None
         self.hooks = []
-        self.logger = get_logger("agent")
+        self.logger = get_logger("agent", emoji="🤠")
         # Requires instance, so is set in `setup` methods
         self._rloop = None
 
@@ -765,8 +766,6 @@ class Agent:
             self.logger.warning(f"Failed to set environment variables: {traceback.format_exc()}")
             raise e
         command_files = list()
-        print(self.config.command_files)
-        print([type(f) for f in self.config.command_files])
         for file in self.config.command_files:
             datum = dict()
             with open(file) as f:

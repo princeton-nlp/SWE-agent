@@ -5,6 +5,7 @@ import os
 from pathlib import PurePath
 
 from rich.logging import RichHandler
+from rich.text import Text
 
 _SET_UP_LOGGERS = set()
 _ADDITIONAL_HANDLERS = []
@@ -25,7 +26,19 @@ _STREAM_LEVEL = _interpret_level_from_env(os.environ.get("SWE_AGENT_LOG_STREAM_L
 _FILE_LEVEL = _interpret_level_from_env(os.environ.get("SWE_AGENT_LOG_FILE_LEVEL"), default=logging.TRACE)
 
 
-def get_logger(name: str) -> logging.Logger:
+class _RichHandlerWithEmoji(RichHandler):
+    def __init__(self, emoji: str, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not emoji.endswith(" "):
+            emoji += " "
+        self.emoji = emoji
+
+    def get_level_text(self, record: logging.LogRecord) -> Text:
+        level_name = record.levelname
+        return Text.styled((self.emoji + level_name).ljust(10), f"logging.level.{level_name.lower()}")
+
+
+def get_logger(name: str, *, emoji: str = "") -> logging.Logger:
     """Get logger. Use this instead of `logging.getLogger` to ensure
     that the logger is set up with the correct handlers.
     """
@@ -33,7 +46,8 @@ def get_logger(name: str) -> logging.Logger:
     if name in _SET_UP_LOGGERS:
         # Already set up
         return logger
-    handler = RichHandler(
+    handler = _RichHandlerWithEmoji(
+        emoji=emoji,
         show_time=bool(os.environ.get("SWE_AGENT_LOG_TIME", False)),
         show_path=False,
     )

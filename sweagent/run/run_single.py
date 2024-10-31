@@ -47,16 +47,18 @@ class RunSingle:
         *,
         traj_dir: str = ".",
         hooks: list[RunHook] | None = None,
-        actions: RunSingleActionConfig,
+        actions: RunSingleActionConfig | None = None,
     ):
         """Note: When initializing this class, make sure to add the hooks that are required by your actions.
         See `from_config` for an example.
         """
-        self.logger = get_logger("PlaygroundMain")
+        self.logger = get_logger("Run", emoji="🏃")
         self.env = env
         self.agent = agent
         self.traj_dir = traj_dir
         self._hooks = []
+        if actions is not None:
+            actions = RunSingleActionConfig()
         self.actions = actions
         self._chooks = CombinedRunHooks()
         for hook in hooks or []:
@@ -84,7 +86,7 @@ class RunSingle:
         hook.on_init(run=self)
         self._chooks.add_hook(hook)
 
-    def main(self):
+    def run(self):
         self._chooks.on_start()
         self.logger.info("Starting environment")
         self.env.start()
@@ -104,7 +106,7 @@ class RunSingle:
 
 
 def main(args: RunSingleConfig):
-    RunSingle.from_config(args).main()
+    RunSingle.from_config(args).run()
 
 
 if __name__ == "__main__":

@@ -24,11 +24,12 @@ from sweagent.agent.commands import Command
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
-logger = get_logger("api_models")
+logger = get_logger("lm", emoji="🤖")
 
 _MAX_RETRIES = int(keys_config.get("SWE_AGENT_MODEL_MAX_RETRIES", 10))
 
 
+# todo: Separate out human model and replay model
 class ModelArguments(PydanticBaseModel):
     """Arguments configuring the model and its behavior."""
 

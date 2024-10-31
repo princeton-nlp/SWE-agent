@@ -1,5 +1,6 @@
 import asyncio
 import os
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Literal, Self
 
@@ -12,7 +13,13 @@ from swerex.runtime.abstract import Command, UploadRequest
 from sweagent.utils.config import keys_config
 
 
-class LocalRepoConfig(BaseModel):
+class AbstractRepoConfig(ABC):
+    @abstractmethod
+    def copy(self, deployment: AbstractDeployment):
+        pass
+
+
+class LocalRepoConfig(BaseModel, AbstractRepoConfig):
     path: str = ""
     base_commit: str = "HEAD"
 
@@ -43,7 +50,7 @@ class LocalRepoConfig(BaseModel):
             raise RuntimeError(msg)
 
 
-class GithubRepoConfig(BaseModel):
+class GithubRepoConfig(BaseModel, AbstractRepoConfig):
     url: str = ""
 
     base_commit: str = "HEAD"
