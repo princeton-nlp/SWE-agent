@@ -881,7 +881,8 @@ class Agent:
         return observation, done
 
     def _run_step(self, observation: str | None) -> tuple[str | None, bool]:
-        """Run a step of the agent (forward, execute, and save).
+        """Run a step of the agent: Forward the last observation to the LM,
+        then execute the action and save the trajectory.
 
         Returns:
             observation: Observation
@@ -903,6 +904,7 @@ class Agent:
         done = False
         observations: list[str | None] = list()
         execution_t0 = time.perf_counter()
+        breakpoint()
         for sub_action in self.split_actions(run_action):
             observation, done = self._run_sub_action(sub_action)
             # If the last sub-action is done, the observation is not

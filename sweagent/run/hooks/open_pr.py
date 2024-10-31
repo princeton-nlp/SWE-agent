@@ -2,9 +2,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from sweagent.environment.utils import InvalidGithubURL
 from sweagent.run.hooks.abstract import RunHook
-from sweagent.utils.github import _get_associated_commit_urls, _get_gh_issue_data, _parse_gh_issue_url
+from sweagent.utils.github import InvalidGithubURL, _get_associated_commit_urls, _get_gh_issue_data, _parse_gh_issue_url
 from sweagent.utils.log import get_logger
 
 # todo: Move this to run.py

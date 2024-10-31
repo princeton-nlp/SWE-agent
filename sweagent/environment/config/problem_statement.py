@@ -54,8 +54,8 @@ class GithubIssue(BaseModel):
 
     @property
     def id(self) -> str:
-        org, repo, issue = self.issue_url.split("/")[-3:]
-        return f"{org}__{repo}-i{issue}"
+        owner, repo, issue_number = _parse_gh_issue_url(self.issue_url)
+        return f"{owner}__{repo}-i{issue_number}"
 
     def get_problem_statement(self) -> str:
         owner, repo, issue_number = _parse_gh_issue_url(self.issue_url)

@@ -1,18 +1,14 @@
 from __future__ import annotations
 
-import hashlib
 import os
 import subprocess
 
 import pytest
 
-from sweagent.environment.utils import (
-    InvalidGithubURL,
-    get_instances,
-)
 from sweagent.run.hooks.open_pr import _remove_triple_backticks, format_trajectory_markdown
 from sweagent.utils.config import keys_config
 from sweagent.utils.github import (
+    InvalidGithubURL,
     _get_associated_commit_urls,
     _is_github_issue_url,
     _is_github_repo_url,
@@ -87,20 +83,6 @@ def test_get_associated_commit_urls():
     assert len(assoc) > 0
 
 
-def test_get_instance_gh_issue():
-    instance = get_instances("https://github.com/swe-agent/test-repo/issues/1", **_TOKEN)[0]
-    compare_with = {
-        "repo": "swe-agent/test-repo",
-        "instance_id": "swe-agent__test-repo-i1",
-        "repo_type": "github",
-    }
-    for key in compare_with:
-        assert instance[key] == compare_with[key]
-    assert "SyntaxError" in instance["problem_statement"]
-    assert len(instance["base_commit"]) > 10
-    assert instance["version"]
-
-
 def clone_repo(tmp_path, repo_url):
     cmd = [
         "git",
@@ -108,92 +90,3 @@ def clone_repo(tmp_path, repo_url):
         repo_url,
     ]
     subprocess.run(cmd, check=True, cwd=tmp_path)
-
-
-def test_get_instance_gh_issue_local_repo(tmp_path):
-    clone_repo(tmp_path, "https://github.com/swe-agent/test-repo/")
-    instance = get_instances(
-        file_path="https://github.com/swe-agent/test-repo/issues/1",
-        repo_path=str(tmp_path / "test-repo"),
-        **_TOKEN,
-    )[0]
-    compare_with = {
-        "repo": str(tmp_path.resolve() / "test-repo"),
-        "repo_type": "local",
-        "instance_id": "swe-agent__test-repo-i1",
-    }
-    for key in compare_with:
-        assert instance[key] == compare_with[key]
-    assert "SyntaxError" in instance["problem_statement"]
-    assert len(instance["base_commit"]) > 10
-    assert instance["version"]
-
-
-def test_get_instance_local_issue_local_repo(tmp_path):
-    clone_repo(tmp_path, "https://github.com/swe-agent/test-repo/")
-    issue_path = tmp_path / "issue.txt"
-    issue_path.write_text("asdf")
-    instance = get_instances(
-        file_path=str(issue_path),
-        repo_path=str(tmp_path / "test-repo"),
-    )[0]
-    compare_with = {
-        "repo": str(tmp_path.resolve() / "test-repo"),
-        "repo_type": "local",
-        "instance_id": hashlib.sha256(b"asdf").hexdigest()[:6],
-        "problem_statement": "asdf",
-    }
-    for key in compare_with:
-        assert instance[key] == compare_with[key]
-    assert len(instance["base_commit"]) > 10
-    assert instance["version"]
-
-
-def test_get_instance_gh_issue_gh_repo(tmp_path):
-    instance = get_instances(
-        file_path="https://github.com/swe-agent/test-repo/issues/1",
-        repo_path="https://github.com/princeton-nlp/SWE-agent",
-        **_TOKEN,
-    )[0]
-    compare_with = {
-        "repo": "princeton-nlp/SWE-agent",
-        "repo_type": "github",
-        "instance_id": "swe-agent__test-repo-i1",
-    }
-    for key in compare_with:
-        assert instance[key] == compare_with[key]
-    assert "SyntaxError" in instance["problem_statement"]
-    assert len(instance["base_commit"]) > 10
-    assert instance["version"]
-
-
-def test_get_instance_text_issue_gh_repo(tmp_path):
-    instance = get_instances(
-        file_path="text://this is a test",
-        repo_path="https://github.com/princeton-nlp/SWE-agent",
-        **_TOKEN,
-    )[0]
-    compare_with = {
-        "repo": "princeton-nlp/SWE-agent",
-        "repo_type": "github",
-        "problem_statement": "this is a test",
-    }
-    for key in compare_with:
-        assert instance[key] == compare_with[key]
-    assert len(instance["base_commit"]) > 10
-    assert instance["version"]
-
-
-def test_load_instances(test_data_path, caplog):
-    test_data_sources = test_data_path / "data_sources"
-    examples = [example for example in test_data_sources.iterdir() if example.is_file()]
-    for example in examples:
-        get_instances(file_path=str(example), **_TOKEN)
-
-
-@pytest.mark.ctf
-def test_load_ctf_instances(test_data_path, caplog):
-    test_data_sources = test_data_path / "data_sources" / "ctf"
-    examples = list(test_data_sources.glob("**/challenge.json"))
-    for example in examples:
-        get_instances(file_path=str(example), repo_path=str(example.parent))

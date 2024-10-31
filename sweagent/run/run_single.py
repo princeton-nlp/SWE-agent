@@ -24,10 +24,6 @@ class RunSingleActionConfig(BaseModel):
     pr_config: OpenPRConfig = Field(default_factory=OpenPRConfig)
     # When working with local repository: Apply patch
     apply_patch_locally: bool = False
-    # todo: implement this
-    raise_exceptions: bool = False
-    # todo: implement this
-    print_config: bool = True
 
 
 class RunSingleConfig(BaseSettings):
@@ -37,6 +33,10 @@ class RunSingleConfig(BaseSettings):
     )
     traj_dir: str = "."
     actions: RunSingleActionConfig = Field(default_factory=RunSingleActionConfig)
+    # todo: implement this
+    raise_exceptions: bool = True
+    # todo: implement this
+    print_config: bool = True
 
 
 class RunSingle:

@@ -19,6 +19,11 @@ def _is_github_repo_url(data_path: str) -> bool:
     return GITHUB_REPO_URL_PATTERN.search(data_path) is not None
 
 
+def _is_github_issue_url(data_path: str) -> bool:
+    """Check if data_path is an URL pointing to a github issue"""
+    return GITHUB_ISSUE_URL_PATTERN.search(data_path) is not None
+
+
 def _get_commit(api: GhApi, owner: str, repo: str, ref: str | None = None):
     """Get commit object from github api
 

@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+from swerex.runtime.abstract import CommandTimeoutError
 
 from sweagent.environment.hooks.abstract import EnvHook
 
@@ -44,3 +45,39 @@ def test_env_with_hook(test_env_args):
     with swe_env_context(test_env_args) as env:
         env.add_hook(EnvHook())
         env.reset()
+
+
+@pytest.mark.slow
+def test_env_communicate_with_handling(test_env_args):
+    with swe_env_context(test_env_args) as env:
+        env.reset()
+        env.communicate_with_handling("echo 'hello world'", error_msg="Failed to echo", timeout_duration=1)
+
+
+@pytest.mark.slow
+def test_env_communicate_with_handling_timeout(test_env_args):
+    with swe_env_context(test_env_args) as env:
+        env.reset()
+        with pytest.raises(CommandTimeoutError):
+            env.communicate_with_handling("sleep 10", error_msg="Failed to sleep", timeout_duration=0.2)
+
+
+@pytest.mark.slow
+def test_env_step(test_env_args):
+    with swe_env_context(test_env_args) as env:
+        env.reset()
+        env.step(action="ls")
+
+
+@pytest.mark.slow
+def test_env_step_exit_forfeit(test_env_args):
+    with swe_env_context(test_env_args) as env:
+        env.reset()
+        env.step(action="exit_forfeit")
+
+
+@pytest.mark.slow
+def test_env_step_exit_cost(test_env_args):
+    with swe_env_context(test_env_args) as env:
+        env.reset()
+        env.step(action="exit_cost")

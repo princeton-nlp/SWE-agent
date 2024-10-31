@@ -10,7 +10,6 @@ from typing import Any
 
 from sweagent.agent.models import APIStats, BaseModel, ContextWindowExceededError, ModelArguments
 from sweagent.environment.swe_env import SWEEnv
-from sweagent.environment.utils import copy_anything_to_container
 from sweagent.utils.log import get_logger
 
 
