@@ -10,8 +10,9 @@ from pathlib import Path
 
 import pytest
 
-import docker
-import docker.errors
+from sweagent.environment.config.deployment import DockerDeploymentConfig
+from sweagent.environment.config.problem_statement import FileProblemStatement
+from sweagent.environment.config.repo import LocalRepoConfig
 from sweagent.environment.swe_env import EnvironmentInstanceConfig, SWEEnv
 
 # this is a hack and should be removed when we have a better solution
@@ -83,24 +84,11 @@ def test_env_args(
     subprocess.run(clone_cmd, check=True)
     data_path = local_repo_path / "problem_statements" / "1.md"
     test_env_args = EnvironmentInstanceConfig(
-        data_path=str(data_path),
-        repo_path=str(local_repo_path),
-        image_name="sweagent/swe-agent:latest",
-        container_name="test-container-this-is-a-random-string",
-        verbose=True,
+        problem_statement=FileProblemStatement(path=str(data_path)),
+        deployment=DockerDeploymentConfig(image="sweagent/swe-agent:latest"),
+        repo=LocalRepoConfig(path=str(local_repo_path)),
     )
     yield test_env_args
-    # Cleanup (after session ends)
-    client = docker.from_env()
-    # fixme (?): What happens if user changed container_name?
-    try:
-        assert test_env_args.container_name is not None  # mypy
-        container = client.containers.get(test_env_args.container_name)
-        container.remove(force=True)
-    except docker.errors.NotFound:
-        # Can happen if this fixture never runs because we only do a partial
-        # test run
-        pass
     shutil.rmtree(local_repo_path)
 
 
@@ -110,7 +98,8 @@ def swe_env_context(env_args):
     so that we can reuse it.
     """
 
-    env = SWEEnv(env_args)
+    env = SWEEnv.from_config(env_args)
+    env.start()
     try:
         yield env
     finally:

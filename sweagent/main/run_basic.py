@@ -48,7 +48,6 @@ class BasicMain:
             env=self.env,
             observation=observation,
             traj_dir=Path(self.traj_dir),
-            return_type="info_trajectory",
         )
         self.logger.info("Done")
 

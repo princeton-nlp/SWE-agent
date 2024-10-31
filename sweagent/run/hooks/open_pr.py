@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from sweagent.environment.utils import InvalidGithubURL
 from sweagent.run.hooks.abstract import RunHook
-from sweagent.utils._github import get_associated_commit_urls, get_gh_issue_data, parse_gh_issue_url
+from sweagent.utils.github import _get_associated_commit_urls, _get_gh_issue_data, _parse_gh_issue_url
 from sweagent.utils.log import get_logger
 
 # todo: Move this to run.py
@@ -142,7 +142,7 @@ class OpenPRHook(RunHook):
             self.logger.info("Not opening PR because exit status was %s and not submitted.", info["exit_status"])
             return False
         try:
-            issue = get_gh_issue_data(self._data_path, token=self._token)
+            issue = _get_gh_issue_data(self._data_path, token=self._token)
         except InvalidGithubURL:
             self.logger.info("Currently only GitHub is supported to open PRs to. Skipping PR creation.")
             return False
@@ -155,8 +155,8 @@ class OpenPRHook(RunHook):
         if issue.locked:
             self.logger.info("Issue is locked. Skipping PR creation.")
             return False
-        org, repo, issue_number = parse_gh_issue_url(self._data_path)
-        associated_commits = get_associated_commit_urls(org, repo, issue_number, token=self._token)
+        org, repo, issue_number = _parse_gh_issue_url(self._data_path)
+        associated_commits = _get_associated_commit_urls(org, repo, issue_number, token=self._token)
         if associated_commits:
             commit_url_strs = ", ".join(associated_commits)
             if self._config.skip_if_commits_reference_issue:

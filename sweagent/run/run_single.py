@@ -100,7 +100,6 @@ class RunSingle:
             env=self.env,
             observation=observation,
             traj_dir=Path(self.traj_dir),
-            return_type="info_trajectory",
         )
         self._fire_hooks("on_instance_completed", info=info, trajectory=trajectory)
         self.logger.info("Done")

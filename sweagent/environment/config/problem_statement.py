@@ -5,8 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from sweagent.utils._github import get_problem_statement_from_github_issue, parse_gh_issue_url
 from sweagent.utils.config import keys_config
+from sweagent.utils.github import _get_problem_statement_from_github_issue, _parse_gh_issue_url
 
 
 class EmptyProblemStatement(BaseModel):
@@ -58,8 +58,10 @@ class GithubIssue(BaseModel):
         return f"{org}__{repo}-i{issue}"
 
     def get_problem_statement(self) -> str:
-        owner, repo, issue_number = parse_gh_issue_url(self.issue_url)
-        return get_problem_statement_from_github_issue(owner, repo, issue_number, token=keys_config.get("GITHUB_TOKEN"))
+        owner, repo, issue_number = _parse_gh_issue_url(self.issue_url)
+        return _get_problem_statement_from_github_issue(
+            owner, repo, issue_number, token=keys_config.get("GITHUB_TOKEN")
+        )
 
 
-ProblemStatementConfig = TextProblemStatement | GithubIssue | EmptyProblemStatement
+ProblemStatementConfig = TextProblemStatement | GithubIssue | EmptyProblemStatement | FileProblemStatement

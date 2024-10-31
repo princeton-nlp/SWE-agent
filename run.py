@@ -182,7 +182,6 @@ class Main:
             env=self.env,
             observation=observation,
             traj_dir=self.traj_dir,
-            return_type="info_trajectory",
         )
         challenge = None
         self._save_predictions(instance_id, info, challenge)

@@ -11,14 +11,14 @@ from sweagent.environment.utils import (
     get_instances,
 )
 from sweagent.run.hooks.open_pr import _remove_triple_backticks, format_trajectory_markdown
-from sweagent.utils._github import (
-    get_associated_commit_urls,
-    is_github_issue_url,
-    is_github_repo_url,
-    parse_gh_issue_url,
-    parse_gh_repo_url,
-)
 from sweagent.utils.config import keys_config
+from sweagent.utils.github import (
+    _get_associated_commit_urls,
+    _is_github_issue_url,
+    _is_github_repo_url,
+    _parse_gh_issue_url,
+    _parse_gh_repo_url,
+)
 
 _TOKEN = {"token": keys_config["GITHUB_TOKEN"]}
 
@@ -34,32 +34,32 @@ def test_remove_triple_backticks():
 
 
 def test_is_github_repo_url():
-    assert is_github_repo_url("https://github.com/princeton-nlp/SWE-agent")
-    assert is_github_repo_url("https://github.com/princeton-nlp/SWE-agent/anything")
-    assert is_github_repo_url("github.com/princeton-nlp/SWE-agent/anything")
-    assert not is_github_repo_url("")
-    assert not is_github_repo_url("/path/to/file")
+    assert _is_github_repo_url("https://github.com/princeton-nlp/SWE-agent")
+    assert _is_github_repo_url("https://github.com/princeton-nlp/SWE-agent/anything")
+    assert _is_github_repo_url("github.com/princeton-nlp/SWE-agent/anything")
+    assert not _is_github_repo_url("")
+    assert not _is_github_repo_url("/path/to/file")
 
 
 def test_parse_gh_repo_url():
-    assert parse_gh_repo_url("https://github.com/princeton-nlp/SWE-agent") == ("princeton-nlp", "SWE-agent")
-    assert parse_gh_repo_url("github.com/princeton-nlp/SWE-agent") == ("princeton-nlp", "SWE-agent")
-    assert parse_gh_repo_url("github.com/princeton-nlp/SWE-agent/asdfjsdfg") == ("princeton-nlp", "SWE-agent")
-    assert parse_gh_repo_url("git@github.com/princeton-nlp/SWE-agent/asdfjsdfg") == ("princeton-nlp", "SWE-agent")
+    assert _parse_gh_repo_url("https://github.com/princeton-nlp/SWE-agent") == ("princeton-nlp", "SWE-agent")
+    assert _parse_gh_repo_url("github.com/princeton-nlp/SWE-agent") == ("princeton-nlp", "SWE-agent")
+    assert _parse_gh_repo_url("github.com/princeton-nlp/SWE-agent/asdfjsdfg") == ("princeton-nlp", "SWE-agent")
+    assert _parse_gh_repo_url("git@github.com/princeton-nlp/SWE-agent/asdfjsdfg") == ("princeton-nlp", "SWE-agent")
 
 
 def test_parse_gh_repo_url_fails():
     with pytest.raises(InvalidGithubURL):
-        parse_gh_repo_url("adfkj;lasdfl;kj")
+        _parse_gh_repo_url("adfkj;lasdfl;kj")
     with pytest.raises(InvalidGithubURL):
-        parse_gh_repo_url("github.com/")
+        _parse_gh_repo_url("github.com/")
     with pytest.raises(InvalidGithubURL):
-        parse_gh_repo_url("github.com//a/")
+        _parse_gh_repo_url("github.com//a/")
 
 
 def test_parse_gh_issue_url():
     url = "https://github.com/princeton-nlp/SWE-agent/issues/43"
-    owner, repo, no = parse_gh_issue_url(url)
+    owner, repo, no = _parse_gh_issue_url(url)
     assert owner == "princeton-nlp"
     assert repo == "SWE-agent"
     assert no == "43"
@@ -67,18 +67,18 @@ def test_parse_gh_issue_url():
 
 def test_parse_gh_issue_url_fails():
     with pytest.raises(InvalidGithubURL):
-        parse_gh_issue_url("https://github.com/a/b")
+        _parse_gh_issue_url("https://github.com/a/b")
     with pytest.raises(InvalidGithubURL):
-        parse_gh_issue_url("https://github.com/a/b////")
+        _parse_gh_issue_url("https://github.com/a/b////")
 
 
 def test_is_from_github_url():
-    assert not is_github_issue_url("")
-    assert is_github_issue_url("https://github.com/princeton-nlp/SWE-agent/issues/43")
+    assert not _is_github_issue_url("")
+    assert _is_github_issue_url("https://github.com/princeton-nlp/SWE-agent/issues/43")
 
 
 def test_get_associated_commit_urls():
-    assoc = get_associated_commit_urls(
+    assoc = _get_associated_commit_urls(
         org="princeton-nlp",
         repo="SWE-agent",
         issue_number="41",

@@ -936,9 +936,8 @@ class Agent:
         env: SWEEnv,
         observation: str | None = None,
         traj_dir: Path | None = None,
-        return_type: str = "info_trajectory",
         init_model_stats: APIStats | None = None,
-    ):
+    ) -> tuple[AgentInfo, Trajectory]:
         """
         Run the agent on an environment.
         Return the final value of the specified return type.
@@ -948,22 +947,14 @@ class Agent:
             env: The environment to run the agent on.
             observation: Output from environment setup
             traj_dir: Directory to save the trajectory to
-            return_type: Controls what to return.
-                This should be left at `info_trajectory`, the
-                other values are for internal usage with subroutines.
             init_model_stats: Initial model stats to use for the run.
 
         Returns:
             If return_type is "info_trajectory", returns a tuple of
             the info dictionary and the trajectory (list of dictionaries).
         """
-        # if env.container_obj.id != self.last_container_id:
-        # self.logger.info(f"Initializing agent settings for container {env.container_obj.id}")
         self.init_environment_vars(env)
-        # Re-initialize primary
         self.setup(setup_args, init_model_stats)
-        # self._summarizer =
-        # self.config.summarizer_config.function.setup(setup_args, self.config)
 
         # Save/reset some attributes
         self.trajectory = Trajectory()
@@ -981,14 +972,8 @@ class Agent:
         while not done:
             observation, done = self._run_step(observation)
             self.save_trajectory()
-            if done:
-                done = True
         self._fire_hooks("on_run_done", trajectory=self.trajectory, info=self.info)
 
         self.logger.info("Trajectory saved to %s", self.traj_path)
 
-        if return_type == "info":
-            return self.info
-        if return_type == "info_trajectory":
-            return self.info, self.trajectory
-        return self.trajectory[-1][return_type]
+        return self.info, self.trajectory

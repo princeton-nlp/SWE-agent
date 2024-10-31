@@ -2,27 +2,24 @@ import re
 
 from ghapi.all import GhApi
 
-from sweagent.environment.utils import InvalidGithubURL
-
 GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
 
 
-def is_github_issue_url(data_path: str) -> bool:
-    """Check if data_path is an URL pointing to a github issue"""
-    return GITHUB_ISSUE_URL_PATTERN.search(data_path) is not None
+class InvalidGithubURL(Exception):
+    """Raised when a github URL is invalid"""
 
 
 GITHUB_REPO_URL_PATTERN = re.compile(r".*[/@]?github\.com\/([^/]+)\/([^/]+)")
 
 
-def is_github_repo_url(data_path: str) -> bool:
+def _is_github_repo_url(data_path: str) -> bool:
     """Check if data_path is an URL pointing to a github repository.
     Paths to issues or PRs will also match this pattern.
     """
     return GITHUB_REPO_URL_PATTERN.search(data_path) is not None
 
 
-def get_commit(api: GhApi, owner: str, repo: str, ref: str | None = None):
+def _get_commit(api: GhApi, owner: str, repo: str, ref: str | None = None):
     """Get commit object from github api
 
     Args:
@@ -39,7 +36,7 @@ def get_commit(api: GhApi, owner: str, repo: str, ref: str | None = None):
     return api.repos.list_commits(owner, repo)[0]  # type: ignore
 
 
-def parse_gh_issue_url(issue_url: str) -> tuple[str, str, str]:
+def _parse_gh_issue_url(issue_url: str) -> tuple[str, str, str]:
     """
     Returns:
         owner: Repo owner
@@ -58,7 +55,7 @@ def parse_gh_issue_url(issue_url: str) -> tuple[str, str, str]:
     return tuple(res)  # type: ignore
 
 
-def parse_gh_repo_url(repo_url: str) -> tuple[str, str]:
+def _parse_gh_repo_url(repo_url: str) -> tuple[str, str]:
     """
     Returns:
         owner: Repo owner/org
@@ -76,17 +73,19 @@ def parse_gh_repo_url(repo_url: str) -> tuple[str, str]:
     return tuple(res)  # type: ignore
 
 
-def get_gh_issue_data(issue_url: str, *, token: str = ""):
+def _get_gh_issue_data(issue_url: str, *, token: str = ""):
     """Returns github issue data in the form of a dictionary.
     See https://docs.github.com/en/rest/issues/issues?apiVersion=2022-11-28#get-an-issue
     for return format
     """
-    owner, repo, issue_number = parse_gh_issue_url(issue_url)
+    owner, repo, issue_number = _parse_gh_issue_url(issue_url)
     api = GhApi(token=token)
-    return api.issues.get(owner, repo, issue_number)
+    return api.issues.get(owner, repo, issue_number)  # type: ignore
 
 
-def get_problem_statement_from_github_issue(owner: str, repo: str, issue_number: str, *, token: str | None = "") -> str:
+def _get_problem_statement_from_github_issue(
+    owner: str, repo: str, issue_number: str, *, token: str | None = ""
+) -> str:
     """Return problem statement from github issue"""
     api = GhApi(token=token)
     issue = api.issues.get(owner, repo, issue_number)  # type: ignore
@@ -95,19 +94,19 @@ def get_problem_statement_from_github_issue(owner: str, repo: str, issue_number:
     return f"{title}\n{body}\n"
 
 
-def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token: str = "") -> list[str]:
+def _get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token: str = "") -> list[str]:
     """Return the URLs of commits that would close an issue."""
     api = GhApi(token=token)
     # Strangely the "pull_request" field of api.issues.get is often not set
     # so we have to go through the events to check if there's a commit
-    events = api.issues.list_events(org, repo, issue_number)
+    events = api.issues.list_events(org, repo, issue_number)  # type: ignore
     commit_urls = []
     for event in events:
         if event.event != "referenced":
             continue
         if not event.commit_id:
             continue
-        commit = api.repos.get_commit(org, repo, event.commit_id)
+        commit = api.repos.get_commit(org, repo, event.commit_id)  # type: ignore
         message = commit.commit.message
         if f"fixes #{issue_number}" in message.lower() or f"closes #{issue_number}" in message.lower():
             commit_urls.append(commit.html_url)
