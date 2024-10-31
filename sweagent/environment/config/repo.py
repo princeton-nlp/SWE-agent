@@ -14,9 +14,10 @@ from sweagent.utils.config import keys_config
 
 
 class AbstractRepoConfig(ABC):
+    """Abstract base class for repository configurations."""
+
     @abstractmethod
-    def copy(self, deployment: AbstractDeployment):
-        pass
+    def copy(self, deployment: AbstractDeployment): ...
 
 
 class LocalRepoConfig(BaseModel, AbstractRepoConfig):

@@ -99,9 +99,6 @@ class BasicCLI:
             config_merged = self.arg_type().model_dump()
 
         # args = ScriptArguments.model_validate(config_merged)
-        print("-------")
-        print(remaining_args)
-        print("-------")
         args = CliApp.run(self.arg_type, remaining_args, **config_merged)  # type: ignore
         if cli_args.print_config:  # type: ignore
             print(yaml.dump(args.model_dump()))

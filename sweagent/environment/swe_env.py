@@ -227,7 +227,7 @@ class SWEEnv:
 
     # todo: Have a return type here
     # todo: Break this up
-    def step(self, action: str) -> tuple[str | None, int, bool, AgentInfo]:
+    def step(self, action: str) -> tuple[str, int, bool, AgentInfo]:
         """
         Runs an action proposed by the agent in the environment and returns the corresponding output.
 
@@ -306,7 +306,7 @@ class SWEEnv:
             info["exit_status"] = "submitted"
             info["submission"] = submission if submission.strip() != "" else None
             info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
-            observation = submission if submission.strip() != "" else None
+            observation = submission if submission.strip() != "" else ""
             return observation, 0, True, info
 
         return observation, 0, False, info
@@ -471,6 +471,10 @@ class SWEEnv:
         Returns:
             file_contents: Contents of file as string
         """
+        if self.repo is None:
+            msg = "Repository not set, cannot read file"
+            raise ValueError(msg)
+
         # todo: Just use the runtime for this instead
         path_in_container = f"/{self.repo.repo_name}/{path}"
         return self.communicate(f"cat {str(path_in_container)}")

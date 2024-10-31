@@ -954,6 +954,9 @@ class ReplayModel(BaseModel):
 
         return action
 
+    def history_to_messages(self, history: list[dict[str, str]], *args, **kwargs) -> list[dict[str, str]]:
+        return history
+
 
 class InstantEmptySubmitTestModel(BaseModel):
     MODELS = {
@@ -980,6 +983,9 @@ class InstantEmptySubmitTestModel(BaseModel):
             action = "DISCUSSION\nThe task should be resolved, so let's submit the patch.\n\n```\nsubmit\n```\n"
         self.update_stats(0, 0)
         return action
+
+    def history_to_messages(self, history: list[dict[str, str]], *args, **kwargs) -> list[dict[str, str]]:
+        return history
 
 
 def get_model(args: ModelArguments, commands: list[Command] | None = None):

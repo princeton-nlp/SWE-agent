@@ -17,7 +17,7 @@ class TrajectoryStep(TypedDict):
     action: str
     observation: str
     response: str
-    state: str | None
+    state: dict[str, str]
     thought: str
     execution_time: float
 
