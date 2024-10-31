@@ -10,21 +10,19 @@ import pytest
 from run_replay import get_args, main
 from sweagent import CONFIG_DIR
 from sweagent.environment.config.deployment import DockerDeploymentConfig
+from sweagent.environment.config.repo import LocalRepoConfig
 from sweagent.run.run_replay import RunReplay, RunReplayConfig
 
 
-def test_replay(test_trajectories_path, tmp_path):
+def test_replay(swe_agent_test_repo_traj, tmp_path, swe_agent_test_repo_clone):
     rc = RunReplayConfig(
-        traj_path=str(
-            test_trajectories_path
-            / "gpt4__swe-agent-test-repo__default_from_url__t-0.00__p-0.95__c-3.00__install-1"
-            / "6e44b9__sweagenttestrepo-1c2844.traj"
-        ),
+        traj_path=str(swe_agent_test_repo_traj),
         config_path=str(CONFIG_DIR / "default_from_url.yaml"),
         deployment=DockerDeploymentConfig(),
         output_dir=str(tmp_path),
+        repo=LocalRepoConfig(path=str(swe_agent_test_repo_clone)),
     )
-    rr = RunReplay.from_config(rc, _catch_errors=False)
+    rr = RunReplay.from_config(rc, _catch_errors=False, _require_zero_exit_code=True)
     rr.main()
 
 

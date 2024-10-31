@@ -49,9 +49,11 @@ class SWEEnv:
         startup_commands: list[str],
         hooks: list[EnvHook] | None = None,
         _catch_errors: bool = False,
+        _always_require_zero_exit_code: bool = False,
     ):
         super().__init__()
         self._catch_errors = _catch_errors
+        self._require_zero_exit_code = _always_require_zero_exit_code
         self.deployment = deployment
         self.repo = repo
         self.problem_statement = problem_statement
@@ -184,8 +186,9 @@ class SWEEnv:
                 f"git reset --hard {self.repo.base_commit}",
                 "git clean -fdxq",
             ]
-            self.communicate_with_handling(
+            self.communicate(
                 input=" && ".join(startup_commands),
+                require_zero_exit_code=True,
                 error_msg="Failed to clean repository",
             )
 
@@ -198,8 +201,9 @@ class SWEEnv:
             "export SEARCH_FILES=()",
             "export SEARCH_INDEX=0",
         ]
-        self.communicate_with_handling(
+        self.communicate(
             input=" && ".join(cmd),
+            require_zero_exit_code=True,
             error_msg="Failed to reset environment variables",
         )
 
@@ -279,7 +283,6 @@ class SWEEnv:
             observation = self.communicate(
                 input=action,
                 timeout_duration=AGENT_ACTION_TIMEOUT,
-                no_output_timeout_duration=AGENT_ACTION_NO_OUTPUT_TIMEOUT,
                 set_last_action=True,
             )
         except RuntimeError as e:
@@ -340,95 +343,66 @@ class SWEEnv:
         """
         Initialize custom commands within container
         """
-        self.communicate_with_handling(
+        self.communicate(
             "mkdir -p /root/commands",
+            require_zero_exit_code=True,
             error_msg="Failed to create commands directory",
         )
-        self.communicate_with_handling(
+        self.communicate(
             "touch /root/commands/__init__.py",
+            require_zero_exit_code=True,
             error_msg="Failed to create __init__.py",
         )
-        self.communicate_with_handling(
+        self.communicate(
             "export PATH=$PATH:/root/commands",
+            require_zero_exit_code=True,
             error_msg="Failed to add commands directory to PATH",
         )
-
-    def _communicate(
-        self,
-        input: str,
-        timeout_duration: int | float = 25,
-        *,
-        no_output_timeout_duration: int | float = 25,
-    ) -> str:
-        """Runs command in container and returns output.
-        This is the internal version of `communicate` that does not handle the "exit" command etc.
-        """
-        self.returncode = None
-        r = asyncio.run(self.deployment.runtime.run_in_session(BashAction(command=input, timeout=timeout_duration)))
-        self.returncode = r.exit_code
-        return r.output
 
     def communicate(
         self,
         input: str,
         timeout_duration: int | float = 25,
         *,
-        no_output_timeout_duration: int | float | None = None,
         set_last_action: bool = False,
+        require_zero_exit_code: bool = False,
+        error_msg: str = "Command failed",
     ) -> str:
         """Sends input to container and returns output
 
         Args:
             input: input to send to container
             timeout_duration: duration to wait for output
-            no_output_timeout_duration: duration to wait when the process stopped produce any output
             set_last_action: whether to set the LAST_ACTION environment variable
-
+            require_zero_exit_code: whether to raise an error if the exit code is non-zero
+            error_msg: error message to raise if the command fails
         Returns:
             output: output from container
         """
-        if no_output_timeout_duration is None:
-            no_output_timeout_duration = timeout_duration
-
         if input.strip() == "exit":
             asyncio.run(self.deployment.stop())
             self.returncode = 0
             return ""
 
         self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
-        output = self._communicate(
-            input,
-            timeout_duration=timeout_duration,
-            no_output_timeout_duration=no_output_timeout_duration,
-        )
+        self.returncode = None
+        r = asyncio.run(self.deployment.runtime.run_in_session(BashAction(command=input, timeout=timeout_duration)))
+        self.returncode = r.exit_code
+        output = r.output
         self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
+        if (self._require_zero_exit_code or require_zero_exit_code) and self.returncode != 0:
+            self.logger.error(f"{error_msg}: {output}")
+            self.close()
+            msg = f"{error_msg} (command: {input})"
+            raise RuntimeError(msg)
+        # todo: What do we do with this?
         if set_last_action:
             # Cannot merge this with last command, because of multiline command
             # handling.
             last_action_string = shlex.quote(input.strip())
             input = f"export LAST_ACTION={last_action_string}"
-            self._communicate(input, timeout_duration=5, no_output_timeout_duration=5)
+            r = asyncio.run(self.deployment.runtime.run_in_session(BashAction(command=input, timeout=1)))
         return output
-
-    def communicate_with_handling(self, input: str, error_msg: str, timeout_duration: int | float = 25) -> str:
-        """
-        Wrapper for communicate function that raises error if return code is non-zero
-
-        Args:
-            input: input to send to container
-            error_msg: error message to raise if return code is non-zero
-            timeout_duration: duration to wait for output
-
-        Returns:
-            output: output from container
-        """
-        logs = self.communicate(input, timeout_duration=timeout_duration)
-        if self.returncode != 0:
-            self.logger.error(f"{error_msg}: {logs}")
-            self.close()
-            msg = f"{error_msg} (command: {input})"
-            raise RuntimeError(msg)
-        return logs
 
     def get_available_actions(self) -> list[str]:
         """
@@ -471,16 +445,18 @@ class SWEEnv:
                 self.deployment.runtime.write_file(WriteFileRequest(content=contents, path=f"/root/commands/{name}"))
             )
             if command["type"] == "source_file":
-                self.communicate_with_handling(
+                self.communicate(
                     f"source /root/commands/{name}",
+                    require_zero_exit_code=True,
                     error_msg=(
                         f"Failed to source {name}. If you meant to make a script,"
                         " start the file with a shebang (e.g. #!/usr/bin/env python)."
                     ),
                 )
             elif command["type"] == "script":
-                self.communicate_with_handling(
+                self.communicate(
                     f"chmod +x /root/commands/{name}",
+                    require_zero_exit_code=True,
                     error_msg=f"Failed to chmod {name}",
                 )
             elif command["type"] == "utility":

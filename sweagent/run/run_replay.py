@@ -40,6 +40,7 @@ class RunReplay:
         repo: RepoConfig | None,
         output_dir: str,
         _catch_errors: bool = False,
+        _require_zero_exit_code: bool = False,
     ):
         self.traj_path = traj_path
         self.config_path = config_path
@@ -49,6 +50,7 @@ class RunReplay:
         self._replay_action_trajs_path = Path(tempfile.NamedTemporaryFile(suffix=".json").name)
         self.logger = get_logger("RunReplay", emoji="🏃")
         self._catch_errors = _catch_errors
+        self._require_zero_exit_code = _require_zero_exit_code
 
     @property
     def instance_id(self) -> str:
@@ -78,6 +80,7 @@ class RunReplay:
             problem_statement=EmptyProblemStatement(),
             startup_commands=[],
             _catch_errors=self._catch_errors,
+            _always_require_zero_exit_code=self._require_zero_exit_code,
         )
 
     def _get_agent(self) -> Agent:
