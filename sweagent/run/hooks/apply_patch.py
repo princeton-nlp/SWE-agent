@@ -2,6 +2,8 @@ import subprocess
 from pathlib import Path
 
 import rich
+import rich.markdown
+import rich.panel
 
 from sweagent.environment.config.repo import LocalRepoConfig
 from sweagent.environment.swe_env import SWEEnv

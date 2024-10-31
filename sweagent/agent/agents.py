@@ -756,10 +756,7 @@ class Agent:
         )
         commands = "\n".join(commands_to_execute)
         try:
-            output = env.communicate(commands)
-            if env.returncode != 0:
-                msg = f"Nonzero return code: {env.returncode}\nOutput: {output}"
-                raise RuntimeError(msg)
+            env.communicate(commands, require_zero=True)
         except KeyboardInterrupt:
             raise
         except Exception as e:

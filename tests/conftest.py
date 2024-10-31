@@ -104,3 +104,22 @@ def swe_env_context(env_args):
         yield env
     finally:
         env.close()
+
+
+@pytest.fixture
+def swe_agent_test_repo_clone(tmp_path):
+    local_repo_path = tmp_path / "test-repo"
+    clone_cmd = ["git", "clone", "https://github.com/swe-agent/test-repo", local_repo_path]
+    subprocess.run(clone_cmd, check=True)
+    return local_repo_path
+
+
+@pytest.fixture
+def swe_agent_test_repo_traj(test_trajectories_path) -> Path:
+    p = (
+        test_trajectories_path
+        / "gpt4__swe-agent-test-repo__default_from_url__t-0.00__p-0.95__c-3.00__install-1"
+        / "6e44b9__sweagenttestrepo-1c2844.traj"
+    )
+    assert p.is_file()
+    return p

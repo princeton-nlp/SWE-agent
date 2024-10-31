@@ -19,17 +19,17 @@ class EmptyProblemStatement(BaseModel):
 
 
 class TextProblemStatement(BaseModel):
-    problem_statement: str = ""
+    text: str = ""
 
     type: Literal["text"] = "text"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
     @property
     def id(self) -> str:
-        return hashlib.sha256(self.problem_statement.encode()).hexdigest()[:6]
+        return hashlib.sha256(self.text.encode()).hexdigest()[:6]
 
     def get_problem_statement(self) -> str:
-        return self.problem_statement
+        return self.text
 
 
 class FileProblemStatement(BaseModel):
@@ -47,18 +47,18 @@ class FileProblemStatement(BaseModel):
 
 
 class GithubIssue(BaseModel):
-    issue_url: str = ""
+    url: str = ""
 
     type: Literal["github"] = "github"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
     @property
     def id(self) -> str:
-        owner, repo, issue_number = _parse_gh_issue_url(self.issue_url)
+        owner, repo, issue_number = _parse_gh_issue_url(self.url)
         return f"{owner}__{repo}-i{issue_number}"
 
     def get_problem_statement(self) -> str:
-        owner, repo, issue_number = _parse_gh_issue_url(self.issue_url)
+        owner, repo, issue_number = _parse_gh_issue_url(self.url)
         return _get_problem_statement_from_github_issue(
             owner, repo, issue_number, token=keys_config.get("GITHUB_TOKEN")
         )

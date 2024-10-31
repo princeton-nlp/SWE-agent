@@ -51,7 +51,7 @@ def test_env_with_hook(test_env_args):
 def test_env_communicate_with_handling(test_env_args):
     with swe_env_context(test_env_args) as env:
         env.reset()
-        env.communicate("echo 'hello world'", require_zero_exit_code=True, error_msg="Failed to echo")
+        env.communicate("echo 'hello world'", require_zero=True, error_msg="Failed to echo")
 
 
 @pytest.mark.slow
@@ -59,7 +59,7 @@ def test_env_communicate_with_handling_timeout(test_env_args):
     with swe_env_context(test_env_args) as env:
         env.reset()
         with pytest.raises(CommandTimeoutError):
-            env.communicate("sleep 10", require_zero_exit_code=True, error_msg="Failed to sleep")
+            env.communicate("sleep 10", require_zero=True, error_msg="Failed to sleep", timeout=0.2)
 
 
 @pytest.mark.slow

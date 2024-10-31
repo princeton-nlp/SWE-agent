@@ -50,7 +50,7 @@ class BatchInstance(BaseModel):
         # Combine image name and deployment options into a DeploymentConfig object. Because this can be one of many
         # subclasses, we use a TypeAdapter to validate/instantiate the object.
         deployment = TypeAdapter(DeploymentConfig).validate_python(dict(image=self.image_name, **deployment_kwargs))
-        problem_statement = TextProblemStatement(problem_statement=self.problem_statement)
+        problem_statement = TextProblemStatement(text=self.problem_statement)
         return EnvironmentInstanceConfig(deployment=deployment, problem_statement=problem_statement, repo=None)
 
 

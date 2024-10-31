@@ -59,8 +59,6 @@ class SWEEnv:
         self.problem_statement = problem_statement
         self._startup_commands = startup_commands
         self.logger = get_logger("swe_env", emoji="🌱")
-        # todo: get rid of this
-        self.returncode: None | int = None
 
         self.clean_multi_line_functions = lambda x: x
         self._hooks: list[EnvHook] = []
@@ -188,7 +186,7 @@ class SWEEnv:
             ]
             self.communicate(
                 input=" && ".join(startup_commands),
-                require_zero_exit_code=True,
+                require_zero=True,
                 error_msg="Failed to clean repository",
             )
 
@@ -203,7 +201,7 @@ class SWEEnv:
         ]
         self.communicate(
             input=" && ".join(cmd),
-            require_zero_exit_code=True,
+            require_zero=True,
             error_msg="Failed to reset environment variables",
         )
 
@@ -282,7 +280,7 @@ class SWEEnv:
         try:
             observation = self.communicate(
                 input=action,
-                timeout_duration=AGENT_ACTION_TIMEOUT,
+                timeout=AGENT_ACTION_TIMEOUT,
                 set_last_action=True,
             )
         except RuntimeError as e:
@@ -345,27 +343,27 @@ class SWEEnv:
         """
         self.communicate(
             "mkdir -p /root/commands",
-            require_zero_exit_code=True,
+            require_zero=True,
             error_msg="Failed to create commands directory",
         )
         self.communicate(
             "touch /root/commands/__init__.py",
-            require_zero_exit_code=True,
+            require_zero=True,
             error_msg="Failed to create __init__.py",
         )
         self.communicate(
             "export PATH=$PATH:/root/commands",
-            require_zero_exit_code=True,
+            require_zero=True,
             error_msg="Failed to add commands directory to PATH",
         )
 
     def communicate(
         self,
         input: str,
-        timeout_duration: int | float = 25,
+        timeout: int | float = 25,
         *,
         set_last_action: bool = False,
-        require_zero_exit_code: bool = False,
+        require_zero: bool = False,
         error_msg: str = "Command failed",
     ) -> str:
         """Sends input to container and returns output
@@ -381,16 +379,13 @@ class SWEEnv:
         """
         if input.strip() == "exit":
             asyncio.run(self.deployment.stop())
-            self.returncode = 0
             return ""
 
         self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
-        self.returncode = None
-        r = asyncio.run(self.deployment.runtime.run_in_session(BashAction(command=input, timeout=timeout_duration)))
-        self.returncode = r.exit_code
+        r = asyncio.run(self.deployment.runtime.run_in_session(BashAction(command=input, timeout=timeout)))
         output = r.output
         self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
-        if (self._require_zero_exit_code or require_zero_exit_code) and self.returncode != 0:
+        if (self._require_zero_exit_code or require_zero) and r.exit_code != 0:
             self.logger.error(f"{error_msg}: {output}")
             self.close()
             msg = f"{error_msg} (command: {input})"
@@ -447,7 +442,7 @@ class SWEEnv:
             if command["type"] == "source_file":
                 self.communicate(
                     f"source /root/commands/{name}",
-                    require_zero_exit_code=True,
+                    require_zero=True,
                     error_msg=(
                         f"Failed to source {name}. If you meant to make a script,"
                         " start the file with a shebang (e.g. #!/usr/bin/env python)."
@@ -456,7 +451,7 @@ class SWEEnv:
             elif command["type"] == "script":
                 self.communicate(
                     f"chmod +x /root/commands/{name}",
-                    require_zero_exit_code=True,
+                    require_zero=True,
                     error_msg=f"Failed to chmod {name}",
                 )
             elif command["type"] == "utility":

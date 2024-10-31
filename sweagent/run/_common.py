@@ -9,6 +9,7 @@ from pydantic_settings import BaseSettings, CliApp
 from sweagent import CONFIG_DIR
 
 
+# todo: Parameterize type hints
 class BasicCLI:
     def __init__(self, arg_type: type[BaseSettings], default_settings: bool = True):
         self.arg_type = arg_type
