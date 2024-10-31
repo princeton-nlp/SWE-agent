@@ -186,9 +186,9 @@ class AgentHook:
 
     def on_actions_generated(self, *, thought: str, action: str, output: str): ...
 
-    def on_sub_action_started(self, *, sub_action: str): ...
+    def on_action_started(self, *, action: str): ...
 
-    def on_sub_action_executed(self, *, obs: str, done: bool): ...
+    def on_action_executed(self, *, obs: str, done: bool): ...
 
     def on_step_done(self, *, trajectory_step: TrajectoryStep, model_stats: APIStats): ...
 
@@ -305,7 +305,7 @@ class Agent:
         The path is reset for every new instance.
         """
         if self.traj_dir and self._env is not None:
-            return self.traj_dir / (self._env.instance.id + ".traj")
+            return self.traj_dir / (self._env.problem_statement.id + ".traj")
         return None
 
     def add_hook(self, hook: AgentHook) -> None:
@@ -509,50 +509,8 @@ class Agent:
                 rem_action = ""
         return "\n".join(parsed_action)
 
-    # todo: Do we still need that now that we don't have subroutines
-    def split_actions(self, action: str, pattern_type="subroutine") -> list[SubAction]:
-        """Split an action into a list of actions in a greedy manner, each of which is a subroutine call or a single command."""
-        parsed_action: list[SubAction] = list()
-        rem_action = action
-        while rem_action.strip():
-            first_match = self._get_first_match(rem_action, pattern_type)
-            if first_match:
-                pre_action = rem_action[: first_match.start()]
-                match_action = rem_action[first_match.start() : first_match.end()]
-                rem_action = rem_action[first_match.end() :]
-                if pre_action.strip():
-                    parsed_action.append({"agent": self.name, "action": pre_action, "cmd_name": None, "args": ""})
-                if match_action.strip():
-                    if match_action.split()[0] == self.config.submit_command:
-                        parsed_action.append(
-                            SubAction(
-                                {
-                                    "agent": self.name,
-                                    "action": match_action,
-                                    "cmd_name": first_match.group(1),
-                                    "args": "",
-                                },
-                            )
-                        )  # submit command is not a subroutine
-                    else:
-                        parsed_action.append(
-                            SubAction(
-                                {
-                                    "agent": first_match.group(1),
-                                    "args": first_match.group(2),
-                                    "action": match_action,
-                                    "cmd_name": first_match.group(1),
-                                },
-                            )
-                        )
-            else:
-                parsed_action.append(
-                    SubAction({"agent": self.name, "action": rem_action, "cmd_name": None, "args": ""})
-                )
-                rem_action = ""
-        return parsed_action
-
     def _parse_command_patterns(self) -> None:
+        """Sets self.command_patterns and self.subroutine_patterns"""
         assert self.config is not None  # mypy
         self.command_patterns = dict()
         for command in self.config.commands:
@@ -577,7 +535,8 @@ class Agent:
         self.command_patterns[self.config.submit_command] = submit_pat
 
     def forward(self, observation: str | None, available_actions: list[str], state: str) -> tuple[str, str, str]:
-        """Forwards the model
+        """Forwards the model, i.e., queries the model with the current trajectory and observation.
+        This is identical to `self.forward_with_error_check`, but adds the output to the trajectory.
 
         Args:
             observation: Observation
@@ -608,6 +567,7 @@ class Agent:
 
     def forward_model(self, observation: str | None, state: str) -> str:
         """Query the model with the current state and observation with the appropriate template.
+        In most cases you want to use `self.forward_with_error_check` instead to handle requeueing etc.
 
         Returns:
             output: raw model output (not output of the command)
@@ -699,7 +659,8 @@ class Agent:
         self,
         output: str,
     ) -> tuple[str, str, str]:
-        """Query the model with the current state and observation with the appropriate template.
+        """Checks model output. If the output is malformatted or the action is blocked, call
+        `self.retry_after_format_fail` or `self.retry_after_blocklist_fail`.
 
         Try to parse the output into a thought and action. Retry if the output is malformatted or the action is blocked.
 
@@ -843,20 +804,7 @@ class Agent:
             env_vars[var] = env.communicate(f"echo ${var}").strip()
         return env_vars
 
-    # def _update_summarizer_stats(self, cost: APIStats):
-    #     """Update stats for summarizer"""
-    #     self.model.stats += cost
-    #     if "summarizer" not in self.info:
-    #         self.info["summarizer"] = {
-    #             "model_stats": APIStats().to_dict(),
-    #             "n_calls": 0,
-    #         }
-    #     total_cost = APIStats(**self.info["summarizer"]["model_stats"])
-    #     total_cost += cost
-    #     self.info["summarizer"]["model_stats"] = total_cost.to_dict()
-    #     self.info["summarizer"]["n_calls"] += 1
-
-    def _run_sub_action(self, sub_action: SubAction) -> tuple[str | None, bool]:
+    def _run_action(self, action: str) -> tuple[str | None, bool]:
         """Execute a sub-action. If the sub-action is a command, execute it.
 
         Returns:
@@ -867,20 +815,13 @@ class Agent:
         assert self.config is not None
 
         # Normal command, not a subroutine
-        self._fire_hooks("on_sub_action_started", sub_action=sub_action)
-        observation, _, done, _info = self._env.step(sub_action["action"])
-        # observation, additional_cost = self.config.summarizer_config.function(  # type: ignore
-        #     sub_action["action"], observation, self._env, self.summarizer_model
-        # )
-        # self._update_summarizer_stats(additional_cost)
+        self._fire_hooks("on_action_started", action=action)
+        observation, _, done, _info = self._env.step(action)
         self.info.update(_info)
-        self._fire_hooks("on_sub_action_executed", obs=observation, done=done)
-        if sub_action["cmd_name"] == self.config.submit_command:
-            done = True
-
+        self._fire_hooks("on_action_executed", obs=observation, done=done)
         return observation, done
 
-    def _run_step(self, observation: str | None) -> tuple[str | None, bool]:
+    def _step(self, observation: str | None) -> tuple[str | None, bool]:
         """Run a step of the agent: Forward the last observation to the LM,
         then execute the action and save the trajectory.
 
@@ -901,18 +842,8 @@ class Agent:
         run_action: str = self._guard_multiline_input(action)
 
         # Loop over sub-actions (if any)
-        done = False
-        observations: list[str | None] = list()
         execution_t0 = time.perf_counter()
-        breakpoint()
-        for sub_action in self.split_actions(run_action):
-            observation, done = self._run_sub_action(sub_action)
-            # If the last sub-action is done, the observation is not
-            # appended.
-            if done:
-                break
-            observations.append(observation)
-        observation = "\n".join([obs for obs in observations if obs is not None])
+        observation, done = self._run_action(run_action)
         execution_time = time.perf_counter() - execution_t0
 
         trajectory_step = TrajectoryStep(
@@ -972,7 +903,7 @@ class Agent:
         self._fire_hooks("on_run_start")
         done = False
         while not done:
-            observation, done = self._run_step(observation)
+            observation, done = self._step(observation)
             self.save_trajectory()
         self._fire_hooks("on_run_done", trajectory=self.trajectory, info=self.info)
 

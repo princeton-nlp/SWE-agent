@@ -1,9 +1,10 @@
 import subprocess
 from pathlib import Path
-from typing import Any
 
 import rich
 
+from sweagent.environment.config.repo import LocalRepoConfig
+from sweagent.environment.swe_env import SWEEnv
 from sweagent.run.hooks.abstract import RunHook
 from sweagent.utils.log import get_logger
 
@@ -16,26 +17,27 @@ class SaveApplyPatchHook(RunHook):
         self._apply_patch_locally = apply_patch_locally
 
     def on_init(self, *, run):
-        self._traj_dir = run.traj_dir
+        self._traj_dir = Path(run.traj_dir)
         self._apply_patch_locally = run.actions.apply_patch_locally
-        self._instance = None
+        self._env: SWEEnv | None = None
 
-    def on_instance_start(self, *, index: int, instance: dict[str, Any]):
-        self._instance = instance
+    def on_instance_start(self, *, index: int, env: SWEEnv):
+        self._env = env
 
     def on_instance_completed(self, *, info, trajectory):
-        assert self._instance is not None  # mypy
-        instance_id = self._instance["instance_id"]
+        assert self._env is not None  # mypy
+        instance_id = self._env.problem_statement.id
         patch_path = self._save_patch(instance_id, info)
         if patch_path:
             if not self._apply_patch_locally:
                 return
             if not self._is_promising_patch(info):
                 return
-            assert self._instance  # mypy
-            if self._instance["repo_type"] != "local":
+            if self._env.repo is None:
                 return
-            local_dir = Path(self._instance["repo"])
+            if not isinstance(self._env.repo, LocalRepoConfig):
+                return
+            local_dir = Path(self._env.repo.path)
             self._apply_patch(patch_path, local_dir)
 
     @staticmethod

@@ -44,7 +44,7 @@ class BasicMain:
         observation, info = self.env.reset()
         self.logger.info("Running agent")
         info, trajectory = self.agent.run(
-            setup_args={"problem_statement": self.env.instance.get_problem_statement()},
+            setup_args={"problem_statement": self.env.problem_statement.get_problem_statement()},
             env=self.env,
             observation=observation,
             traj_dir=Path(self.traj_dir),

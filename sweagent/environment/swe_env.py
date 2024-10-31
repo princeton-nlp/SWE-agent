@@ -51,14 +51,14 @@ class SWEEnv:
         deployment: AbstractDeployment,
         # todo: Should None be included in RepoConfig?
         repo: RepoConfig | None,
-        instance: ProblemStatementConfig,
+        problem_statement: ProblemStatementConfig,
         startup_commands: list[str],
         hooks: list[EnvHook] | None = None,
     ):
         super().__init__()
         self.deployment = deployment
         self.repo = repo
-        self.instance = instance
+        self.problem_statement = problem_statement
         self._startup_commands = startup_commands
         self.logger = get_logger("🌱 SWEEnv")
         # todo: get rid of this
@@ -81,7 +81,7 @@ class SWEEnv:
         return cls(
             deployment=deployment,
             repo=config.repo,
-            instance=config.problem_statement,
+            problem_statement=config.problem_statement,
             startup_commands=config.startup_commands,
         )
 

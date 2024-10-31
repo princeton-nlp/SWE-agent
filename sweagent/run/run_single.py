@@ -10,7 +10,7 @@ from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.agent.models import ModelArguments
 from sweagent.environment.swe_env import EnvironmentInstanceConfig, SWEEnv
 from sweagent.run._common import BasicCLI
-from sweagent.run.hooks.abstract import RunHook
+from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
 from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
 from sweagent.run.hooks.open_pr import OpenPRConfig, OpenPRHook
 from sweagent.utils.log import get_logger
@@ -58,12 +58,13 @@ class RunSingle:
         self.traj_dir = traj_dir
         self._hooks = []
         self.actions = actions
+        self._chooks = CombinedRunHooks()
         for hook in hooks or []:
             self.add_hook(hook)
 
     @property
     def hooks(self) -> list[RunHook]:
-        return self._hooks
+        return self._chooks.hooks
 
     @classmethod
     def from_config(cls, config: RunSingleConfig) -> Self:
@@ -81,29 +82,25 @@ class RunSingle:
 
     def add_hook(self, hook: RunHook) -> None:
         hook.on_init(run=self)
-        self._hooks.append(hook)
-
-    def _fire_hooks(self, hook_name: str, *args, **kwargs) -> None:
-        for hook in self.hooks:
-            getattr(hook, hook_name)(*args, **kwargs)
+        self._chooks.add_hook(hook)
 
     def main(self):
-        self._fire_hooks("on_start")
+        self._chooks.on_start()
         self.logger.info("Starting environment")
         self.env.start()
         self.logger.info("Resetting environment")
         observation, info = self.env.reset()
         self.logger.info("Running agent")
-        self._fire_hooks("on_instance_start", index=0, instance=self.env.instance.model_dump())
+        self._chooks.on_instance_start(index=0, env=self.env)
         info, trajectory = self.agent.run(
-            setup_args={"problem_statement": self.env.instance.get_problem_statement()},
+            setup_args={"problem_statement": self.env.problem_statement.get_problem_statement()},
             env=self.env,
             observation=observation,
             traj_dir=Path(self.traj_dir),
         )
-        self._fire_hooks("on_instance_completed", info=info, trajectory=trajectory)
+        self._chooks.on_instance_completed(info=info, trajectory=trajectory)
         self.logger.info("Done")
-        self._fire_hooks("on_end")
+        self._chooks.on_end()
 
 
 def main(args: RunSingleConfig):
