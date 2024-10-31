@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://princeton-nlp.github.io/SWE-agent/"><strong>Documentation</strong></a>&nbsp; | &nbsp;
   <a href="https://discord.gg/AVEFbBn2rH"><strong>Discord</strong></a>&nbsp; | &nbsp;
-  <a href="https://arxiv.org/abs/2405.15793"><strong>Preprint</strong></a>&nbsp; | &nbsp;
+  <a href="https://arxiv.org/abs/2405.15793"><strong>Paper</strong></a>&nbsp; | &nbsp;
   <a href="https://arxiv.org/abs/2409.16165"><strong>EnIGMA preprint</strong></a>
 </p>
 
