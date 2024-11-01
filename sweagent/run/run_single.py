@@ -8,7 +8,12 @@ from pydantic_settings import BaseSettings
 
 from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.agent.models import ModelArguments
-from sweagent.environment.swe_env import EnvironmentInstanceConfig, SWEEnv
+from sweagent.environment.config.problem_statement import (
+    EmptyProblemStatement,
+    ProblemStatement,
+    ProblemStatementConfig,
+)
+from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
 from sweagent.run._common import BasicCLI
 from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
 from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
@@ -27,10 +32,11 @@ class RunSingleActionConfig(BaseModel):
 
 
 class RunSingleConfig(BaseSettings):
-    env: EnvironmentInstanceConfig = Field(default_factory=EnvironmentInstanceConfig)
+    env: EnvironmentConfig = Field(default_factory=EnvironmentConfig)
     agent: AgentConfig = AgentConfig(
         model=ModelArguments(name="human"), next_step_template="Observation: {observation}"
     )
+    problem_statement: ProblemStatementConfig = Field(default_factory=EmptyProblemStatement)
     traj_dir: str = "."
     actions: RunSingleActionConfig = Field(default_factory=RunSingleActionConfig)
     # todo: implement this
@@ -44,6 +50,7 @@ class RunSingle:
         self,
         env: SWEEnv,
         agent: Agent,
+        problem_statement: ProblemStatement,
         *,
         traj_dir: str = ".",
         hooks: list[RunHook] | None = None,
@@ -61,6 +68,7 @@ class RunSingle:
             actions = RunSingleActionConfig()
         self.actions = actions
         self._chooks = CombinedRunHooks()
+        self.problem_statement = problem_statement
         for hook in hooks or []:
             self.add_hook(hook)
 
@@ -73,6 +81,7 @@ class RunSingle:
         self = cls(
             env=SWEEnv.from_config(config.env),
             agent=Agent("main", config.agent),
+            problem_statement=config.problem_statement,
             traj_dir=config.traj_dir,
             actions=config.actions,
         )
@@ -91,13 +100,12 @@ class RunSingle:
         self.logger.info("Starting environment")
         self.env.start()
         self.logger.info("Resetting environment")
-        observation, info = self.env.reset()
+        self.env.reset()
         self.logger.info("Running agent")
         self._chooks.on_instance_start(index=0, env=self.env)
         info, trajectory = self.agent.run(
-            setup_args={"problem_statement": self.env.problem_statement.get_problem_statement()},
+            problem_statement=self.problem_statement,
             env=self.env,
-            observation=observation,
             traj_dir=Path(self.traj_dir),
         )
         self._chooks.on_instance_completed(info=info, trajectory=trajectory)

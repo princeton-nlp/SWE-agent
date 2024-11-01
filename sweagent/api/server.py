@@ -35,7 +35,7 @@ from sweagent.agent.agents import AgentConfig
 from sweagent.agent.models import ModelArguments
 from sweagent.api.hooks import AgentUpdateHook, EnvUpdateHook, MainUpdateHook, WebUpdate
 from sweagent.api.utils import AttrDict, ThreadWithExc
-from sweagent.environment.swe_env import EnvironmentInstanceConfig
+from sweagent.environment.swe_env import EnvironmentConfig
 
 # baaaaaaad
 sys.path.append(str(PACKAGE_DIR.parent))
@@ -157,7 +157,7 @@ def run():
     agent_config = OmegaConf.load(CONFIG_DIR / "default_from_url.yaml")
     defaults = ScriptArguments(
         suffix="",
-        environment=EnvironmentInstanceConfig(
+        environment=EnvironmentConfig(
             deployment=DeploymentConfig(),
             data_path=run.environment.data_path,
             base_commit=run.environment.base_commit,

@@ -77,7 +77,6 @@ class RunReplay:
         return SWEEnv(
             deployment=self.deployment,
             repo=self.repo,
-            problem_statement=EmptyProblemStatement(),
             startup_commands=[],
             _catch_errors=self._catch_errors,
             _always_require_zero_exit_code=self._require_zero_exit_code,
@@ -90,7 +89,7 @@ class RunReplay:
         return Agent("replay", agent_config)
 
     def _get_run_single(self) -> RunSingle:
-        return RunSingle(self._get_env(), self._get_agent())
+        return RunSingle(self._get_env(), self._get_agent(), problem_statement=EmptyProblemStatement())
 
     def main(self):
         self._create_actions_file()

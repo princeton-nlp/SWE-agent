@@ -38,7 +38,7 @@ from unidiff import PatchSet
 
 from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.agent.models import ModelArguments
-from sweagent.environment.swe_env import EnvironmentInstanceConfig, SWEEnv
+from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
 
 __doc__: str = """ Run inference. Usage examples:
 
@@ -60,7 +60,7 @@ logging.getLogger("simple_parsing").setLevel(logging.WARNING)
 class ScriptArguments(BaseSettings):
     """Configure the control flow of the run.py script"""
 
-    environment: EnvironmentInstanceConfig = Field(..., default_factory=EnvironmentInstanceConfig)
+    environment: EnvironmentConfig = Field(..., default_factory=EnvironmentConfig)
     agent: AgentConfig = Field(..., default_factory=AgentConfig)
     actions: RunSingleActionConfig = Field(..., default_factory=RunSingleActionConfig)
     # Only run instances that completely match this regex
@@ -178,7 +178,7 @@ class Main:
         #     setup_args["port"] = challenge.get("port")
         #     setup_args["server_description"] = challenge.get("server_description")
         info, trajectory = self.agent.run(
-            setup_args=setup_args,
+            problem_statement=setup_args,
             env=self.env,
             observation=observation,
             traj_dir=self.traj_dir,
@@ -299,7 +299,7 @@ def get_args(args=None) -> ScriptArguments:
     # Otherwise, the configs from the respective classes will be used
     no_config_defaults = ScriptArguments(
         suffix="",
-        environment=EnvironmentInstanceConfig(
+        environment=EnvironmentConfig(
             deployment=DockerDeploymentConfig(),
             # data_path="princeton-nlp/SWE-bench_Lite",
             # split="dev",

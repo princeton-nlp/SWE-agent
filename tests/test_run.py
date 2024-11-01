@@ -5,7 +5,7 @@ import subprocess
 import pytest
 
 from sweagent.agent.agents import AgentConfig
-from sweagent.environment.swe_env import EnvironmentInstanceConfig
+from sweagent.environment.swe_env import EnvironmentConfig
 from sweagent.run._common import BasicCLI
 from sweagent.run.hooks.abstract import RunHook
 from sweagent.run.run_single import RunSingle, RunSingleConfig
@@ -51,7 +51,7 @@ def test_run_ies(agent_config_with_commands):
     ac = agent_config_with_commands
     ac.model.name = "instant_empty_submit"
     rsc = RunSingleConfig(
-        env=EnvironmentInstanceConfig(),
+        env=EnvironmentConfig(),
         agent=ac,
     )
     rs = RunSingle.from_config(rsc)
@@ -68,11 +68,11 @@ def test_run_ies_repo_ps_matrix(
     problem_statement_source,
 ):
     if problem_statement_source == "github":
-        ps_args = ["--env.problem_statement.url", "https://github.com/swe-agent/test-repo/issues/1"]
+        ps_args = ["--problem_statement.url", "https://github.com/swe-agent/test-repo/issues/1"]
     elif problem_statement_source == "local":
-        ps_args = ["--env.problem_statement.path", str(swe_agent_test_repo_clone / "problem_statements" / "1.md")]
+        ps_args = ["--problem_statement.path", str(swe_agent_test_repo_clone / "problem_statements" / "1.md")]
     elif problem_statement_source == "text":
-        ps_args = ["--env.problem_statement.text='this is a test'"]
+        ps_args = ["--problem_statement.text='this is a test'"]
     else:
         raise ValueError(problem_statement_source)
     if repo == "local":

@@ -1,11 +1,11 @@
 import asyncio
 import os
-from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Literal, Self
+from typing import Literal, Protocol, Self
 
 import pydantic
-from git import InvalidGitRepositoryError, Repo
+from git import InvalidGitRepositoryError
+from git import Repo as GitRepo
 from pydantic import BaseModel
 from swerex.deployment.abstract import AbstractDeployment
 from swerex.runtime.abstract import Command, UploadRequest
@@ -13,14 +13,15 @@ from swerex.runtime.abstract import Command, UploadRequest
 from sweagent.utils.config import keys_config
 
 
-class AbstractRepoConfig(ABC):
-    """Abstract base class for repository configurations."""
+class Repo(Protocol):
+    """Protocol for repository configurations."""
 
-    @abstractmethod
+    base_commit: str
+
     def copy(self, deployment: AbstractDeployment): ...
 
 
-class LocalRepoConfig(BaseModel, AbstractRepoConfig):
+class LocalRepoConfig(BaseModel):
     path: str = ""
     base_commit: str = "HEAD"
 
@@ -34,7 +35,7 @@ class LocalRepoConfig(BaseModel, AbstractRepoConfig):
     @pydantic.model_validator(mode="after")
     def check_valid_repo(self) -> Self:
         try:
-            repo = Repo(self.path, search_parent_directories=True)
+            repo = GitRepo(self.path, search_parent_directories=True)
         except InvalidGitRepositoryError as e:
             msg = f"Could not find git repository at {self.path=}."
             raise ValueError(msg) from e
@@ -51,7 +52,7 @@ class LocalRepoConfig(BaseModel, AbstractRepoConfig):
             raise RuntimeError(msg)
 
 
-class GithubRepoConfig(BaseModel, AbstractRepoConfig):
+class GithubRepoConfig(BaseModel):
     url: str = ""
 
     base_commit: str = "HEAD"

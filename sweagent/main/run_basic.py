@@ -13,12 +13,12 @@ from pydantic_settings import BaseSettings, CliApp
 from sweagent import CONFIG_DIR
 from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.agent.models import ModelArguments
-from sweagent.environment.swe_env import EnvironmentInstanceConfig, SWEEnv
+from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
 from sweagent.utils.log import get_logger
 
 
 class BasicRunArguments(BaseSettings):
-    env: EnvironmentInstanceConfig = Field(default_factory=EnvironmentInstanceConfig)
+    env: EnvironmentConfig = Field(default_factory=EnvironmentConfig)
     agent: AgentConfig = AgentConfig(
         model=ModelArguments(name="human"), next_step_template="Observation: {observation}"
     )
@@ -44,7 +44,7 @@ class BasicMain:
         observation, info = self.env.reset()
         self.logger.info("Running agent")
         info, trajectory = self.agent.run(
-            setup_args={"problem_statement": self.env.problem_statement.get_problem_statement()},
+            problem_statement={"problem_statement": self.env.problem_statement.get_problem_statement()},
             env=self.env,
             observation=observation,
             traj_dir=Path(self.traj_dir),

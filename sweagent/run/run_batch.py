@@ -9,15 +9,15 @@ from pydantic_settings import BaseSettings
 
 from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.agent.models import ModelArguments
-from sweagent.environment.swe_env import EnvironmentInstanceConfig, SWEEnv
+from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
 from sweagent.run._common import BasicCLI
-from sweagent.run.batch_instances import InstanceSourceConfig
+from sweagent.run.batch_instances import BatchInstanceSourceConfig
 from sweagent.run.hooks.abstract import RunHook
 from sweagent.utils.log import get_logger
 
 
 class RunBatchConfig(BaseSettings):
-    instances: InstanceSourceConfig
+    instances: BatchInstanceSourceConfig
     agent: AgentConfig = AgentConfig(
         model=ModelArguments(name="human"), next_step_template="Observation: {observation}"
     )
@@ -28,7 +28,7 @@ class RunBatchConfig(BaseSettings):
 class RunBatch:
     def __init__(
         self,
-        instances: list[EnvironmentInstanceConfig],
+        instances: list[EnvironmentConfig],
         agent: Agent,
         *,
         traj_dir: str = ".",
@@ -72,16 +72,15 @@ class RunBatch:
             env = SWEEnv.from_config(instance)
             env.start()
             self.logger.info("Resetting environment")
-            observation, info = env.reset()
+            env.reset()
             self.logger.info("Running agent")
             self._fire_hooks("on_instance_start", index=0, instance=instance.model_dump())
             info, trajectory = self.agent.run(
-                setup_args={"problem_statement": instance.problem_statement.get_problem_statement()},
+                problem_statement=instance.problem_statement,
                 env=env,
-                observation=observation,
                 traj_dir=Path(self.traj_dir),
             )
-        self._fire_hooks("on_instance_completed", info=info, trajectory=trajectory)
+            self._fire_hooks("on_instance_completed", info=info, trajectory=trajectory)
         self.logger.info("Done")
         self._fire_hooks("on_end")
 

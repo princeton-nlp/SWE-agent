@@ -12,8 +12,7 @@ from swerex.deployment.abstract import AbstractDeployment
 from swerex.runtime.abstract import BashAction, CreateBashSessionRequest, WriteFileRequest
 
 from sweagent.environment.config.deployment import DeploymentConfig, DockerDeploymentConfig
-from sweagent.environment.config.problem_statement import EmptyProblemStatement, ProblemStatementConfig
-from sweagent.environment.config.repo import AbstractRepoConfig, RepoConfig
+from sweagent.environment.config.repo import Repo, RepoConfig
 from sweagent.environment.hooks.abstract import EnvHook
 from sweagent.types import AgentInfo
 from sweagent.utils.config import keys_config
@@ -25,10 +24,9 @@ AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
 AGENT_ACTION_NO_OUTPUT_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_NO_OUTPUT_TIMEOUT", AGENT_ACTION_TIMEOUT))
 
 
-class EnvironmentInstanceConfig(BaseModel):
+class EnvironmentConfig(BaseModel):
     """Configure data sources and setup instructions for the environment in which we solve the tasks."""
 
-    problem_statement: ProblemStatementConfig = Field(default_factory=EmptyProblemStatement)
     deployment: DeploymentConfig = Field(default_factory=DockerDeploymentConfig)
     repo: RepoConfig | None = None
     startup_commands: list[str] = []
@@ -41,9 +39,7 @@ class SWEEnv:
         self,
         *,
         deployment: AbstractDeployment,
-        # todo: Should None be included in RepoConfig?
-        repo: AbstractRepoConfig | None,
-        problem_statement: ProblemStatementConfig,
+        repo: Repo | None,
         startup_commands: list[str],
         hooks: list[EnvHook] | None = None,
         _catch_errors: bool = False,
@@ -55,7 +51,6 @@ class SWEEnv:
         self._require_zero_exit_code = _always_require_zero_exit_code
         self.deployment = deployment
         self.repo = repo
-        self.problem_statement = problem_statement
         self._startup_commands = startup_commands
         self.logger = get_logger("swe_env", emoji="🌱")
 
@@ -70,11 +65,10 @@ class SWEEnv:
         self._init_scripts()
 
     @classmethod
-    def from_config(cls, config: EnvironmentInstanceConfig) -> Self:
+    def from_config(cls, config: EnvironmentConfig) -> Self:
         return cls(
             deployment=config.deployment.get_deployment(),
             repo=config.repo,
-            problem_statement=config.problem_statement,
             startup_commands=config.startup_commands,
         )
 
@@ -113,6 +107,7 @@ class SWEEnv:
         self._fire_hooks("on_copy_repo_started", self.repo)
         self.repo.copy(self.deployment)
 
+    # todo: have named return type here
     def reset(self) -> tuple[str | None, dict]:
         """Reset the container between each task instance.
 
@@ -464,6 +459,5 @@ class SWEEnv:
             msg = "Repository not set, cannot read file"
             raise ValueError(msg)
 
-        # todo: Just use the runtime for this instead
         path_in_container = f"/{self.repo.repo_name}/{path}"
         return self.communicate(f"cat {str(path_in_container)}")

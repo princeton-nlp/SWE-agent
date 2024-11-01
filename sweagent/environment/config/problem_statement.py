@@ -1,12 +1,20 @@
 import hashlib
 import uuid
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Protocol
 
 from pydantic import BaseModel, Field
 
 from sweagent.utils.config import keys_config
 from sweagent.utils.github import _get_problem_statement_from_github_issue, _parse_gh_issue_url
+
+
+class ProblemStatement(Protocol):
+    """A problem statement for a task."""
+
+    id: str
+
+    def get_problem_statement(self) -> str: ...
 
 
 class EmptyProblemStatement(BaseModel):
@@ -18,6 +26,7 @@ class EmptyProblemStatement(BaseModel):
         return ""
 
 
+# todo: Make id overridable
 class TextProblemStatement(BaseModel):
     text: str = ""
 
@@ -32,6 +41,7 @@ class TextProblemStatement(BaseModel):
         return self.text
 
 
+# todo: Make id overridable
 class FileProblemStatement(BaseModel):
     path: str = ""
 

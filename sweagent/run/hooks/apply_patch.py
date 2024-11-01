@@ -21,14 +21,14 @@ class SaveApplyPatchHook(RunHook):
     def on_init(self, *, run):
         self._traj_dir = Path(run.traj_dir)
         self._apply_patch_locally = run.actions.apply_patch_locally
-        self._env: SWEEnv | None = None
+        self._env = run.env
+        self._problem_statement = run.problem_statement
 
     def on_instance_start(self, *, index: int, env: SWEEnv):
         self._env = env
 
     def on_instance_completed(self, *, info, trajectory):
-        assert self._env is not None  # mypy
-        instance_id = self._env.problem_statement.id
+        instance_id = self._problem_statement.id
         patch_path = self._save_patch(instance_id, info)
         if patch_path:
             if not self._apply_patch_locally:

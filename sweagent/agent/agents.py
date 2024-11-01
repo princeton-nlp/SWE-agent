@@ -28,6 +28,7 @@ from sweagent.agent.parsing import FormatError, ParseFunction
 
 # from sweagent.agent.summarizer import SummarizerConfig
 from sweagent.agent.utils import _guard_multiline_input
+from sweagent.environment.config.problem_statement import ProblemStatement
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.types import AgentInfo, History, HistoryItem, Trajectory, TrajectoryStep
 from sweagent.utils.config import _convert_paths_to_abspath
@@ -198,7 +199,6 @@ class Agent:
             "command_docs": self.config.command_docs,
             **self.config.env_variables,
         }
-        self.instance_args = {}
         self._parse_command_patterns()
         self.last_container_id = None
         self.logger = get_logger("agent", emoji="🤠")
@@ -207,7 +207,8 @@ class Agent:
 
         # Set in run method
         self._env: SWEEnv | None = None
-        self.traj_dir: None | Path = None
+        self._problem_statement: ProblemStatement | None = None
+        self.traj_path: Path | None = None
 
         #: Number of attempts to solve the issue when using a review loop
         self._i_attempt: int = 0
@@ -261,15 +262,6 @@ class Agent:
     def info(self, value: AgentInfo):
         self._info_by_attempt[self._i_attempt] = value
 
-    @property
-    def traj_path(self) -> Path | None:
-        """Returns path to the trajectory.
-        The path is reset for every new instance.
-        """
-        if self.traj_dir and self._env is not None:
-            return self.traj_dir / (self._env.problem_statement.id + ".traj")
-        return None
-
     def add_hook(self, hook: AbstractAgentHook) -> None:
         """Add hook to agent"""
         hook.on_init(agent=self)
@@ -281,15 +273,13 @@ class Agent:
         self.history.append(item)
 
     # todo: klieret: Long term: Might make more sense to reinitialize the agent class for every instance instead of this
-    def setup(self, instance_args: dict[str, Any], init_model_stats: APIStats | None = None) -> None:
+    def setup(self, init_model_stats: APIStats | None = None) -> None:
         """Setup the agent for a new instance. This includes
         formatting the system message and adding demonstrations to the history.
 
         Args:
             instance_args: Arguments for the instance
         """
-
-        self.instance_args = instance_args
 
         self._i_attempt = 0
         self._history_by_attempt = defaultdict(list)
@@ -318,7 +308,10 @@ class Agent:
         self.model.reset_stats(init_model_stats)
         # self.model = get_model(self._args.model, self.config._commands + self.config.subroutine_types)
         # fixme: This doesn't reset total cost
-        system_msg = self.config.system_template.format(**self.system_args, **self.instance_args)
+        assert self._problem_statement is not None
+        system_msg = self.config.system_template.format(
+            **self.system_args, problem_statement=self._problem_statement.get_problem_statement()
+        )
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
         self._append_history(HistoryItem({"role": "system", "content": system_msg, "agent": self.name}))
         # todo: This should be moved somewhere
@@ -513,14 +506,15 @@ class Agent:
 
         # Populate selected template(s) with information (e.g., issue, arguments, state)
         messages = []
+        assert self._problem_statement is not None
         for template in templates:
             messages.append(
                 template.format(
-                    **self.instance_args,
                     **self.system_args,
                     **state,
                     observation=observation or "",
                     **self._forwarded_vars,
+                    problem_statement=self._problem_statement.get_problem_statement(),
                 ),
             )
 
@@ -655,10 +649,10 @@ class Agent:
                 f"exit due to retry error: {e}",
             )
 
-    def init_environment_vars(self, env: SWEEnv):
-        self.set_environment_vars(env, self.config.env_variables)
+    def init_environment_vars(self):
+        self.set_environment_vars(self.config.env_variables)
 
-    def set_environment_vars(self, env: SWEEnv, env_variables: dict[str, Any]) -> None:
+    def set_environment_vars(self, env_variables: dict[str, Any]) -> None:
         """Sets environment variables in the container and for example makes sure
         that all the commands are available in the PATH on the container.
         """
@@ -671,8 +665,9 @@ class Agent:
             [f"{k}={v}" for k, v in env_variables.items()]
         )
         commands = "\n".join(commands_to_execute)
+        assert self._env is not None
         try:
-            env.communicate(commands, require_zero=True)
+            self._env.communicate(commands, require_zero=True)
         except KeyboardInterrupt:
             raise
         except Exception as e:
@@ -706,8 +701,9 @@ class Agent:
                 datum["name"] = Path(file).name.rsplit(".", 1)[0]
                 datum["type"] = "script"
             command_files.append(datum)
-        env.add_commands(command_files)
+        self._env.add_commands(command_files)
 
+    # todo: Move to SWEEnv?
     def get_environment_vars(self, env: SWEEnv) -> dict[str, Any]:
         """Get environment variables inside of the container"""
         env_vars = dict()
@@ -772,13 +768,13 @@ class Agent:
         self._chook.on_step_done(trajectory_step=trajectory_step, model_stats=model_stats)
         return observation, done
 
-    # todo: Get rid of setup_arts in this unspecified form
+    # todo: Set env already in  setup?
     def run(
         self,
-        setup_args: dict[str, Any],
+        problem_statement: ProblemStatement,
         env: SWEEnv,
         observation: str = "",
-        traj_dir: Path | None = None,
+        traj_dir: Path = Path("."),
         init_model_stats: APIStats | None = None,
     ) -> tuple[AgentInfo, Trajectory]:
         """Run the agent on a problem instance. This method contains the
@@ -795,16 +791,18 @@ class Agent:
             If return_type is "info_trajectory", returns a tuple of
             the info dictionary and the trajectory (list of dictionaries).
         """
-        self.init_environment_vars(env)
-        self.setup(setup_args, init_model_stats)
+        self._problem_statement = problem_statement
+        self._env = env
+        # todo: Shouldn't this be moved to setup?
+        self.init_environment_vars()
+        self.setup(init_model_stats)
 
         # Save/reset some attributes
         self.trajectory = Trajectory()
-        self._env = env
         self.info = AgentInfo()
         self.info["swe_agent_hash"] = get_agent_commit_hash()
         self.info["swe_agent_version"] = __version__
-        self.traj_dir = traj_dir
+        self.traj_path = traj_dir / (self._problem_statement.id + ".traj")
 
         self.logger.info("Trajectory will be saved to %s", self.traj_path)
 
