@@ -27,6 +27,7 @@ from sweagent.agent.models import (
 from sweagent.agent.parsing import FormatError, ParseFunction
 
 # from sweagent.agent.summarizer import SummarizerConfig
+from sweagent.agent.utils import _guard_multiline_input
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.types import AgentInfo, History, HistoryItem, Trajectory, TrajectoryStep
 from sweagent.utils.config import _convert_paths_to_abspath
@@ -320,6 +321,7 @@ class Agent:
         system_msg = self.config.system_template.format(**self.system_args, **self.instance_args)
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
         self._append_history(HistoryItem({"role": "system", "content": system_msg, "agent": self.name}))
+        # todo: This should be moved somewhere
         if "history_to_messages" in dir(self.model):
             for demonstration_path in self.config.demonstrations:
                 if self.config.demonstration_template is None and not self.config.put_demos_in_history:
@@ -405,22 +407,17 @@ class Agent:
         assert self.traj_path is not None
         self.traj_path.write_text(json.dumps(data, indent=2))
 
-    def _get_first_match(self, action: str, pattern_type: str) -> re.Match | None:
-        """Return the first match of a command pattern in the action string."""
+    def _get_first_multiline_cmd(self, action: str) -> re.Match | None:
+        """Return the first match of a command pattern in the action string.
+        Where first match is defined by the start of the match.
 
-        if pattern_type == "subroutine":
-            patterns = {k: v for k, v in self.subroutine_patterns.items()}
-        elif pattern_type == "multi_line":
-            patterns = {
-                k: v
-                for k, v in self.command_patterns.items()
-                if k in self.config.multi_line_command_endings or k == self.config.submit_command
-            }
-        elif pattern_type == "multi_line_no_subroutines":
-            patterns = {k: v for k, v in self.command_patterns.items() if k in self.config.multi_line_command_endings}
-        else:
-            msg = f"Unknown pattern type: {pattern_type}"
-            raise ValueError(msg)
+        The match object has three groups: (1) command name, (2) command arguments, (3) end name
+        """
+        patterns = {
+            k: v
+            for k, v in self.command_patterns.items()
+            if k in self.config.multi_line_command_endings or k == self.config.submit_command
+        }
         matches = list()
         for _, pat in patterns.items():
             match = pat.search(action)
@@ -431,36 +428,13 @@ class Agent:
         matches = sorted(matches, key=lambda x: x.start())
         return matches[0]
 
-    #: todo: Should that be a utility function??
     def _guard_multiline_input(self, action: str) -> str:
         """Split action by multiline commands, then append the first line in each multiline command with "<< '{end_name}'".
         Multiline commands (which are specified by an end_name) are commands that span multiple lines and are terminated by a specific end_name.
 
         Their multi-line argument is sent using a heredoc, which is a way to send a multi-line string to a command in bash.
         """
-        parsed_action = list()
-        rem_action = action
-        while rem_action.strip():
-            first_match = self._get_first_match(rem_action, "multi_line_no_subroutines")
-            if first_match:
-                pre_action = rem_action[: first_match.start()]
-                match_action = rem_action[first_match.start() : first_match.end()]
-                rem_action = rem_action[first_match.end() :]
-                if pre_action.strip():
-                    parsed_action.append(pre_action)
-                if match_action.strip():
-                    eof = first_match.group(3).strip()
-                    if not match_action.split("\n")[0].strip().endswith(f"<< '{eof}'"):
-                        guarded_command = match_action[first_match.start() :]
-                        first_line = guarded_command.split("\n")[0]
-                        guarded_command = guarded_command.replace(first_line, first_line + f" << '{eof}'", 1)
-                        parsed_action.append(guarded_command)
-                    else:
-                        parsed_action.append(match_action)
-            else:
-                parsed_action.append(rem_action)
-                rem_action = ""
-        return "\n".join(parsed_action)
+        return _guard_multiline_input(action, self._get_first_multiline_cmd)
 
     def _parse_command_patterns(self) -> None:
         """Sets self.command_patterns and self.subroutine_patterns"""
@@ -476,7 +450,6 @@ class Agent:
             else:
                 pat = re.compile(rf"^\s*({command.name})\s*(.*?)$", re.MULTILINE)
                 self.command_patterns[command.name] = pat
-        self.subroutine_patterns = dict()
         if hasattr(self.config, "submit_command_end_name"):
             submit_pat = re.compile(
                 rf"^\s*({self.config.submit_command})\s*(.*?)^({self.config.submit_command_end_name})\s*$",
@@ -484,7 +457,6 @@ class Agent:
             )
         else:
             submit_pat = re.compile(rf"^\s*({self.config.submit_command})(\s*)$", re.MULTILINE)  # group 2 is nothing
-        self.subroutine_patterns[self.config.submit_command] = submit_pat
         self.command_patterns[self.config.submit_command] = submit_pat
 
     def forward(self, observation: str, available_actions: list[str], state: dict[str, str]) -> tuple[str, str, str]:
@@ -744,6 +716,7 @@ class Agent:
         return env_vars
 
     def get_state(self) -> dict[str, str]:
+        """If a state command is defined, execute it in the environment and return the result as a dictionary."""
         if not self.config.state_command:
             return {}
         assert self._env is not None
@@ -754,9 +727,10 @@ class Agent:
             msg = f"State {state!r} is not valid json. This is an internal error, please report it."
             raise ValueError(msg) from e
 
-    def _step(self, observation: str) -> tuple[str, bool]:
-        """Run a step of the agent: Forward the last observation to the LM,
-        then execute the action and save the trajectory.
+    def step(self, observation: str) -> tuple[str, bool]:
+        """Run a step of the agent: Take the last observation, combine it with all other context
+        (i.e., the history of thoughts and actions), then execute the action and return the new observation.
+        Also saves the new trajectory.
 
         Returns:
             observation: Observation
@@ -807,9 +781,8 @@ class Agent:
         traj_dir: Path | None = None,
         init_model_stats: APIStats | None = None,
     ) -> tuple[AgentInfo, Trajectory]:
-        """
-        Run the agent on an environment.
-        Return the final value of the specified return type.
+        """Run the agent on a problem instance. This method contains the
+        main loop that repeatedly calls `self._step` until the problem is solved.
 
         Args:
             setup_args: Arguments to pass to the agent's setup method.
@@ -839,7 +812,7 @@ class Agent:
         self._chook.on_run_start()
         done = False
         while not done:
-            observation, done = self._step(observation)
+            observation, done = self.step(observation)
             self.save_trajectory()
         self._chook.on_run_done(trajectory=self.trajectory, info=self.info)
 

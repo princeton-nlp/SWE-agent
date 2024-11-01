@@ -35,8 +35,6 @@ class EnvironmentInstanceConfig(BaseModel):
 
 
 class SWEEnv:
-    """Gym environment for SWE-bench. This class should handle all communication with the docker container."""
-
     name = "swe_main"
 
     def __init__(
@@ -51,6 +49,7 @@ class SWEEnv:
         _catch_errors: bool = False,
         _always_require_zero_exit_code: bool = False,
     ):
+        """This class represents the environment in which we solve the tasks."""
         super().__init__()
         self._catch_errors = _catch_errors
         self._require_zero_exit_code = _always_require_zero_exit_code
@@ -115,8 +114,7 @@ class SWEEnv:
         self.repo.copy(self.deployment)
 
     def reset(self) -> tuple[str | None, dict]:
-        """
-        Function to reset container between each task instance.
+        """Reset the container between each task instance.
 
         * Clones instance's repository
         * Cleans repository of prior modifications
@@ -205,6 +203,7 @@ class SWEEnv:
             error_msg="Failed to reset environment variables",
         )
 
+    # todo: Shouldn't this be the same as reset meanwhile?
     def reset_for_new_attempt(
         self,
     ) -> None:
@@ -228,8 +227,7 @@ class SWEEnv:
     # todo: Have a return type here
     # todo: Break this up
     def step(self, action: str) -> tuple[str, int, bool, AgentInfo]:
-        """
-        Runs an action proposed by the agent in the environment and returns the corresponding output.
+        """Runs an action proposed by the agent in the environment and returns the corresponding output.
 
         Args:
             action: command to run in bash shell
@@ -312,9 +310,7 @@ class SWEEnv:
         return observation, 0, False, info
 
     def close(self) -> None:
-        """
-        Handle environment shutdown
-        """
+        """Shoutdown SWE-ReX deployment etc."""
         self.logger.info("Beginning environment shutdown...")
         asyncio.run(self.deployment.stop())
         self._fire_hooks("on_close")
@@ -329,8 +325,7 @@ class SWEEnv:
     def _init_container(
         self,
     ) -> None:
-        """
-        Handles container initialization. Defines container name and creates it.
+        """Handles container initialization. Defines container name and creates it.
         If cached_image is provided, it will use that image name instead of the default.
         """
         asyncio.run(self.deployment.start())
@@ -338,9 +333,7 @@ class SWEEnv:
         self.logger.info("Environment Initialized")
 
     def _init_scripts(self):
-        """
-        Initialize custom commands within container
-        """
+        """Initialize custom commands within container"""
         self.communicate(
             "mkdir -p /root/commands",
             require_zero=True,
@@ -366,14 +359,16 @@ class SWEEnv:
         require_zero: bool = False,
         error_msg: str = "Command failed",
     ) -> str:
-        """Sends input to container and returns output
+        """Executes a command in the running shell. The details of this are handled by
+        the SWE-ReX deployment/runtime.
 
         Args:
             input: input to send to container
             timeout_duration: duration to wait for output
             set_last_action: whether to set the LAST_ACTION environment variable
-            require_zero_exit_code: whether to raise an error if the exit code is non-zero
+            require_zero: whether to raise an error if the exit code is non-zero
             error_msg: error message to raise if the command fails
+
         Returns:
             output: output from container
         """
@@ -400,16 +395,14 @@ class SWEEnv:
         return output
 
     def get_available_actions(self) -> list[str]:
-        """
-        Returns list of available actions in current environment state
+        """Returns list of available actions in current environment state
 
         Currently not in use.
         """
         return []
 
     def get_submission(self, output: str) -> str | None:
-        """
-        Function for extracting diff patch submission at the end of an episode.
+        """Function for extracting diff patch submission at the end of an episode.
 
         Args:
             output: `submit` observation
@@ -424,15 +417,11 @@ class SWEEnv:
         return match.group(1)
 
     def on_environment_startup(self) -> None:
-        """
-        Creates conda environment and installs third party dependencies to allow code execution
-        """
+        """Creates conda environment and installs third party dependencies to allow code execution"""
         self._fire_hooks("on_environment_startup")
 
     def add_commands(self, commands: list[dict]) -> None:
-        """
-        Adds custom commands to container
-        """
+        """Adds custom commands to container"""
         for command in commands:
             name = command["name"]
             contents = command["contents"]
