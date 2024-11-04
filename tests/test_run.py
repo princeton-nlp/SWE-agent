@@ -1,24 +1,49 @@
 from __future__ import annotations
 
 import subprocess
+from pathlib import Path
 
 import pytest
 
 from sweagent.agent.agents import AgentConfig
 from sweagent.environment.swe_env import EnvironmentConfig
-from sweagent.run._common import BasicCLI
+from sweagent.run.common import BasicCLI
 from sweagent.run.hooks.abstract import RunHook
 from sweagent.run.run_single import RunSingle, RunSingleConfig
 
 
-@pytest.mark.slow
-def test_run_cli_help():
+def test_run_cli_no_arg_error():
     args = [
-        "python",
-        "sweagent/run/run_single.py",
+        "sweagent",
+    ]
+    output = subprocess.run(args, check=False, capture_output=True)
+    assert output.returncode == 2
+    assert "run-batch" in output.stdout.decode()
+    assert "run-replay" in output.stdout.decode()
+    assert "run" in output.stdout.decode()
+
+
+def test_run_cli_main_help():
+    args = [
+        "sweagent",
         "--help",
     ]
-    subprocess.run(args, check=True)
+    output = subprocess.run(args, check=True, capture_output=True)
+    assert output.returncode == 0
+    assert "run-batch" in output.stdout.decode()
+    assert "run-replay" in output.stdout.decode()
+    assert "run" in output.stdout.decode()
+
+
+def test_run_cli_subcommand_help():
+    args = [
+        "sweagent",
+        "run",
+        "--help",
+    ]
+    output = subprocess.run(args, check=True, capture_output=True)
+    assert output.returncode == 0
+    assert "--config" in output.stdout.decode()
 
 
 class RaisesExceptionHook(RunHook):
@@ -67,6 +92,9 @@ def test_run_ies_repo_ps_matrix(
     repo,
     problem_statement_source,
 ):
+    output_formats = ["traj", "pred", "patch"]
+    for fmt in output_formats:
+        assert not list(Path(tmpdir).glob(f"*.{fmt}"))
     if problem_statement_source == "github":
         ps_args = ["--problem_statement.url", "https://github.com/swe-agent/test-repo/issues/1"]
     elif problem_statement_source == "local":
@@ -94,3 +122,6 @@ def test_run_ies_repo_ps_matrix(
     with tmpdir.as_cwd():
         # Test that we can run run.py also independently from repo dir
         rs.run()
+    for fmt in output_formats:
+        assert len(list(Path(tmpdir).glob(f"*.{fmt}"))) == 1
+        print(fmt, list(Path(tmpdir).iterdir()))

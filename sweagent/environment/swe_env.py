@@ -39,7 +39,7 @@ class SWEEnv:
         self,
         *,
         deployment: AbstractDeployment,
-        repo: Repo | None,
+        repo: Repo | RepoConfig | None,
         startup_commands: list[str],
         hooks: list[EnvHook] | None = None,
         _catch_errors: bool = False,
@@ -61,7 +61,7 @@ class SWEEnv:
 
     def start(self) -> None:
         """Start the environment"""
-        self._init_container()
+        self._init_deployment()
         self._init_scripts()
 
     @classmethod
@@ -89,12 +89,6 @@ class SWEEnv:
         for hook in self.hooks:
             getattr(hook, hook_name)(*args, **kwargs)
 
-    # @property
-    # def _repo_name(self) -> str:
-    #     """Name of the local copy of the repository"""
-    #     return self.record["repo"].replace("/", "__").replace(" ", "-").replace("'", "")
-
-    # todo: Ideally move that to the RepoClasses
     def _copy_repo(self) -> None:
         """Clone/copy repository/codebase in container"""
         if self.repo is None:
@@ -107,7 +101,7 @@ class SWEEnv:
         self._fire_hooks("on_copy_repo_started", self.repo)
         self.repo.copy(self.deployment)
 
-    # todo: have named return type here
+    # todo: Get rid of return type here?
     def reset(self) -> tuple[str | None, dict]:
         """Reset the container between each task instance.
 
@@ -124,53 +118,22 @@ class SWEEnv:
             info: additional information (e.g. debugging information)
         """
         info = {}
-
-        ### Reset Container ###
-        # self._init_docker_compose()
-
-        # Init docker network
-        # self._init_docker_network()
-
-        # Clone repository if not already cloned
         self.communicate(input="cd /")
         self._copy_repo()
-
         self._reset_repository()
         self._reset_environment_variables()
-
-        # Set up environment
-        # self.communicate_with_handling(
-        #     "source /root/miniconda3/etc/profile.d/conda.sh",
-        #     error_msg="Failed to source conda",
-        # )
-
-        # system = self.communicate("uname -s").strip().lower()
-        # arch = self.communicate("uname -m").strip().lower()
-        # if system == "linux" and arch == "x86_64":
-        #     self.communicate_with_handling(
-        #         "apt update; apt install build-essential -y",
-        #         error_msg="Failed to install build-essential",
-        #         timeout_duration=LONG_TIMEOUT,
-        #     )
-
-        # Call install environment helper function if specified
-        # if self.install_environment:
         self.on_environment_startup()
-        # Install mypy for linting purposes
-        # self.communicate_with_handling("pip install flake8", error_msg="Failed to install flake8 (lint library)")
-
-        # Write any metadata to info if necessary
         return None, info
 
     def _reset_repository(self) -> None:
         """Clean repository of any modifications + Checkout base commit"""
         if self.repo is not None:
+            # todo: This is part of our commands, not the environment
             startup_commands = [
                 "echo -n > /root/files_to_edit.txt",
                 f"cd /{self.repo.repo_name}",
                 "export ROOT=$(pwd -P)",
             ]
-            # if self.challenge is None:
             startup_commands += [
                 "git status",
                 "git restore .",
@@ -183,6 +146,7 @@ class SWEEnv:
                 error_msg="Failed to clean repository",
             )
 
+    # todo: This is part of our commands, not the environment
     def _reset_environment_variables(self) -> None:
         """Reset environment variables (`CURRENT_FILE`) etc. within container"""
         cmd = [
@@ -314,10 +278,10 @@ class SWEEnv:
 
     def reset_container(self) -> None:
         self.close()
-        self._init_container()
+        self._init_deployment()
         self._init_scripts()
 
-    def _init_container(
+    def _init_deployment(
         self,
     ) -> None:
         """Handles container initialization. Defines container name and creates it.
@@ -327,6 +291,7 @@ class SWEEnv:
         asyncio.run(self.deployment.runtime.create_session(CreateBashSessionRequest(startup_source=["/root/.bashrc"])))
         self.logger.info("Environment Initialized")
 
+    # todo: this part is part of our commands, not the environment
     def _init_scripts(self):
         """Initialize custom commands within container"""
         self.communicate(

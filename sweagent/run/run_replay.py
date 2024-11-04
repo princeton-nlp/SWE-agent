@@ -1,6 +1,7 @@
 """Run on a single instance taken from github or similar."""
 
 import json
+import sys
 import tempfile
 from pathlib import Path
 from typing import Self
@@ -17,7 +18,7 @@ from sweagent.environment.config.deployment import DeploymentConfig, DockerDeplo
 from sweagent.environment.config.problem_statement import EmptyProblemStatement
 from sweagent.environment.config.repo import RepoConfig
 from sweagent.environment.swe_env import SWEEnv
-from sweagent.run._common import BasicCLI
+from sweagent.run.common import BasicCLI
 from sweagent.run.run_single import RunSingle
 from sweagent.utils.log import get_logger
 
@@ -97,9 +98,15 @@ class RunReplay:
         run_single.run()
 
 
-def main(args: RunReplayConfig):
+def run_from_config(args: RunReplayConfig):
     RunReplay.from_config(args).main()
 
 
+def run_from_cli(args: list[str] | None = None):
+    if args is None:
+        args = sys.argv[1:]
+    run_from_config(BasicCLI(RunReplayConfig, default_settings=False).get_args(args))  # type: ignore
+
+
 if __name__ == "__main__":
-    main(BasicCLI(RunReplayConfig, default_settings=False).get_args())  # type: ignore
+    run_from_cli()

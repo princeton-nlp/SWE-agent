@@ -8,9 +8,11 @@ from __future__ import annotations
 
 import copy
 from dataclasses import dataclass
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal
 
+from pydantic import BaseModel
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
+from typing_extensions import TypedDict
 
 
 class TrajectoryStep(TypedDict):
@@ -95,3 +97,8 @@ class BinaryReviewerResult(FrozenSerializable):
     choice: Literal[0, 1]
     output: str
     messages: list[dict[str, str]]
+
+
+class AgentRunResult(BaseModel):
+    info: AgentInfo
+    trajectory: Trajectory

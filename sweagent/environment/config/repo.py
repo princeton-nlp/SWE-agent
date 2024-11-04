@@ -17,6 +17,7 @@ class Repo(Protocol):
     """Protocol for repository configurations."""
 
     base_commit: str
+    repo_name: str
 
     def copy(self, deployment: AbstractDeployment): ...
 

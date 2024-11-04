@@ -29,7 +29,8 @@ class Command(BaseModel):
     code: str
     name: str
     docstring: str | None = None
-    end_name: str | None = None  # if there is an end_name, then it is a multi-line command
+    # if there is an end_name, then it is a multi-line command
+    end_name: str | None = None
     arguments: dict | None = None
     signature: str | None = None
 

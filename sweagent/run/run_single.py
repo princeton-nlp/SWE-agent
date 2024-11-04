@@ -1,5 +1,6 @@
 """Run on a single instance taken from github or similar."""
 
+import sys
 from pathlib import Path
 from typing import Self
 
@@ -14,7 +15,7 @@ from sweagent.environment.config.problem_statement import (
     ProblemStatementConfig,
 )
 from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
-from sweagent.run._common import BasicCLI
+from sweagent.run.common import BasicCLI, save_predictions
 from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
 from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
 from sweagent.run.hooks.open_pr import OpenPRConfig, OpenPRHook
@@ -37,7 +38,7 @@ class RunSingleConfig(BaseSettings):
         model=ModelArguments(name="human"), next_step_template="Observation: {observation}"
     )
     problem_statement: ProblemStatementConfig = Field(default_factory=EmptyProblemStatement)
-    traj_dir: str = "."
+    traj_dir: Path = Path(".")
     actions: RunSingleActionConfig = Field(default_factory=RunSingleActionConfig)
     # todo: implement this
     raise_exceptions: bool = True
@@ -50,9 +51,9 @@ class RunSingle:
         self,
         env: SWEEnv,
         agent: Agent,
-        problem_statement: ProblemStatement,
+        problem_statement: ProblemStatement | ProblemStatementConfig,
         *,
-        traj_dir: str = ".",
+        traj_dir: Path = Path("."),
         hooks: list[RunHook] | None = None,
         actions: RunSingleActionConfig | None = None,
     ):
@@ -102,20 +103,27 @@ class RunSingle:
         self.logger.info("Resetting environment")
         self.env.reset()
         self.logger.info("Running agent")
-        self._chooks.on_instance_start(index=0, env=self.env)
-        info, trajectory = self.agent.run(
+        self._chooks.on_instance_start(index=0, env=self.env, problem_statement=self.problem_statement)
+        result = self.agent.run(
             problem_statement=self.problem_statement,
             env=self.env,
             traj_dir=Path(self.traj_dir),
         )
-        self._chooks.on_instance_completed(info=info, trajectory=trajectory)
+        self._chooks.on_instance_completed(result=result)
         self.logger.info("Done")
         self._chooks.on_end()
+        save_predictions(self.traj_dir, self.problem_statement.id, result)
 
 
-def main(args: RunSingleConfig):
+def run_from_config(args: RunSingleConfig):
     RunSingle.from_config(args).run()
 
 
+def run_from_cli(args: list[str] | None = None):
+    if args is None:
+        args = sys.argv[1:]
+    run_from_config(BasicCLI(RunSingleConfig).get_args(args))  # type: ignore
+
+
 if __name__ == "__main__":
-    main(BasicCLI(RunSingleConfig).get_args())  # type: ignore
+    run_from_cli()

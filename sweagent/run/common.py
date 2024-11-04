@@ -1,5 +1,6 @@
 """Common functionality for the run scripts."""
 
+import json
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -7,6 +8,7 @@ import yaml
 from pydantic_settings import BaseSettings, CliApp
 
 from sweagent import CONFIG_DIR
+from sweagent.types import AgentInfo, AgentRunResult
 
 
 # todo: Parameterize type hints
@@ -60,3 +62,22 @@ class BasicCLI:
             print(yaml.dump(args.model_dump()))
             exit(0)
         return args
+
+
+def save_predictions(traj_dir: Path, instance_id: str, result: AgentRunResult):
+    """Save predictions in a file readable by SWE-bench"""
+    output_file = traj_dir / (instance_id + ".pred")
+    datum = {
+        "model_name_or_path": traj_dir.name,
+        "instance_id": instance_id,
+        "model_patch": result.info.get("submission"),
+    }
+    output_file.write_text(json.dumps(datum))
+
+
+def _is_promising_patch(info: AgentInfo) -> bool:
+    """Do we actually believe that the patch will solve the issue?
+    Or are we just submitting the last patch we generated before hitting an error?
+    """
+    # The exit status can also be `submitted (exit_cost)` etc.
+    return info.get("exit_status") == "submitted" and info.get("submission") is not None

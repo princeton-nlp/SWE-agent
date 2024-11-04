@@ -5,9 +5,12 @@ import rich
 import rich.markdown
 import rich.panel
 
+from sweagent.environment.config.problem_statement import ProblemStatementConfig
 from sweagent.environment.config.repo import LocalRepoConfig
 from sweagent.environment.swe_env import SWEEnv
+from sweagent.run.common import _is_promising_patch
 from sweagent.run.hooks.abstract import RunHook
+from sweagent.types import AgentRunResult
 from sweagent.utils.log import get_logger
 
 
@@ -24,16 +27,16 @@ class SaveApplyPatchHook(RunHook):
         self._env = run.env
         self._problem_statement = run.problem_statement
 
-    def on_instance_start(self, *, index: int, env: SWEEnv):
+    def on_instance_start(self, *, index: int, env: SWEEnv, problem_statement: ProblemStatementConfig):
         self._env = env
 
-    def on_instance_completed(self, *, info, trajectory):
+    def on_instance_completed(self, *, result: AgentRunResult):
         instance_id = self._problem_statement.id
-        patch_path = self._save_patch(instance_id, info)
+        patch_path = self._save_patch(instance_id, result.info)
         if patch_path:
             if not self._apply_patch_locally:
                 return
-            if not self._is_promising_patch(info):
+            if not _is_promising_patch(result.info):
                 return
             if self._env.repo is None:
                 return
@@ -73,7 +76,7 @@ class SaveApplyPatchHook(RunHook):
         Returns:
             The path to the patch file, if it was saved. Otherwise, returns None.
         """
-        patch_output_dir = self._traj_dir / "patches"
+        patch_output_dir = self._traj_dir
         patch_output_dir.mkdir(exist_ok=True, parents=True)
         patch_output_file = patch_output_dir / f"{instance_id}.patch"
         if info.get("submission") is None:
@@ -81,7 +84,7 @@ class SaveApplyPatchHook(RunHook):
             return None
         model_patch = info["submission"]
         patch_output_file.write_text(model_patch)
-        if self._is_promising_patch(info):
+        if _is_promising_patch(info):
             # Only print big congratulations if we actually believe
             # the patch will solve the issue
             self._print_patch_message(patch_output_file)

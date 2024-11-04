@@ -7,7 +7,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, TypeAdapter
 
 from sweagent.environment.config.deployment import DeploymentConfig, LocalDeploymentConfig
-from sweagent.environment.config.problem_statement import ProblemStatement, TextProblemStatement
+from sweagent.environment.config.problem_statement import ProblemStatementConfig, TextProblemStatement
 from sweagent.environment.swe_env import EnvironmentConfig
 
 
@@ -40,7 +40,7 @@ class BatchInstance(BaseModel):
     """
 
     env: EnvironmentConfig
-    problem_statement: ProblemStatement
+    problem_statement: ProblemStatementConfig
 
 
 def _filter_batch_items(instances: list[BatchInstance], filter: str) -> list[BatchInstance]:

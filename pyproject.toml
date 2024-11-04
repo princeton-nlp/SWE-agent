@@ -36,6 +36,9 @@ classifiers = [
   "Programming Language :: Python :: 3 :: Only",
 ]
 
+[project.scripts]
+sweagent = "sweagent.run.run:main"
+
 [project.optional-dependencies]
 dev = [
     "mkdocs-material",

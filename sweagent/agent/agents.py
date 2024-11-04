@@ -28,9 +28,9 @@ from sweagent.agent.parsing import FormatError, ParseFunction
 
 # from sweagent.agent.summarizer import SummarizerConfig
 from sweagent.agent.utils import _guard_multiline_input
-from sweagent.environment.config.problem_statement import ProblemStatement
+from sweagent.environment.config.problem_statement import ProblemStatement, ProblemStatementConfig
 from sweagent.environment.swe_env import SWEEnv
-from sweagent.types import AgentInfo, History, HistoryItem, Trajectory, TrajectoryStep
+from sweagent.types import AgentInfo, AgentRunResult, History, HistoryItem, Trajectory, TrajectoryStep
 from sweagent.utils.config import _convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 
@@ -207,7 +207,7 @@ class Agent:
 
         # Set in run method
         self._env: SWEEnv | None = None
-        self._problem_statement: ProblemStatement | None = None
+        self._problem_statement: ProblemStatement | ProblemStatementConfig | None = None
         self.traj_path: Path | None = None
 
         #: Number of attempts to solve the issue when using a review loop
@@ -703,14 +703,6 @@ class Agent:
             command_files.append(datum)
         self._env.add_commands(command_files)
 
-    # todo: Move to SWEEnv?
-    def get_environment_vars(self, env: SWEEnv) -> dict[str, Any]:
-        """Get environment variables inside of the container"""
-        env_vars = dict()
-        for var in self.config.env_variables:
-            env_vars[var] = env.communicate(f"echo ${var}").strip()
-        return env_vars
-
     def get_state(self) -> dict[str, str]:
         """If a state command is defined, execute it in the environment and return the result as a dictionary."""
         if not self.config.state_command:
@@ -771,12 +763,12 @@ class Agent:
     # todo: Set env already in  setup?
     def run(
         self,
-        problem_statement: ProblemStatement,
+        problem_statement: ProblemStatement | ProblemStatementConfig,
         env: SWEEnv,
         observation: str = "",
         traj_dir: Path = Path("."),
         init_model_stats: APIStats | None = None,
-    ) -> tuple[AgentInfo, Trajectory]:
+    ) -> AgentRunResult:
         """Run the agent on a problem instance. This method contains the
         main loop that repeatedly calls `self._step` until the problem is solved.
 
@@ -786,10 +778,6 @@ class Agent:
             observation: Output from environment setup
             traj_dir: Directory to save the trajectory to
             init_model_stats: Initial model stats to use for the run.
-
-        Returns:
-            If return_type is "info_trajectory", returns a tuple of
-            the info dictionary and the trajectory (list of dictionaries).
         """
         self._problem_statement = problem_statement
         self._env = env
@@ -816,4 +804,4 @@ class Agent:
 
         self.logger.info("Trajectory saved to %s", self.traj_path)
 
-        return self.info, self.trajectory
+        return AgentRunResult(info=self.info, trajectory=self.trajectory)
