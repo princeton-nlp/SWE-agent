@@ -76,8 +76,7 @@ def test_run_ies_repo_ps_matrix(
         raise ValueError(repo)
     args = [
         "--agent.model.name=instant_empty_submit",
-        "--raise_exceptions=True",
-        "--print_config=False",
+        "--print_config",
         "--traj_dir",
         str(tmpdir),
         *ps_args,

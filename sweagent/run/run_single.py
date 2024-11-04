@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 from typing import Self
 
+import yaml
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
 
@@ -22,7 +23,7 @@ from sweagent.run.hooks.open_pr import OpenPRConfig, OpenPRHook
 from sweagent.utils.log import get_logger
 
 
-class RunSingleActionConfig(BaseModel):
+class RunSingleActionConfig(BaseModel, cli_implicit_flags=True):
     """Run real-life actions (opening PRs, etc.) if we can solve the issue."""
 
     # Open a PR with the patch if we can solve the issue
@@ -32,7 +33,7 @@ class RunSingleActionConfig(BaseModel):
     apply_patch_locally: bool = False
 
 
-class RunSingleConfig(BaseSettings):
+class RunSingleConfig(BaseSettings, cli_implicit_flags=True):
     env: EnvironmentConfig = Field(default_factory=EnvironmentConfig)
     agent: AgentConfig = AgentConfig(
         model=ModelArguments(name="human"), next_step_template="Observation: {observation}"
@@ -40,10 +41,9 @@ class RunSingleConfig(BaseSettings):
     problem_statement: ProblemStatementConfig = Field(default_factory=EmptyProblemStatement)
     traj_dir: Path = Path(".")
     actions: RunSingleActionConfig = Field(default_factory=RunSingleActionConfig)
-    # todo: implement this
-    raise_exceptions: bool = True
-    # todo: implement this
-    print_config: bool = True
+
+    print_config: bool = False
+    """Print config at the beginning of the run."""
 
     class Config:
         extra = "forbid"
@@ -82,6 +82,10 @@ class RunSingle:
 
     @classmethod
     def from_config(cls, config: RunSingleConfig) -> Self:
+        logger = get_logger("Run", emoji="🏃")
+        if config.print_config:
+            config_str = yaml.dump(config.model_dump())
+            logger.info(f"Config:\n {config_str}")
         self = cls(
             env=SWEEnv.from_config(config.env),
             agent=Agent("main", config.agent),

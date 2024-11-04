@@ -20,7 +20,6 @@ def test_expert_instances(test_data_sources_path: Path, tmp_path: Path):
         "--traj_dir",
         str(tmp_path),
         "--raise_exceptions",
-        "True",
     ]
     main(cmd)
     for _id in ["simple_test_problem", "simple_test_problem_2"]:
@@ -40,7 +39,6 @@ def test_simple_instances(test_data_sources_path: Path, tmp_path: Path):
         "--traj_dir",
         str(tmp_path),
         "--raise_exceptions",
-        "True",
     ]
     main(cmd)
     assert (tmp_path / "simple_test_problem.traj").exists(), list(tmp_path.iterdir())
@@ -58,7 +56,6 @@ def test_empty_instances_simple(test_data_sources_path: Path, tmp_path: Path):
         "--traj_dir",
         str(tmp_path),
         "--raise_exceptions",
-        "True",
         "--instances.filter",
         "doesnotmatch",
     ]
@@ -80,7 +77,6 @@ def test_empty_instances_expert(test_data_sources_path: Path, tmp_path: Path):
         "--traj_dir",
         str(tmp_path),
         "--raise_exceptions",
-        "True",
         "--instances.filter",
         "doesnotmatch",
     ]

@@ -21,14 +21,14 @@ from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
 from sweagent.utils.log import get_logger
 
 
-class RunBatchConfig(BaseSettings):
+class RunBatchConfig(BaseSettings, cli_implicit_flags=True):
     instances: BatchInstanceSourceConfig = Field(union_mode="left_to_right")
     agent: AgentConfig = AgentConfig(
         model=ModelArguments(name="human"), next_step_template="Observation: {observation}"
     )
     traj_dir: Path = Path(".")
     raise_exceptions: bool = False
-    skip_existing: bool = True
+    redo_existing: bool = False
 
 
 class _BreakLoop(Exception):
@@ -44,7 +44,7 @@ class RunBatch:
         traj_dir: Path = Path("."),
         hooks: list[RunHook] | None = None,
         raise_exceptions: bool = False,
-        skip_existing: bool = True,
+        redo_existing: bool = False,
     ):
         """Note: When initializing this class, make sure to add the hooks that are required by your actions.
         See `from_config` for an example.
@@ -59,7 +59,7 @@ class RunBatch:
         self._hooks = []
         self._raise_exceptions = raise_exceptions
         self._chooks = CombinedRunHooks()
-        self._skip_existing = skip_existing
+        self._redo_existing = redo_existing
         for hook in hooks or [SaveApplyPatchHook()]:
             self.add_hook(hook)
 
@@ -135,7 +135,7 @@ class RunBatch:
 
     def should_skip(self, instance: BatchInstance) -> bool:
         """Check if we should skip this instance"""
-        if not self._skip_existing:
+        if self._redo_existing:
             return False
 
         # Check if there's an existing trajectory for this instance
