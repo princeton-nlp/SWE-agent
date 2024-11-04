@@ -23,12 +23,10 @@ class SaveApplyPatchHook(RunHook):
 
     def on_init(self, *, run):
         self._traj_dir = Path(run.traj_dir)
-        self._apply_patch_locally = run.actions.apply_patch_locally
-        self._env = run.env
-        self._problem_statement = run.problem_statement
 
     def on_instance_start(self, *, index: int, env: SWEEnv, problem_statement: ProblemStatementConfig):
         self._env = env
+        self._problem_statement = problem_statement
 
     def on_instance_completed(self, *, result: AgentRunResult):
         instance_id = self._problem_statement.id

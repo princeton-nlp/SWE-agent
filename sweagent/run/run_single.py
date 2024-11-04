@@ -45,6 +45,9 @@ class RunSingleConfig(BaseSettings):
     # todo: implement this
     print_config: bool = True
 
+    class Config:
+        extra = "forbid"
+
 
 class RunSingle:
     def __init__(

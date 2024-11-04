@@ -8,6 +8,7 @@ import traceback
 from pathlib import Path
 from typing import Self
 
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 from sweagent.agent.agents import Agent, AgentConfig
@@ -21,7 +22,7 @@ from sweagent.utils.log import get_logger
 
 
 class RunBatchConfig(BaseSettings):
-    instances: BatchInstanceSourceConfig
+    instances: BatchInstanceSourceConfig = Field(union_mode="left_to_right")
     agent: AgentConfig = AgentConfig(
         model=ModelArguments(name="human"), next_step_template="Observation: {observation}"
     )
@@ -64,8 +65,19 @@ class RunBatch:
 
     @classmethod
     def from_config(cls, config: RunBatchConfig) -> Self:
+        logger = get_logger("RunBatch", emoji="🏃")
+        logger.debug("Loading instances from %s", f"{config.instances!r}")
+        instances = config.instances.get_instance_configs()
+        logger.info("Loaded %d instances", len(instances))
+        if not instances:
+            msg = (
+                "No instances to run. You might want to check your instance_filter "
+                "(if supported by your instance source)"
+            )
+            raise ValueError(msg)
+        logger.debug("The first instance is %s", f"{instances[0]!r}")
         return cls(
-            instances=config.instances.get_instance_configs(),
+            instances=instances,
             agent=Agent("main", config.agent),
             traj_dir=config.traj_dir,
             raise_exceptions=config.raise_exceptions,
@@ -105,6 +117,7 @@ class RunBatch:
     def _run_instance(self, instance: BatchInstance):
         if self.should_skip(instance):
             return
+        self.logger.info("Starting to run on instance %s", instance.problem_statement.id)
         self.logger.info("Starting environment")
         env = SWEEnv.from_config(instance.env)
         env.start()

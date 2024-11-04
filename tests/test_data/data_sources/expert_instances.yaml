@@ -1,0 +1,14 @@
+- env:
+    deployment:
+      type: docker
+  problem_statement:
+    type: text
+    text: "A simple test problem"
+    id: "simple_test_problem"
+- env:
+    deployment:
+      type: docker
+  problem_statement:
+    type: text
+    text: "A simple test problem 2"
+    id: "simple_test_problem_2"

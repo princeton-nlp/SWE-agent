@@ -31,6 +31,9 @@ class EnvironmentConfig(BaseModel):
     repo: RepoConfig | None = None
     startup_commands: list[str] = []
 
+    class Config:
+        extra = "forbid"
+
 
 class SWEEnv:
     name = "swe_main"

@@ -28,8 +28,8 @@ def test_replay(rr_config):
 
 def test_run_cli_help():
     args = [
-        "python",
-        "sweagent/run/run_replay.py",
+        "sweagent",
+        "run-replay",
         "--help",
     ]
     subprocess.run(args, check=True)

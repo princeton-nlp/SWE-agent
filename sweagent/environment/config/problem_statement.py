@@ -1,7 +1,7 @@
 import hashlib
 import uuid
 from pathlib import Path
-from typing import Literal, Protocol
+from typing import Annotated, Any, Literal, Protocol
 
 from pydantic import BaseModel, Field
 
@@ -26,31 +26,33 @@ class EmptyProblemStatement(BaseModel):
         return ""
 
 
-# todo: Make id overridable
 class TextProblemStatement(BaseModel):
     text: str = ""
 
     type: Literal["text"] = "text"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
-    @property
-    def id(self) -> str:
-        return hashlib.sha256(self.text.encode()).hexdigest()[:6]
+    id: str = None  # type: ignore
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.id is None:
+            self.id = hashlib.sha256(self.text.encode()).hexdigest()[:6]
 
     def get_problem_statement(self) -> str:
         return self.text
 
 
-# todo: Make id overridable
 class FileProblemStatement(BaseModel):
     path: str = ""
 
     type: Literal["text_file"] = "text_file"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
-    @property
-    def id(self) -> str:
-        return hashlib.sha256(self.get_problem_statement().encode()).hexdigest()[:6]
+    id: str = None  # type: ignore
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.id is None:
+            self.id = hashlib.sha256(self.get_problem_statement().encode()).hexdigest()[:6]
 
     def get_problem_statement(self) -> str:
         return Path(self.path).read_text()
@@ -74,4 +76,6 @@ class GithubIssue(BaseModel):
         )
 
 
-ProblemStatementConfig = TextProblemStatement | GithubIssue | EmptyProblemStatement | FileProblemStatement
+ProblemStatementConfig = Annotated[
+    TextProblemStatement | GithubIssue | EmptyProblemStatement | FileProblemStatement, Field(union_mode="left_to_right")
+]
