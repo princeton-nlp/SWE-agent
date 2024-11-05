@@ -36,8 +36,7 @@ from sweagent.utils.log import get_logger
 class TemplateConfig(BaseModel):
     system_template: str = ""
     instance_template: str = ""
-    next_step_template: str = None  # type: ignore
-    """Template for the next step. Defaults to instance_template."""
+    next_step_template: str = "Observation: {observation}"
 
     next_step_no_output_template: str = None  # type: ignore
     """Template for the next step when the last output was empty. Defaults to next_step_template."""
@@ -55,8 +54,6 @@ class TemplateConfig(BaseModel):
 
     def model_post_init(self, __context):
         self.demonstrations = _convert_paths_to_abspath(self.demonstrations)
-        if self.next_step_template is None:
-            self.next_step_template = self.instance_template
         if self.next_step_no_output_template is None:
             self.next_step_no_output_template = self.next_step_template
 
@@ -89,19 +86,17 @@ class ToolFilterConfig(BaseModel):
         "su",
     ]
     # todo: probably rename this
-    block_unless_regex: dict[str, str] = field(
-        default_factory=lambda: {
-            "radare2": r"\b(?:radare2)\b.*\s+-c\s+.*",
-            "r2": r"\b(?:radare2)\b.*\s+-c\s+.*",
-        }
-    )
+    block_unless_regex: dict[str, str] = {
+        "radare2": r"\b(?:radare2)\b.*\s+-c\s+.*",
+        "r2": r"\b(?:radare2)\b.*\s+-c\s+.*",
+    }
 
 
 class ToolConfig(BaseModel):
-    filter: ToolFilterConfig = field(default_factory=ToolFilterConfig)
-    command_files: list[str] = field(default_factory=list)
-    env_variables: dict[str, Any] = field(default_factory=dict)
-    util_functions: list[str] = field(default_factory=list)
+    filter: ToolFilterConfig = ToolFilterConfig()
+    command_files: list[str] = []
+    env_variables: dict[str, Any] = {}
+    util_functions: list[str] = []
     submit_command: str = "submit"
     parse_function: Any = "ThoughtActionParser"
     parse_command: Any = "ParseCommandBash"
@@ -110,11 +105,11 @@ class ToolConfig(BaseModel):
     """Defaults to format_error_template in ParseFunction"""
 
     command_docs: str = None  # type: ignore
-    multi_line_command_endings: dict[str, str] = field(default_factory=dict)
+    multi_line_command_endings: dict[str, str] = {}
     submit_command_end_name: str | None = None
 
-    install_commands: list[str] = field(default_factory=list)
-    reset_commands: list[str] = field(default_factory=list)
+    install_commands: list[str] = []
+    reset_commands: list[str] = []
 
     @property
     def commands(self) -> list[Command]:
@@ -168,24 +163,22 @@ class ToolConfig(BaseModel):
 
 # todo: factor out tools config and potentially try to only give it to SWEEnv. Agent should only need allow-lists and the final tools documentation
 class AgentConfig(BaseModel):
-    templates: TemplateConfig = field(default_factory=TemplateConfig)
-    tools: ToolConfig = field(default_factory=ToolConfig)
+    templates: TemplateConfig = TemplateConfig()
+    tools: ToolConfig = ToolConfig()
 
     # todo: Why can't we just configure this in the same way as the models?
     history_processor: Any = "DefaultHistoryProcessor"
-    history_processor_args: dict[str, Any] = field(default_factory=dict)
+    history_processor_args: dict[str, Any] = {}
 
-    state_command: Command = field(
-        default_factory=lambda: Command(
-            name="state",
-            code="""state() {
+    state_command: Command = Command(
+        name="state",
+        code="""state() {
             echo '{"working_dir": "'$(realpath --relative-to=$ROOT/.. $PWD)'"}';
         };""",
-        )
     )
     """Should extract environment state in a json readable form"""
 
-    model: ModelConfig = field(default_factory=lambda: ModelConfig(name="gpt4"))
+    model: ModelConfig = ModelConfig(name="gpt4")
 
 
 # todo: separate out from_config. In particular separate out model (as a class, etc.)
@@ -798,7 +791,6 @@ class Agent:
         """
         self._problem_statement = problem_statement
         self._env = env
-        # todo: Shouldn't this be moved to setup?
         self.setup(init_model_stats)
 
         # Save/reset some attributes

@@ -8,6 +8,8 @@ def test_run_cli_no_arg_error():
         "sweagent",
     ]
     output = subprocess.run(args, check=False, capture_output=True)
+    print(output.stdout.decode())
+    print(output.stderr.decode())
     assert output.returncode == 2
     assert "run-batch" in output.stdout.decode()
     assert "run-replay" in output.stdout.decode()

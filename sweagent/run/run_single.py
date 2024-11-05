@@ -5,11 +5,10 @@ from pathlib import Path
 from typing import Self
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings
 
 from sweagent.agent.agents import Agent, AgentConfig
-from sweagent.agent.models import ModelConfig
 from sweagent.environment.config.problem_statement import (
     EmptyProblemStatement,
     ProblemStatement,
@@ -28,23 +27,23 @@ class RunSingleActionConfig(BaseModel, cli_implicit_flags=True):
 
     # Open a PR with the patch if we can solve the issue
     open_pr: bool = False
-    pr_config: OpenPRConfig = Field(default_factory=OpenPRConfig)
+    pr_config: OpenPRConfig = OpenPRConfig()
     # When working with local repository: Apply patch
     apply_patch_locally: bool = False
 
 
 class RunSingleConfig(BaseSettings, cli_implicit_flags=True):
-    env: EnvironmentConfig = Field(default_factory=EnvironmentConfig)
-    agent: AgentConfig = AgentConfig(model=ModelConfig(name="human"), next_step_template="Observation: {observation}")
+    env: EnvironmentConfig = EnvironmentConfig()
+    agent: AgentConfig = AgentConfig()
     problem_statement: ProblemStatementConfig = Field(default_factory=EmptyProblemStatement)
     traj_dir: Path = Path(".")
-    actions: RunSingleActionConfig = Field(default_factory=RunSingleActionConfig)
+    actions: RunSingleActionConfig = RunSingleActionConfig()
 
     print_config: bool = False
     """Print config at the beginning of the run."""
 
-    class Config:
-        extra = "forbid"
+    # pydantic config
+    model_config = ConfigDict(extra="forbid")  # type: ignore
 
 
 class RunSingle:

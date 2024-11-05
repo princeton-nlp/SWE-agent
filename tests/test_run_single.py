@@ -19,7 +19,11 @@ class RaisesExceptionHook(RunHook):
 
 @pytest.mark.slow
 def test_run_single_raises_exception():
-    rs = RunSingle.from_config(RunSingleConfig())
+    rsc = RunSingleConfig()
+    rsc.agent.model.name = "instant_empty_submit"
+    rsc.agent.model.model_post_init(None)
+    rsc.agent.model_post_init(None)
+    rs = RunSingle.from_config(rsc)
     rs.add_hook(RaisesExceptionHook())
     with pytest.raises(ValueError, match="test exception"):
         rs.run()

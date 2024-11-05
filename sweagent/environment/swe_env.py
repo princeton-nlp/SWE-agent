@@ -7,7 +7,7 @@ import shlex
 from pathlib import PurePath
 from typing import Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from swerex.deployment.abstract import AbstractDeployment
 from swerex.runtime.abstract import BashAction, CreateBashSessionRequest, WriteFileRequest
 
@@ -31,8 +31,8 @@ class EnvironmentConfig(BaseModel):
     repo: RepoConfig | None = None
     startup_commands: list[str] = []
 
-    class Config:
-        extra = "forbid"
+    # pydantic config
+    model_config = ConfigDict(extra="forbid")
 
 
 class SWEEnv:

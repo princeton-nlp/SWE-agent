@@ -12,7 +12,6 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 
 from sweagent.agent.agents import Agent, AgentConfig
-from sweagent.agent.models import ModelConfig
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.run.batch_instances import BatchInstance, BatchInstanceSourceConfig
 from sweagent.run.common import BasicCLI, save_predictions
@@ -23,7 +22,7 @@ from sweagent.utils.log import get_logger
 
 class RunBatchConfig(BaseSettings, cli_implicit_flags=True):
     instances: BatchInstanceSourceConfig = Field(union_mode="left_to_right")
-    agent: AgentConfig = AgentConfig(model=ModelConfig(name="human"), next_step_template="Observation: {observation}")
+    agent: AgentConfig = AgentConfig()
     traj_dir: Path = Path(".")
     raise_exceptions: bool = False
     redo_existing: bool = False
