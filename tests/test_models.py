@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from sweagent.agent.models import GroqModel, ModelArguments, OpenAIModel, TogetherModel
+from sweagent.agent.models import GroqModel, ModelConfig, OpenAIModel, TogetherModel
 
 
 @pytest.fixture
@@ -34,7 +34,7 @@ TEST_HISTORY = [{"role": "system", "content": "Hello, how are you?"}]
 
 def test_openai_model(openai_mock_client):
     for model_name in list(OpenAIModel.MODELS) + list(OpenAIModel.SHORTCUTS):
-        model_args = ModelArguments(name=model_name)
+        model_args = ModelConfig(name=model_name)
         with patch("sweagent.agent.models.keys_config"), patch("sweagent.agent.models.OpenAI"):
             model = OpenAIModel(model_args, [])
         model.client = openai_mock_client
@@ -44,7 +44,7 @@ def test_openai_model(openai_mock_client):
 # Test groq models
 def test_groq_model(openai_mock_client):
     for model_name in list(GroqModel.MODELS) + list(GroqModel.SHORTCUTS):
-        model_args = ModelArguments(name=model_name)
+        model_args = ModelConfig(name=model_name)
         with patch("sweagent.agent.models.keys_config"), patch("sweagent.agent.models.Groq"):
             model = GroqModel(model_args, [])
         model.client = openai_mock_client
@@ -57,6 +57,6 @@ def test_together_model(mock_together_response, model_name):
         mock_together.version = "1.1.0"
         mock_together.Complete.create.return_value = mock_together_response
 
-        model_args = ModelArguments(name=model_name)
+        model_args = ModelConfig(name=model_name)
         model = TogetherModel(model_args, [])
         model.query(TEST_HISTORY)

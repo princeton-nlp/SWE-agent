@@ -12,16 +12,14 @@ from pydantic_settings import BaseSettings, CliApp
 
 from sweagent import CONFIG_DIR
 from sweagent.agent.agents import Agent, AgentConfig
-from sweagent.agent.models import ModelArguments
+from sweagent.agent.models import ModelConfig
 from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
 from sweagent.utils.log import get_logger
 
 
 class BasicRunArguments(BaseSettings):
     env: EnvironmentConfig = Field(default_factory=EnvironmentConfig)
-    agent: AgentConfig = AgentConfig(
-        model=ModelArguments(name="human"), next_step_template="Observation: {observation}"
-    )
+    agent: AgentConfig = AgentConfig(model=ModelConfig(name="human"), next_step_template="Observation: {observation}")
     traj_dir: str = "."
 
 

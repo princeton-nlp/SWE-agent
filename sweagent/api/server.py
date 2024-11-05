@@ -32,7 +32,7 @@ from flask_socketio import SocketIO
 
 from sweagent import CONFIG_DIR, PACKAGE_DIR
 from sweagent.agent.agents import AgentConfig
-from sweagent.agent.models import ModelArguments
+from sweagent.agent.models import ModelConfig
 from sweagent.api.hooks import AgentUpdateHook, EnvUpdateHook, MainUpdateHook, WebUpdate
 from sweagent.api.utils import AttrDict, ThreadWithExc
 from sweagent.environment.swe_env import EnvironmentConfig
@@ -172,7 +172,7 @@ def run():
         actions=RunSingleActionConfig(open_pr=False, skip_if_commits_reference_issue=True),
         raise_exceptions=True,
     )
-    defaults.agent.model = ModelArguments(
+    defaults.agent.model = ModelConfig(
         name=model_name,
         total_cost_limit=0.0,
         per_instance_cost_limit=3.0,

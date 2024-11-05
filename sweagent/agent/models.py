@@ -29,8 +29,8 @@ logger = get_logger("lm", emoji="🤖")
 _MAX_RETRIES = int(keys_config.get("SWE_AGENT_MODEL_MAX_RETRIES", 10))
 
 
-# todo: Separate out human model and replay model
-class ModelArguments(PydanticBaseModel):
+# todo: Separate out human model and replay model?
+class ModelConfig(PydanticBaseModel):
     """Arguments configuring the model and its behavior."""
 
     # Name of the model to use
@@ -86,7 +86,7 @@ class BaseModel:
     MODELS = {}
     SHORTCUTS = {}
 
-    def __init__(self, args: ModelArguments, commands: list[Command]):
+    def __init__(self, args: ModelConfig, commands: list[Command]):
         self.args = args
         self.commands = commands
         self.model_metadata = {}
@@ -261,7 +261,7 @@ class OpenAIModel(BaseModel):
         "o1-mini": "o1-mini-2024-09-12",
     }
 
-    def __init__(self, args: ModelArguments, commands: list[Command]):
+    def __init__(self, args: ModelConfig, commands: list[Command]):
         super().__init__(args, commands)
 
         logging.getLogger("openai").setLevel(logging.WARNING)
@@ -456,7 +456,7 @@ class AnthropicModel(BaseModel):
         "claude-sonnet-3.5": "claude-3-5-sonnet-20240620",
     }
 
-    def __init__(self, args: ModelArguments, commands: list[Command]):
+    def __init__(self, args: ModelConfig, commands: list[Command]):
         super().__init__(args, commands)
 
         # Set Anthropic key
@@ -526,7 +526,7 @@ class BedrockModel(BaseModel):
         },
     }
 
-    def __init__(self, args: ModelArguments, commands: list[Command]):
+    def __init__(self, args: ModelConfig, commands: list[Command]):
         super().__init__(args, commands)
 
         # Extract provider from model ID
@@ -688,7 +688,7 @@ class OllamaModel(BaseModel):
         },
     )
 
-    def __init__(self, args: ModelArguments, commands: list[Command]):
+    def __init__(self, args: ModelConfig, commands: list[Command]):
         super().__init__(args, commands)
         from ollama import Client
 
@@ -782,7 +782,7 @@ class TogetherModel(BaseModel):
         "redpajama7b": "togethercomputer/RedPajama-INCITE-7B-Chat",
     }
 
-    def __init__(self, args: ModelArguments, commands: list[Command]):
+    def __init__(self, args: ModelConfig, commands: list[Command]):
         super().__init__(args, commands)
         assert together.version >= "1.1.0", "Please upgrade to Together SDK v1.1.0 or later."
 
@@ -835,7 +835,7 @@ class TogetherModel(BaseModel):
 class HumanModel(BaseModel):
     MODELS = {"human": {}}
 
-    def __init__(self, args: ModelArguments, commands: list[Command]):
+    def __init__(self, args: ModelConfig, commands: list[Command]):
         super().__init__(args, commands)
 
         # Determine which commands require multi-line input
@@ -912,7 +912,7 @@ class HumanThoughtModel(HumanModel):
 class ReplayModel(BaseModel):
     MODELS = {"replay": {}}
 
-    def __init__(self, args: ModelArguments, commands: list[Command]):
+    def __init__(self, args: ModelConfig, commands: list[Command]):
         super().__init__(args, commands)
 
         if self.args.replay_path is None or not Path(self.args.replay_path).exists():
@@ -968,7 +968,7 @@ class InstantEmptySubmitTestModel(BaseModel):
         }
     }
 
-    def __init__(self, args: ModelArguments, commands: list[Command]):
+    def __init__(self, args: ModelConfig, commands: list[Command]):
         """This model immediately submits. Useful for testing purposes"""
         super().__init__(args, commands)
         self._action_idx = 0
@@ -988,7 +988,7 @@ class InstantEmptySubmitTestModel(BaseModel):
         return history
 
 
-def get_model(args: ModelArguments, commands: list[Command] | None = None):
+def get_model(args: ModelConfig, commands: list[Command] | None = None):
     """
     Returns correct model object given arguments and commands
     """

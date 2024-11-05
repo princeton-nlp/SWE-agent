@@ -13,7 +13,7 @@ from swerex.deployment.abstract import AbstractDeployment
 
 from sweagent import CONFIG_DIR
 from sweagent.agent.agents import Agent, AgentConfig
-from sweagent.agent.models import ModelArguments
+from sweagent.agent.models import ModelConfig
 from sweagent.environment.config.deployment import DeploymentConfig, DockerDeploymentConfig
 from sweagent.environment.config.problem_statement import EmptyProblemStatement
 from sweagent.environment.config.repo import RepoConfig
@@ -86,7 +86,7 @@ class RunReplay:
     def _get_agent(self) -> Agent:
         _agent_config = yaml.safe_load(Path(self.config_path).read_text())
         agent_config = AgentConfig(**_agent_config["agent"])
-        agent_config.model = ModelArguments(name="replay", replay_path=str(self._replay_action_trajs_path))
+        agent_config.model = ModelConfig(name="replay", replay_path=str(self._replay_action_trajs_path))
         return Agent("replay", agent_config)
 
     def _get_run_single(self) -> RunSingle:

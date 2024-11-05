@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
 
 from sweagent.agent.agents import Agent, AgentConfig
-from sweagent.agent.models import ModelArguments
+from sweagent.agent.models import ModelConfig
 from sweagent.environment.config.problem_statement import (
     EmptyProblemStatement,
     ProblemStatement,
@@ -35,9 +35,7 @@ class RunSingleActionConfig(BaseModel, cli_implicit_flags=True):
 
 class RunSingleConfig(BaseSettings, cli_implicit_flags=True):
     env: EnvironmentConfig = Field(default_factory=EnvironmentConfig)
-    agent: AgentConfig = AgentConfig(
-        model=ModelArguments(name="human"), next_step_template="Observation: {observation}"
-    )
+    agent: AgentConfig = AgentConfig(model=ModelConfig(name="human"), next_step_template="Observation: {observation}")
     problem_statement: ProblemStatementConfig = Field(default_factory=EmptyProblemStatement)
     traj_dir: Path = Path(".")
     actions: RunSingleActionConfig = Field(default_factory=RunSingleActionConfig)

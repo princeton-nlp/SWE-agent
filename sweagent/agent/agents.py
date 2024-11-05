@@ -21,7 +21,7 @@ from sweagent.agent.models import (
     APIStats,
     ContextWindowExceededError,
     CostLimitExceededError,
-    ModelArguments,
+    ModelConfig,
     get_model,
 )
 from sweagent.agent.parsing import FormatError, ParseFunction
@@ -108,7 +108,7 @@ class AgentConfig(BaseModel):
     )
     # _subroutines: dict[str, Subroutine] = field(default_factory=dict)
     # subroutine_types: list[Subroutine] = field(default_factory=list)
-    model: ModelArguments = field(default_factory=lambda: ModelArguments(name="gpt4"))
+    model: ModelConfig = field(default_factory=lambda: ModelConfig(name="gpt4"))
     multi_line_command_endings: dict[str, str] = field(default_factory=dict)
     submit_command_end_name: str | None = None
 
