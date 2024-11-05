@@ -89,9 +89,6 @@ agent:
       OVERLAP: 2
       CURRENT_LINE: 0
       CURRENT_FILE: ""
-      SEARCH_RESULTS: ()
-      SEARCH_FILES: ()
-      SEARCH_INDEX: 0
     command_files:
     - config/commands/defaults.sh
     - config/commands/search.sh

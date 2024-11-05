@@ -113,6 +113,9 @@ class ToolConfig(BaseModel):
     multi_line_command_endings: dict[str, str] = field(default_factory=dict)
     submit_command_end_name: str | None = None
 
+    install_commands: list[str] = field(default_factory=list)
+    reset_commands: list[str] = field(default_factory=list)
+
     @property
     def commands(self) -> list[Command]:
         _commands = []
@@ -232,6 +235,14 @@ class Agent:
 
         self._chook = CombinedAgentHook()
 
+    def add_hook(self, hook: AbstractAgentHook) -> None:
+        """Add hook to agent"""
+        hook.on_init(agent=self)
+        self._chook.add_hook(hook)
+
+    # Properties
+    # ----------
+
     @property
     def history(self) -> History:
         """History that is passed on to the model.
@@ -264,10 +275,13 @@ class Agent:
     def info(self, value: AgentInfo):
         self._info_by_attempt[self._i_attempt] = value
 
-    def add_hook(self, hook: AbstractAgentHook) -> None:
-        """Add hook to agent"""
-        hook.on_init(agent=self)
-        self._chook.add_hook(hook)
+    @property
+    def local_history(self) -> list[dict[str, str]]:
+        """Return the history of the agent since the last reset."""
+        return self._history_processor([entry for entry in self.history if entry["agent"] == self.name])
+
+    # Methods
+    # -------
 
     def _append_history(self, item: HistoryItem) -> None:
         """Adds an item to the history."""
@@ -297,7 +311,9 @@ class Agent:
 
     def setup_attempt(self, *, init_model_stats: APIStats | None = None) -> None:
         """Setup the agent for a new attempt. This includes resetting the model stats."""
-
+        self.init_environment_vars()
+        self._make_state_command_available()
+        self._make_commands_available()
         if self._i_attempt > 0 and init_model_stats is not None:
             msg = (
                 "We might be dealing with nested retries, where subroutines are mixed with retries. "
@@ -309,62 +325,58 @@ class Agent:
             self._env.reset_for_new_attempt()
         self.model.reset_stats(init_model_stats)
         # self.model = get_model(self._args.model, self.config._commands + self.config.subroutine_types)
-        # fixme: This doesn't reset total cost
+        self.add_system_message()
+        self.add_demonstrations_to_history()
+
+    def add_system_message(self) -> None:
+        """Add system message to history"""
         assert self._problem_statement is not None
         system_msg = self.config.templates.system_template.format(
             **self.system_args, problem_statement=self._problem_statement.get_problem_statement()
         )
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
         self._append_history(HistoryItem({"role": "system", "content": system_msg, "agent": self.name}))
-        # todo: This should be moved somewhere
-        if "history_to_messages" in dir(self.model):
-            for demonstration_path in self.config.templates.demonstrations:
-                if (
-                    self.config.templates.demonstration_template is None
-                    and not self.config.templates.put_demos_in_history
-                ):
-                    msg = "Cannot use demonstrations without a demonstration template or put_demos_in_history=True"
-                    raise ValueError(msg)
 
-                # Load history
-                self.logger.info(f"DEMONSTRATION: {demonstration_path}")
-                demo_history = json.loads(Path(demonstration_path).read_text())["history"]
-                demo_history = [
-                    entry
-                    for entry in demo_history
-                    if ("agent" not in entry) or ("agent" in entry and entry["agent"] == self.name)
-                ]
+    def add_demonstrations_to_history(self) -> None:
+        """Add demonstrations to history"""
+        for demonstration_path in self.config.templates.demonstrations:
+            if self.config.templates.demonstration_template is None and not self.config.templates.put_demos_in_history:
+                msg = "Cannot use demonstrations without a demonstration template or put_demos_in_history=True"
+                raise ValueError(msg)
 
-                if self.config.templates.put_demos_in_history:
-                    if self.config.templates.demonstration_template is not None:
-                        self.logger.warning("Demonstration template is ignored for put_demos_in_history=True")
-                    # Add demonstration to history directly as separate messages
-                    for entry in demo_history:
-                        if entry["role"] != "system":
-                            entry["is_demo"] = True
-                            self._append_history(entry)
-                else:
-                    # Add demonstration as single message to history
-                    demo_message = self.model.history_to_messages(
-                        demo_history,
-                        is_demonstration=True,
-                    )
-                    assert self.config.templates.demonstration_template is not None
-                    demonstration = self.config.templates.demonstration_template.format(demonstration=demo_message)
-                    self._append_history(
-                        {
-                            "agent": self.name,
-                            "content": demonstration,
-                            "is_demo": True,
-                            "role": "user",
-                        },
-                    )
+            # Load history
+            self.logger.info(f"DEMONSTRATION: {demonstration_path}")
+            demo_history = json.loads(Path(demonstration_path).read_text())["history"]
+            demo_history = [
+                entry
+                for entry in demo_history
+                if ("agent" not in entry) or ("agent" in entry and entry["agent"] == self.name)
+            ]
 
-    # todo: turn into method
-    @property
-    def local_history(self) -> list[dict[str, str]]:
-        """Return the history of the agent since the last reset."""
-        return self._history_processor([entry for entry in self.history if entry["agent"] == self.name])
+            if self.config.templates.put_demos_in_history:
+                if self.config.templates.demonstration_template is not None:
+                    self.logger.warning("Demonstration template is ignored for put_demos_in_history=True")
+                # Add demonstration to history directly as separate messages
+                for entry in demo_history:
+                    if entry["role"] != "system":
+                        entry["is_demo"] = True
+                        self._append_history(entry)
+            else:
+                # Add demonstration as single message to history
+                demo_message = self.model.history_to_messages(
+                    demo_history,
+                    is_demonstration=True,
+                )
+                assert self.config.templates.demonstration_template is not None
+                demonstration = self.config.templates.demonstration_template.format(demonstration=demo_message)
+                self._append_history(
+                    {
+                        "agent": self.name,
+                        "content": demonstration,
+                        "is_demo": True,
+                        "role": "user",
+                    },
+                )
 
     def _get_total_stats(self) -> APIStats:
         """Combine model stats of different attempts"""
@@ -656,27 +668,13 @@ class Agent:
     def init_environment_vars(self):
         self.set_environment_vars(self.config.tools.env_variables)
 
-    def set_environment_vars(self, env_variables: dict[str, Any]) -> None:
-        """Sets environment variables in the container and for example makes sure
-        that all the commands are available in the PATH on the container.
-        """
-
-        commands_to_execute = (
-            [self.config.state_command.code]
-            +
-            # [code for code in self.config.util_functions] +
-            # [command.code for command in self.config._commands] +
-            [f"{k}={v}" for k, v in env_variables.items()]
-        )
-        commands = "\n".join(commands_to_execute)
+    def _make_state_command_available(self) -> None:
+        """Define state command in the container"""
         assert self._env is not None
-        try:
-            self._env.communicate(commands, require_zero=True)
-        except KeyboardInterrupt:
-            raise
-        except Exception as e:
-            self.logger.warning(f"Failed to set environment variables: {traceback.format_exc()}")
-            raise e
+        self._env.communicate(self.config.state_command.code, require_zero=True)
+
+    def _make_commands_available(self) -> None:
+        """Make sure all commands are available in the container"""
         command_files = list()
         for file in self.config.tools.command_files:
             datum = dict()
@@ -705,14 +703,32 @@ class Agent:
                 datum["name"] = Path(file).name.rsplit(".", 1)[0]
                 datum["type"] = "script"
             command_files.append(datum)
+        assert self._env is not None
         self._env.add_commands(command_files)
 
+    def set_environment_vars(self, env_variables: dict[str, Any]) -> None:
+        """Sets environment variables in the container and for example makes sure
+        that all the commands are available in the PATH on the container.
+        """
+        _env_setters = [f"export {k}={v}" for k, v in env_variables.items()]
+        commands = " && ".join(_env_setters)
+        assert self._env is not None
+        try:
+            self._env.communicate(commands, require_zero=True)
+        except KeyboardInterrupt:
+            raise
+        except Exception as e:
+            self.logger.warning(f"Failed to set environment variables: {traceback.format_exc()}")
+            raise e
+
     def get_state(self) -> dict[str, str]:
-        """If a state command is defined, execute it in the environment and return the result as a dictionary."""
+        """If a state command is defined, execute it in the environment parse it as json and return the result.
+        This can be used to extract environment variables etc. from the environment.
+        """
         if not self.config.state_command:
             return {}
         assert self._env is not None
-        state = self._env.communicate(self.config.state_command.name)
+        state = self._env.communicate(self.config.state_command.name, require_zero=True)
         try:
             return json.loads(state)
         except json.JSONDecodeError as e:
@@ -733,14 +749,11 @@ class Agent:
 
         self._chook.on_step_start()
 
-        # fixme: This will probably fail if the state command is not set
-        # todo: parse state here rather than in forward
         state = self.get_state()
         thought, raw_action, output = self.forward(observation, self._env.get_available_actions(), state)
         self._chook.on_actions_generated(thought=thought, action=raw_action, output=output)
         run_action: str = self._guard_multiline_input(raw_action)
 
-        # Loop over sub-actions (if any)
         execution_t0 = time.perf_counter()
         self._chook.on_action_started(action=run_action)
         observation, _, done, _info = self._env.step(run_action)
@@ -786,7 +799,6 @@ class Agent:
         self._problem_statement = problem_statement
         self._env = env
         # todo: Shouldn't this be moved to setup?
-        self.init_environment_vars()
         self.setup(init_model_stats)
 
         # Save/reset some attributes

@@ -181,6 +181,14 @@ class BaseModel:
         msg = "Use a subclass of BaseModel"
         raise NotImplementedError(msg)
 
+    def history_to_messages(
+        self,
+        history: list[dict[str, str]],
+        is_demonstration: bool = False,
+    ) -> str | list[dict[str, str]]:
+        msg = "Use a subclass of BaseModel"
+        raise NotImplementedError(msg)
+
 
 class OpenAIModel(BaseModel):
     MODELS = {
@@ -832,6 +840,17 @@ class TogetherModel(BaseModel):
         return response
 
 
+def _history_to_messages(history: list[dict[str, str]], is_demonstration: bool = False) -> str | list[dict[str, str]]:
+    """
+    Create `messages` by filtering out all keys except for role/content per `history` turn
+    """
+    if is_demonstration:
+        history = [entry for entry in history if entry["role"] != "system"]
+        return "\n".join([entry["content"] for entry in history])
+        # Return history components with just role, content fields
+    return [{k: v for k, v in entry.items() if k in ["role", "content"]} for entry in history]
+
+
 class HumanModel(BaseModel):
     MODELS = {"human": {}}
 
@@ -851,12 +870,7 @@ class HumanModel(BaseModel):
         """
         Create `messages` by filtering out all keys except for role/content per `history` turn
         """
-        # Remove system messages if it is a demonstration
-        if is_demonstration:
-            history = [entry for entry in history if entry["role"] != "system"]
-            return "\n".join([entry["content"] for entry in history])
-        # Return history components with just role, content fields
-        return [{k: v for k, v in entry.items() if k in ["role", "content"]} for entry in history]
+        return _history_to_messages(history, is_demonstration)
 
     def query(self, history: list[dict[str, str]], action_prompt: str = "> ") -> str:
         """
@@ -954,8 +968,8 @@ class ReplayModel(BaseModel):
 
         return action
 
-    def history_to_messages(self, history: list[dict[str, str]], *args, **kwargs) -> list[dict[str, str]]:
-        return history
+    def history_to_messages(self, history: list[dict[str, str]], *args, **kwargs) -> str | list[dict[str, str]]:
+        return _history_to_messages(history, is_demonstration=True)
 
 
 class InstantEmptySubmitTestModel(BaseModel):

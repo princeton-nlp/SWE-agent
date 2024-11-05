@@ -42,7 +42,7 @@ def test_run_ies(tmpdir, agent_config_with_commands):
     rsc = RunSingleConfig(
         env=EnvironmentConfig(),
         agent=ac,
-        traj_dir=tmpdir,
+        traj_dir=Path(tmpdir),
     )
     rs = RunSingle.from_config(rsc)
     rs.run()

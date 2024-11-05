@@ -155,9 +155,6 @@ class SWEEnv:
         cmd = [
             'export CURRENT_FILE=""',
             "export CURRENT_LINE=0",
-            "export SEARCH_RESULTS=()",
-            "export SEARCH_FILES=()",
-            "export SEARCH_INDEX=0",
         ]
         self.communicate(
             input=" && ".join(cmd),
