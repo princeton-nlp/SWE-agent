@@ -90,7 +90,12 @@ class RunReplay:
         return Agent("replay", agent_config)
 
     def _get_run_single(self) -> RunSingle:
-        return RunSingle(self._get_env(), self._get_agent(), problem_statement=EmptyProblemStatement())
+        return RunSingle(
+            self._get_env(),
+            self._get_agent(),
+            problem_statement=EmptyProblemStatement(),
+            traj_dir=Path(self.output_dir),
+        )
 
     def main(self):
         self._create_actions_file()

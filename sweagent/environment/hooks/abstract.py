@@ -1,4 +1,4 @@
-from sweagent.environment.config.repo import RepoConfig
+from sweagent.environment.config.repo import Repo, RepoConfig
 
 
 class EnvHook:
@@ -12,7 +12,7 @@ class EnvHook:
     def on_init(self, *, env) -> None:
         """Gets called when the hook is added"""
 
-    def on_copy_repo_started(self, repo: RepoConfig) -> None:
+    def on_copy_repo_started(self, repo: RepoConfig | Repo) -> None:
         """Gets called when the repository is being cloned to the container"""
 
     def on_install_env_started(self) -> None:
@@ -23,3 +23,31 @@ class EnvHook:
 
     def on_environment_startup(self) -> None:
         """Called when the environment is started"""
+
+
+class CombinedEnvHooks(EnvHook):
+    def __init__(self):
+        self._hooks = []
+
+    def add_hook(self, hook: EnvHook) -> None:
+        self._hooks.append(hook)
+
+    def on_init(self, *, env) -> None:
+        for hook in self._hooks:
+            hook.on_init(env=env)
+
+    def on_copy_repo_started(self, repo: RepoConfig | Repo) -> None:
+        for hook in self._hooks:
+            hook.on_copy_repo_started(repo=repo)
+
+    def on_install_env_started(self) -> None:
+        for hook in self._hooks:
+            hook.on_install_env_started()
+
+    def on_close(self):
+        for hook in self._hooks:
+            hook.on_close()
+
+    def on_environment_startup(self) -> None:
+        for hook in self._hooks:
+            hook.on_environment_startup()

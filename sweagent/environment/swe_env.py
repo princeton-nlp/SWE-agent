@@ -13,7 +13,7 @@ from swerex.runtime.abstract import BashAction, CreateBashSessionRequest, WriteF
 
 from sweagent.environment.config.deployment import DeploymentConfig, DockerDeploymentConfig
 from sweagent.environment.config.repo import Repo, RepoConfig
-from sweagent.environment.hooks.abstract import EnvHook
+from sweagent.environment.hooks.abstract import CombinedEnvHooks, EnvHook
 from sweagent.types import AgentInfo
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
@@ -58,14 +58,9 @@ class SWEEnv:
         self.logger = get_logger("swe_env", emoji="🌱")
 
         self.clean_multi_line_functions = lambda x: x
-        self._hooks: list[EnvHook] = []
+        self._chook = CombinedEnvHooks()
         for hook in hooks or []:
             self.add_hook(hook)
-
-    def start(self) -> None:
-        """Start the environment"""
-        self._init_deployment()
-        self._init_scripts()
 
     @classmethod
     def from_config(cls, config: EnvironmentConfig) -> Self:
@@ -75,10 +70,6 @@ class SWEEnv:
             startup_commands=config.startup_commands,
         )
 
-    @property
-    def hooks(self) -> list[EnvHook]:
-        return self._hooks
-
     def add_hook(self, hook: EnvHook) -> None:
         """Add `EnvHook` to the environment.
 
@@ -86,22 +77,23 @@ class SWEEnv:
         lifecycle, in particular to connect SWE-agent to a new interface (like a GUI).
         """
         hook.on_init(env=self)
-        self._hooks.append(hook)
+        self._chook.add_hook(hook)
 
-    def _fire_hooks(self, hook_name: str, *args, **kwargs) -> None:
-        for hook in self.hooks:
-            getattr(hook, hook_name)(*args, **kwargs)
+    def start(self) -> None:
+        """Start the environment"""
+        self._init_deployment()
+        self._init_scripts()
 
     def _copy_repo(self) -> None:
         """Clone/copy repository/codebase in container"""
         if self.repo is None:
             return
 
-        folders = self.communicate(input="ls").split("\n")
+        folders = self.communicate(input="ls", check=True).split("\n")
         if self.repo.repo_name in folders:
             return
 
-        self._fire_hooks("on_copy_repo_started", self.repo)
+        self._chook.on_copy_repo_started(repo=self.repo)
         self.repo.copy(self.deployment)
 
     # todo: Get rid of return type here?
@@ -145,7 +137,7 @@ class SWEEnv:
             ]
             self.communicate(
                 input=" && ".join(startup_commands),
-                require_zero=True,
+                check=True,
                 error_msg="Failed to clean repository",
             )
 
@@ -158,7 +150,7 @@ class SWEEnv:
         ]
         self.communicate(
             input=" && ".join(cmd),
-            require_zero=True,
+            check=True,
             error_msg="Failed to reset environment variables",
         )
 
@@ -272,7 +264,7 @@ class SWEEnv:
         """Shoutdown SWE-ReX deployment etc."""
         self.logger.info("Beginning environment shutdown...")
         asyncio.run(self.deployment.stop())
-        self._fire_hooks("on_close")
+        self._chook.on_close()
 
     # MARK: Helper functions #
 
@@ -296,17 +288,17 @@ class SWEEnv:
         """Initialize custom commands within container"""
         self.communicate(
             "mkdir -p /root/commands",
-            require_zero=True,
+            check=True,
             error_msg="Failed to create commands directory",
         )
         self.communicate(
             "touch /root/commands/__init__.py",
-            require_zero=True,
+            check=True,
             error_msg="Failed to create __init__.py",
         )
         self.communicate(
             "export PATH=$PATH:/root/commands",
-            require_zero=True,
+            check=True,
             error_msg="Failed to add commands directory to PATH",
         )
 
@@ -316,7 +308,7 @@ class SWEEnv:
         timeout: int | float = 25,
         *,
         set_last_action: bool = False,
-        require_zero: bool = False,
+        check: bool = False,
         error_msg: str = "Command failed",
     ) -> str:
         """Executes a command in the running shell. The details of this are handled by
@@ -326,7 +318,7 @@ class SWEEnv:
             input: input to send to container
             timeout_duration: duration to wait for output
             set_last_action: whether to set the LAST_ACTION environment variable
-            require_zero: whether to raise an error if the exit code is non-zero
+            check: whether to raise an error if the exit code is non-zero
             error_msg: error message to raise if the command fails
 
         Returns:
@@ -340,7 +332,7 @@ class SWEEnv:
         r = asyncio.run(self.deployment.runtime.run_in_session(BashAction(command=input, timeout=timeout)))
         output = r.output
         self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
-        if (self._require_zero_exit_code or require_zero) and r.exit_code != 0:
+        if (self._require_zero_exit_code or check) and r.exit_code != 0:
             self.logger.error(f"{error_msg}: {output}")
             self.close()
             msg = f"{error_msg} (command: {input})"
@@ -378,7 +370,7 @@ class SWEEnv:
 
     def on_environment_startup(self) -> None:
         """Creates conda environment and installs third party dependencies to allow code execution"""
-        self._fire_hooks("on_environment_startup")
+        self._chook.on_environment_startup()
 
     def add_commands(self, commands: list[dict]) -> None:
         """Adds custom commands to container"""
@@ -391,7 +383,7 @@ class SWEEnv:
             if command["type"] == "source_file":
                 self.communicate(
                     f"source /root/commands/{name}",
-                    require_zero=True,
+                    check=True,
                     error_msg=(
                         f"Failed to source {name}. If you meant to make a script,"
                         " start the file with a shebang (e.g. #!/usr/bin/env python)."
@@ -400,7 +392,7 @@ class SWEEnv:
             elif command["type"] == "script":
                 self.communicate(
                     f"chmod +x /root/commands/{name}",
-                    require_zero=True,
+                    check=True,
                     error_msg=f"Failed to chmod {name}",
                 )
             elif command["type"] == "utility":

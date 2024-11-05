@@ -30,8 +30,8 @@ class RunHook:
 
 
 class CombinedRunHooks(RunHook):
-    def __init__(self, hooks: list[RunHook] | None = None):
-        self._hooks = hooks or []
+    def __init__(self):
+        self._hooks = []
 
     def add_hook(self, hook: RunHook) -> None:
         self._hooks.append(hook)

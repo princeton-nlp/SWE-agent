@@ -671,7 +671,7 @@ class Agent:
     def _make_state_command_available(self) -> None:
         """Define state command in the container"""
         assert self._env is not None
-        self._env.communicate(self.config.state_command.code, require_zero=True)
+        self._env.communicate(self.config.state_command.code, check=True)
 
     def _make_commands_available(self) -> None:
         """Make sure all commands are available in the container"""
@@ -714,7 +714,7 @@ class Agent:
         commands = " && ".join(_env_setters)
         assert self._env is not None
         try:
-            self._env.communicate(commands, require_zero=True)
+            self._env.communicate(commands, check=True)
         except KeyboardInterrupt:
             raise
         except Exception as e:
@@ -728,7 +728,7 @@ class Agent:
         if not self.config.state_command:
             return {}
         assert self._env is not None
-        state = self._env.communicate(self.config.state_command.name, require_zero=True)
+        state = self._env.communicate(self.config.state_command.name, check=True)
         try:
             return json.loads(state)
         except json.JSONDecodeError as e:
