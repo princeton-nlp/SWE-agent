@@ -96,16 +96,16 @@ agent:
     - config/commands/_split_string.py
     - config/commands/submit.sh
     parse_command: ParseCommandDetailed
-  state_command:
-    name: state
-    code: |
-      state() {
-        local working_dir="$PWD";
-        if [ -z "$CURRENT_FILE" ]; then
-            echo '{"open_file": "n/a", "working_dir": "'$working_dir'"}';
-        else
-            echo '{"open_file": "'$(realpath "$CURRENT_FILE")'", "working_dir": "'$working_dir'"}';
-        fi
-      };
+    state_command:
+      name: state
+      code: |
+        state() {
+          local working_dir="$PWD";
+          if [ -z "$CURRENT_FILE" ]; then
+              echo '{"open_file": "n/a", "working_dir": "'$working_dir'"}';
+          else
+              echo '{"open_file": "'$(realpath "$CURRENT_FILE")'", "working_dir": "'$working_dir'"}';
+          fi
+        };
   parse_function: ThoughtActionParser
   history_processor: Last5Observations

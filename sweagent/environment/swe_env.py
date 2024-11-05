@@ -9,7 +9,7 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field
 from swerex.deployment.abstract import AbstractDeployment
-from swerex.runtime.abstract import BashAction, CreateBashSessionRequest, WriteFileRequest
+from swerex.runtime.abstract import BashAction, CreateBashSessionRequest
 
 from sweagent.environment.config.deployment import DeploymentConfig, DockerDeploymentConfig
 from sweagent.environment.config.repo import Repo, RepoConfig
@@ -51,7 +51,7 @@ class SWEEnv:
         """This class represents the environment in which we solve the tasks."""
         super().__init__()
         self._catch_errors = _catch_errors
-        self._require_zero_exit_code = _always_require_zero_exit_code
+        self._always_require_zero_exit_code = _always_require_zero_exit_code
         self.deployment = deployment
         self.repo = repo
         self._startup_commands = startup_commands
@@ -332,7 +332,7 @@ class SWEEnv:
         r = asyncio.run(self.deployment.runtime.run_in_session(BashAction(command=input, timeout=timeout)))
         output = r.output
         self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
-        if (self._require_zero_exit_code or check) and r.exit_code != 0:
+        if (self._always_require_zero_exit_code or check) and r.exit_code != 0:
             self.logger.error(f"{error_msg}: {output}")
             self.close()
             msg = f"{error_msg} (command: {input})"
@@ -374,33 +374,6 @@ class SWEEnv:
 
     def add_commands(self, commands: list[dict]) -> None:
         """Adds custom commands to container"""
-        for command in commands:
-            name = command["name"]
-            contents = command["contents"]
-            asyncio.run(
-                self.deployment.runtime.write_file(WriteFileRequest(content=contents, path=f"/root/commands/{name}"))
-            )
-            if command["type"] == "source_file":
-                self.communicate(
-                    f"source /root/commands/{name}",
-                    check=True,
-                    error_msg=(
-                        f"Failed to source {name}. If you meant to make a script,"
-                        " start the file with a shebang (e.g. #!/usr/bin/env python)."
-                    ),
-                )
-            elif command["type"] == "script":
-                self.communicate(
-                    f"chmod +x /root/commands/{name}",
-                    check=True,
-                    error_msg=f"Failed to chmod {name}",
-                )
-            elif command["type"] == "utility":
-                # nothing to do for utility scripts
-                pass
-            else:
-                msg = f"Invalid command type: {command['type']}"
-                raise ValueError(msg)
 
     # todo: Use the runtime for this instead
     def read_file(self, path: str | PurePath) -> str:

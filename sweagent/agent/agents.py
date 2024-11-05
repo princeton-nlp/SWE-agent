@@ -1,16 +1,18 @@
 from __future__ import annotations
 
+import asyncio
 import copy
 import json
 import re
 import time
-import traceback
 from collections import defaultdict
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 from pydantic import BaseModel
 from simple_parsing.helpers.fields import field
+from swerex.runtime.abstract import AbstractRuntime, BashAction, WriteFileRequest
+from swerex.runtime.abstract import Command as RexCommand
 from tenacity import RetryError
 
 from sweagent import __version__, get_agent_commit_hash
@@ -44,7 +46,7 @@ class TemplateConfig(BaseModel):
     strategy_template: str | None = None
     demonstration_template: str | None = None
 
-    demonstrations: list[str] = field(default_factory=list)
+    demonstrations: list[Path] = field(default_factory=list)
     """Paths to demonstrations. If path is not absolute, it is assumed to be
     relative to the SWE_AGENT_CONFIG_ROOT (if set) or the SWE-agent repository root
     """
@@ -94,9 +96,13 @@ class ToolFilterConfig(BaseModel):
 
 class ToolConfig(BaseModel):
     filter: ToolFilterConfig = ToolFilterConfig()
-    command_files: list[str] = []
+    command_files: list[Path] = []
+
     env_variables: dict[str, Any] = {}
-    util_functions: list[str] = []
+    """Shorthand to set environment variables for the tools, effectively
+    equivalent to adding `export VARNAME=value` to the `reset_commands`.
+    """
+
     submit_command: str = "submit"
     parse_function: Any = "ThoughtActionParser"
     parse_command: Any = "ParseCommandBash"
@@ -108,57 +114,156 @@ class ToolConfig(BaseModel):
     multi_line_command_endings: dict[str, str] = {}
     submit_command_end_name: str | None = None
 
-    install_commands: list[str] = []
-    reset_commands: list[str] = []
+    install_commands: list[str] = [
+        "mkdir -p /root/commands",
+        "touch /root/commands/__init__.py",
+        "export PATH=$PATH:/root/commands",
+    ]
+    """Commands to install dependencies and tools.
+    These commands are executed in a subprocess and are not part of the environment state.
+    """
 
+    reset_commands: list[str | list[str]] = []
+    """Commands to reset the environment. They will also be called when we start the environment.
+    Unlike `install_commands`, these commands are part of the environment state.
+    """
+
+    state_command: Command = Command(
+        name="state",
+        code="""state() {
+            echo '{"working_dir": "'$(realpath --relative-to=$ROOT/.. $PWD)'"}';
+        };""",
+    )
+    """Should extract environment state in a json readable form"""
+
+    # todo: move to ToolHandler
     @property
     def commands(self) -> list[Command]:
-        _commands = []
+        """Read command files and returned parsed command objects"""
+        commands = []
         parse_command = ParseCommand.get(self.parse_command)
         for file in self.command_files:
-            commands = parse_command.parse_command_file(file)
-            util_functions = [command for command in commands if command.name.startswith("_")]
-            commands = [command for command in commands if not command.name.startswith("_")]
-            self.util_functions.extend(util_functions)
-            _commands.extend(commands)
-        return _commands
+            parsed_commands = parse_command.parse_command_file(file)
+            commands.extend([command for command in parsed_commands if not command.name.startswith("_")])
+        return commands
 
+    # todo: can some of these be moved to ToolHandler?
     def model_post_init(self, __context):
         self.command_files = _convert_paths_to_abspath(self.command_files)
 
         parse_command = ParseCommand.get(self.parse_command)
-        _commands = []
-        for file in self.command_files:
-            commands = parse_command.parse_command_file(file)
-
-            util_functions = [command for command in commands if command.name.startswith("_")]
-            commands = [command for command in commands if not command.name.startswith("_")]
-
-            self.util_functions.extend(util_functions)
-            _commands.extend(commands)
+        # for caching:
+        commands = self.commands
 
         multi_line_command_endings = {
-            command.name: command.end_name for command in _commands if command.end_name is not None
+            command.name: command.end_name for command in commands if command.end_name is not None
         }
         self.multi_line_command_endings = multi_line_command_endings
         self.command_docs = parse_command.generate_command_docs(
-            _commands,
+            self.commands,
             [],
-            # self.subroutine_types,
             **self.env_variables,
         )
         parse_function = ParseFunction.get(self.parse_function)
         if self.format_error_template is None:
             self.format_error_template = parse_function.format_error_template
         self.format_error_template = self.format_error_template.format(**self.__dict__)
-        for command in _commands:
-            print(command.name, self.submit_command)
+        for command in commands:
             if command.name == self.submit_command:
-                print("yay")
                 self.submit_command_end_name = command.end_name
                 break
-        else:
-            print(_commands)
+
+
+# todo: move everything about parsing the commands in here
+# todo: Support different shell sessions?
+class ToolHandler:
+    def __init__(self, tools: ToolConfig, runtime: AbstractRuntime):
+        self.config = tools
+        self._runtime = runtime
+        # partially initialized in `install_commands`.
+        self._reset_commands = []
+        self.logger = get_logger("Tools", emoji="🔧")
+
+    @classmethod
+    def from_config(cls, config: ToolConfig, runtime: AbstractRuntime) -> Self:
+        return cls(config, runtime)
+
+    def install(self) -> None:
+        self._install_commands()
+        self._make_state_command_available()
+        self.reset()
+
+    def _install_commands(self) -> None:
+        """Make sure all commands are available in the container"""
+        for file in self.config.command_files:
+            contents = file.read_text()
+            source = False
+            mark_executable = False
+            if not contents.strip().startswith("#!"):
+                if file.suffix == ".sh":
+                    name = file.name
+                    source = True
+                elif file.name.startswith("_"):
+                    name = file.name
+                else:
+                    msg = (
+                        f"Non-shell script file {file} does not start with shebang.\n"
+                        "Either add a shebang (#!) or change the file extension to .sh if you want to source it.\n"
+                        "You can override this behavior by adding an underscore to the file name (e.g. _utils.py)."
+                    )
+                    raise ValueError(msg)
+            else:
+                name = file.name.rpartition(".")[0]
+                mark_executable = True
+
+            self.logger.debug(f"Installing command {name} ({source=}, {mark_executable=})")
+            asyncio.run(self._runtime.write_file(WriteFileRequest(content=contents, path=f"/root/commands/{name}")))
+            if source:
+                self._reset_commands.append(f"source /root/commands/{name}")
+            if mark_executable:
+                asyncio.run(
+                    self._runtime.execute(RexCommand(command=f"chmod +x /root/commands/{name}", shell=True, check=True))
+                )
+        for command in self.config.install_commands:
+            asyncio.run(self._runtime.run_in_session(BashAction(command=command, timeout=1, check=True)))
+
+    def _make_state_command_available(self) -> None:
+        asyncio.run(
+            self._runtime.run_in_session(BashAction(command=self.config.state_command.code, timeout=1, check=True))
+        )
+
+    def _set_env_variables(self) -> None:
+        _env_setters = [f"export {k}={v}" for k, v in self.config.env_variables.items()]
+        command = " && ".join(_env_setters)
+        asyncio.run(
+            self._runtime.run_in_session(
+                BashAction(command=command, timeout=1, check=True, error_msg="Failed to set environment variables")
+            )
+        )
+
+    def reset(self) -> None:
+        self.logger.info("Resetting tools")
+        self._set_env_variables()
+        asyncio.run(
+            self._runtime.run_in_session(BashAction(command=" && ".join(self._reset_commands), timeout=1, check=True))
+        )
+
+    def get_state(self) -> dict[str, str]:
+        """If a state command is defined, execute it in the environment parse it as json and return the result.
+        This can be used to extract environment variables etc. from the environment.
+        """
+        if not self.config.state_command:
+            return {}
+        state = asyncio.run(
+            self._runtime.run_in_session(BashAction(command=self.config.state_command.name, check=True))
+        )
+        try:
+            state = json.loads(state.output)
+        except json.JSONDecodeError as e:
+            msg = f"State {state.output!r} is not valid json. This is an internal error, please report it."
+            raise ValueError(msg) from e
+        self.logger.debug(f"Retrieved state from environment: {state}")
+        return state
 
 
 # todo: factor out tools config and potentially try to only give it to SWEEnv. Agent should only need allow-lists and the final tools documentation
@@ -169,14 +274,6 @@ class AgentConfig(BaseModel):
     # todo: Why can't we just configure this in the same way as the models?
     history_processor: Any = "DefaultHistoryProcessor"
     history_processor_args: dict[str, Any] = {}
-
-    state_command: Command = Command(
-        name="state",
-        code="""state() {
-            echo '{"working_dir": "'$(realpath --relative-to=$ROOT/.. $PWD)'"}';
-        };""",
-    )
-    """Should extract environment state in a json readable form"""
 
     model: ModelConfig = ModelConfig(name="gpt4")
 
@@ -198,15 +295,13 @@ class Agent:
             **self.config.tools.env_variables,
         }
         self._parse_command_patterns()
-        self.last_container_id = None
         self.logger = get_logger("agent", emoji="🤠")
-        # Requires instance, so is set in `setup` methods
-        self._rloop = None
 
         # Set in run method
         self._env: SWEEnv | None = None
         self._problem_statement: ProblemStatement | ProblemStatementConfig | None = None
         self.traj_path: Path | None = None
+        self._tool_handler: ToolHandler | None = None
 
         #: Number of attempts to solve the issue when using a review loop
         self._i_attempt: int = 0
@@ -295,18 +390,17 @@ class Agent:
         self._trajectory_by_attempt = defaultdict(list)
         self._info_by_attempt = defaultdict(dict)  # type: ignore
         self._forwarded_vars = {}
-        if self._rloop is not None:
-            self._forwarded_vars = self._rloop.get_forwarded_vars()
-
+        # if self._rloop is not None:
+        #     self._forwarded_vars = self._rloop.get_forwarded_vars()
+        assert self._tool_handler is not None
+        self._tool_handler.install()
         self.setup_attempt(init_model_stats=init_model_stats)
 
         self._chook.on_setup_done()
 
     def setup_attempt(self, *, init_model_stats: APIStats | None = None) -> None:
         """Setup the agent for a new attempt. This includes resetting the model stats."""
-        self.init_environment_vars()
-        self._make_state_command_available()
-        self._make_commands_available()
+        assert self._tool_handler is not None
         if self._i_attempt > 0 and init_model_stats is not None:
             msg = (
                 "We might be dealing with nested retries, where subroutines are mixed with retries. "
@@ -317,7 +411,6 @@ class Agent:
             assert self._env is not None  # mypy
             self._env.reset_for_new_attempt()
         self.model.reset_stats(init_model_stats)
-        # self.model = get_model(self._args.model, self.config._commands + self.config.subroutine_types)
         self.add_system_message()
         self.add_demonstrations_to_history()
 
@@ -378,8 +471,8 @@ class Agent:
             assert "model_stats" in stats  # mypy
             attempt_stats = APIStats(**stats["model_stats"])  # type: ignore
             total_stats += attempt_stats
-        if self._rloop is not None:
-            total_stats += self._rloop.model_stats
+        # if self._rloop is not None:
+        #     total_stats += self._rloop.model_stats
         return total_stats
 
     def save_trajectory(
@@ -440,7 +533,7 @@ class Agent:
         return _guard_multiline_input(action, self._get_first_multiline_cmd)
 
     def _parse_command_patterns(self) -> None:
-        """Sets self.command_patterns and self.subroutine_patterns"""
+        """Sets self.command_patterns"""
 
         self.command_patterns = dict()
         for command in self.config.tools.commands:
@@ -658,76 +751,6 @@ class Agent:
                 f"exit due to retry error: {e}",
             )
 
-    def init_environment_vars(self):
-        self.set_environment_vars(self.config.tools.env_variables)
-
-    def _make_state_command_available(self) -> None:
-        """Define state command in the container"""
-        assert self._env is not None
-        self._env.communicate(self.config.state_command.code, check=True)
-
-    def _make_commands_available(self) -> None:
-        """Make sure all commands are available in the container"""
-        command_files = list()
-        for file in self.config.tools.command_files:
-            datum = dict()
-            with open(file) as f:
-                contents = f.read()
-            datum["contents"] = contents
-            filename = Path(file).name
-            if not contents.strip().startswith("#!"):
-                if filename.endswith(".sh"):
-                    # files are sourced, so they are not executable
-                    datum["name"] = Path(file).name
-                    datum["type"] = "source_file"
-                elif filename.startswith("_"):
-                    # files are sourced, so they are not executable
-                    datum["name"] = Path(file).name
-                    datum["type"] = "utility"
-                else:
-                    msg = (
-                        f"Non-shell script file {file} does not start with shebang.\n"
-                        "Either add a shebang (#!) or change the file extension to .sh if you want to source it.\n"
-                        "You can override this behavior by adding an underscore to the file name (e.g. _utils.py)."
-                    )
-                    raise ValueError(msg)
-            else:
-                # scripts are made executable
-                datum["name"] = Path(file).name.rsplit(".", 1)[0]
-                datum["type"] = "script"
-            command_files.append(datum)
-        assert self._env is not None
-        self._env.add_commands(command_files)
-
-    def set_environment_vars(self, env_variables: dict[str, Any]) -> None:
-        """Sets environment variables in the container and for example makes sure
-        that all the commands are available in the PATH on the container.
-        """
-        _env_setters = [f"export {k}={v}" for k, v in env_variables.items()]
-        commands = " && ".join(_env_setters)
-        assert self._env is not None
-        try:
-            self._env.communicate(commands, check=True)
-        except KeyboardInterrupt:
-            raise
-        except Exception as e:
-            self.logger.warning(f"Failed to set environment variables: {traceback.format_exc()}")
-            raise e
-
-    def get_state(self) -> dict[str, str]:
-        """If a state command is defined, execute it in the environment parse it as json and return the result.
-        This can be used to extract environment variables etc. from the environment.
-        """
-        if not self.config.state_command:
-            return {}
-        assert self._env is not None
-        state = self._env.communicate(self.config.state_command.name, check=True)
-        try:
-            return json.loads(state)
-        except json.JSONDecodeError as e:
-            msg = f"State {state!r} is not valid json. This is an internal error, please report it."
-            raise ValueError(msg) from e
-
     def step(self, observation: str) -> tuple[str, bool]:
         """Run a step of the agent: Take the last observation, combine it with all other context
         (i.e., the history of thoughts and actions), then execute the action and return the new observation.
@@ -739,10 +762,9 @@ class Agent:
         """
 
         assert self._env is not None
-
         self._chook.on_step_start()
-
-        state = self.get_state()
+        assert self._tool_handler is not None
+        state = self._tool_handler.get_state()
         thought, raw_action, output = self.forward(observation, self._env.get_available_actions(), state)
         self._chook.on_actions_generated(thought=thought, action=raw_action, output=output)
         run_action: str = self._guard_multiline_input(raw_action)
@@ -791,6 +813,7 @@ class Agent:
         """
         self._problem_statement = problem_statement
         self._env = env
+        self._tool_handler = ToolHandler.from_config(self.config.tools, env.deployment.runtime)
         self.setup(init_model_stats)
 
         # Save/reset some attributes

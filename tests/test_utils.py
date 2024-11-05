@@ -61,4 +61,4 @@ def test_convert_path_to_abspath():
 
 
 def test_convert_paths_to_abspath():
-    assert _convert_paths_to_abspath([Path("sadf"), Path("/sadf")]) == [str(REPO_ROOT / "sadf"), str(Path("/sadf"))]
+    assert _convert_paths_to_abspath([Path("sadf"), Path("/sadf")]) == [REPO_ROOT / "sadf", Path("/sadf")]
