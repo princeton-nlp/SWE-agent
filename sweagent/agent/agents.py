@@ -25,8 +25,6 @@ from sweagent.agent.models import (
     get_model,
 )
 from sweagent.agent.parsing import FormatError, ParseFunction
-
-# from sweagent.agent.summarizer import SummarizerConfig
 from sweagent.agent.utils import _guard_multiline_input
 from sweagent.environment.config.problem_statement import ProblemStatement, ProblemStatementConfig
 from sweagent.environment.swe_env import SWEEnv
@@ -35,8 +33,7 @@ from sweagent.utils.config import _convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 
 
-# todo: factor out tools config and potentially try to only give it to SWEEnv. Agent should only need allow-lists and the final tools documentation
-class AgentConfig(BaseModel):
+class TemplateConfig(BaseModel):
     system_template: str = ""
     instance_template: str = ""
     next_step_template: str = None  # type: ignore
@@ -47,26 +44,26 @@ class AgentConfig(BaseModel):
 
     strategy_template: str | None = None
     demonstration_template: str | None = None
-    # Paths to demonstrations. If path is not absolute, it is assumed to be
-    # relative to the SWE_AGENT_CONFIG_ROOT (if set) or the SWE-agent repository root
+
     demonstrations: list[str] = field(default_factory=list)
-    put_demos_in_history: bool = False  # if True, add demonstration to history instead of as a single message
-    # defaults to format_error_template in ParseFunction
-    format_error_template: str = None  # type: ignore
-    # Paths to command files. If path is not absolute, it is assumed to be
-    # relative to the SWE_AGENT_CONFIG_ROOT (if set) or the SWE-agent repository root
-    command_files: list[str] = field(default_factory=list)
-    env_variables: dict[str, Any] = field(default_factory=dict)
-    util_functions: list[str] = field(default_factory=list)
-    submit_command: str = "submit"
-    parse_function: Any = "ThoughtActionParser"
-    parse_command: Any = "ParseCommandBash"
-    history_processor: Any = "DefaultHistoryProcessor"
-    history_processor_args: dict[str, Any] = field(default_factory=dict)
-    command_docs: str = None  # type: ignore
-    # summarizer_config: SummarizerConfig = field(default_factory=SummarizerConfig)
+    """Paths to demonstrations. If path is not absolute, it is assumed to be
+    relative to the SWE_AGENT_CONFIG_ROOT (if set) or the SWE-agent repository root
+    """
+
+    put_demos_in_history: bool = False
+    """If True, add demonstration to history instead of as a single message"""
+
+    def model_post_init(self, __context):
+        self.demonstrations = _convert_paths_to_abspath(self.demonstrations)
+        if self.next_step_template is None:
+            self.next_step_template = self.instance_template
+        if self.next_step_no_output_template is None:
+            self.next_step_no_output_template = self.next_step_template
+
+
+class ToolFilterConfig(BaseModel):
     blocklist_error_template: str = "Interactive operation '{name}' is not supported by this environment"
-    blocklist: tuple[str, ...] = (
+    blocklist: list[str] = [
         "vim",
         "vi",
         "emacs",
@@ -74,8 +71,8 @@ class AgentConfig(BaseModel):
         "nohup",
         "git",
         "gdb",
-    )
-    blocklist_standalone: tuple[str, ...] = (
+    ]
+    blocklist_standalone: list[str] = [
         "python",
         "python3",
         "ipython",
@@ -90,25 +87,29 @@ class AgentConfig(BaseModel):
         "emacs",
         "nano",
         "su",
-    )
+    ]
+    # todo: probably rename this
     block_unless_regex: dict[str, str] = field(
         default_factory=lambda: {
             "radare2": r"\b(?:radare2)\b.*\s+-c\s+.*",
             "r2": r"\b(?:radare2)\b.*\s+-c\s+.*",
         }
     )
-    # Should extract environment state in a json readable form
-    state_command: Command = field(
-        default_factory=lambda: Command(
-            name="state",
-            code="""state() {
-            echo '{"working_dir": "'$(realpath --relative-to=$ROOT/.. $PWD)'"}';
-        };""",
-        )
-    )
-    # _subroutines: dict[str, Subroutine] = field(default_factory=dict)
-    # subroutine_types: list[Subroutine] = field(default_factory=list)
-    model: ModelConfig = field(default_factory=lambda: ModelConfig(name="gpt4"))
+
+
+class ToolConfig(BaseModel):
+    filter: ToolFilterConfig = field(default_factory=ToolFilterConfig)
+    command_files: list[str] = field(default_factory=list)
+    env_variables: dict[str, Any] = field(default_factory=dict)
+    util_functions: list[str] = field(default_factory=list)
+    submit_command: str = "submit"
+    parse_function: Any = "ThoughtActionParser"
+    parse_command: Any = "ParseCommandBash"
+
+    format_error_template: str = None  # type: ignore
+    """Defaults to format_error_template in ParseFunction"""
+
+    command_docs: str = None  # type: ignore
     multi_line_command_endings: dict[str, str] = field(default_factory=dict)
     submit_command_end_name: str | None = None
 
@@ -126,14 +127,7 @@ class AgentConfig(BaseModel):
 
     def model_post_init(self, __context):
         self.command_files = _convert_paths_to_abspath(self.command_files)
-        self.demonstrations = _convert_paths_to_abspath(self.demonstrations)
 
-        if self.next_step_template is None:
-            self.next_step_template = self.instance_template
-        if self.next_step_no_output_template is None:
-            self.next_step_no_output_template = self.next_step_template
-
-        # object.__setattr__(self, "parse_command", ParseCommand.get(self.parse_command))
         parse_command = ParseCommand.get(self.parse_command)
         _commands = []
         for file in self.command_files:
@@ -146,10 +140,7 @@ class AgentConfig(BaseModel):
             _commands.extend(commands)
 
         multi_line_command_endings = {
-            command.name: command.end_name
-            # for command in [*self._commands, *self._subroutines.values()]
-            for command in _commands
-            if command.end_name is not None
+            command.name: command.end_name for command in _commands if command.end_name is not None
         }
         self.multi_line_command_endings = multi_line_command_endings
         self.command_docs = parse_command.generate_command_docs(
@@ -158,25 +149,40 @@ class AgentConfig(BaseModel):
             # self.subroutine_types,
             **self.env_variables,
         )
-        # object.__setattr__(self, "parse_function", ParseFunction.get(self.parse_function))
         parse_function = ParseFunction.get(self.parse_function)
         if self.format_error_template is None:
             self.format_error_template = parse_function.format_error_template
         self.format_error_template = self.format_error_template.format(**self.__dict__)
         for command in _commands:
+            print(command.name, self.submit_command)
             if command.name == self.submit_command:
+                print("yay")
                 self.submit_command_end_name = command.end_name
                 break
-        # object.__setattr__(
-        #     self,
-        #     "history_processor",
-        #     HistoryProcessor.get(self.history_processor, **self.history_processor_args),
-        # )
-        # if "WINDOW" in self.env_variables:
-        # window_size = self.env_variables["WINDOW"]
-        # if self.summarizer_config.window_length < int(window_size):
-        #     msg = f"Summarizer window length is set to {self.summarizer_config.window_length} which is less than the window length {window_size}"
-        #     raise ValueError(msg)
+        else:
+            print(_commands)
+
+
+# todo: factor out tools config and potentially try to only give it to SWEEnv. Agent should only need allow-lists and the final tools documentation
+class AgentConfig(BaseModel):
+    templates: TemplateConfig = field(default_factory=TemplateConfig)
+    tools: ToolConfig = field(default_factory=ToolConfig)
+
+    # todo: Why can't we just configure this in the same way as the models?
+    history_processor: Any = "DefaultHistoryProcessor"
+    history_processor_args: dict[str, Any] = field(default_factory=dict)
+
+    state_command: Command = field(
+        default_factory=lambda: Command(
+            name="state",
+            code="""state() {
+            echo '{"working_dir": "'$(realpath --relative-to=$ROOT/.. $PWD)'"}';
+        };""",
+        )
+    )
+    """Should extract environment state in a json readable form"""
+
+    model: ModelConfig = field(default_factory=lambda: ModelConfig(name="gpt4"))
 
 
 # todo: separate out from_config. In particular separate out model (as a class, etc.)
@@ -188,16 +194,12 @@ class Agent:
         self.name = name
         # todo: currently only used to get the model name, so might remove this later
         self._args = args
-        # self.model = get_model(args.model, args.config._commands + args.config.subroutine_types)
-        self.model = get_model(args.model, args.commands)
-        # self.summarizer_model = get_model(
-        #     args.summarizer_config.model if args.summarizer_config.model is not None else args.model
-        # )
+        self.model = get_model(args.model, args.tools.commands)
         self.config = args
 
         self.system_args = {
-            "command_docs": self.config.command_docs,
-            **self.config.env_variables,
+            "command_docs": self.config.tools.command_docs,
+            **self.config.tools.env_variables,
         }
         self._parse_command_patterns()
         self.last_container_id = None
@@ -226,7 +228,7 @@ class Agent:
         self._history_processor = HistoryProcessor.get(
             self.config.history_processor, **self.config.history_processor_args
         )
-        self._parse_function = ParseFunction.get(self.config.parse_function)
+        self._parse_function = ParseFunction.get(self.config.tools.parse_function)
 
         self._chook = CombinedAgentHook()
 
@@ -309,15 +311,18 @@ class Agent:
         # self.model = get_model(self._args.model, self.config._commands + self.config.subroutine_types)
         # fixme: This doesn't reset total cost
         assert self._problem_statement is not None
-        system_msg = self.config.system_template.format(
+        system_msg = self.config.templates.system_template.format(
             **self.system_args, problem_statement=self._problem_statement.get_problem_statement()
         )
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
         self._append_history(HistoryItem({"role": "system", "content": system_msg, "agent": self.name}))
         # todo: This should be moved somewhere
         if "history_to_messages" in dir(self.model):
-            for demonstration_path in self.config.demonstrations:
-                if self.config.demonstration_template is None and not self.config.put_demos_in_history:
+            for demonstration_path in self.config.templates.demonstrations:
+                if (
+                    self.config.templates.demonstration_template is None
+                    and not self.config.templates.put_demos_in_history
+                ):
                     msg = "Cannot use demonstrations without a demonstration template or put_demos_in_history=True"
                     raise ValueError(msg)
 
@@ -330,8 +335,8 @@ class Agent:
                     if ("agent" not in entry) or ("agent" in entry and entry["agent"] == self.name)
                 ]
 
-                if self.config.put_demos_in_history:
-                    if self.config.demonstration_template is not None:
+                if self.config.templates.put_demos_in_history:
+                    if self.config.templates.demonstration_template is not None:
                         self.logger.warning("Demonstration template is ignored for put_demos_in_history=True")
                     # Add demonstration to history directly as separate messages
                     for entry in demo_history:
@@ -344,8 +349,8 @@ class Agent:
                         demo_history,
                         is_demonstration=True,
                     )
-                    assert self.config.demonstration_template is not None
-                    demonstration = self.config.demonstration_template.format(demonstration=demo_message)
+                    assert self.config.templates.demonstration_template is not None
+                    demonstration = self.config.templates.demonstration_template.format(demonstration=demo_message)
                     self._append_history(
                         {
                             "agent": self.name,
@@ -409,7 +414,7 @@ class Agent:
         patterns = {
             k: v
             for k, v in self.command_patterns.items()
-            if k in self.config.multi_line_command_endings or k == self.config.submit_command
+            if k in self.config.tools.multi_line_command_endings or k == self.config.tools.submit_command
         }
         matches = list()
         for _, pat in patterns.items():
@@ -433,7 +438,7 @@ class Agent:
         """Sets self.command_patterns and self.subroutine_patterns"""
 
         self.command_patterns = dict()
-        for command in self.config.commands:
+        for command in self.config.tools.commands:
             if command.end_name is not None:
                 pat = re.compile(
                     rf"^\s*({command.name})\s*(.*?)^({command.end_name})\s*$",
@@ -443,14 +448,11 @@ class Agent:
             else:
                 pat = re.compile(rf"^\s*({command.name})\s*(.*?)$", re.MULTILINE)
                 self.command_patterns[command.name] = pat
-        if hasattr(self.config, "submit_command_end_name"):
-            submit_pat = re.compile(
-                rf"^\s*({self.config.submit_command})\s*(.*?)^({self.config.submit_command_end_name})\s*$",
-                re.DOTALL | re.MULTILINE,
-            )
-        else:
-            submit_pat = re.compile(rf"^\s*({self.config.submit_command})(\s*)$", re.MULTILINE)  # group 2 is nothing
-        self.command_patterns[self.config.submit_command] = submit_pat
+        submit_pat = re.compile(
+            rf"^\s*({self.config.tools.submit_command})\s*(.*?)^({self.config.tools.submit_command_end_name})\s*$",
+            re.DOTALL | re.MULTILINE,
+        )
+        self.command_patterns[self.config.tools.submit_command] = submit_pat
 
     def forward(self, observation: str, available_actions: list[str], state: dict[str, str]) -> tuple[str, str, str]:
         """Forwards the model, i.e., queries the model with the current trajectory and observation.
@@ -494,15 +496,15 @@ class Agent:
         # Determine observation template based on what prior observation was
         if self.history[-1]["role"] == "system" or self.history[-1].get("is_demo", False):
             # Show instance template if prev. obs. was initial system message
-            templates = [self.config.instance_template]
-            if self.config.strategy_template is not None:
-                templates.append(self.config.strategy_template)
+            templates = [self.config.templates.instance_template]
+            if self.config.templates.strategy_template is not None:
+                templates.append(self.config.templates.strategy_template)
         elif observation is None or observation.strip() == "":
             # Show no output template if observation content was empty
-            templates = [self.config.next_step_no_output_template]
+            templates = [self.config.templates.next_step_no_output_template]
         else:
             # Show standard output template if there is observation content
-            templates = [self.config.next_step_template]
+            templates = [self.config.templates.next_step_template]
 
         # Populate selected template(s) with information (e.g., issue, arguments, state)
         messages = []
@@ -528,7 +530,7 @@ class Agent:
 
     def retry_after_format_fail(self, output: str) -> str:
         """Ask the model to correct (without committing to persistent history) after a malformatted model output"""
-        format_error_template = self.config.format_error_template
+        format_error_template = self.config.tools.format_error_template
 
         self.logger.warning(f"MALFORMED OUTPUT\n{output}")
         self.logger.warning(f"FORMAT ERROR\n{format_error_template}")
@@ -542,7 +544,7 @@ class Agent:
     def retry_after_blocklist_fail(self, output: str, action: str) -> str:
         """Ask the model to correct (without committing to persistent history) after a disallowed command"""
         name = action.strip().split()[0]
-        blocklist_error_message = self.config.blocklist_error_template.format(name=name)
+        blocklist_error_message = self.config.tools.filter.blocklist_error_template.format(name=name)
 
         self.logger.warning(f"BLOCKLISTED OUTPUT\n{output}")
         self.logger.warning(f"BLOCKLIST ERROR\n{blocklist_error_message}")
@@ -559,11 +561,13 @@ class Agent:
         if len(names) == 0:
             return False
         name = names[0]
-        if name in self.config.blocklist:
+        if name in self.config.tools.filter.blocklist:
             return True
-        if name in self.config.blocklist_standalone and name == action.strip():
+        if name in self.config.tools.filter.blocklist_standalone and name == action.strip():
             return True
-        if name in self.config.block_unless_regex and not re.search(self.config.block_unless_regex[name], action):
+        if name in self.config.tools.filter.block_unless_regex and not re.search(
+            self.config.tools.filter.block_unless_regex[name], action
+        ):
             return True
         return False
 
@@ -587,7 +591,7 @@ class Agent:
         elif self.model.args.name == "human_thought":
             thought, action = ParseFunction.get("ThoughtActionParser")(
                 output,
-                self.config.commands,
+                self.config.tools.commands,
                 strict=False,
             )
             return thought, action, output
@@ -598,7 +602,7 @@ class Agent:
             try:
                 thought, action = self._parse_function(
                     output,
-                    self.config.commands,
+                    self.config.tools.commands,
                     strict=False,
                 )
             except KeyboardInterrupt:
@@ -650,7 +654,7 @@ class Agent:
             )
 
     def init_environment_vars(self):
-        self.set_environment_vars(self.config.env_variables)
+        self.set_environment_vars(self.config.tools.env_variables)
 
     def set_environment_vars(self, env_variables: dict[str, Any]) -> None:
         """Sets environment variables in the container and for example makes sure
@@ -674,7 +678,7 @@ class Agent:
             self.logger.warning(f"Failed to set environment variables: {traceback.format_exc()}")
             raise e
         command_files = list()
-        for file in self.config.command_files:
+        for file in self.config.tools.command_files:
             datum = dict()
             with open(file) as f:
                 contents = f.read()

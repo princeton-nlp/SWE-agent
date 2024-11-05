@@ -28,21 +28,21 @@ def test_run_single_raises_exception():
 @pytest.fixture
 def agent_config_with_commands():
     ac = AgentConfig()
-    ac.command_files = [
-        f"config/commands/{name}"
-        for name in ["defaults.sh", "search.sh", "edit_linting.sh", "_split_string.py", "submit.sh"]
-    ]
+    ac.tools.command_files = [f"config/commands/{name}" for name in ["submit.sh"]]
+    # Make sure dependent properties are set
+    ac.tools.model_post_init(None)
     return ac
 
 
 @pytest.mark.slow
-def test_run_ies(agent_config_with_commands):
+def test_run_ies(tmpdir, agent_config_with_commands):
     # ies = instant empty submit
     ac = agent_config_with_commands
     ac.model.name = "instant_empty_submit"
     rsc = RunSingleConfig(
         env=EnvironmentConfig(),
         agent=ac,
+        traj_dir=tmpdir,
     )
     rs = RunSingle.from_config(rsc)
     rs.run()
