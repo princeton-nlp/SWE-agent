@@ -22,7 +22,7 @@ from sweagent.utils.log import get_logger
 
 class RunBatchConfig(BaseSettings, cli_implicit_flags=True):
     instances: BatchInstanceSourceConfig = Field(union_mode="left_to_right")
-    agent: AgentConfig = AgentConfig()
+    agent: AgentConfig = Field(default_factory=AgentConfig)
     traj_dir: Path = Path(".")
     raise_exceptions: bool = False
     redo_existing: bool = False

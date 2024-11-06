@@ -7,12 +7,12 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from simple_parsing.helpers.fields import field
 from tenacity import RetryError
 
 from sweagent import __version__, get_agent_commit_hash
-from sweagent.agent.history_processors import HistoryProcessor
+from sweagent.agent.history_processors import DefaultHistoryProcessor, HistoryProcessor
 from sweagent.agent.hooks.abstract import AbstractAgentHook, CombinedAgentHook
 from sweagent.agent.models import (
     APIStats,
@@ -63,14 +63,13 @@ class TemplateConfig(BaseModel):
 
 
 class AgentConfig(BaseModel):
-    templates: TemplateConfig = TemplateConfig()
-    tools: ToolConfig = ToolConfig()
+    templates: TemplateConfig = Field(default_factory=TemplateConfig)
+    tools: ToolConfig = Field(default_factory=ToolConfig)
+    history_processor: HistoryProcessor = Field(default_factory=DefaultHistoryProcessor)
+    model: ModelConfig = Field(default_factory=ModelConfig)
 
-    # todo: Why can't we just configure this in the same way as the models?
-    history_processor: Any = "DefaultHistoryProcessor"
-    history_processor_args: dict[str, Any] = {}
-
-    model: ModelConfig = ModelConfig()
+    # pydantic config
+    model_config = ConfigDict(extra="forbid")
 
 
 # todo: Move parse function to tools
@@ -119,9 +118,7 @@ class Agent:
         #: solution attempt to the next
         self._forwarded_vars: dict[str, Any] = {}
 
-        self._history_processor = HistoryProcessor.get(
-            self.config.history_processor, **self.config.history_processor_args
-        )
+        self._history_processor = self._args.history_processor
 
         # todo: move to tools
         self._parse_function = ParseFunction.get(self.config.tools.parse_function)

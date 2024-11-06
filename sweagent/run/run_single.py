@@ -27,17 +27,17 @@ class RunSingleActionConfig(BaseModel, cli_implicit_flags=True):
 
     # Open a PR with the patch if we can solve the issue
     open_pr: bool = False
-    pr_config: OpenPRConfig = OpenPRConfig()
+    pr_config: OpenPRConfig = Field(default_factory=OpenPRConfig)
     # When working with local repository: Apply patch
     apply_patch_locally: bool = False
 
 
 class RunSingleConfig(BaseSettings, cli_implicit_flags=True):
-    env: EnvironmentConfig = EnvironmentConfig()
-    agent: AgentConfig = AgentConfig()
+    env: EnvironmentConfig = Field(default_factory=EnvironmentConfig)
+    agent: AgentConfig = Field(default_factory=AgentConfig)
     problem_statement: ProblemStatementConfig = Field(default_factory=EmptyProblemStatement)
     traj_dir: Path = Path(".")
-    actions: RunSingleActionConfig = RunSingleActionConfig()
+    actions: RunSingleActionConfig = Field(default_factory=RunSingleActionConfig)
 
     print_config: bool = False
     """Print config at the beginning of the run."""

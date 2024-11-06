@@ -110,4 +110,6 @@ agent:
               echo '{"open_file": "'$(realpath "$CURRENT_FILE")'", "working_dir": "'$working_dir'"}';
           fi
         };
-  history_processor: Last5Observations
+  history_processor:
+    type: last_n_observations
+    n: 5

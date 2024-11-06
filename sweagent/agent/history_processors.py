@@ -2,51 +2,33 @@ from __future__ import annotations
 
 import re
 from abc import abstractmethod
-from dataclasses import dataclass
+from typing import Annotated, Literal, Protocol
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class FormatError(Exception):
     pass
 
 
-# ABSTRACT BASE CLASSES
-
-
-class HistoryProcessorMeta(type):
-    _registry = {}
-
-    def __new__(cls, name, bases, attrs):
-        new_cls = super().__new__(cls, name, bases, attrs)
-        if name != "HistoryProcessor":
-            cls._registry[name] = new_cls
-        return new_cls
-
-
-@dataclass
-class HistoryProcessor(metaclass=HistoryProcessorMeta):
-    def __init__(self, *args, **kwargs):
-        pass
-
+class AbstractHistoryProcessor(Protocol):
     @abstractmethod
     def __call__(self, history: list[str]) -> list[str]:
         raise NotImplementedError
 
-    @classmethod
-    def get(cls, name, *args, **kwargs):
-        try:
-            return cls._registry[name](*args, **kwargs)
-        except KeyError:
-            msg = f"Model output parser ({name}) not found."
-            raise ValueError(msg)
 
+class DefaultHistoryProcessor(BaseModel):
+    type: Literal["default"] = "default"
+    """Do not change. Used for (de)serialization."""
 
-# DEFINE NEW PARSING FUNCTIONS BELOW THIS LINE
-class DefaultHistoryProcessor(HistoryProcessor):
+    # pydantic config
+    model_config = ConfigDict(extra="forbid")
+
     def __call__(self, history):
         return history
 
 
-def last_n_history(history, n):
+def _last_n_history(history, n):
     if n <= 0:
         msg = "n must be a positive integer"
         raise ValueError(msg)
@@ -71,27 +53,29 @@ def last_n_history(history, n):
     return new_history
 
 
-class LastNObservations(HistoryProcessor):
-    def __init__(self, n):
-        self.n = n
+class LastNObservations(BaseModel):
+    """Keep the last n observations"""
+
+    n: int
+    type: Literal["last_n_observations"] = "last_n_observations"
+    """Do not change. Used for (de)serialization."""
+
+    # pydantic config
+    model_config = ConfigDict(extra="forbid")
 
     def __call__(self, history):
-        return last_n_history(history, self.n)
+        return _last_n_history(history, self.n)
 
 
-class Last2Observations(HistoryProcessor):
-    def __call__(self, history):
-        return last_n_history(history, 2)
+class ClosedWindowHistoryProcessor(BaseModel):
+    type: Literal["closed_window"] = "closed_window"
+    """Do not change. Used for (de)serialization."""
 
+    _pattern = re.compile(r"^(\d+)\:.*?(\n|$)", re.MULTILINE)
+    _file_pattern = re.compile(r"\[File:\s+(.*)\s+\(\d+\s+lines\ total\)\]")
 
-class Last5Observations(HistoryProcessor):
-    def __call__(self, history):
-        return last_n_history(history, 5)
-
-
-class ClosedWindowHistoryProcessor(HistoryProcessor):
-    pattern = re.compile(r"^(\d+)\:.*?(\n|$)", re.MULTILINE)
-    file_pattern = re.compile(r"\[File:\s+(.*)\s+\(\d+\s+lines\ total\)\]")
+    # pydantic config
+    model_config = ConfigDict(extra="forbid")
 
     def __call__(self, history):
         new_history = list()
@@ -107,9 +91,9 @@ class ClosedWindowHistoryProcessor(HistoryProcessor):
             if data.get("is_demo", False):
                 new_history.append(entry)
                 continue
-            matches = list(self.pattern.finditer(entry["content"]))
+            matches = list(self._pattern.finditer(entry["content"]))
             if len(matches) >= 1:
-                file_match = self.file_pattern.search(entry["content"])
+                file_match = self._file_pattern.search(entry["content"])
                 if file_match:
                     file = file_match.group(1)
                 else:
@@ -125,3 +109,8 @@ class ClosedWindowHistoryProcessor(HistoryProcessor):
                 windows.add(file)
             new_history.append(data)
         return list(reversed(new_history))
+
+
+HistoryProcessor = Annotated[
+    DefaultHistoryProcessor | LastNObservations | ClosedWindowHistoryProcessor, Field(discriminator="type")
+]

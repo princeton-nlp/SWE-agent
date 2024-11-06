@@ -1,7 +1,7 @@
 import hashlib
 import uuid
 from pathlib import Path
-from typing import Annotated, Any, Literal, Protocol
+from typing import Any, Literal, Protocol
 
 from pydantic import BaseModel, Field
 
@@ -76,6 +76,4 @@ class GithubIssue(BaseModel):
         )
 
 
-ProblemStatementConfig = Annotated[
-    TextProblemStatement | GithubIssue | EmptyProblemStatement | FileProblemStatement, Field(union_mode="left_to_right")
-]
+ProblemStatementConfig = TextProblemStatement | GithubIssue | EmptyProblemStatement | FileProblemStatement

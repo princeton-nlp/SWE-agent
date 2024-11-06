@@ -107,5 +107,7 @@ agent:
               echo '{"open_file": "'$(realpath "$CURRENT_FILE")'", "working_dir": "'$working_dir'"}';
           fi
         };
-  parse_function: ThoughtActionParser
-  history_processor: Last5Observations
+    parse_function: ThoughtActionParser
+  history_processor:
+    type: last_n_observations
+    n: 5

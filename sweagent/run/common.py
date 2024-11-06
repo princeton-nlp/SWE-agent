@@ -5,10 +5,12 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 import yaml
+from pydantic import ValidationError
 from pydantic_settings import BaseSettings, CliApp
 
 from sweagent import CONFIG_DIR
 from sweagent.types import AgentInfo, AgentRunResult
+from sweagent.utils.log import get_logger
 
 
 # todo: Parameterize type hints
@@ -16,6 +18,7 @@ class BasicCLI:
     def __init__(self, arg_type: type[BaseSettings], default_settings: bool = True):
         self.arg_type = arg_type
         self.default_settings = default_settings
+        self.logger = get_logger("CLI", emoji="⚙️")
 
     def get_args(self, args=None) -> BaseSettings:
         # The defaults if no config file is provided
@@ -49,15 +52,32 @@ class BasicCLI:
         config_merged = {}
         if cli_args.config:
             for _f in cli_args.config:
-                _loaded = yaml.safe_load(Path(_f).read_text())
+                txt = Path(_f).read_text()
+                if not txt.strip():
+                    self.logger.warning(f"Config file {_f} is empty")
+                    continue
+                _loaded = yaml.safe_load(txt)
                 config_merged.update(_loaded)
         elif self.default_settings and not cli_args.no_config_file:
-            config_merged = yaml.safe_load((CONFIG_DIR / "default.yaml").read_text())
+            config_file = CONFIG_DIR / "default.yaml"
+            self.logger.info(f"Loading default config from {config_file}")
+            txt = config_file.read_text()
+            if not txt.strip():
+                self.logger.warning(f"Default config file {config_file} is empty")
+                config_merged = {}
+            else:
+                config_merged = yaml.safe_load(txt)
         else:
             config_merged = {}
 
-        # args = ScriptArguments.model_validate(config_merged)
-        args = CliApp.run(self.arg_type, remaining_args, **config_merged)  # type: ignore
+        try:
+            args = CliApp.run(self.arg_type, remaining_args, **config_merged)  # type: ignore
+        except (ValidationError, AttributeError, TypeError):
+            print("Merged configuration dictionary:")
+            print("-" * 40)
+            print(yaml.dump(config_merged))
+            print("-" * 40)
+            raise
         if cli_args.print_config:  # type: ignore
             print(yaml.dump(args.model_dump()))
             exit(0)
