@@ -32,7 +32,7 @@ def test_run_single_raises_exception():
 @pytest.fixture
 def agent_config_with_commands():
     ac = AgentConfig()
-    ac.tools.command_files = [f"config/commands/{name}" for name in ["submit.sh"]]
+    ac.tools.command_files = [Path(f"config/commands/{name}") for name in ["submit.sh"]]
     # Make sure dependent properties are set
     ac.tools.model_post_init(None)
     return ac

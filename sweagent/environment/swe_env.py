@@ -123,7 +123,6 @@ class SWEEnv:
         if self.repo is not None:
             # todo: This is part of our commands, not the environment
             startup_commands = [
-                "echo -n > /root/files_to_edit.txt",
                 f"cd /{self.repo.repo_name}",
                 "export ROOT=$(pwd -P)",
             ]
@@ -159,6 +158,7 @@ class SWEEnv:
             out[f"edited_files{context_length}"] = value
         return out
 
+    # todo: This should be in the agent class
     # todo: Have a return type here
     # todo: Break this up
     def step(self, action: str) -> tuple[str, int, bool, AgentInfo]:
@@ -192,7 +192,7 @@ class SWEEnv:
         if action in {"exit_context", "exit_cost", "exit_error", "exit_format", "exit_api"}:
             try:
                 observation = self.communicate(input="submit")
-                submission = self.get_submission(observation)
+                submission = self.parse_submission_cmd_output(observation)
                 assert submission is not None and submission.strip() != "", AssertionError("No submission found.")
                 self.logger.info(f"Found submission: {submission}")
                 info["exit_status"] = f"submitted ({action})"
@@ -232,7 +232,7 @@ class SWEEnv:
             self.logger.exception("Unknown exception")
 
         # Record submission and end episode if `submit` keyword found
-        submission = self.get_submission(observation)
+        submission = self.parse_submission_cmd_output(observation)
         if submission is not None:
             # if self.validate_submission(submission):
             self.logger.info(f"Found submission: {submission}")
@@ -311,7 +311,7 @@ class SWEEnv:
         return output
 
     # todo: Move to tools?
-    def get_submission(self, output: str) -> str | None:
+    def parse_submission_cmd_output(self, output: str) -> str | None:
         """Function for extracting diff patch submission at the end of an episode.
 
         Args:

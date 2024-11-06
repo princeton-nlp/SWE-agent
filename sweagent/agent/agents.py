@@ -108,6 +108,8 @@ class Agent:
         self._history_processor = HistoryProcessor.get(
             self.config.history_processor, **self.config.history_processor_args
         )
+
+        # todo: move to tools
         self._parse_function = ParseFunction.get(self.config.tools.parse_function)
 
         self._chook = CombinedAgentHook()
@@ -200,10 +202,10 @@ class Agent:
             assert self._env is not None  # mypy
             self._env.reset_for_new_attempt()
         self.model.reset_stats(init_model_stats)
-        self.add_system_message()
+        self.add_system_message_to_history()
         self.add_demonstrations_to_history()
 
-    def add_system_message(self) -> None:
+    def add_system_message_to_history(self) -> None:
         """Add system message to history"""
         assert self._problem_statement is not None
         system_msg = self.config.templates.system_template.format(
@@ -214,45 +216,85 @@ class Agent:
 
     def add_demonstrations_to_history(self) -> None:
         """Add demonstrations to history"""
-        # todo: Extract loop body into a method?
         for demonstration_path in self.config.templates.demonstrations:
-            if self.config.templates.demonstration_template is None and not self.config.templates.put_demos_in_history:
-                msg = "Cannot use demonstrations without a demonstration template or put_demos_in_history=True"
-                raise ValueError(msg)
+            self._add_demonstration_to_history(demonstration_path)
 
-            # Load history
-            self.logger.info(f"DEMONSTRATION: {demonstration_path}")
-            demo_history = json.loads(Path(demonstration_path).read_text())["history"]
-            demo_history = [
-                entry
-                for entry in demo_history
-                if ("agent" not in entry) or ("agent" in entry and entry["agent"] == self.name)
-            ]
+    def _add_demonstration_to_history(self, demonstration_path: Path) -> None:
+        """Load demonstration from disk and add to history"""
+        if self.config.templates.demonstration_template is None and not self.config.templates.put_demos_in_history:
+            msg = "Cannot use demonstrations without a demonstration template or put_demos_in_history=True"
+            raise ValueError(msg)
 
-            if self.config.templates.put_demos_in_history:
-                if self.config.templates.demonstration_template is not None:
-                    self.logger.warning("Demonstration template is ignored for put_demos_in_history=True")
-                # Add demonstration to history directly as separate messages
-                for entry in demo_history:
-                    if entry["role"] != "system":
-                        entry["is_demo"] = True
-                        self._append_history(entry)
-            else:
-                # Add demonstration as single message to history
-                demo_message = self.model.history_to_messages(
-                    demo_history,
-                    is_demonstration=True,
-                )
-                assert self.config.templates.demonstration_template is not None
-                demonstration = self.config.templates.demonstration_template.format(demonstration=demo_message)
-                self._append_history(
-                    {
-                        "agent": self.name,
-                        "content": demonstration,
-                        "is_demo": True,
-                        "role": "user",
-                    },
-                )
+        # Load history
+        self.logger.info(f"DEMONSTRATION: {demonstration_path}")
+        demo_history = json.loads(Path(demonstration_path).read_text())["history"]
+        demo_history = [
+            entry
+            for entry in demo_history
+            if ("agent" not in entry) or ("agent" in entry and entry["agent"] == self.name)
+        ]
+
+        if self.config.templates.put_demos_in_history:
+            if self.config.templates.demonstration_template is not None:
+                self.logger.warning("Demonstration template is ignored for put_demos_in_history=True")
+            # Add demonstration to history directly as separate messages
+            for entry in demo_history:
+                if entry["role"] != "system":
+                    entry["is_demo"] = True
+                    self._append_history(entry)
+        else:
+            # Add demonstration as single message to history
+            demo_message = self.model.history_to_messages(
+                demo_history,
+                is_demonstration=True,
+            )
+            assert self.config.templates.demonstration_template is not None
+            demonstration = self.config.templates.demonstration_template.format(demonstration=demo_message)
+            self._append_history(
+                {
+                    "agent": self.name,
+                    "content": demonstration,
+                    "is_demo": True,
+                    "role": "user",
+                },
+            )
+
+    def add_to_history(self, observation: str, state: dict[str, str]) -> None:
+        """Add observation to history, as well as the instance template or demonstrations if we're
+        at the start of a new attempt.
+        """
+        templates: list[str] = []
+        # Determine observation template based on what prior observation was
+        if self.history[-1]["role"] == "system" or self.history[-1].get("is_demo", False):
+            # Show instance template if prev. obs. was initial system message
+            templates = [self.config.templates.instance_template]
+            if self.config.templates.strategy_template is not None:
+                templates.append(self.config.templates.strategy_template)
+        elif observation is None or observation.strip() == "":
+            # Show no output template if observation content was empty
+            templates = [self.config.templates.next_step_no_output_template]
+        else:
+            # Show standard output template if there is observation content
+            templates = [self.config.templates.next_step_template]
+
+        # Populate selected template(s) with information (e.g., issue, arguments, state)
+        messages = []
+        assert self._problem_statement is not None
+        for template in templates:
+            messages.append(
+                template.format(
+                    **self.system_args,
+                    **state,
+                    observation=observation or "",
+                    **self._forwarded_vars,
+                    problem_statement=self._problem_statement.get_problem_statement(),
+                ),
+            )
+
+        message = "\n".join(messages)
+
+        self.logger.info(f"🤖 MODEL INPUT\n{message}")
+        self._append_history({"role": "user", "content": message, "agent": self.name})
 
     def _get_total_stats(self) -> APIStats:
         """Combine model stats of different attempts"""
@@ -293,20 +335,46 @@ class Agent:
         assert self.traj_path is not None
         self.traj_path.write_text(json.dumps(data, indent=2))
 
-    def forward(self, observation: str, state: dict[str, str]) -> tuple[str, str, str]:
-        """Forwards the model, i.e., queries the model with the current trajectory and observation.
-        This is identical to `self.forward_with_error_check`, but adds the output to the trajectory.
+    def forward_model(self, observation: str, state: dict[str, str]) -> tuple[str, str, str]:
+        """This method is called by `self.step`. It forwards the model
+        and checks the output for malformattings or blocked actions.
 
         Args:
-            observation: Observation
-            state:
+            observation: Observation from the last step
+            state: Environment state as extracted by the state commands.
 
         Returns:
             thought: model reasoning
             action: action that the model proposes
             output: raw model output (not output of the action)
         """
-        thought, action, output = self.forward_with_error_check(observation, state)
+        self.add_to_history(observation, state)
+        self._chook.on_model_query(messages=self.local_history, agent=self.name)
+        try:
+            output = self.model.query(self.local_history)
+            thought, action, output = self.check_format_and_requery(output)
+        except KeyboardInterrupt:
+            raise
+        except RuntimeError as e:
+            self.logger.exception(f"Runtime error: {e}")
+            return (
+                f"Exit due to runtime error: {e}",
+                "exit_error",
+                f"exit due to runtime error: {e}",
+            )
+        except ContextWindowExceededError:
+            self.logger.warning("Context window exceeded")
+            return "Exit due to context window", "exit_context", "Exit due to context window"
+        except CostLimitExceededError:
+            self.logger.warning("Cost limit exceeded")
+            return "Exit due to cost limit", "exit_cost", "Exit due to cost limit"
+        except RetryError as e:
+            self.logger.warning(f"Retry error: {e}")
+            return (
+                f"Exit due to retry error: {e}",
+                "exit_api",
+                f"exit due to retry error: {e}",
+            )
 
         self._append_history(
             {
@@ -323,51 +391,13 @@ class Agent:
 
         return thought, action, output
 
-    def forward_model(self, observation: str, state: dict[str, str]) -> str:
-        """Query the model with the current state and observation with the appropriate template.
-        In most cases you want to use `self.forward_with_error_check` instead to handle requeueing etc.
-
-        Returns:
-            output: raw model output (not output of the command)
-        """
-        templates: list[str] = []
-        # Determine observation template based on what prior observation was
-        if self.history[-1]["role"] == "system" or self.history[-1].get("is_demo", False):
-            # Show instance template if prev. obs. was initial system message
-            templates = [self.config.templates.instance_template]
-            if self.config.templates.strategy_template is not None:
-                templates.append(self.config.templates.strategy_template)
-        elif observation is None or observation.strip() == "":
-            # Show no output template if observation content was empty
-            templates = [self.config.templates.next_step_no_output_template]
-        else:
-            # Show standard output template if there is observation content
-            templates = [self.config.templates.next_step_template]
-
-        # Populate selected template(s) with information (e.g., issue, arguments, state)
-        messages = []
-        assert self._problem_statement is not None
-        for template in templates:
-            messages.append(
-                template.format(
-                    **self.system_args,
-                    **state,
-                    observation=observation or "",
-                    **self._forwarded_vars,
-                    problem_statement=self._problem_statement.get_problem_statement(),
-                ),
-            )
-
-        message = "\n".join(messages)
-
-        self.logger.info(f"🤖 MODEL INPUT\n{message}")
-        self._append_history({"role": "user", "content": message, "agent": self.name})
-
-        self._chook.on_model_query(messages=self.local_history, agent=self.name)
-        return self.model.query(self.local_history)
-
     def retry_after_format_fail(self, output: str) -> str:
-        """Ask the model to correct (without committing to persistent history) after a malformatted model output"""
+        """Ask the model to correct after a malformatted model output.
+
+        This involves adding temporary history based on the error template and querying the model.
+        If the model is able to correct itself, the records of the mistakes will not be part of the history
+        (but they are saved in the trajectory).
+        """
         format_error_template = self.config.tools.format_error_template
 
         self.logger.warning(f"MALFORMED OUTPUT\n{output}")
@@ -380,7 +410,12 @@ class Agent:
         return self.model.query(temp_history)
 
     def retry_after_blocklist_fail(self, output: str, action: str) -> str:
-        """Ask the model to correct (without committing to persistent history) after a disallowed command"""
+        """Ask the model to correct after a disallowed command
+
+        This involves adding temporary history based on the error template and querying the model.
+        If the model is able to correct itself, the records of the mistakes will not be part of the history
+        (but they are saved in the trajectory).
+        """
         name = action.strip().split()[0]
         blocklist_error_message = self.config.tools.filter.blocklist_error_template.format(name=name)
 
@@ -398,7 +433,8 @@ class Agent:
         output: str,
     ) -> tuple[str, str, str]:
         """Checks model output. If the output is malformatted or the action is blocked, call
-        `self.retry_after_format_fail` or `self.retry_after_blocklist_fail`.
+        `self.retry_after_format_fail` or `self.retry_after_blocklist_fail`, else return
+        parsed output.
 
         Try to parse the output into a thought and action. Retry if the output is malformatted or the action is blocked.
 
@@ -442,44 +478,15 @@ class Agent:
         self.logger.warning(f"Malformat limit reached: \n{output}")
         return "Exit due to format error", "exit_format", output
 
-    def forward_with_error_check(self, observation: str, state: dict[str, str]) -> tuple[str, str, str]:
-        """Wrapper around `self.forward_model` that handles errors and retries
-        due to format errors or blocked actions.
-
-        Returns:
-            thought: model reasoning
-            action: action that the model proposes
-            output: raw model output
-        """
-        try:
-            return self.check_format_and_requery(self.forward_model(observation, state))
-        except KeyboardInterrupt:
-            raise
-        except RuntimeError as e:
-            self.logger.warning(f"Runtime error: {e}")
-            return (
-                f"Exit due to runtime error: {e}",
-                "exit_error",
-                f"exit due to runtime error: {e}",
-            )
-        except ContextWindowExceededError:
-            self.logger.warning("Context window exceeded")
-            return "Exit due to context window", "exit_context", "Exit due to context window"
-        except CostLimitExceededError:
-            self.logger.warning("Cost limit exceeded")
-            return "Exit due to cost limit", "exit_cost", "Exit due to cost limit"
-        except RetryError as e:
-            self.logger.warning(f"Retry error: {e}")
-            return (
-                f"Exit due to retry error: {e}",
-                "exit_api",
-                f"exit due to retry error: {e}",
-            )
-
     def step(self, observation: str) -> tuple[str, bool]:
-        """Run a step of the agent: Take the last observation, combine it with all other context
-        (i.e., the history of thoughts and actions), then execute the action and return the new observation.
-        Also saves the new trajectory.
+        """Run a step of the agent:
+
+        1. Take the last observation, combine it with all other context
+           (i.e., the history of thoughts and actions). This is done by
+           `self.forward`.
+        2. Execute the action and return the new observation. This is done by
+           `self._env.step`.
+        3. Save the new trajectory etc.
 
         Returns:
             observation: Observation
@@ -487,13 +494,16 @@ class Agent:
         """
 
         assert self._env is not None
-        self._chook.on_step_start()
         assert self._tool_handler is not None
+
+        # Forward model and get actions
+        self._chook.on_step_start()
         state = self._tool_handler.get_state()
-        thought, raw_action, output = self.forward(observation, state)
+        thought, raw_action, output = self.forward_model(observation, state)
         self._chook.on_actions_generated(thought=thought, action=raw_action, output=output)
         run_action: str = self._tool_handler.guard_multiline_input(raw_action)
 
+        # Execute action
         execution_t0 = time.perf_counter()
         self._chook.on_action_started(action=run_action)
         observation, _, done, _info = self._env.step(run_action)
@@ -501,6 +511,7 @@ class Agent:
         self._chook.on_action_executed(obs=observation, done=done)
         execution_time = time.perf_counter() - execution_t0
 
+        # Bookkeeping
         trajectory_step = TrajectoryStep(
             {
                 "action": raw_action,
