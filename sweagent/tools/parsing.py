@@ -1,4 +1,4 @@
-from __future__ import annotations
+"""Parse output from the LM into thoughts and actions."""
 
 import json
 import re

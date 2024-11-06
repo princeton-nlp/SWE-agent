@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from sweagent.agent.commands import Command
-from sweagent.agent.parsing import (
+from sweagent.tools.parsing import (
     ActionParser,
     EditFormat,
     FormatError,
