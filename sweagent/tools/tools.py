@@ -297,3 +297,18 @@ class ToolHandler:
         )
         _command_patterns[self.config.submit_command] = submit_pat
         return _command_patterns
+
+    def parse_submission_cmd_output(self, output: str) -> str | None:
+        """Function for extracting diff patch submission at the end of an episode.
+
+        Args:
+            output: `submit` observation
+
+        Returns:
+            submission: diff patch submission
+        """
+        pattern = r"\<\<SUBMISSION\|\|(.*)\|\|SUBMISSION\>\>"
+        match = re.search(pattern, output, re.DOTALL)
+        if match is None:
+            return None
+        return match.group(1)

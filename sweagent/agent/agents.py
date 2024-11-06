@@ -26,11 +26,18 @@ from sweagent.environment.swe_env import SWEEnv
 from sweagent.tools.parsing import FormatError, ParseFunction
 from sweagent.tools.tools import ToolConfig, ToolHandler
 from sweagent.types import AgentInfo, AgentRunResult, History, HistoryItem, Trajectory, TrajectoryStep
-from sweagent.utils.config import _convert_paths_to_abspath
+from sweagent.utils.config import _convert_paths_to_abspath, keys_config
 from sweagent.utils.log import get_logger
+from sweagent.utils.patch_formatter import PatchFormatter
+
+AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
 
 
 class TemplateConfig(BaseModel):
+    """This configuration is used to define almost all message templates that are
+    formatted by the agent and sent to the LM.
+    """
+
     system_template: str = ""
     instance_template: str = ""
     next_step_template: str = "Observation: {observation}"
@@ -63,17 +70,24 @@ class AgentConfig(BaseModel):
     history_processor: Any = "DefaultHistoryProcessor"
     history_processor_args: dict[str, Any] = {}
 
-    model: ModelConfig = ModelConfig(name="gpt4")
+    model: ModelConfig = ModelConfig()
 
 
 # todo: Move parse function to tools
 # todo: separate out from_config. In particular separate out model (as a class, etc.). Agent should only take templates, tools, history processor and model.
 #    slight problem: get_model needs commands....
-# todo: Can this class be split up into separate responsibilities?
 class Agent:
     """Agent handles the behaviour of the model and how it interacts with the environment."""
 
-    def __init__(self, name: str, args: AgentConfig):
+    def __init__(
+        self,
+        name: str,
+        args: AgentConfig,
+        _catch_errors: bool = False,
+        _always_require_zero_exit_code: bool = False,
+    ):
+        self._catch_errors = _catch_errors
+        self._always_require_zero_exit_code = _always_require_zero_exit_code
         self.name = name
         # todo: currently only used to get the model name, so might remove this later
         self._args = args
@@ -478,6 +492,132 @@ class Agent:
         self.logger.warning(f"Malformat limit reached: \n{output}")
         return "Exit due to format error", "exit_format", output
 
+    # todo: add a hook here
+    def handle_special_actions(self, action: str, info: AgentInfo) -> tuple[str, bool, AgentInfo] | None:
+        """Handles special actions like `skip`, `exit_cost`, etc."""
+        assert self._env is not None
+        assert self._tool_handler is not None
+        if action == "skip":
+            observation = "Skipped"
+            info["exit_status"] = "skipped"
+            return observation, True, info
+        if action == "exit_forfeit":
+            observation = "Exited"
+            info["exit_status"] = action
+            return observation, True, info
+        if action in {"exit_context", "exit_cost", "exit_error", "exit_format", "exit_api"}:
+            try:
+                return self.attempt_autosubmission_after_error(action, info)
+            except KeyboardInterrupt:
+                raise
+            except:
+                observation = "Exited"
+                info["exit_status"] = action
+                return observation, True, info
+        return None
+
+    def attempt_autosubmission_after_error(self, action: str, info: AgentInfo) -> tuple[str, bool, AgentInfo]:
+        """If we hit exit_cost or similar exit statuses, we attempt to still extract the patch/submission
+        and submit this. This means we send the `submit` command to the runtime and parse the output.
+        """
+        assert self._env is not None
+        assert self._tool_handler is not None
+        observation = self._env.communicate(input="submit")
+        submission = self._tool_handler.parse_submission_cmd_output(observation)
+        assert submission is not None and submission.strip() != "", AssertionError("No submission found.")
+        self.logger.info(f"Found submission: {submission}")
+        info["exit_status"] = f"submitted ({action})"
+        info["submission"] = submission
+        info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
+        observation = "Exited (autosubmitted)"
+        self.logger.info("Exiting with autosubmission")
+        return observation, True, info
+
+    def handle_submission(self, observation: str, info: AgentInfo) -> tuple[str, bool, AgentInfo] | None:
+        """Check if there was a submission in the observation and handle it.
+
+        Returns:
+            None if no submission was found, else tuple of observation, done, info
+        """
+        assert self._tool_handler is not None
+        submission = self._tool_handler.parse_submission_cmd_output(observation)
+        if submission is None:
+            return None
+        self.logger.info(f"Found submission: {submission}")
+        info["exit_status"] = "submitted"
+        info["submission"] = submission if submission.strip() != "" else None
+        info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
+        observation = submission if submission.strip() != "" else ""
+        return observation, True, info
+
+    def _get_edited_files_with_context(self, patch: str) -> dict[str, str]:
+        """Get the edited files with context from the patch"""
+        assert self._env is not None
+        pf = PatchFormatter(patch, read_method=self._env.read_file) if patch else None
+        out = {}
+        for context_length in [30, 50, 70]:
+            value = "Empty. No edited files found."
+            if pf is not None:
+                value = pf.get_files_str(original=False, context_length=context_length)
+            out[f"edited_files{context_length}"] = value
+        return out
+
+    def execute_action_in_runtime(self, action: str, info: AgentInfo) -> tuple[str, bool, AgentInfo]:
+        assert self._env is not None
+        # Attempt to run action in container
+        try:
+            observation = self._env.communicate(
+                input=action,
+                timeout=AGENT_ACTION_TIMEOUT,
+                set_last_action=True,
+                check=self._always_require_zero_exit_code,
+            )
+        except RuntimeError as e:
+            if not self._catch_errors:
+                raise
+            observation = e.args[1] if len(e.args) > 1 else ""
+            observation += "COMMAND FAILED TO EXECUTE. RESTARTING PROCESS."
+            info["exit_status"] = "early_exit"
+            self.logger.warning(f"Failed to execute command: {e}\nRESTARTING PROCESS.")
+            # todo: Are we doing this here or somewhere else?
+            self._env.reset_container()
+            return observation, True, info
+        # todo: Should this also be handled in the exit status?
+        except Exception:
+            if not self._catch_errors:
+                raise
+            observation = "Unknown exception"
+            self.logger.exception("Unknown exception")
+
+        # Check if there was a submission
+        submission_result = self.handle_submission(observation, info)
+        if submission_result is not None:
+            return submission_result
+
+        return observation, False, info
+
+    def handle_action(self, action: str) -> tuple[str, bool, AgentInfo]:
+        """Runs an action proposed by the agent in the environment and returns the corresponding output.
+
+        Args:
+            action: command to run in bash shell
+
+        Returns:
+            observation:  output from container
+            done: whether task is over
+            info: additional information (e.g. debugging information)
+        """
+        info: AgentInfo = {}
+        # Make sure to have the right keys even if the submission is missing/empty
+        info.update(self._get_edited_files_with_context(patch=""))  # type: ignore
+
+        # Handle special actions
+        special_action_result = self.handle_special_actions(action, info)
+        if special_action_result is not None:
+            return special_action_result
+
+        return self.execute_action_in_runtime(action, info)
+
     def step(self, observation: str) -> tuple[str, bool]:
         """Run a step of the agent:
 
@@ -501,12 +641,12 @@ class Agent:
         state = self._tool_handler.get_state()
         thought, raw_action, output = self.forward_model(observation, state)
         self._chook.on_actions_generated(thought=thought, action=raw_action, output=output)
-        run_action: str = self._tool_handler.guard_multiline_input(raw_action)
+        run_action: str = self._tool_handler.guard_multiline_input(raw_action).strip()
 
         # Execute action
         execution_t0 = time.perf_counter()
         self._chook.on_action_started(action=run_action)
-        observation, _, done, _info = self._env.step(run_action)
+        observation, done, _info = self.handle_action(run_action)
         self.info.update(_info)
         self._chook.on_action_executed(obs=observation, done=done)
         execution_time = time.perf_counter() - execution_t0

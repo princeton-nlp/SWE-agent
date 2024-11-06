@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import re
 import shlex
 from pathlib import PurePath
 from typing import Self
@@ -14,14 +13,7 @@ from swerex.runtime.abstract import BashAction, CreateBashSessionRequest
 from sweagent.environment.config.deployment import DeploymentConfig, DockerDeploymentConfig
 from sweagent.environment.config.repo import Repo, RepoConfig
 from sweagent.environment.hooks.abstract import CombinedEnvHooks, EnvHook
-from sweagent.types import AgentInfo
-from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
-from sweagent.utils.patch_formatter import PatchFormatter
-
-LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500))
-AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
-AGENT_ACTION_NO_OUTPUT_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_NO_OUTPUT_TIMEOUT", AGENT_ACTION_TIMEOUT))
 
 
 class EnvironmentConfig(BaseModel):
@@ -45,13 +37,9 @@ class SWEEnv:
         repo: Repo | RepoConfig | None,
         startup_commands: list[str],
         hooks: list[EnvHook] | None = None,
-        _catch_errors: bool = False,
-        _always_require_zero_exit_code: bool = False,
     ):
         """This class represents the environment in which we solve the tasks."""
         super().__init__()
-        self._catch_errors = _catch_errors
-        self._always_require_zero_exit_code = _always_require_zero_exit_code
         self.deployment = deployment
         self.repo = repo
         self._startup_commands = startup_commands
@@ -112,7 +100,7 @@ class SWEEnv:
             info: additional information (e.g. debugging information)
         """
         info = {}
-        self.communicate(input="cd /")
+        self.communicate(input="cd /", check=True)
         self._copy_repo()
         self._reset_repository()
         self._chook.on_environment_startup()
@@ -146,103 +134,6 @@ class SWEEnv:
         this prepares the container for taking another shot at the same instance.
         """
         self._reset_repository()
-
-    def _get_edited_files_with_context(self, patch: str) -> dict[str, str]:
-        """Get the edited files with context from the patch"""
-        pf = PatchFormatter(patch, read_method=self.read_file) if patch else None
-        out = {}
-        for context_length in [30, 50, 70]:
-            value = "Empty. No edited files found."
-            if pf is not None:
-                value = pf.get_files_str(original=False, context_length=context_length)
-            out[f"edited_files{context_length}"] = value
-        return out
-
-    # todo: This should be in the agent class
-    # todo: Have a return type here
-    # todo: Break this up
-    def step(self, action: str) -> tuple[str, int, bool, AgentInfo]:
-        """Runs an action proposed by the agent in the environment and returns the corresponding output.
-
-        Args:
-            action: command to run in bash shell
-
-        Returns:
-            observation:  output from container
-            reward: Always set to 0
-            done: whether task is over
-            info: additional information (e.g. debugging information)
-        """
-        info: AgentInfo = {}
-        # Make sure to have the right keys even if the submission is missing/empty
-        info.update(self._get_edited_files_with_context(patch=""))  # type: ignore
-
-        observation = ""
-        # Handle special actions
-        action = action.strip()
-        if action == "skip":
-            observation = "Skipped"
-            info["exit_status"] = "skipped"
-            return observation, 0, True, info
-        if action == "exit_forfeit":
-            observation = "Exited"
-            info["exit_status"] = action
-            return observation, 0, True, info
-        # todo: pull out a handle_exit_action function
-        if action in {"exit_context", "exit_cost", "exit_error", "exit_format", "exit_api"}:
-            try:
-                observation = self.communicate(input="submit")
-                submission = self.parse_submission_cmd_output(observation)
-                assert submission is not None and submission.strip() != "", AssertionError("No submission found.")
-                self.logger.info(f"Found submission: {submission}")
-                info["exit_status"] = f"submitted ({action})"
-                info["submission"] = submission
-                info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
-                observation = "Exited (autosubmitted)"
-                self.logger.info("Exiting with autosubmission")
-                return observation, 0, True, info
-            except KeyboardInterrupt:
-                raise
-            except:
-                observation = "Exited"
-                info["exit_status"] = action
-                return observation, 0, True, info
-
-        # Attempt to run action in container
-        observation = ""
-        try:
-            observation = self.communicate(
-                input=action,
-                timeout=AGENT_ACTION_TIMEOUT,
-                set_last_action=True,
-            )
-        except RuntimeError as e:
-            if not self._catch_errors:
-                raise
-            observation += e.args[1] if len(e.args) > 1 else ""
-            observation += "\nCOMMAND FAILED TO EXECUTE. RESTARTING PROCESS."
-            info["exit_status"] = "early_exit"
-            self.logger.warning(f"Failed to execute command: {e}\nRESTARTING PROCESS.")
-            self.reset_container()
-            return observation, 0, True, info
-        except Exception:
-            if not self._catch_errors:
-                raise
-            observation += "\nEXECUTION FAILED OR COMMAND MALFORMED"
-            self.logger.exception("Unknown exception")
-
-        # Record submission and end episode if `submit` keyword found
-        submission = self.parse_submission_cmd_output(observation)
-        if submission is not None:
-            # if self.validate_submission(submission):
-            self.logger.info(f"Found submission: {submission}")
-            info["exit_status"] = "submitted"
-            info["submission"] = submission if submission.strip() != "" else None
-            info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
-            observation = submission if submission.strip() != "" else ""
-            return observation, 0, True, info
-
-        return observation, 0, False, info
 
     def close(self) -> None:
         """Shoutdown SWE-ReX deployment etc."""
@@ -296,7 +187,7 @@ class SWEEnv:
         r = asyncio.run(self.deployment.runtime.run_in_session(BashAction(command=input, timeout=timeout)))
         output = r.output
         self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
-        if (self._always_require_zero_exit_code or check) and r.exit_code != 0:
+        if check and r.exit_code != 0:
             self.logger.error(f"{error_msg}: {output}")
             self.close()
             msg = f"{error_msg} (command: {input})"
@@ -309,22 +200,6 @@ class SWEEnv:
             input = f"export LAST_ACTION={last_action_string}"
             r = asyncio.run(self.deployment.runtime.run_in_session(BashAction(command=input, timeout=1)))
         return output
-
-    # todo: Move to tools?
-    def parse_submission_cmd_output(self, output: str) -> str | None:
-        """Function for extracting diff patch submission at the end of an episode.
-
-        Args:
-            output: `submit` observation
-
-        Returns:
-            submission: diff patch submission
-        """
-        pattern = r"\<\<SUBMISSION\|\|(.*)\|\|SUBMISSION\>\>"
-        match = re.search(pattern, output, re.DOTALL)
-        if match is None:
-            return None
-        return match.group(1)
 
     # todo: Use the runtime for this instead
     def read_file(self, path: str | PurePath) -> str:

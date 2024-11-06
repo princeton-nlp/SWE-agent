@@ -60,24 +60,3 @@ def test_env_communicate_with_handling_timeout(test_env_args):
         env.reset()
         with pytest.raises(CommandTimeoutError):
             env.communicate("sleep 10", check=True, error_msg="Failed to sleep", timeout=0.2)
-
-
-@pytest.mark.slow
-def test_env_step(test_env_args):
-    with swe_env_context(test_env_args) as env:
-        env.reset()
-        env.step(action="ls")
-
-
-@pytest.mark.slow
-def test_env_step_exit_forfeit(test_env_args):
-    with swe_env_context(test_env_args) as env:
-        env.reset()
-        env.step(action="exit_forfeit")
-
-
-@pytest.mark.slow
-def test_env_step_exit_cost(test_env_args):
-    with swe_env_context(test_env_args) as env:
-        env.reset()
-        env.step(action="exit_cost")
