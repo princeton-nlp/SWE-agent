@@ -72,7 +72,6 @@ class AgentConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-# todo: Move parse function to tools
 # todo: separate out from_config. In particular separate out model (as a class, etc.). Agent should only take templates, tools, history processor and model.
 #    slight problem: get_model needs commands....
 class Agent:
@@ -175,7 +174,7 @@ class Agent:
         self._chook.on_query_message_added(**item)
         self.history.append(item)
 
-    # todo: klieret: Long term: Might make more sense to reinitialize the agent class for every instance instead of this
+    # todo: get rid of this. simply instantiate a new agent class for every instance?
     def setup(self, init_model_stats: APIStats | None = None) -> None:
         """Setup the agent for a new instance. This includes
         formatting the system message and adding demonstrations to the history.
@@ -657,7 +656,7 @@ class Agent:
         self._chook.on_step_done(trajectory_step=trajectory_step, model_stats=model_stats)
         return observation, done
 
-    # todo: Set env already in  setup?
+    # todo: Set env already in __init__, i.e., initialize a new agent class for every instance?
     def run(
         self,
         problem_statement: ProblemStatement | ProblemStatementConfig,

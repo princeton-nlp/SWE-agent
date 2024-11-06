@@ -1,0 +1,10 @@
+{
+    "python.testing.pytestArgs": [
+        "--cov=sweagent/",
+        // "--cov-report=xml",
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "git.ignoreLimitWarning": true
+}
