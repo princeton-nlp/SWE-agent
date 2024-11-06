@@ -176,12 +176,21 @@ class ToolConfig(BaseModel):
 
 # todo: move everything about parsing the commands in here
 # todo: Support different shell sessions?
+# todo: Take runtime in methods, not in constructor, so I can pass it to the agent
 class ToolHandler:
     def __init__(self, tools: ToolConfig, runtime: AbstractRuntime):
+        """This class handles most of the tool usage. It has the following responsibilities:
+
+        - Install the tools
+        - Parse commands and handle multiline commands
+        - Decide if an action should be blocked
+        - Get the current state of the environment
+        """
         self.config = tools
         self._runtime = runtime
         # partially initialized in `install_commands`.
         self._reset_commands = []
+        self._command_patterns = self._get_command_patterns()
         self.logger = get_logger("Tools", emoji="🔧")
 
     @classmethod
@@ -265,6 +274,72 @@ class ToolHandler:
         self.logger.debug(f"Retrieved state from environment: {state}")
         return state
 
+    def should_block_action(self, action: str) -> bool:
+        """Check if the command should be blocked."""
+        names = action.strip().split()
+        if len(names) == 0:
+            return False
+        name = names[0]
+        if name in self.config.filter.blocklist:
+            return True
+        if name in self.config.filter.blocklist_standalone and name == action.strip():
+            return True
+        if name in self.config.filter.block_unless_regex and not re.search(
+            self.config.filter.block_unless_regex[name], action
+        ):
+            return True
+        return False
+
+    def _get_first_multiline_cmd(self, action: str) -> re.Match | None:
+        """Return the first match of a command pattern in the action string.
+        Where first match is defined by the start of the match.
+
+        The match object has three groups: (1) command name, (2) command arguments, (3) end name
+        """
+        patterns = {
+            k: v
+            for k, v in self._command_patterns.items()
+            if k in self.config.multi_line_command_endings or k == self.config.submit_command
+        }
+        matches = list()
+        for _, pat in patterns.items():
+            match = pat.search(action)
+            if match:
+                matches.append(match)
+        if len(matches) == 0:
+            return None
+        matches = sorted(matches, key=lambda x: x.start())
+        return matches[0]
+
+    def guard_multiline_input(self, action: str) -> str:
+        """Split action by multiline commands, then append the first line in each multiline command with "<< '{end_name}'".
+        Multiline commands (which are specified by an end_name) are commands that span multiple lines and are terminated by a specific end_name.
+
+        Their multi-line argument is sent using a heredoc, which is a way to send a multi-line string to a command in bash.
+        """
+        return _guard_multiline_input(action, self._get_first_multiline_cmd)
+
+    def _get_command_patterns(self) -> dict[str, re.Pattern]:
+        """Sets self._command_patterns"""
+
+        _command_patterns = {}
+        for command in self.config.commands:
+            if command.end_name is not None:
+                pat = re.compile(
+                    rf"^\s*({command.name})\s*(.*?)^({command.end_name})\s*$",
+                    re.DOTALL | re.MULTILINE,
+                )
+                _command_patterns[command.name] = pat
+            else:
+                pat = re.compile(rf"^\s*({command.name})\s*(.*?)$", re.MULTILINE)
+                _command_patterns[command.name] = pat
+        submit_pat = re.compile(
+            rf"^\s*({self.config.submit_command})\s*(.*?)^({self.config.submit_command_end_name})\s*$",
+            re.DOTALL | re.MULTILINE,
+        )
+        _command_patterns[self.config.submit_command] = submit_pat
+        return _command_patterns
+
 
 # todo: factor out tools config and potentially try to only give it to SWEEnv. Agent should only need allow-lists and the final tools documentation
 class AgentConfig(BaseModel):
@@ -278,7 +353,8 @@ class AgentConfig(BaseModel):
     model: ModelConfig = ModelConfig(name="gpt4")
 
 
-# todo: separate out from_config. In particular separate out model (as a class, etc.)
+# todo: separate out from_config. In particular separate out model (as a class, etc.). Agent should only take templates, tools, history processor and model.
+#    slight problem: get_model needs commands....
 # todo: Can this class be split up into separate responsibilities?
 class Agent:
     """Agent handles the behaviour of the model and how it interacts with the environment."""
@@ -294,7 +370,6 @@ class Agent:
             "command_docs": self.config.tools.command_docs,
             **self.config.tools.env_variables,
         }
-        self._parse_command_patterns()
         self.logger = get_logger("agent", emoji="🤠")
 
         # Set in run method
@@ -503,55 +578,6 @@ class Agent:
         assert self.traj_path is not None
         self.traj_path.write_text(json.dumps(data, indent=2))
 
-    def _get_first_multiline_cmd(self, action: str) -> re.Match | None:
-        """Return the first match of a command pattern in the action string.
-        Where first match is defined by the start of the match.
-
-        The match object has three groups: (1) command name, (2) command arguments, (3) end name
-        """
-        patterns = {
-            k: v
-            for k, v in self.command_patterns.items()
-            if k in self.config.tools.multi_line_command_endings or k == self.config.tools.submit_command
-        }
-        matches = list()
-        for _, pat in patterns.items():
-            match = pat.search(action)
-            if match:
-                matches.append(match)
-        if len(matches) == 0:
-            return None
-        matches = sorted(matches, key=lambda x: x.start())
-        return matches[0]
-
-    def _guard_multiline_input(self, action: str) -> str:
-        """Split action by multiline commands, then append the first line in each multiline command with "<< '{end_name}'".
-        Multiline commands (which are specified by an end_name) are commands that span multiple lines and are terminated by a specific end_name.
-
-        Their multi-line argument is sent using a heredoc, which is a way to send a multi-line string to a command in bash.
-        """
-        return _guard_multiline_input(action, self._get_first_multiline_cmd)
-
-    def _parse_command_patterns(self) -> None:
-        """Sets self.command_patterns"""
-
-        self.command_patterns = dict()
-        for command in self.config.tools.commands:
-            if command.end_name is not None:
-                pat = re.compile(
-                    rf"^\s*({command.name})\s*(.*?)^({command.end_name})\s*$",
-                    re.DOTALL | re.MULTILINE,
-                )
-                self.command_patterns[command.name] = pat
-            else:
-                pat = re.compile(rf"^\s*({command.name})\s*(.*?)$", re.MULTILINE)
-                self.command_patterns[command.name] = pat
-        submit_pat = re.compile(
-            rf"^\s*({self.config.tools.submit_command})\s*(.*?)^({self.config.tools.submit_command_end_name})\s*$",
-            re.DOTALL | re.MULTILINE,
-        )
-        self.command_patterns[self.config.tools.submit_command] = submit_pat
-
     def forward(self, observation: str, available_actions: list[str], state: dict[str, str]) -> tuple[str, str, str]:
         """Forwards the model, i.e., queries the model with the current trajectory and observation.
         This is identical to `self.forward_with_error_check`, but adds the output to the trajectory.
@@ -653,22 +679,6 @@ class Agent:
         ]
         return self.model.query(temp_history)
 
-    def should_block_action(self, action: str) -> bool:
-        """Check if the command should be blocked."""
-        names = action.strip().split()
-        if len(names) == 0:
-            return False
-        name = names[0]
-        if name in self.config.tools.filter.blocklist:
-            return True
-        if name in self.config.tools.filter.blocklist_standalone and name == action.strip():
-            return True
-        if name in self.config.tools.filter.block_unless_regex and not re.search(
-            self.config.tools.filter.block_unless_regex[name], action
-        ):
-            return True
-        return False
-
     def check_format_and_requery(
         self,
         output: str,
@@ -696,6 +706,7 @@ class Agent:
 
         format_fails = blocklist_fails = 0
 
+        assert self._tool_handler is not None
         while format_fails + blocklist_fails <= 2:
             try:
                 thought, action = self._parse_function(
@@ -709,7 +720,7 @@ class Agent:
                 format_fails += 1
                 output = self.retry_after_format_fail(output)
                 continue
-            if self.should_block_action(action):
+            if self._tool_handler.should_block_action(action):
                 blocklist_fails += 1
                 output = self.retry_after_blocklist_fail(output, action)
             else:
@@ -767,7 +778,7 @@ class Agent:
         state = self._tool_handler.get_state()
         thought, raw_action, output = self.forward(observation, self._env.get_available_actions(), state)
         self._chook.on_actions_generated(thought=thought, action=raw_action, output=output)
-        run_action: str = self._guard_multiline_input(raw_action)
+        run_action: str = self._tool_handler.guard_multiline_input(raw_action)
 
         execution_t0 = time.perf_counter()
         self._chook.on_action_started(action=run_action)
