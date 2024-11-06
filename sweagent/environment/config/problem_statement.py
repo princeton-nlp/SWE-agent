@@ -3,10 +3,13 @@ import uuid
 from pathlib import Path
 from typing import Any, Literal, Protocol
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from sweagent.utils.config import keys_config
 from sweagent.utils.github import _get_problem_statement_from_github_issue, _parse_gh_issue_url
+from sweagent.utils.log import get_logger
+
+logger = get_logger("Config", emoji="⚙️")
 
 
 class ProblemStatement(Protocol):
@@ -22,20 +25,25 @@ class EmptyProblemStatement(BaseModel):
     type: Literal["empty"] = "empty"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
+    model_config = ConfigDict(extra="forbid")
+
     def get_problem_statement(self) -> str:
         return ""
 
 
 class TextProblemStatement(BaseModel):
-    text: str = ""
+    text: str
 
     type: Literal["text"] = "text"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
     id: str = None  # type: ignore
 
+    model_config = ConfigDict(extra="forbid")
+
     def model_post_init(self, __context: Any) -> None:
         if self.id is None:
+            logger.info("Setting problem statement id to hash of text")
             self.id = hashlib.sha256(self.text.encode()).hexdigest()[:6]
 
     def get_problem_statement(self) -> str:
@@ -43,31 +51,39 @@ class TextProblemStatement(BaseModel):
 
 
 class FileProblemStatement(BaseModel):
-    path: str = ""
+    path: Path
 
     type: Literal["text_file"] = "text_file"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
     id: str = None  # type: ignore
 
+    model_config = ConfigDict(extra="forbid")
+
     def model_post_init(self, __context: Any) -> None:
         if self.id is None:
+            logger.info("Setting problem statement id to hash of file contents (path: %s)", self.path)
             self.id = hashlib.sha256(self.get_problem_statement().encode()).hexdigest()[:6]
 
     def get_problem_statement(self) -> str:
-        return Path(self.path).read_text()
+        return self.path.read_text()
 
 
 class GithubIssue(BaseModel):
-    url: str = ""
+    url: str
 
     type: Literal["github"] = "github"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
-    @property
-    def id(self) -> str:
-        owner, repo, issue_number = _parse_gh_issue_url(self.url)
-        return f"{owner}__{repo}-i{issue_number}"
+    id: str = None  # type: ignore
+
+    model_config = ConfigDict(extra="forbid")
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.id is None:
+            logger.info("Setting problem statement based on github issue url")
+            owner, repo, issue_number = _parse_gh_issue_url(self.url)
+            self.id = f"{owner}__{repo}-i{issue_number}"
 
     def get_problem_statement(self) -> str:
         owner, repo, issue_number = _parse_gh_issue_url(self.url)

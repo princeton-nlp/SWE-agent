@@ -2,7 +2,7 @@ import json
 import re
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Annotated, Any, Literal
+from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, Field, TypeAdapter
@@ -153,7 +153,4 @@ class ExpertInstancesFromFile(BaseModel, AbstractInstanceSource):
         return _filter_batch_items(instances, self.filter)
 
 
-BatchInstanceSourceConfig = Annotated[
-    InstancesFromHuggingFace | InstancesFromFile | SWEBenchInstances | ExpertInstancesFromFile,
-    Field(union_mode="left_to_right"),
-]
+BatchInstanceSourceConfig = InstancesFromHuggingFace | InstancesFromFile | SWEBenchInstances | ExpertInstancesFromFile

@@ -97,8 +97,10 @@ agent:
     - config/commands/edit_linting.sh
     - config/commands/_split_string.py
     - config/commands/submit.sh
-    parse_function: ThoughtActionParser
-    parse_command: ParseCommandDetailed
+    parse_function:
+      type: thought_action
+    parse_command:
+      type: detailed
     state_command:
       name: state
       code: |

@@ -20,7 +20,7 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from sweagent.agent.commands import Command
+from sweagent.tools.commands import Command
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 

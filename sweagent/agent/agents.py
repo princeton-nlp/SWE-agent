@@ -23,7 +23,7 @@ from sweagent.agent.models import (
 )
 from sweagent.environment.config.problem_statement import ProblemStatement, ProblemStatementConfig
 from sweagent.environment.swe_env import SWEEnv
-from sweagent.tools.parsing import FormatError, ParseFunction
+from sweagent.tools.parsing import FormatError
 from sweagent.tools.tools import ToolConfig, ToolHandler
 from sweagent.types import AgentInfo, AgentRunResult, History, HistoryItem, Trajectory, TrajectoryStep
 from sweagent.utils.config import _convert_paths_to_abspath, keys_config
@@ -119,9 +119,6 @@ class Agent:
         self._forwarded_vars: dict[str, Any] = {}
 
         self._history_processor = self._args.history_processor
-
-        # todo: move to tools
-        self._parse_function = ParseFunction.get(self.config.tools.parse_function)
 
         self._chook = CombinedAgentHook()
 
@@ -454,15 +451,12 @@ class Agent:
             action: action that the model proposes
             output: raw model output
         """
+        assert self._tool_handler is not None
         # Condition for handling outputs with no thought (just action)
         if self.model.args.name == "human":
             return "", output, output
         elif self.model.args.name == "human_thought":
-            thought, action = ParseFunction.get("ThoughtActionParser")(
-                output,
-                self.config.tools.commands,
-                strict=False,
-            )
+            thought, action = self._tool_handler.parse_actions(output)
             return thought, action, output
 
         format_fails = blocklist_fails = 0
@@ -470,10 +464,8 @@ class Agent:
         assert self._tool_handler is not None
         while format_fails + blocklist_fails <= 2:
             try:
-                thought, action = self._parse_function(
+                thought, action = self._tool_handler.parse_actions(
                     output,
-                    self.config.tools.commands,
-                    strict=False,
                 )
             except KeyboardInterrupt:
                 raise

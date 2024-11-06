@@ -5,77 +5,53 @@ import re
 import shlex
 import string
 import textwrap
-from abc import abstractmethod
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from typing import Any, Literal
 
-from sweagent.agent.commands import Command
+from pydantic import BaseModel
+
+from sweagent.tools.commands import Command
 
 
 class FormatError(Exception):
     pass
 
 
-# ABSTRACT BASE CLASSES
-
-
-class ParseFunctionMeta(type):
-    """
-    Registry maps all inherited classes to their names.
-    """
-
-    _registry = {}
-
-    def __new__(cls, name, bases, attrs):
-        new_cls = super().__new__(cls, name, bases, attrs)
-        if name != "ParseFunction":
-            cls._registry[name] = new_cls
-        return new_cls
-
-
-@dataclass
-class ParseFunction(metaclass=ParseFunctionMeta):
+class AbstractParseFunction(ABC):
     """
     Abstract class for parsing functions.
     We use get to generate the right parser based on the name of the parser.
     """
 
-    _error_message = None
+    error_message: str
 
     @abstractmethod
-    def __call__(self, model_response, commands: list[Command], strict=False):
+    def __call__(self, model_response, commands: list[Command], strict=False) -> tuple[str, str]:
         raise NotImplementedError
 
     @property
     def format_error_template(self):
-        if self._error_message is None:
-            msg = "You must define an error message for your parser."
-            raise NotImplementedError(msg)
-        return textwrap.dedent(self._error_message)
-
-    @classmethod
-    def get(cls, name):
-        try:
-            return cls._registry[name]()
-        except KeyError:
-            msg = f"Model output parser ({name}) not found."
-            raise ValueError(msg)
+        return textwrap.dedent(self.error_message)
 
 
 # DEFINE NEW PARSING FUNCTIONS BELOW THIS LINE
 
 
-class ActionParser(ParseFunction):
+class ActionParser(AbstractParseFunction, BaseModel):
     """
     Expects the model response to be a single command.
     Example: "ls -l"
     """
 
-    _error_message = """\
+    error_message: str = """\
     The command you provided was not recognized. Please specify one of the commands (+ any necessary arguments) from the following list in your response. Do not include any other text.
 
     COMMANDS:
     {command_docs}
     """
+
+    type: Literal["action"] = "action"
+    """Type for (de)serialization. Do not change."""
 
     def __call__(self, model_response, commands: list[Command], strict=False):
         if model_response.split():
@@ -86,7 +62,7 @@ class ActionParser(ParseFunction):
         raise FormatError(msg)
 
 
-class ThoughtActionParser(ParseFunction):
+class ThoughtActionParser(AbstractParseFunction, BaseModel):
     """
     Expects the model response to be a discussion followed by a command wrapped in backticks.
     Example:
@@ -96,7 +72,7 @@ class ThoughtActionParser(ParseFunction):
     ```
     """
 
-    _error_message = """\
+    error_message: str = """\
     Your output was not formatted correctly. You must always include one discussion and one command as part of your response. Make sure you do not have multiple discussion/command tags.
     Please make sure your output precisely matches the following format:
     DISCUSSION
@@ -106,6 +82,9 @@ class ThoughtActionParser(ParseFunction):
     command(s) that you're going to run
     ```
     """
+
+    type: Literal["thought_action"] = "thought_action"
+    """Type for (de)serialization. Do not change."""
 
     def __call__(self, model_response, commands: list[Command], strict=False):
         """
@@ -142,7 +121,7 @@ class ThoughtActionParser(ParseFunction):
         raise FormatError(msg)
 
 
-class XMLThoughtActionParser(ParseFunction):
+class XMLThoughtActionParser(AbstractParseFunction, BaseModel):
     """
     Expects the model response to be a discussion followed by a command wrapped in XML tags.
     Example:
@@ -152,12 +131,15 @@ class XMLThoughtActionParser(ParseFunction):
     </command>
     """
 
-    _error_message = """\
+    error_message: str = """\
     Your output was not formatted correctly. You must always include one discussion and one command as part of your response. Make sure you do not have multiple discussion/command tags.
     Please make sure your output precisely matches the following format:
     """
 
-    def __call__(self, model_response, commands: list[Command], strict=False):
+    type: Literal["xml_thought_action"] = "xml_thought_action"
+    """Type for (de)serialization. Do not change."""
+
+    def __call__(self, model_response, commands: list[Command], strict=False) -> tuple[str, str]:
         """
         Parses the action from the output of the API call.
         We assume that the action is the last code block in the model_response.
@@ -188,7 +170,7 @@ class XMLThoughtActionParser(ParseFunction):
         return thought.strip(), action.strip()
 
 
-class EditFormat(ThoughtActionParser):
+class EditFormat(ThoughtActionParser, BaseModel):
     """
     Expects the model response to be a discussion followed by a command wrapped in backticks.
     Example:
@@ -199,7 +181,7 @@ class EditFormat(ThoughtActionParser):
     ```
     """
 
-    _error_message = """\
+    error_message: str = """\
     Your output was not formatted correctly. You must wrap the replacement text in backticks (```).
     Please make sure your output precisely matches the following format:
     COMMENTS
@@ -214,37 +196,41 @@ class EditFormat(ThoughtActionParser):
     ```
     """
 
+    type: Literal["edit_format"] = "edit_format"
+    """Type for (de)serialization. Do not change."""
 
-class Identity(ParseFunction):
-    """
-    This parser does not do any parsing. It just returns the model response as both the thought and action.
-    """
 
-    _error_message = """\
+class Identity(AbstractParseFunction, BaseModel):
+    """This parser does not do any parsing. It just returns the model response as both the thought and action."""
+
+    error_message: str = """\
     It seems like something went wrong with your output. Please try again.
     """
 
-    def __call__(self, model_response, commands: list[Command], strict=False):
+    type: Literal["identity"] = "identity"
+    """Type for (de)serialization. Do not change."""
+
+    def __call__(self, model_response, commands: list[Command], strict=False) -> tuple[str, str]:
         """
         This doesn't do any parsing. It just returns the model response as the thought and action.
         """
         return model_response, model_response
 
 
-class JsonParser(ParseFunction):
-    """
-    Expects the model response to be a JSON object.
-    """
+class JsonParser(AbstractParseFunction, BaseModel):
+    """Expects the model response to be a JSON object."""
 
-    _error_message = """\
+    error_message: str = """\
     Your output could not be parsed as JSON. Please make sure your output 1) is valid JSON and
     2) Includes the "thought" and "command" fields.
 
     """
 
+    type: Literal["json"] = "json"
+    """Type for (de)serialization. Do not change."""
+
     def __call__(self, model_response, commands: list[Command], strict=False):
-        """
-        Parses the action from the output of the API call.
+        """Parses the action from the output of the API call.
         We assume that model output is a JSON object with the following fields:
         {
             "thought": "discussion text here.",
@@ -295,15 +281,16 @@ class JsonParser(ParseFunction):
                     action += " " + " ".join(data_command["arguments"].values())
             else:
                 signature = command.signature
+                assert signature is not None
                 signature = signature.replace("[", "").replace("]", "").replace("<", "{").replace(">", "}")
-                signature_args = extract_keys(signature)
+                signature_args = _extract_keys(signature)
                 command_args = {k: "" for k in signature_args}
 
                 if "arguments" in data_command:
                     for arg in signature_args:
                         if arg in data_command["arguments"]:
                             value = data_command["arguments"][arg]
-                            if should_quote(value, command):
+                            if _should_quote(value, command):
                                 value = shlex.quote(value)
                             command_args[arg] = value
                 action = signature.format(**command_args)
@@ -314,10 +301,11 @@ class JsonParser(ParseFunction):
             raise FormatError(msg)
 
 
-def extract_keys(format_string):
-    """
-    Given a format string, returns a set of all the keys in the format string.
-    """
+ParseFunction = ActionParser | ThoughtActionParser | XMLThoughtActionParser | EditFormat | Identity | JsonParser
+
+
+def _extract_keys(format_string: str) -> set[str]:
+    """Given a format string, returns a set of all the keys in the format string."""
     formatter = string.Formatter()
     keys = set()
     for _, field_name, _, _ in formatter.parse(format_string):
@@ -326,8 +314,6 @@ def extract_keys(format_string):
     return keys
 
 
-def should_quote(value, command):
-    """
-    Returns True if the value should be quoted, False otherwise.
-    """
+def _should_quote(value: Any, command: Command) -> bool:
+    """Returns True if the value should be quoted, False otherwise."""
     return isinstance(value, str) and command.end_name is None

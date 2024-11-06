@@ -2,28 +2,16 @@ from __future__ import annotations
 
 import pytest
 
-from sweagent.agent.commands import Command
+from sweagent.tools.commands import Command
 from sweagent.tools.parsing import (
     ActionParser,
     EditFormat,
     FormatError,
     Identity,
     JsonParser,
-    ParseFunction,
     ThoughtActionParser,
     XMLThoughtActionParser,
 )
-
-
-def test_parse_function_registry():
-    assert isinstance(ParseFunction.get("ActionParser"), ActionParser)
-    assert isinstance(ParseFunction.get("ThoughtActionParser"), ThoughtActionParser)
-    assert isinstance(ParseFunction.get("XMLThoughtActionParser"), XMLThoughtActionParser)
-    assert isinstance(ParseFunction.get("EditFormat"), EditFormat)
-    assert isinstance(ParseFunction.get("Identity"), Identity)
-    assert isinstance(ParseFunction.get("JsonParser"), JsonParser)
-    with pytest.raises(ValueError):
-        ParseFunction.get("InvalidParser")
 
 
 def test_action_parser():

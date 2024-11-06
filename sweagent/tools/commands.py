@@ -1,28 +1,12 @@
 from __future__ import annotations
 
 import re
-from abc import abstractmethod
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel
-
-
-class AssistantMetadata(BaseModel):
-    """Pass observations to the assistant, and get back a response."""
-
-    system_template: str | None = None
-    instance_template: str | None = None
-
-
-# TODO: first can be used for two-stage actions
-# TODO: eventually might control high-level control flow
-class ControlMetadata(BaseModel):
-    """TODO: should be able to control high-level control flow after calling this command"""
-
-    next_step_template: str | None = None
-    next_step_action_template: str | None = None
 
 
 class Command(BaseModel):
@@ -35,26 +19,7 @@ class Command(BaseModel):
     signature: str | None = None
 
 
-class ParseCommandMeta(type):
-    _registry = {}
-
-    def __new__(cls, name, bases, attrs):
-        new_cls = super().__new__(cls, name, bases, attrs)
-        if name != "ParseCommand":
-            cls._registry[name] = new_cls
-        return new_cls
-
-
-@dataclass
-class ParseCommand(metaclass=ParseCommandMeta):
-    @classmethod
-    def get(cls, name):
-        try:
-            return cls._registry[name]()
-        except KeyError:
-            msg = f"Command parser ({name}) not found."
-            raise ValueError(msg)
-
+class AbstractParseCommand(ABC):
     @abstractmethod
     def parse_command_file(self, path: str) -> list[Command]:
         """
@@ -73,8 +38,11 @@ class ParseCommand(metaclass=ParseCommandMeta):
 # DEFINE NEW COMMAND PARSER FUNCTIONS BELOW THIS LINE
 
 
-class ParseCommandBash(ParseCommand):
-    def parse_command_file(self, path: str) -> list[Command]:
+class ParseCommandBash(AbstractParseCommand, BaseModel):
+    type: Literal["bash"] = "bash"
+    """Discriminator for (de)serialization/CLI. Do not change."""
+
+    def parse_command_file(self, path: Path) -> list[Command]:
         with open(path) as file:
             contents = file.read()
         if contents.strip().startswith("#!"):
@@ -102,8 +70,7 @@ class ParseCommandBash(ParseCommand):
             return commands
 
     def parse_bash_functions(self, path, contents: str) -> list[Command]:
-        """
-        Simple logic for parsing a bash file and segmenting it into functions.
+        """Simple logic for parsing a bash file and segmenting it into functions.
 
         Assumes that all functions have their name and opening curly bracket in one line,
         and closing curly bracket in a line by itself.
@@ -212,6 +179,9 @@ class ParseCommandDetailed(ParseCommandBash):
     #     arg2 (type) [optional]: "description"
     """
 
+    type: Literal["detailed"] = "detailed"
+    """Discriminator for (de)serialization/CLI. Do not change."""
+
     @staticmethod
     def get_signature(cmd):
         signature = cmd.name
@@ -253,3 +223,6 @@ class ParseCommandDetailed(ParseCommandBash):
                     docs += f"    - {param} ({settings['type']}) [{req_string}]: {settings['description']}\n"
             docs += "\n"
         return docs
+
+
+ParseCommand = ParseCommandBash | ParseCommandDetailed

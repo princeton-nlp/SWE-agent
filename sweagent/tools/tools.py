@@ -4,12 +4,12 @@ import re
 from pathlib import Path
 from typing import Any, Self
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from swerex.runtime.abstract import AbstractRuntime, BashAction, WriteFileRequest
 from swerex.runtime.abstract import Command as RexCommand
 
-from sweagent.agent.commands import Command, ParseCommand
-from sweagent.tools.parsing import ParseFunction
+from sweagent.tools.commands import Command, ParseCommand, ParseCommandBash
+from sweagent.tools.parsing import ParseFunction, ThoughtActionParser
 from sweagent.tools.utils import _guard_multiline_input
 from sweagent.utils.config import _convert_paths_to_abspath
 from sweagent.utils.log import get_logger
@@ -60,9 +60,8 @@ class ToolConfig(BaseModel):
 
     submit_command: str = "submit"
 
-    # todo: These should also simply be pydantic objects
-    parse_function: Any = "ThoughtActionParser"
-    parse_command: Any = "ParseCommandBash"
+    parse_function: ParseFunction = Field(default_factory=ThoughtActionParser)
+    parse_command: ParseCommand = Field(default_factory=ParseCommandBash)
 
     format_error_template: str = None  # type: ignore
     """Defaults to format_error_template in ParseFunction"""
@@ -98,9 +97,8 @@ class ToolConfig(BaseModel):
     def commands(self) -> list[Command]:
         """Read command files and returned parsed command objects"""
         commands = []
-        parse_command = ParseCommand.get(self.parse_command)
         for file in self.command_files:
-            parsed_commands = parse_command.parse_command_file(file)
+            parsed_commands = self.parse_command.parse_command_file(file)
             commands.extend([command for command in parsed_commands if not command.name.startswith("_")])
         return commands
 
@@ -108,7 +106,6 @@ class ToolConfig(BaseModel):
     def model_post_init(self, __context):
         self.command_files = _convert_paths_to_abspath(self.command_files)
 
-        parse_command = ParseCommand.get(self.parse_command)
         # for caching:
         commands = self.commands
 
@@ -116,14 +113,13 @@ class ToolConfig(BaseModel):
             command.name: command.end_name for command in commands if command.end_name is not None
         }
         self.multi_line_command_endings = multi_line_command_endings
-        self.command_docs = parse_command.generate_command_docs(
+        self.command_docs = self.parse_command.generate_command_docs(
             self.commands,
             [],
             **self.env_variables,
         )
-        parse_function = ParseFunction.get(self.parse_function)
         if self.format_error_template is None:
-            self.format_error_template = parse_function.format_error_template
+            self.format_error_template = self.parse_function.format_error_template
         self.format_error_template = self.format_error_template.format(**self.__dict__)
         for command in commands:
             if command.name == self.submit_command:
@@ -312,3 +308,7 @@ class ToolHandler:
         if match is None:
             return None
         return match.group(1)
+
+    def parse_actions(self, output: str) -> tuple[str, str]:
+        """Parse the model output into a thought and action."""
+        return self.config.parse_function(output, self.config.commands)

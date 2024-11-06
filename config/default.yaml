@@ -95,7 +95,8 @@ agent:
     - config/commands/edit_linting.sh
     - config/commands/_split_string.py
     - config/commands/submit.sh
-    parse_command: ParseCommandDetailed
+    parse_command:
+      type: detailed
     state_command:
       name: state
       code: |
@@ -107,7 +108,8 @@ agent:
               echo '{"open_file": "'$(realpath "$CURRENT_FILE")'", "working_dir": "'$working_dir'"}';
           fi
         };
-    parse_function: ThoughtActionParser
+    parse_function:
+      type: thought_action
   history_processor:
     type: last_n_observations
     n: 5
