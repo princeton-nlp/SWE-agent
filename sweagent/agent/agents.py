@@ -66,6 +66,7 @@ class AgentConfig(BaseModel):
     model: ModelConfig = ModelConfig(name="gpt4")
 
 
+# todo: Move parse function to tools
 # todo: separate out from_config. In particular separate out model (as a class, etc.). Agent should only take templates, tools, history processor and model.
 #    slight problem: get_model needs commands....
 # todo: Can this class be split up into separate responsibilities?
@@ -213,6 +214,7 @@ class Agent:
 
     def add_demonstrations_to_history(self) -> None:
         """Add demonstrations to history"""
+        # todo: Extract loop body into a method?
         for demonstration_path in self.config.templates.demonstrations:
             if self.config.templates.demonstration_template is None and not self.config.templates.put_demos_in_history:
                 msg = "Cannot use demonstrations without a demonstration template or put_demos_in_history=True"
@@ -291,13 +293,12 @@ class Agent:
         assert self.traj_path is not None
         self.traj_path.write_text(json.dumps(data, indent=2))
 
-    def forward(self, observation: str, available_actions: list[str], state: dict[str, str]) -> tuple[str, str, str]:
+    def forward(self, observation: str, state: dict[str, str]) -> tuple[str, str, str]:
         """Forwards the model, i.e., queries the model with the current trajectory and observation.
         This is identical to `self.forward_with_error_check`, but adds the output to the trajectory.
 
         Args:
             observation: Observation
-            available_actions: Currently not used
             state:
 
         Returns:
@@ -489,7 +490,7 @@ class Agent:
         self._chook.on_step_start()
         assert self._tool_handler is not None
         state = self._tool_handler.get_state()
-        thought, raw_action, output = self.forward(observation, self._env.get_available_actions(), state)
+        thought, raw_action, output = self.forward(observation, state)
         self._chook.on_actions_generated(thought=thought, action=raw_action, output=output)
         run_action: str = self._tool_handler.guard_multiline_input(raw_action)
 

@@ -82,7 +82,6 @@ class SWEEnv:
     def start(self) -> None:
         """Start the environment"""
         self._init_deployment()
-        self._init_scripts()
 
     def _copy_repo(self) -> None:
         """Clone/copy repository/codebase in container"""
@@ -116,8 +115,7 @@ class SWEEnv:
         self.communicate(input="cd /")
         self._copy_repo()
         self._reset_repository()
-        self._reset_environment_variables()
-        self.on_environment_startup()
+        self._chook.on_environment_startup()
         return None, info
 
     def _reset_repository(self) -> None:
@@ -141,19 +139,6 @@ class SWEEnv:
                 error_msg="Failed to clean repository",
             )
 
-    # todo: This is part of our commands, not the environment
-    def _reset_environment_variables(self) -> None:
-        """Reset environment variables (`CURRENT_FILE`) etc. within container"""
-        cmd = [
-            'export CURRENT_FILE=""',
-            "export CURRENT_LINE=0",
-        ]
-        self.communicate(
-            input=" && ".join(cmd),
-            check=True,
-            error_msg="Failed to reset environment variables",
-        )
-
     # todo: Shouldn't this be the same as reset meanwhile?
     def reset_for_new_attempt(
         self,
@@ -162,7 +147,6 @@ class SWEEnv:
         this prepares the container for taking another shot at the same instance.
         """
         self._reset_repository()
-        self._reset_environment_variables()
 
     def _get_edited_files_with_context(self, patch: str) -> dict[str, str]:
         """Get the edited files with context from the patch"""
@@ -271,7 +255,6 @@ class SWEEnv:
     def reset_container(self) -> None:
         self.close()
         self._init_deployment()
-        self._init_scripts()
 
     def _init_deployment(
         self,
@@ -282,25 +265,6 @@ class SWEEnv:
         asyncio.run(self.deployment.start())
         asyncio.run(self.deployment.runtime.create_session(CreateBashSessionRequest(startup_source=["/root/.bashrc"])))
         self.logger.info("Environment Initialized")
-
-    # todo: this part is part of our commands, not the environment
-    def _init_scripts(self):
-        """Initialize custom commands within container"""
-        self.communicate(
-            "mkdir -p /root/commands",
-            check=True,
-            error_msg="Failed to create commands directory",
-        )
-        self.communicate(
-            "touch /root/commands/__init__.py",
-            check=True,
-            error_msg="Failed to create __init__.py",
-        )
-        self.communicate(
-            "export PATH=$PATH:/root/commands",
-            check=True,
-            error_msg="Failed to add commands directory to PATH",
-        )
 
     def communicate(
         self,
@@ -346,13 +310,7 @@ class SWEEnv:
             r = asyncio.run(self.deployment.runtime.run_in_session(BashAction(command=input, timeout=1)))
         return output
 
-    def get_available_actions(self) -> list[str]:
-        """Returns list of available actions in current environment state
-
-        Currently not in use.
-        """
-        return []
-
+    # todo: Move to tools?
     def get_submission(self, output: str) -> str | None:
         """Function for extracting diff patch submission at the end of an episode.
 
@@ -367,13 +325,6 @@ class SWEEnv:
         if match is None:
             return None
         return match.group(1)
-
-    def on_environment_startup(self) -> None:
-        """Creates conda environment and installs third party dependencies to allow code execution"""
-        self._chook.on_environment_startup()
-
-    def add_commands(self, commands: list[dict]) -> None:
-        """Adds custom commands to container"""
 
     # todo: Use the runtime for this instead
     def read_file(self, path: str | PurePath) -> str:
