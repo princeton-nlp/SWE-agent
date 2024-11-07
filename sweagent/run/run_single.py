@@ -111,12 +111,13 @@ class RunSingle:
         result = self.agent.run(
             problem_statement=self.problem_statement,
             env=self.env,
-            traj_dir=Path(self.traj_dir),
+            output_dir=Path(self.traj_dir),
         )
         self._chooks.on_instance_completed(result=result)
         self.logger.info("Done")
         self._chooks.on_end()
         save_predictions(self.traj_dir, self.problem_statement.id, result)
+        self.env.close()
 
 
 def run_from_config(args: RunSingleConfig):

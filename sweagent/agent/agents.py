@@ -77,8 +77,6 @@ class AgentConfig(BaseModel):
 # todo: separate out from_config. In particular separate out model (as a class, etc.). Agent should only take templates, tools, history processor and model.
 #    slight problem: get_model needs commands....
 class Agent:
-    """Agent handles the behaviour of the model and how it interacts with the environment."""
-
     def __init__(
         self,
         *,
@@ -90,6 +88,10 @@ class Agent:
         _catch_errors: bool = True,
         _always_require_zero_exit_code: bool = False,
     ):
+        """The agent handles the behaviour of the model and how it interacts with the environment.
+
+        To run the agent, either call `self.run` or `self.setup` and then `self.step` in a loop.
+        """
         self._catch_errors = _catch_errors
         self._always_require_zero_exit_code = _always_require_zero_exit_code
         self.name = name
@@ -183,14 +185,29 @@ class Agent:
         self._chook.on_query_message_added(**item)
         self.history.append(item)
 
-    # todo: get rid of this. simply instantiate a new agent class for every instance?
-    def setup(self, init_model_stats: APIStats | None = None) -> None:
+    def setup(
+        self,
+        env: SWEEnv,
+        problem_statement: ProblemStatement | ProblemStatementConfig,
+        output_dir: Path = Path("."),
+    ) -> None:
         """Setup the agent for a new instance. This includes
         formatting the system message and adding demonstrations to the history.
+
+        This method is called by `self.run`.
 
         Args:
             instance_args: Arguments for the instance
         """
+        self._problem_statement = problem_statement
+        self._env = env
+
+        # Save/reset some attributes
+        self.info = AgentInfo()
+        self.info["swe_agent_hash"] = get_agent_commit_hash()
+        self.info["swe_agent_version"] = __version__
+        self.traj_path = output_dir / (self._problem_statement.id + ".traj")
+        self.logger.info("Trajectory will be saved to %s", self.traj_path)
 
         self._i_attempt = 0
         self._history_by_attempt = defaultdict(list)
@@ -200,22 +217,16 @@ class Agent:
         # if self._rloop is not None:
         #     self._forwarded_vars = self._rloop.get_forwarded_vars()
         self.tools.install(self._env)
-        self.setup_attempt(init_model_stats=init_model_stats)
+        self.setup_attempt()
 
         self._chook.on_setup_done()
 
-    def setup_attempt(self, *, init_model_stats: APIStats | None = None) -> None:
+    def setup_attempt(self) -> None:
         """Setup the agent for a new attempt. This includes resetting the model stats."""
-        if self._i_attempt > 0 and init_model_stats is not None:
-            msg = (
-                "We might be dealing with nested retries, where subroutines are mixed with retries. "
-                "Currently, this messes up accounting with init_model_stats."
-            )
-            raise ValueError(msg)
         if self._i_attempt > 0:
             assert self._env is not None  # mypy
             self._env.reset_for_new_attempt()
-        self.model.reset_stats(init_model_stats)
+        self.model.reset_stats()
         self.add_system_message_to_history()
         self.add_demonstrations_to_history()
 
@@ -656,11 +667,9 @@ class Agent:
     # todo: Set env already in __init__, i.e., initialize a new agent class for every instance?
     def run(
         self,
-        problem_statement: ProblemStatement | ProblemStatementConfig,
         env: SWEEnv,
-        observation: str = "",
-        traj_dir: Path = Path("."),
-        init_model_stats: APIStats | None = None,
+        problem_statement: ProblemStatement | ProblemStatementConfig,
+        output_dir: Path = Path("."),
     ) -> AgentRunResult:
         """Run the agent on a problem instance. This method contains the
         main loop that repeatedly calls `self._step` until the problem is solved.
@@ -668,26 +677,15 @@ class Agent:
         Args:
             setup_args: Arguments to pass to the agent's setup method.
             env: The environment to run the agent on.
-            observation: Output from environment setup
             traj_dir: Directory to save the trajectory to
             init_model_stats: Initial model stats to use for the run.
         """
-        self._problem_statement = problem_statement
-        self._env = env
-        self.setup(init_model_stats)
-
-        # Save/reset some attributes
-        self.trajectory = Trajectory()
-        self.info = AgentInfo()
-        self.info["swe_agent_hash"] = get_agent_commit_hash()
-        self.info["swe_agent_version"] = __version__
-        self.traj_path = traj_dir / (self._problem_statement.id + ".traj")
-
-        self.logger.info("Trajectory will be saved to %s", self.traj_path)
+        self.setup(env=env, problem_statement=problem_statement, output_dir=output_dir)
 
         # Run action/observation loop
         self._chook.on_run_start()
         done = False
+        observation = ""
         while not done:
             observation, done = self.step(observation)
             self.save_trajectory()

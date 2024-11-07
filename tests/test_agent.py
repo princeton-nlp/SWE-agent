@@ -27,7 +27,7 @@ def test_exit_cost_manually_raised(dummy_env: SWEEnv, test_agent: Agent, tmp_pat
     r = test_agent.run(
         problem_statement=EmptyProblemStatement(),
         env=dummy_env,
-        traj_dir=tmp_path,
+        output_dir=tmp_path,
     )
     assert r.info["exit_status"] == "exit_cost"  # type: ignore
 
@@ -37,7 +37,7 @@ def test_exit_cost(dummy_env: SWEEnv, test_agent: Agent, tmp_path):
     r = test_agent.run(
         problem_statement=EmptyProblemStatement(),
         env=dummy_env,
-        traj_dir=tmp_path,
+        output_dir=tmp_path,
     )
     assert r.info["exit_status"] == "exit_cost"  # type: ignore
 
@@ -47,7 +47,7 @@ def test_exit_context(dummy_env: SWEEnv, test_agent: Agent, tmp_path):
     r = test_agent.run(
         problem_statement=EmptyProblemStatement(),
         env=dummy_env,
-        traj_dir=tmp_path,
+        output_dir=tmp_path,
     )
     assert r.info["exit_status"] == "exit_context"  # type: ignore
 
@@ -57,7 +57,7 @@ def test_exit_model_error(dummy_env: SWEEnv, test_agent: Agent, tmp_path):
     r = test_agent.run(
         problem_statement=EmptyProblemStatement(),
         env=dummy_env,
-        traj_dir=tmp_path,
+        output_dir=tmp_path,
     )
     assert r.info["exit_status"] == "exit_error"  # type: ignore
 
@@ -67,7 +67,7 @@ def test_exit_format(dummy_env: SWEEnv, test_agent: Agent, tmp_path):
     r = test_agent.run(
         problem_statement=EmptyProblemStatement(),
         env=dummy_env,
-        traj_dir=tmp_path,
+        output_dir=tmp_path,
     )
     assert r.info["exit_status"] == "exit_format"  # type: ignore
 
@@ -77,7 +77,7 @@ def test_exit_blocklist(dummy_env: SWEEnv, test_agent: Agent, tmp_path):
     r = test_agent.run(
         problem_statement=EmptyProblemStatement(),
         env=dummy_env,
-        traj_dir=tmp_path,
+        output_dir=tmp_path,
     )
     assert r.info["exit_status"] == "exit_format"  # type: ignore
 
@@ -96,6 +96,6 @@ def test_early_exit(dummy_env: SWEEnv, test_agent: Agent, tmp_path):
     r = test_agent.run(
         problem_statement=EmptyProblemStatement(),
         env=dummy_env,
-        traj_dir=tmp_path,
+        output_dir=tmp_path,
     )
     assert r.info["exit_status"] == "exit_environment_error"  # type: ignore

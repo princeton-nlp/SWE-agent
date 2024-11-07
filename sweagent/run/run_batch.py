@@ -125,10 +125,11 @@ class RunBatch:
         result = self.agent.run(
             problem_statement=instance.problem_statement,
             env=env,
-            traj_dir=Path(self.traj_dir),
+            output_dir=Path(self.traj_dir),
         )
-        self._chooks.on_instance_completed(result=result)
         save_predictions(self.traj_dir, instance.problem_statement.id, result)
+        self._chooks.on_instance_completed(result=result)
+        env.close()
 
     def should_skip(self, instance: BatchInstance) -> bool:
         """Check if we should skip this instance"""
