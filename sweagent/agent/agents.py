@@ -5,7 +5,7 @@ import json
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field
 from simple_parsing.helpers.fields import field
@@ -15,6 +15,7 @@ from sweagent import __version__, get_agent_commit_hash
 from sweagent.agent.history_processors import DefaultHistoryProcessor, HistoryProcessor
 from sweagent.agent.hooks.abstract import AbstractAgentHook, CombinedAgentHook
 from sweagent.agent.models import (
+    AbstractModel,
     APIStats,
     ContextWindowExceededError,
     CostLimitExceededError,
@@ -63,6 +64,7 @@ class TemplateConfig(BaseModel):
 
 
 class AgentConfig(BaseModel):
+    name: str = "main"
     templates: TemplateConfig = Field(default_factory=TemplateConfig)
     tools: ToolConfig = Field(default_factory=ToolConfig)
     history_processor: HistoryProcessor = Field(default_factory=DefaultHistoryProcessor)
@@ -79,30 +81,29 @@ class Agent:
 
     def __init__(
         self,
-        name: str,
-        args: AgentConfig,
-        _catch_errors: bool = False,
+        *,
+        templates: TemplateConfig,
+        tools: ToolHandler,
+        history_processor: HistoryProcessor,
+        model: AbstractModel,
+        name: str = "main",
+        _catch_errors: bool = True,
         _always_require_zero_exit_code: bool = False,
     ):
         self._catch_errors = _catch_errors
         self._always_require_zero_exit_code = _always_require_zero_exit_code
         self.name = name
-        # todo: currently only used to get the model name, so might remove this later
-        self._args = args
-        self.model = get_model(args.model, args.tools.commands)
-        self.config = args
+        self.model = model
+        self.templates = templates
+        self.tools = tools
+        self.history_processor = history_processor
 
-        self.system_args = {
-            "command_docs": self.config.tools.command_docs,
-            **self.config.tools.env_variables,
-        }
         self.logger = get_logger("agent", emoji="🤠")
 
         # Set in run method
         self._env: SWEEnv | None = None
         self._problem_statement: ProblemStatement | ProblemStatementConfig | None = None
         self.traj_path: Path | None = None
-        self._tool_handler: ToolHandler | None = None
 
         #: Number of attempts to solve the issue when using a review loop
         self._i_attempt: int = 0
@@ -117,9 +118,17 @@ class Agent:
         #: solution attempt to the next
         self._forwarded_vars: dict[str, Any] = {}
 
-        self._history_processor = self._args.history_processor
-
         self._chook = CombinedAgentHook()
+
+    @classmethod
+    def from_config(cls, config: AgentConfig) -> Self:
+        model = get_model(config.model, config.tools.commands)
+        return cls(
+            templates=config.templates,
+            tools=ToolHandler.from_config(config.tools),
+            history_processor=config.history_processor,
+            model=model,
+        )
 
     def add_hook(self, hook: AbstractAgentHook) -> None:
         """Add hook to agent"""
@@ -164,7 +173,7 @@ class Agent:
     @property
     def local_history(self) -> list[dict[str, str]]:
         """Return the history of the agent since the last reset."""
-        return self._history_processor([entry for entry in self.history if entry["agent"] == self.name])
+        return self.history_processor([entry for entry in self.history if entry["agent"] == self.name])
 
     # Methods
     # -------
@@ -190,15 +199,13 @@ class Agent:
         self._forwarded_vars = {}
         # if self._rloop is not None:
         #     self._forwarded_vars = self._rloop.get_forwarded_vars()
-        assert self._tool_handler is not None
-        self._tool_handler.install()
+        self.tools.install(self._env)
         self.setup_attempt(init_model_stats=init_model_stats)
 
         self._chook.on_setup_done()
 
     def setup_attempt(self, *, init_model_stats: APIStats | None = None) -> None:
         """Setup the agent for a new attempt. This includes resetting the model stats."""
-        assert self._tool_handler is not None
         if self._i_attempt > 0 and init_model_stats is not None:
             msg = (
                 "We might be dealing with nested retries, where subroutines are mixed with retries. "
@@ -215,20 +222,22 @@ class Agent:
     def add_system_message_to_history(self) -> None:
         """Add system message to history"""
         assert self._problem_statement is not None
-        system_msg = self.config.templates.system_template.format(
-            **self.system_args, problem_statement=self._problem_statement.get_problem_statement()
+        system_msg = self.templates.system_template.format(
+            command_docs=self.tools.config.command_docs,
+            **self.tools.config.env_variables,
+            problem_statement=self._problem_statement.get_problem_statement(),
         )
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
         self._append_history(HistoryItem({"role": "system", "content": system_msg, "agent": self.name}))
 
     def add_demonstrations_to_history(self) -> None:
         """Add demonstrations to history"""
-        for demonstration_path in self.config.templates.demonstrations:
+        for demonstration_path in self.templates.demonstrations:
             self._add_demonstration_to_history(demonstration_path)
 
     def _add_demonstration_to_history(self, demonstration_path: Path) -> None:
         """Load demonstration from disk and add to history"""
-        if self.config.templates.demonstration_template is None and not self.config.templates.put_demos_in_history:
+        if self.templates.demonstration_template is None and not self.templates.put_demos_in_history:
             msg = "Cannot use demonstrations without a demonstration template or put_demos_in_history=True"
             raise ValueError(msg)
 
@@ -241,8 +250,8 @@ class Agent:
             if ("agent" not in entry) or ("agent" in entry and entry["agent"] == self.name)
         ]
 
-        if self.config.templates.put_demos_in_history:
-            if self.config.templates.demonstration_template is not None:
+        if self.templates.put_demos_in_history:
+            if self.templates.demonstration_template is not None:
                 self.logger.warning("Demonstration template is ignored for put_demos_in_history=True")
             # Add demonstration to history directly as separate messages
             for entry in demo_history:
@@ -255,8 +264,8 @@ class Agent:
                 demo_history,
                 is_demonstration=True,
             )
-            assert self.config.templates.demonstration_template is not None
-            demonstration = self.config.templates.demonstration_template.format(demonstration=demo_message)
+            assert self.templates.demonstration_template is not None
+            demonstration = self.templates.demonstration_template.format(demonstration=demo_message)
             self._append_history(
                 {
                     "agent": self.name,
@@ -274,15 +283,15 @@ class Agent:
         # Determine observation template based on what prior observation was
         if self.history[-1]["role"] == "system" or self.history[-1].get("is_demo", False):
             # Show instance template if prev. obs. was initial system message
-            templates = [self.config.templates.instance_template]
-            if self.config.templates.strategy_template is not None:
-                templates.append(self.config.templates.strategy_template)
+            templates = [self.templates.instance_template]
+            if self.templates.strategy_template is not None:
+                templates.append(self.templates.strategy_template)
         elif observation is None or observation.strip() == "":
             # Show no output template if observation content was empty
-            templates = [self.config.templates.next_step_no_output_template]
+            templates = [self.templates.next_step_no_output_template]
         else:
             # Show standard output template if there is observation content
-            templates = [self.config.templates.next_step_template]
+            templates = [self.templates.next_step_template]
 
         # Populate selected template(s) with information (e.g., issue, arguments, state)
         messages = []
@@ -290,7 +299,8 @@ class Agent:
         for template in templates:
             messages.append(
                 template.format(
-                    **self.system_args,
+                    command_docs=self.tools.config.command_docs,
+                    **self.tools.config.env_variables,
                     **state,
                     observation=observation or "",
                     **self._forwarded_vars,
@@ -394,7 +404,7 @@ class Agent:
         If the model is able to correct itself, the records of the mistakes will not be part of the history
         (but they are saved in the trajectory).
         """
-        format_error_template = self.config.tools.format_error_template
+        format_error_template = self.tools.config.format_error_template
 
         self.logger.warning(f"MALFORMED OUTPUT\n{output}")
         self.logger.warning(f"FORMAT ERROR\n{format_error_template}")
@@ -413,7 +423,7 @@ class Agent:
         (but they are saved in the trajectory).
         """
         name = action.strip().split()[0]
-        blocklist_error_message = self.config.tools.filter.blocklist_error_template.format(name=name)
+        blocklist_error_message = self.tools.config.filter.blocklist_error_template.format(name=name)
 
         self.logger.warning(f"BLOCKLISTED OUTPUT\n{output}")
         self.logger.warning(f"BLOCKLIST ERROR\n{blocklist_error_message}")
@@ -439,20 +449,18 @@ class Agent:
             action: action that the model proposes
             output: raw model output
         """
-        assert self._tool_handler is not None
         # Condition for handling outputs with no thought (just action)
         if self.model.name == "human":
             return "", output, output
         elif self.model.name == "human_thought":
-            thought, action = self._tool_handler.parse_actions(output)
+            thought, action = self.tools.parse_actions(output)
             return thought, action, output
 
         format_fails = blocklist_fails = 0
 
-        assert self._tool_handler is not None
         while format_fails + blocklist_fails <= 2:
             try:
-                thought, action = self._tool_handler.parse_actions(
+                thought, action = self.tools.parse_actions(
                     output,
                 )
             except KeyboardInterrupt:
@@ -461,7 +469,7 @@ class Agent:
                 format_fails += 1
                 output = self.retry_after_format_fail(output)
                 continue
-            if self._tool_handler.should_block_action(action):
+            if self.tools.should_block_action(action):
                 blocklist_fails += 1
                 output = self.retry_after_blocklist_fail(output, action)
             else:
@@ -473,7 +481,7 @@ class Agent:
     def handle_special_actions(self, action: str, info: AgentInfo) -> tuple[str, bool, AgentInfo] | None:
         """Handles special actions like `skip`, `exit_cost`, etc."""
         assert self._env is not None
-        assert self._tool_handler is not None
+        assert self.tools is not None
         if action == "skip":
             observation = "Skipped"
             info["exit_status"] = "skipped"
@@ -498,9 +506,9 @@ class Agent:
         and submit this. This means we send the `submit` command to the runtime and parse the output.
         """
         assert self._env is not None
-        assert self._tool_handler is not None
+        assert self.tools is not None
         observation = self._env.communicate(input="submit")
-        submission = self._tool_handler.parse_submission_cmd_output(observation)
+        submission = self.tools.parse_submission_cmd_output(observation)
         assert submission is not None and submission.strip() != "", AssertionError("No submission found.")
         self.logger.info(f"Found submission: {submission}")
         info["exit_status"] = f"submitted ({action})"
@@ -516,8 +524,8 @@ class Agent:
         Returns:
             None if no submission was found, else tuple of observation, done, info
         """
-        assert self._tool_handler is not None
-        submission = self._tool_handler.parse_submission_cmd_output(observation)
+        assert self.tools is not None
+        submission = self.tools.parse_submission_cmd_output(observation)
         if submission is None:
             return None
         self.logger.info(f"Found submission: {submission}")
@@ -612,14 +620,13 @@ class Agent:
         """
 
         assert self._env is not None
-        assert self._tool_handler is not None
 
         # Forward model and get actions
         self._chook.on_step_start()
-        state = self._tool_handler.get_state()
+        state = self.tools.get_state(env=self._env)
         thought, raw_action, output = self.forward_model(observation, state)
         self._chook.on_actions_generated(thought=thought, action=raw_action, output=output)
-        run_action: str = self._tool_handler.guard_multiline_input(raw_action).strip()
+        run_action: str = self.tools.guard_multiline_input(raw_action).strip()
 
         # Execute action
         execution_t0 = time.perf_counter()
@@ -667,7 +674,6 @@ class Agent:
         """
         self._problem_statement = problem_statement
         self._env = env
-        self._tool_handler = ToolHandler.from_config(self.config.tools, env.deployment.runtime)
         self.setup(init_model_stats)
 
         # Save/reset some attributes

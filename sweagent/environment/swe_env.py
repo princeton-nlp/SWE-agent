@@ -190,7 +190,7 @@ class SWEEnv:
         if check and r.exit_code != 0:
             self.logger.error(f"{error_msg}: {output}")
             self.close()
-            msg = f"{error_msg} (command: {input})"
+            msg = f"Command {input!r} failed ({r.exit_code=}): {error_msg}"
             raise RuntimeError(msg)
         # todo: What do we do with this?
         if set_last_action:

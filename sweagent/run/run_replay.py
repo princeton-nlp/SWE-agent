@@ -85,12 +85,10 @@ class RunReplay:
         _agent_config = yaml.safe_load(Path(self.config_path).read_text())
         agent_config = AgentConfig(**_agent_config["agent"])
         agent_config.model = ModelConfig(name="replay", replay_path=str(self._replay_action_trajs_path))
-        return Agent(
-            "replay",
-            agent_config,
-            _catch_errors=self._catch_errors,
-            _always_require_zero_exit_code=self._require_zero_exit_code,
-        )
+        agent = Agent.from_config(agent_config)
+        agent._catch_errors = self._catch_errors
+        agent._always_require_zero_exit_code = self._require_zero_exit_code
+        return agent
 
     def _get_run_single(self) -> RunSingle:
         return RunSingle(

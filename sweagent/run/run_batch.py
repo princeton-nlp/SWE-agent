@@ -75,7 +75,7 @@ class RunBatch:
         logger.debug("The first instance is %s", f"{instances[0]!r}")
         return cls(
             instances=instances,
-            agent=Agent("main", config.agent),
+            agent=Agent.from_config(config.agent),
             traj_dir=config.traj_dir,
             raise_exceptions=config.raise_exceptions,
         )

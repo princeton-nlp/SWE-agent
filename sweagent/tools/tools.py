@@ -5,9 +5,10 @@ from pathlib import Path
 from typing import Any, Self
 
 from pydantic import BaseModel, Field
-from swerex.runtime.abstract import AbstractRuntime, BashAction, WriteFileRequest
+from swerex.runtime.abstract import BashAction, WriteFileRequest
 from swerex.runtime.abstract import Command as RexCommand
 
+from sweagent.environment.swe_env import SWEEnv
 from sweagent.tools.commands import Command, ParseCommand, ParseCommandBash
 from sweagent.tools.parsing import ParseFunction, ThoughtActionParser
 from sweagent.tools.utils import _guard_multiline_input
@@ -127,9 +128,8 @@ class ToolConfig(BaseModel):
                 break
 
 
-# todo: Take runtime in methods, not in constructor, so I can pass it to the agent
 class ToolHandler:
-    def __init__(self, tools: ToolConfig, runtime: AbstractRuntime):
+    def __init__(self, tools: ToolConfig):
         """This class handles most of the tool usage. It has the following responsibilities:
 
         - Install the tools
@@ -138,22 +138,29 @@ class ToolHandler:
         - Get the current state of the environment
         """
         self.config = tools
-        self._runtime = runtime
         # partially initialized in `install_commands`.
         self._reset_commands = []
         self._command_patterns = self._get_command_patterns()
         self.logger = get_logger("Tools", emoji="🔧")
 
     @classmethod
-    def from_config(cls, config: ToolConfig, runtime: AbstractRuntime) -> Self:
-        return cls(config, runtime)
+    def from_config(cls, config: ToolConfig) -> Self:
+        return cls(config)
 
-    def install(self) -> None:
-        self._install_commands()
-        self._make_state_command_available()
-        self.reset()
+    # Installation & Reset
+    # --------------------
 
-    def _install_commands(self) -> None:
+    def install(self, env: SWEEnv) -> None:
+        self._install_commands(env)
+        self._make_state_command_available(env)
+        self.reset(env)
+
+    def reset(self, env: SWEEnv) -> None:
+        self.logger.info("Resetting tools")
+        self._set_env_variables(env)
+        env.communicate(" && ".join(self._reset_commands), check=True)
+
+    def _install_commands(self, env: SWEEnv) -> None:
         """Make sure all commands are available in the container"""
         for file in self.config.command_files:
             contents = file.read_text()
@@ -176,48 +183,44 @@ class ToolHandler:
                 name = file.name.rpartition(".")[0]
                 mark_executable = True
 
+            # todo: Do this with the environment?
             self.logger.debug(f"Installing command {name} ({source=}, {mark_executable=})")
-            asyncio.run(self._runtime.write_file(WriteFileRequest(content=contents, path=f"/root/commands/{name}")))
+            asyncio.run(
+                env.deployment.runtime.write_file(WriteFileRequest(content=contents, path=f"/root/commands/{name}"))
+            )
             if source:
                 self._reset_commands.append(f"source /root/commands/{name}")
             if mark_executable:
                 asyncio.run(
-                    self._runtime.execute(RexCommand(command=f"chmod +x /root/commands/{name}", shell=True, check=True))
+                    env.deployment.runtime.execute(
+                        RexCommand(command=f"chmod +x /root/commands/{name}", shell=True, check=True)
+                    )
                 )
         for command in self.config.install_commands:
-            asyncio.run(self._runtime.run_in_session(BashAction(command=command, timeout=1, check=True)))
+            asyncio.run(env.deployment.runtime.run_in_session(BashAction(command=command, timeout=1, check=True)))
 
-    def _make_state_command_available(self) -> None:
+    def _make_state_command_available(self, env: SWEEnv) -> None:
         asyncio.run(
-            self._runtime.run_in_session(BashAction(command=self.config.state_command.code, timeout=1, check=True))
-        )
-
-    def _set_env_variables(self) -> None:
-        _env_setters = [f"export {k}={v}" for k, v in self.config.env_variables.items()]
-        command = " && ".join(_env_setters)
-        asyncio.run(
-            self._runtime.run_in_session(
-                BashAction(command=command, timeout=1, check=True, error_msg="Failed to set environment variables")
+            env.deployment.runtime.run_in_session(
+                BashAction(command=self.config.state_command.code, timeout=1, check=True)
             )
         )
 
-    def reset(self) -> None:
-        self.logger.info("Resetting tools")
-        self._set_env_variables()
-        asyncio.run(
-            self._runtime.run_in_session(BashAction(command=" && ".join(self._reset_commands), timeout=1, check=True))
-        )
+    def _set_env_variables(self, env: SWEEnv) -> None:
+        _env_setters = [f"export {k}={v}" for k, v in self.config.env_variables.items()]
+        command = " && ".join(_env_setters)
+        env.communicate(command, check=True)
 
-    def get_state(self) -> dict[str, str]:
+    # Getting state
+    # -------------
+
+    def get_state(self, env: SWEEnv) -> dict[str, str]:
         """If a state command is defined, execute it in the environment parse it as json and return the result.
         This can be used to extract environment variables etc. from the environment.
         """
         if not self.config.state_command:
             return {}
-        state = asyncio.run(
-            self._runtime.run_in_session(BashAction(command=self.config.state_command.name, check=True))
-        )
-        output = state.output.strip()
+        output = env.communicate(self.config.state_command.name, check=True).strip()
         if not output:
             return {}
         try:
@@ -227,6 +230,9 @@ class ToolHandler:
             raise ValueError(msg) from e
         self.logger.debug(f"Retrieved state from environment: {state}")
         return state
+
+    # Blocking
+    # --------
 
     def should_block_action(self, action: str) -> bool:
         """Check if the command should be blocked."""
@@ -243,6 +249,36 @@ class ToolHandler:
         ):
             return True
         return False
+
+    # Parsing & multiline commands
+    # -----------------------------
+
+    def parse_submission_cmd_output(self, output: str) -> str | None:
+        """Function for extracting diff patch submission at the end of an episode.
+
+        Args:
+            output: `submit` observation
+
+        Returns:
+            submission: diff patch submission
+        """
+        pattern = r"\<\<SUBMISSION\|\|(.*)\|\|SUBMISSION\>\>"
+        match = re.search(pattern, output, re.DOTALL)
+        if match is None:
+            return None
+        return match.group(1)
+
+    def parse_actions(self, output: str) -> tuple[str, str]:
+        """Parse the model output into a thought and action."""
+        return self.config.parse_function(output, self.config.commands)
+
+    def guard_multiline_input(self, action: str) -> str:
+        """Split action by multiline commands, then append the first line in each multiline command with "<< '{end_name}'".
+        Multiline commands (which are specified by an end_name) are commands that span multiple lines and are terminated by a specific end_name.
+
+        Their multi-line argument is sent using a heredoc, which is a way to send a multi-line string to a command in bash.
+        """
+        return _guard_multiline_input(action, self._get_first_multiline_cmd)
 
     def _get_first_multiline_cmd(self, action: str) -> re.Match | None:
         """Return the first match of a command pattern in the action string.
@@ -265,14 +301,6 @@ class ToolHandler:
         matches = sorted(matches, key=lambda x: x.start())
         return matches[0]
 
-    def guard_multiline_input(self, action: str) -> str:
-        """Split action by multiline commands, then append the first line in each multiline command with "<< '{end_name}'".
-        Multiline commands (which are specified by an end_name) are commands that span multiple lines and are terminated by a specific end_name.
-
-        Their multi-line argument is sent using a heredoc, which is a way to send a multi-line string to a command in bash.
-        """
-        return _guard_multiline_input(action, self._get_first_multiline_cmd)
-
     def _get_command_patterns(self) -> dict[str, re.Pattern]:
         """Creates regular expressions for the commands"""
 
@@ -293,22 +321,3 @@ class ToolHandler:
         )
         _command_patterns[self.config.submit_command] = submit_pat
         return _command_patterns
-
-    def parse_submission_cmd_output(self, output: str) -> str | None:
-        """Function for extracting diff patch submission at the end of an episode.
-
-        Args:
-            output: `submit` observation
-
-        Returns:
-            submission: diff patch submission
-        """
-        pattern = r"\<\<SUBMISSION\|\|(.*)\|\|SUBMISSION\>\>"
-        match = re.search(pattern, output, re.DOTALL)
-        if match is None:
-            return None
-        return match.group(1)
-
-    def parse_actions(self, output: str) -> tuple[str, str]:
-        """Parse the model output into a thought and action."""
-        return self.config.parse_function(output, self.config.commands)

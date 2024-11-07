@@ -85,7 +85,7 @@ class RunSingle:
             logger.info(f"Config:\n {config_str}")
         self = cls(
             env=SWEEnv.from_config(config.env),
-            agent=Agent("main", config.agent),
+            agent=Agent.from_config(config.agent),
             problem_statement=config.problem_statement,
             traj_dir=config.traj_dir,
             actions=config.actions,

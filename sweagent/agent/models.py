@@ -82,7 +82,7 @@ class CostLimitExceededError(Exception):
     pass
 
 
-class BaseModel:
+class AbstractModel:
     MODELS = {}
     SHORTCUTS = {}
 
@@ -194,7 +194,7 @@ class BaseModel:
         raise NotImplementedError(msg)
 
 
-class OpenAIModel(BaseModel):
+class OpenAIModel(AbstractModel):
     MODELS = {
         "gpt-3.5-turbo-0125": {
             "max_context": 16_385,
@@ -417,7 +417,7 @@ class GroqModel(OpenAIModel):
         )
 
 
-class AnthropicModel(BaseModel):
+class AnthropicModel(AbstractModel):
     MODELS = {
         "claude-instant": {
             "max_context": 100_000,
@@ -498,7 +498,7 @@ class AnthropicModel(BaseModel):
         return anthropic_query(self, history)
 
 
-class BedrockModel(BaseModel):
+class BedrockModel(AbstractModel):
     MODELS = {
         "anthropic.claude-instant-v1": {
             "max_context": 100_000,
@@ -691,7 +691,7 @@ def anthropic_query(model: AnthropicModel | BedrockModel, history: list[dict[str
     return "\n".join([x.text for x in response.content])
 
 
-class OllamaModel(BaseModel):
+class OllamaModel(AbstractModel):
     MODELS = defaultdict(
         lambda: {
             "max_context": 128_000,
@@ -755,7 +755,7 @@ class OllamaModel(BaseModel):
         return response["message"]["content"]
 
 
-class TogetherModel(BaseModel):
+class TogetherModel(AbstractModel):
     # Check https://docs.together.ai/docs/inference-models for model names, context
     # Check https://www.together.ai/pricing for pricing
     MODELS = {
@@ -855,7 +855,7 @@ def _history_to_messages(history: list[dict[str, str]], is_demonstration: bool =
     return [{k: v for k, v in entry.items() if k in ["role", "content"]} for entry in history]
 
 
-class HumanModel(BaseModel):
+class HumanModel(AbstractModel):
     MODELS = {"human": {}}
 
     def __init__(self, args: ModelConfig, commands: list[Command]):
@@ -927,7 +927,7 @@ class HumanThoughtModel(HumanModel):
         return f"{thought_all}\n```\n{action}\n```"
 
 
-class ReplayModel(BaseModel):
+class ReplayModel(AbstractModel):
     MODELS = {"replay": {}}
 
     def __init__(self, args: ModelConfig, commands: list[Command]):
@@ -1004,7 +1004,7 @@ class PredeterminedTestModel:
         pass
 
 
-class InstantEmptySubmitTestModel(BaseModel):
+class InstantEmptySubmitTestModel(AbstractModel):
     MODELS = {
         "instant_empty_submit": {
             "max_context": 100_000,
@@ -1034,7 +1034,7 @@ class InstantEmptySubmitTestModel(BaseModel):
         return history
 
 
-def get_model(args: ModelConfig, commands: list[Command] | None = None):
+def get_model(args: ModelConfig, commands: list[Command] | None = None) -> AbstractModel:
     """
     Returns correct model object given arguments and commands
     """
