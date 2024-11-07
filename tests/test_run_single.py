@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from sweagent.agent.agents import AgentConfig
+from sweagent.agent.models import InstantEmptySubmitModelConfig
 from sweagent.environment.swe_env import EnvironmentConfig
 from sweagent.run.common import BasicCLI
 from sweagent.run.hooks.abstract import RunHook
@@ -19,10 +20,7 @@ class RaisesExceptionHook(RunHook):
 
 @pytest.mark.slow
 def test_run_single_raises_exception():
-    rsc = RunSingleConfig()
-    rsc.agent.model.name = "instant_empty_submit"
-    rsc.agent.model.model_post_init(None)
-    rsc.agent.model_post_init(None)
+    rsc = RunSingleConfig(agent=AgentConfig(model=InstantEmptySubmitModelConfig()))
     rs = RunSingle.from_config(rsc)
     rs.add_hook(RaisesExceptionHook())
     with pytest.raises(ValueError, match="test exception"):
@@ -31,7 +29,7 @@ def test_run_single_raises_exception():
 
 @pytest.fixture
 def agent_config_with_commands():
-    ac = AgentConfig()
+    ac = AgentConfig(model=InstantEmptySubmitModelConfig())
     ac.tools.command_files = [Path(f"config/commands/{name}") for name in ["submit.sh"]]
     # Make sure dependent properties are set
     ac.tools.model_post_init(None)

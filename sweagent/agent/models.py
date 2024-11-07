@@ -6,12 +6,14 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass, fields
 from pathlib import Path
+from typing import Annotated, Literal
 
 import together
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
 from groq import Groq
 from openai import AzureOpenAI, BadRequestError, OpenAI
 from pydantic import BaseModel as PydanticBaseModel
+from pydantic import ConfigDict, Field
 from simple_parsing.helpers.serialization.serializable import Serializable
 from tenacity import (
     retry,
@@ -29,24 +31,56 @@ logger = get_logger("lm", emoji="🤖")
 _MAX_RETRIES = int(keys_config.get("SWE_AGENT_MODEL_MAX_RETRIES", 10))
 
 
-# todo: Separate out human model and replay model?
-class ModelConfig(PydanticBaseModel):
+class GenericAPIModelConfig(PydanticBaseModel):
+    name: str
     """Arguments configuring the model and its behavior."""
-
-    # Name of the model to use
-    name: str = "gpt4"
-    # Cost limit for every instance (task)
     per_instance_cost_limit: float = 0.0
-    # Total cost limit
+    """Cost limit for every instance (task)"""
     total_cost_limit: float = 0.0
-    # Sampling temperature
+    """Total cost limit"""
     temperature: float = 1.0
-    # Sampling top-p
+    """Sampling temperature"""
     top_p: float = 1.0
-    # Path to replay file when using the replay model
+    """Sampling top-p"""
+
+    # pydantic
+    model_config = ConfigDict(extra="forbid")
+
+
+class ReplayModelConfig(GenericAPIModelConfig):
     replay_path: str | None = None
-    # Host URL when using Ollama model
-    host_url: str = "localhost:11434"
+    """Path to replay file when using the replay model"""
+
+    name: Literal["replay"] = "replay"
+    """Do not change. Used for (de)serialization."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class InstantEmptySubmitModelConfig(GenericAPIModelConfig):
+    """Model that immediately submits an empty patch"""
+
+    name: Literal["instant_empty_submit"] = "instant_empty_submit"
+    """Do not change. Used for (de)serialization."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class GenericLocalModelConfig(GenericAPIModelConfig):
+    name: str
+    api_base: str
+    temperature: float = 1.0
+    """Sampling temperature"""
+    top_p: float = 1.0
+    """Sampling top-p"""
+
+    model_config = ConfigDict(extra="forbid")
+
+
+ModelConfig = Annotated[
+    GenericAPIModelConfig | GenericLocalModelConfig | ReplayModelConfig | InstantEmptySubmitModelConfig,
+    Field(union_mode="left_to_right"),
+]  # noqa: F821
 
 
 @dataclass
@@ -273,7 +307,7 @@ class OpenAIModel(AbstractModel):
         "o1-mini": "o1-mini-2024-09-12",
     }
 
-    def __init__(self, args: ModelConfig, commands: list[Command]):
+    def __init__(self, args: GenericAPIModelConfig, commands: list[Command]):
         super().__init__(args, commands)
 
         logging.getLogger("openai").setLevel(logging.WARNING)

@@ -3,7 +3,7 @@ from swerex.runtime.abstract import Action, Observation
 from swerex.runtime.dummy import DummyRuntime
 
 from sweagent.agent.agents import Agent, AgentConfig
-from sweagent.agent.models import ModelConfig, PredeterminedTestModel
+from sweagent.agent.models import InstantEmptySubmitModelConfig, PredeterminedTestModel
 from sweagent.environment.config.problem_statement import EmptyProblemStatement
 from sweagent.environment.swe_env import SWEEnv
 
@@ -14,7 +14,7 @@ def test_dummy_env(dummy_env):
 
 @pytest.fixture
 def agent_config():
-    return AgentConfig(model=ModelConfig(name="instant_empty_submit"))
+    return AgentConfig(model=InstantEmptySubmitModelConfig())
 
 
 @pytest.fixture

@@ -66,7 +66,7 @@ class AgentConfig(BaseModel):
     templates: TemplateConfig = Field(default_factory=TemplateConfig)
     tools: ToolConfig = Field(default_factory=ToolConfig)
     history_processor: HistoryProcessor = Field(default_factory=DefaultHistoryProcessor)
-    model: ModelConfig = Field(default_factory=ModelConfig)
+    model: ModelConfig
 
     # pydantic config
     model_config = ConfigDict(extra="forbid")
