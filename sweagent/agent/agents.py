@@ -303,17 +303,6 @@ class Agent:
         self.logger.info(f"🤖 MODEL INPUT\n{message}")
         self._append_history({"role": "user", "content": message, "agent": self.name})
 
-    def _get_total_stats(self) -> APIStats:
-        """Combine model stats of different attempts"""
-        total_stats = APIStats()
-        for stats in self._info_by_attempt.values():
-            assert "model_stats" in stats  # mypy
-            attempt_stats = APIStats(**stats["model_stats"])  # type: ignore
-            total_stats += attempt_stats
-        # if self._rloop is not None:
-        #     total_stats += self._rloop.model_stats
-        return total_stats
-
     def save_trajectory(
         self,
     ) -> None:
@@ -452,9 +441,9 @@ class Agent:
         """
         assert self._tool_handler is not None
         # Condition for handling outputs with no thought (just action)
-        if self.model.args.name == "human":
+        if self.model.name == "human":
             return "", output, output
-        elif self.model.args.name == "human_thought":
+        elif self.model.name == "human_thought":
             thought, action = self._tool_handler.parse_actions(output)
             return thought, action, output
 
@@ -565,7 +554,7 @@ class Agent:
                 raise
             observation = e.args[1] if len(e.args) > 1 else ""
             observation += "COMMAND FAILED TO EXECUTE. RESTARTING PROCESS."
-            info["exit_status"] = "early_exit"
+            info["exit_status"] = "exit_environment_error"
             self.logger.warning(f"Failed to execute command: {e}\nRESTARTING PROCESS.")
             # todo: Are we doing this here or somewhere else?
             self._env.reset_container()
@@ -576,6 +565,7 @@ class Agent:
                 raise
             observation = "Unknown exception"
             self.logger.exception("Unknown exception")
+            return observation, True, info
 
         # Check if there was a submission
         submission_result = self.handle_submission(observation, info)

@@ -127,10 +127,7 @@ class ToolConfig(BaseModel):
                 break
 
 
-# todo: move everything about parsing the commands in here
-# todo: Support different shell sessions?
 # todo: Take runtime in methods, not in constructor, so I can pass it to the agent
-# todo: factor out tools config and potentially try to only give it to SWEEnv. Agent should only need allow-lists and the final tools documentation
 class ToolHandler:
     def __init__(self, tools: ToolConfig, runtime: AbstractRuntime):
         """This class handles most of the tool usage. It has the following responsibilities:
@@ -220,10 +217,13 @@ class ToolHandler:
         state = asyncio.run(
             self._runtime.run_in_session(BashAction(command=self.config.state_command.name, check=True))
         )
+        output = state.output.strip()
+        if not output:
+            return {}
         try:
-            state = json.loads(state.output)
+            state = json.loads(output)
         except json.JSONDecodeError as e:
-            msg = f"State {state.output!r} is not valid json. This is an internal error, please report it."
+            msg = f"State {output!r} is not valid json. This is an internal error, please report it."
             raise ValueError(msg) from e
         self.logger.debug(f"Retrieved state from environment: {state}")
         return state

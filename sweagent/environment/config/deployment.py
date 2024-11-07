@@ -12,6 +12,16 @@ def _get_deployment(config) -> AbstractDeployment:
     return get_deployment(dtype, **config_dict)
 
 
+class DummyDeploymentConfig(BaseModel):
+    """This deployment does nothing. Used for testing purposes."""
+
+    type: Literal["dummy"] = "dummy"
+    """Discriminator for (de)serialization/CLI. Do not change."""
+
+    def get_deployment(self) -> AbstractDeployment:
+        return _get_deployment(self)
+
+
 class LocalDeploymentConfig(BaseModel):
     type: Literal["local"] = "local"
     """Discriminator for (de)serialization/CLI. Do not change."""
@@ -42,4 +52,4 @@ class ModalDeploymentConfig(BaseModel):
         return _get_deployment(self)
 
 
-DeploymentConfig = DockerDeploymentConfig | ModalDeploymentConfig | LocalDeploymentConfig
+DeploymentConfig = DockerDeploymentConfig | ModalDeploymentConfig | LocalDeploymentConfig | DummyDeploymentConfig

@@ -121,6 +121,10 @@ class BaseModel:
             msg = f"Unregistered model ({args.name}). Add model name to MODELS metadata to {self.__class__}"
             raise ValueError(msg)
 
+    @property
+    def name(self) -> str:
+        return self.args.name
+
     def reset_stats(self, other: APIStats | None = None):
         if other is None:
             self.stats = APIStats(total_cost=self.stats.total_cost)
@@ -970,6 +974,34 @@ class ReplayModel(BaseModel):
 
     def history_to_messages(self, history: list[dict[str, str]], *args, **kwargs) -> str | list[dict[str, str]]:
         return _history_to_messages(history, is_demonstration=True)
+
+
+class PredeterminedTestModel:
+    def __init__(self, outputs: list[str]):
+        self._outputs = outputs
+        self._idx = -1
+        self.name = "predetermined_test"
+        self.stats = APIStats()
+
+    def query(self, *args, **kwargs) -> str:
+        self._idx += 1
+        output = self._outputs[self._idx]
+        if output == "raise_runtime":
+            raise RuntimeError()
+        elif output == "raise_cost":
+            raise CostLimitExceededError()
+        elif output == "raise_context":
+            raise ContextWindowExceededError()
+        return output
+
+    def history_to_messages(self, *args, **kwargs) -> list[dict[str, str]]:
+        return []
+
+    def reset_stats(self, *args, **kwargs) -> None:
+        pass
+
+    def update_stats(self, *args, **kwargs) -> None:
+        pass
 
 
 class InstantEmptySubmitTestModel(BaseModel):

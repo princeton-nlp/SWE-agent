@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from sweagent.environment.config.deployment import DockerDeploymentConfig
+from sweagent.environment.config.deployment import DockerDeploymentConfig, DummyDeploymentConfig
 from sweagent.environment.config.repo import LocalRepoConfig
 from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
 
@@ -87,6 +87,19 @@ def test_env_args(
     )
     yield test_env_args
     shutil.rmtree(local_repo_path)
+
+
+@pytest.fixture
+def dummy_env_args() -> EnvironmentConfig:
+    return EnvironmentConfig(
+        deployment=DummyDeploymentConfig(),
+        repo=None,
+    )
+
+
+@pytest.fixture
+def dummy_env(dummy_env_args) -> SWEEnv:
+    return SWEEnv.from_config(dummy_env_args)
 
 
 @contextmanager

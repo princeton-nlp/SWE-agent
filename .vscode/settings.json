@@ -1,7 +1,8 @@
 {
     "python.testing.pytestArgs": [
+        "sweagent",
         "--cov=sweagent/",
-        // "--cov-report=xml",
+        "--cov-report=xml:cov.xml",
         "tests"
     ],
     "python.testing.unittestEnabled": false,

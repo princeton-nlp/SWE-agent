@@ -11,6 +11,9 @@ from swerex.deployment.abstract import AbstractDeployment
 from swerex.runtime.abstract import Command, UploadRequest
 
 from sweagent.utils.config import keys_config
+from sweagent.utils.log import get_logger
+
+logger = get_logger("Config", emoji="⚙️")
 
 
 class Repo(Protocol):
@@ -69,7 +72,10 @@ class GithubRepoConfig(BaseModel):
 
     def _get_url_with_token(self, token: str) -> str:
         """Prepend github token to URL"""
+        if not token:
+            return self.url
         if "@" in self.url:
+            logger.warning("Cannot prepend token to URL. '@' found in URL")
             return self.url
         _, _, url_no_protocol = self.url.partition("://")
         return f"https://{token}@{url_no_protocol}"
@@ -78,7 +84,7 @@ class GithubRepoConfig(BaseModel):
         base_commit = self.base_commit
         github_token = keys_config.get("GITHUB_TOKEN", "")
         url = self._get_url_with_token(github_token)
-        r = asyncio.run(
+        asyncio.run(
             deployment.runtime.execute(
                 Command(
                     command=" && ".join(
@@ -94,12 +100,10 @@ class GithubRepoConfig(BaseModel):
                     ),
                     timeout=float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500)),
                     shell=True,
+                    check=True,
                 )
             ),
         )
-        if r.exit_code != 0:
-            msg = f"Failed to clone repository (exit code: {r.exit_code}, stdout: {r.stdout}, stderr: {r.stderr})"
-            raise RuntimeError(msg)
 
 
 RepoConfig = LocalRepoConfig | GithubRepoConfig
