@@ -27,11 +27,9 @@ from sweagent.environment.swe_env import SWEEnv
 from sweagent.tools.parsing import FormatError
 from sweagent.tools.tools import ToolConfig, ToolHandler
 from sweagent.types import AgentInfo, AgentRunResult, History, HistoryItem, Trajectory, TrajectoryStep
-from sweagent.utils.config import _convert_paths_to_abspath, keys_config
+from sweagent.utils.config import _convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 from sweagent.utils.patch_formatter import PatchFormatter
-
-AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
 
 
 class TemplateConfig(BaseModel):
@@ -564,7 +562,7 @@ class Agent:
         try:
             observation = self._env.communicate(
                 input=action,
-                timeout=AGENT_ACTION_TIMEOUT,
+                timeout=self.tools.config.execution_timeout,
                 set_last_action=True,
                 check=self._always_require_zero_exit_code,
             )

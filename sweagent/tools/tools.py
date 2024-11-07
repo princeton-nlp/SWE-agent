@@ -93,6 +93,12 @@ class ToolConfig(BaseModel):
     )
     """Should extract environment state in a json readable form"""
 
+    execution_timeout: int = 30
+    """Timeout for executing commands in the environment"""
+
+    install_timeout: int = 300
+    """Timeout used for each of the installation commands"""
+
     # todo: move to ToolHandler?
     @property
     def commands(self) -> list[Command]:
@@ -197,7 +203,11 @@ class ToolHandler:
                     )
                 )
         for command in self.config.install_commands:
-            asyncio.run(env.deployment.runtime.run_in_session(BashAction(command=command, timeout=1, check=True)))
+            asyncio.run(
+                env.deployment.runtime.run_in_session(
+                    BashAction(command=command, timeout=self.config.install_timeout, check=True)
+                )
+            )
 
     def _make_state_command_available(self, env: SWEEnv) -> None:
         asyncio.run(
