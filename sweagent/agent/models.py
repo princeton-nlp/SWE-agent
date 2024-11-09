@@ -360,7 +360,16 @@ class LiteLLMModel(AbstractModel):
             wait=wait_random_exponential(min=self.args.retry.min_wait, max=self.args.retry.max_wait),
             reraise=True,
             retry=retry_if_not_exception_type(
-                (CostLimitExceededError, RuntimeError, litellm.exceptions.UnsupportedParamsError)
+                (
+                    CostLimitExceededError,
+                    RuntimeError,
+                    litellm.exceptions.UnsupportedParamsError,
+                    litellm.exceptions.NotFoundError,
+                    litellm.exceptions.PermissionDeniedError,
+                    litellm.exceptions.ContextWindowExceededError,
+                    litellm.exceptions.ContentPolicyViolationError,
+                    litellm.exceptions.APIError,
+                )
             ),
         ):
             with attempt:
@@ -376,7 +385,7 @@ class LiteLLMModel(AbstractModel):
                 return "user" if self.args.convert_system_to_user else "system"
             return history_item["role"]
 
-        return [{"role": history_item["role"], "content": history_item["content"]} for history_item in history]
+        return [{"role": get_role(history_item), "content": history_item["content"]} for history_item in history]
 
 
 def get_model(args: ModelConfig, commands: list[Command] | None = None) -> AbstractModel:
