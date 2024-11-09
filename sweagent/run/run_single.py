@@ -1,5 +1,6 @@
 """Run on a single instance taken from github or similar."""
 
+import getpass
 import sys
 from pathlib import Path
 from typing import Self
@@ -37,7 +38,11 @@ class RunSingleConfig(BaseSettings, cli_implicit_flags=True):
     env: EnvironmentConfig = Field(default_factory=EnvironmentConfig)
     agent: AgentConfig
     problem_statement: ProblemStatementConfig = Field(default_factory=EmptyProblemStatement)
-    traj_dir: Path = Path(".")
+    output_dir: Path = Path("DEFAULT")
+    """Directory to save the trajectory and similar output files to. If None, a default location
+    based on user ID, problem statement ID and model is used.
+    """
+
     actions: RunSingleActionConfig = Field(default_factory=RunSingleActionConfig)
 
     print_config: bool = False
@@ -49,6 +54,18 @@ class RunSingleConfig(BaseSettings, cli_implicit_flags=True):
     # pydantic config
     model_config = ConfigDict(extra="forbid")  # type: ignore
 
+    def set_default_output_dir(self) -> None:
+        # Needs to be called explicitly, because self._config_files will be setup
+        # post-init.
+        if self.output_dir == Path("DEFAULT"):
+            user_id = getpass.getuser()
+            problem_id = self.problem_statement.id
+            model_id = self.agent.model.id
+            config_file = getattr(self, "_config_files", ["no_config"])[0]
+            if isinstance(config_file, Path):
+                config_file = config_file.name
+            self.output_dir = Path.cwd() / "trajectories" / user_id / f"{config_file}__{model_id}___{problem_id}"
+
 
 class RunSingle:
     def __init__(
@@ -57,7 +74,7 @@ class RunSingle:
         agent: Agent,
         problem_statement: ProblemStatement | ProblemStatementConfig,
         *,
-        traj_dir: Path = Path("."),
+        output_dir: Path = Path("."),
         hooks: list[RunHook] | None = None,
         actions: RunSingleActionConfig | None = None,
     ):
@@ -67,7 +84,7 @@ class RunSingle:
         self.logger = get_logger("Run", emoji="🏃")
         self.env = env
         self.agent = agent
-        self.traj_dir = traj_dir
+        self.output_dir = output_dir
         self._hooks = []
         if actions is not None:
             actions = RunSingleActionConfig()
@@ -88,11 +105,13 @@ class RunSingle:
             config_str = yaml.dump(config.model_dump())
             logger.info(f"Config:\n {config_str}")
         load_environment_variables(config.env_var_path)
+        config.set_default_output_dir()
+        config.output_dir.mkdir(parents=True, exist_ok=True)
         self = cls(
             env=SWEEnv.from_config(config.env),
             agent=Agent.from_config(config.agent),
             problem_statement=config.problem_statement,
-            traj_dir=config.traj_dir,
+            output_dir=config.output_dir,
             actions=config.actions,
         )
         self.add_hook(SaveApplyPatchHook(apply_patch_locally=config.actions.apply_patch_locally))
@@ -116,12 +135,12 @@ class RunSingle:
         result = self.agent.run(
             problem_statement=self.problem_statement,
             env=self.env,
-            output_dir=Path(self.traj_dir),
+            output_dir=Path(self.output_dir),
         )
         self._chooks.on_instance_completed(result=result)
         self.logger.info("Done")
         self._chooks.on_end()
-        save_predictions(self.traj_dir, self.problem_statement.id, result)
+        save_predictions(self.output_dir, self.problem_statement.id, result)
         self.env.close()
 
 

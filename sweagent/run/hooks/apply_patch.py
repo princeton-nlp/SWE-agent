@@ -22,7 +22,7 @@ class SaveApplyPatchHook(RunHook):
         self._apply_patch_locally = apply_patch_locally
 
     def on_init(self, *, run):
-        self._traj_dir = Path(run.traj_dir)
+        self._output_dir = Path(run.output_dir)
 
     def on_instance_start(self, *, index: int, env: SWEEnv, problem_statement: ProblemStatementConfig):
         self._env = env
@@ -74,7 +74,7 @@ class SaveApplyPatchHook(RunHook):
         Returns:
             The path to the patch file, if it was saved. Otherwise, returns None.
         """
-        patch_output_dir = self._traj_dir
+        patch_output_dir = self._output_dir
         patch_output_dir.mkdir(exist_ok=True, parents=True)
         patch_output_file = patch_output_dir / f"{instance_id}.patch"
         if info.get("submission") is None:

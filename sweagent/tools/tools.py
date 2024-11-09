@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Any, Self
 
 from pydantic import BaseModel, Field
-from swerex.runtime.abstract import BashAction, WriteFileRequest
 from swerex.runtime.abstract import Command as RexCommand
+from swerex.runtime.abstract import WriteFileRequest
 
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.tools.commands import Command, ParseCommand, ParseCommandBash
@@ -196,26 +196,18 @@ class ToolHandler:
                 env.deployment.runtime.write_file(WriteFileRequest(content=contents, path=f"/root/commands/{name}"))
             )
             if source:
-                self._reset_commands.append(f"source /root/commands/{name}")
+                self._reset_commands.append(f"source '/root/commands/{name}'")
             if mark_executable:
                 asyncio.run(
                     env.deployment.runtime.execute(
-                        RexCommand(command=f"chmod +x /root/commands/{name}", shell=True, check=True)
+                        RexCommand(command=f"chmod +x '/root/commands/{name}'", shell=True, check=True)
                     )
                 )
         for command in self.config.install_commands:
-            asyncio.run(
-                env.deployment.runtime.run_in_session(
-                    BashAction(command=command, timeout=self.config.install_timeout, check=True)
-                )
-            )
+            env.communicate(command, check=True, timeout=self.config.install_timeout)
 
     def _make_state_command_available(self, env: SWEEnv) -> None:
-        asyncio.run(
-            env.deployment.runtime.run_in_session(
-                BashAction(command=self.config.state_command.code, timeout=1, check=True)
-            )
-        )
+        env.communicate(self.config.state_command.code, check=True, timeout=1)
 
     def _set_env_variables(self, env: SWEEnv) -> None:
         _env_setters = [f"export {k}={v}" for k, v in self.config.env_variables.items()]

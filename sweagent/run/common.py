@@ -50,7 +50,9 @@ class BasicCLI:
             exit(0)
 
         config_merged = {}
+        config_files = []
         if cli_args.config:
+            config_files.extend(cli_args.config)
             for _f in cli_args.config:
                 txt = Path(_f).read_text()
                 if not txt.strip():
@@ -60,6 +62,7 @@ class BasicCLI:
                 config_merged.update(_loaded)
         elif self.default_settings and not cli_args.no_config_file:
             config_file = CONFIG_DIR / "default.yaml"
+            config_files.append(config_file)
             self.logger.info(f"Loading default config from {config_file}")
             txt = config_file.read_text()
             if not txt.strip():
@@ -81,6 +84,8 @@ class BasicCLI:
         if cli_args.print_config:  # type: ignore
             print(yaml.dump(args.model_dump()))
             exit(0)
+
+        args._config_files = config_files  # type: ignore
         return args
 
 

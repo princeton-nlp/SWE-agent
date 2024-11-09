@@ -61,6 +61,10 @@ class GenericAPIModelConfig(PydanticBaseModel):
     # pydantic
     model_config = ConfigDict(extra="forbid")
 
+    @property
+    def id(self) -> str:
+        return f"{self.name}__t-{self.temperature:.2f}__p-{self.top_p:.2f}__c-{self.per_instance_cost_limit:.2f}"
+
 
 class ReplayModelConfig(GenericAPIModelConfig):
     replay_path: Path

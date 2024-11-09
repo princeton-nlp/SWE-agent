@@ -3,8 +3,9 @@
 import json
 import sys
 import tempfile
+from getpass import getpass
 from pathlib import Path
-from typing import Self
+from typing import Any, Self
 
 import yaml
 from pydantic import Field
@@ -25,24 +26,32 @@ from sweagent.utils.log import get_logger
 
 
 class RunReplayConfig(BaseSettings):
-    traj_path: str
-    config_path: str = str(CONFIG_DIR / "default.yaml")
+    traj_path: Path
+    config_path: Path = CONFIG_DIR / "default.yaml"
     deployment: DeploymentConfig = Field(default_factory=DockerDeploymentConfig)
     repo: RepoConfig | None = None
-    output_dir: str = "."
+    output_dir: Path = Path("DEFAULT")
     env_var_path: Path | None = None
     """Path to a .env file to load environment variables from."""
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.output_dir == Path("DEFAULT"):
+            user_id = getpass.getuser()
+            self.output_dir = (
+                Path.cwd() / "trajectories" / user_id / f"{self.config_path.name}__replay___{self.traj_path.stem}"
+            )
+        self.output_dir.mkdir(parents=True, exist_ok=True)
 
 
 class RunReplay:
     def __init__(
         self,
         *,
-        traj_path: str,
-        config_path: str,
+        traj_path: Path,
+        config_path: Path,
         deployment: AbstractDeployment,
         repo: RepoConfig | None,
-        output_dir: str,
+        output_dir: Path,
         _catch_errors: bool = False,
         _require_zero_exit_code: bool = False,
     ):
@@ -87,7 +96,7 @@ class RunReplay:
 
     def _get_agent(self) -> Agent:
         _agent_config = yaml.safe_load(Path(self.config_path).read_text())["agent"]
-        _agent_config["model"] = ReplayModelConfig(replay_path=str(self._replay_action_trajs_path)).model_dump()
+        _agent_config["model"] = ReplayModelConfig(replay_path=self._replay_action_trajs_path).model_dump()
         agent_config = AgentConfig(**_agent_config)
         agent = Agent.from_config(agent_config)
         agent._catch_errors = self._catch_errors
@@ -99,7 +108,7 @@ class RunReplay:
             self._get_env(),
             self._get_agent(),
             problem_statement=EmptyProblemStatement(),
-            traj_dir=Path(self.output_dir),
+            output_dir=Path(self.output_dir),
         )
 
     def main(self):

@@ -2,6 +2,7 @@
 Run on a batch of instances/issues. For example run on all of SWE-bench.
 """
 
+import getpass
 import json
 import sys
 import traceback
@@ -23,11 +24,23 @@ from sweagent.utils.log import get_logger
 class RunBatchConfig(BaseSettings, cli_implicit_flags=True):
     instances: BatchInstanceSourceConfig
     agent: AgentConfig
-    traj_dir: Path = Path(".")
+    output_dir: Path = Path("DEFAULT")
     raise_exceptions: bool = False
     redo_existing: bool = False
     env_var_path: Path | None = None
     """Path to a .env file to load environment variables from."""
+
+    def set_default_output_dir(self) -> None:
+        # Needs to be called explicitly, because self._config_files will be setup
+        # post-init.
+        if self.output_dir == Path("DEFAULT"):
+            user_id = getpass.getuser()
+            source_id = self.instances.id
+            model_id = self.agent.model.id
+            config_file = getattr(self, "_config_files", ["no_config"])[0]
+            if isinstance(config_file, Path):
+                config_file = config_file.name
+            self.output_dir = Path.cwd() / "trajectories" / user_id / f"{config_file}__{model_id}___{source_id}"
 
 
 class _BreakLoop(Exception):
@@ -40,7 +53,7 @@ class RunBatch:
         instances: list[BatchInstance],
         agent: Agent,
         *,
-        traj_dir: Path = Path("."),
+        output_dir: Path = Path("."),
         hooks: list[RunHook] | None = None,
         raise_exceptions: bool = False,
         redo_existing: bool = False,
@@ -54,7 +67,7 @@ class RunBatch:
         self.logger = get_logger("Run", emoji="🏃")
         self.instances = instances
         self.agent = agent
-        self.traj_dir = traj_dir
+        self.output_dir = output_dir
         self._hooks = []
         self._raise_exceptions = raise_exceptions
         self._chooks = CombinedRunHooks()
@@ -65,6 +78,8 @@ class RunBatch:
     @classmethod
     def from_config(cls, config: RunBatchConfig) -> Self:
         load_environment_variables(config.env_var_path)
+        config.set_default_output_dir()
+        config.output_dir.mkdir(parents=True, exist_ok=True)
         logger = get_logger("RunBatch", emoji="🏃")
         logger.debug("Loading instances from %s", f"{config.instances!r}")
         instances = config.instances.get_instance_configs()
@@ -79,7 +94,7 @@ class RunBatch:
         return cls(
             instances=instances,
             agent=Agent.from_config(config.agent),
-            traj_dir=config.traj_dir,
+            output_dir=config.output_dir,
             raise_exceptions=config.raise_exceptions,
         )
 
@@ -128,9 +143,9 @@ class RunBatch:
         result = self.agent.run(
             problem_statement=instance.problem_statement,
             env=env,
-            output_dir=Path(self.traj_dir),
+            output_dir=Path(self.output_dir),
         )
-        save_predictions(self.traj_dir, instance.problem_statement.id, result)
+        save_predictions(self.output_dir, instance.problem_statement.id, result)
         self._chooks.on_instance_completed(result=result)
         env.close()
 
@@ -140,7 +155,7 @@ class RunBatch:
             return False
 
         # Check if there's an existing trajectory for this instance
-        log_path = self.traj_dir / (instance.problem_statement.id + ".traj")
+        log_path = self.output_dir / (instance.problem_statement.id + ".traj")
         if not log_path.exists():
             return False
 

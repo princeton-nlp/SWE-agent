@@ -97,6 +97,10 @@ class InstancesFromFile(BaseModel, AbstractInstanceSource):
         instances = [instance.to_full_batch_instance(self.deployment) for instance in simple_instances]
         return _filter_batch_items(instances, self.filter)
 
+    @property
+    def id(self) -> str:
+        return self.path.stem
+
 
 class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
     """Load instances from HuggingFace."""
@@ -118,6 +122,10 @@ class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
         instances = [instance.to_full_batch_instance(self.deployment) for instance in simple_instances]
         return _filter_batch_items(instances, self.filter)
 
+    @property
+    def id(self) -> str:
+        return "".join(l for l in self.dataset_name if l.isalnum())
+
 
 class SWEBenchInstances(BaseModel, AbstractInstanceSource):
     """Load instances from SWE-bench."""
@@ -135,6 +143,10 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
     def get_instance_configs(self) -> list[BatchInstance]:
         raise NotImplementedError
 
+    @property
+    def id(self) -> str:
+        return f"swe_bench_{self.flavor}"
+
 
 class ExpertInstancesFromFile(BaseModel, AbstractInstanceSource):
     """Load instances from a file. The difference to `InstancesFromFile` is that the instances are configured as full
@@ -151,6 +163,10 @@ class ExpertInstancesFromFile(BaseModel, AbstractInstanceSource):
         instance_dicts = _load_file(self.path)
         instances = [BatchInstance(**instance_dict) for instance_dict in instance_dicts]
         return _filter_batch_items(instances, self.filter)
+
+    @property
+    def id(self) -> str:
+        return self.path.stem
 
 
 BatchInstanceSourceConfig = InstancesFromHuggingFace | InstancesFromFile | SWEBenchInstances | ExpertInstancesFromFile

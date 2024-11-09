@@ -44,7 +44,7 @@ def test_run_ies(tmpdir, agent_config_with_commands):
     rsc = RunSingleConfig(
         env=EnvironmentConfig(),
         agent=ac,
-        traj_dir=Path(tmpdir),
+        output_dir=Path(tmpdir),
     )
     rs = RunSingle.from_config(rsc)
     rs.run()
@@ -79,7 +79,7 @@ def test_run_ies_repo_ps_matrix(
     args = [
         "--agent.model.name=instant_empty_submit",
         "--print_config",
-        "--traj_dir",
+        "--output_dir",
         str(tmpdir),
         *ps_args,
         *repo_args,
