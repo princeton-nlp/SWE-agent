@@ -1,4 +1,11 @@
 cov.xml
+trajectories/**
+!trajectories/demonstrations/**
+data/**
+*.env
+
+# -------- automatically generated files --------
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -185,12 +192,6 @@ website/frontend/build
 
 # demo yamls (for editing)
 *.demo.yaml
-
-# trajectory files
-trajectories/**
-!trajectories/demonstrations/**
-data/**
-.vscode/**
 
 # PyCharm
 .idea/

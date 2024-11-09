@@ -19,6 +19,7 @@ from sweagent.agent.models import (
     APIStats,
     ContextWindowExceededError,
     CostLimitExceededError,
+    HumanModel,
     ModelConfig,
     get_model,
 )
@@ -269,10 +270,8 @@ class Agent:
                     self._append_history(entry)
         else:
             # Add demonstration as single message to history
-            demo_message = self.model.history_to_messages(
-                demo_history,
-                is_demonstration=True,
-            )
+            demo_history = [entry for entry in demo_history if entry["role"] != "system"]
+            demo_message = "\n".join([entry["content"] for entry in demo_history])
             assert self.templates.demonstration_template is not None
             demonstration = self.templates.demonstration_template.format(demonstration=demo_message)
             self._append_history(
@@ -459,11 +458,10 @@ class Agent:
             output: raw model output
         """
         # Condition for handling outputs with no thought (just action)
-        if self.model.name == "human":
+        if isinstance(self.model, HumanModel):
+            # Need special attention, because HumanModel doesn't know how to format actions
+            # because it depends on the action parser in tools
             return "", output, output
-        elif self.model.name == "human_thought":
-            thought, action = self.tools.parse_actions(output)
-            return thought, action, output
 
         format_fails = blocklist_fails = 0
 
@@ -658,7 +656,7 @@ class Agent:
         )
         self.trajectory.append(trajectory_step)
         model_stats: APIStats = self.model.stats
-        self.info["model_stats"] = model_stats.to_dict()
+        self.info["model_stats"] = model_stats.model_dump()
         self._chook.on_step_done(trajectory_step=trajectory_step, model_stats=model_stats)
         return observation, done
 

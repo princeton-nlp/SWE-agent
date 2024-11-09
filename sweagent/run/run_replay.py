@@ -20,6 +20,7 @@ from sweagent.environment.config.repo import RepoConfig
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.run.common import BasicCLI
 from sweagent.run.run_single import RunSingle
+from sweagent.utils.config import load_environment_variables
 from sweagent.utils.log import get_logger
 
 
@@ -29,6 +30,8 @@ class RunReplayConfig(BaseSettings):
     deployment: DeploymentConfig = Field(default_factory=DockerDeploymentConfig)
     repo: RepoConfig | None = None
     output_dir: str = "."
+    env_var_path: Path | None = None
+    """Path to a .env file to load environment variables from."""
 
 
 class RunReplay:
@@ -59,6 +62,7 @@ class RunReplay:
 
     @classmethod
     def from_config(cls, config: RunReplayConfig, **kwargs) -> Self:
+        load_environment_variables(config.env_var_path)
         return cls(
             traj_path=config.traj_path,
             config_path=config.config_path,

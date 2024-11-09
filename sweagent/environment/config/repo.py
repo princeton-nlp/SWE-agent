@@ -10,7 +10,6 @@ from pydantic import BaseModel
 from swerex.deployment.abstract import AbstractDeployment
 from swerex.runtime.abstract import Command, UploadRequest
 
-from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
 logger = get_logger("Config", emoji="⚙️")
@@ -61,6 +60,9 @@ class GithubRepoConfig(BaseModel):
 
     base_commit: str = "HEAD"
 
+    clone_timeout: float = 500
+    """Timeout for git clone operation."""
+
     type: Literal["github"] = "github"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
@@ -82,7 +84,7 @@ class GithubRepoConfig(BaseModel):
 
     def copy(self, deployment: AbstractDeployment):
         base_commit = self.base_commit
-        github_token = keys_config.get("GITHUB_TOKEN", "")
+        github_token = os.getenv("GITHUB_TOKEN", "")
         url = self._get_url_with_token(github_token)
         asyncio.run(
             deployment.runtime.execute(
@@ -98,7 +100,7 @@ class GithubRepoConfig(BaseModel):
                             "cd ..",
                         )
                     ),
-                    timeout=float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500)),
+                    timeout=self.clone_timeout,
                     shell=True,
                     check=True,
                 )

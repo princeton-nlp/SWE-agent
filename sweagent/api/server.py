@@ -1,18 +1,5 @@
 from __future__ import annotations
 
-from omegaconf import OmegaConf
-
-from sweagent.environment.config.deployment import DeploymentConfig
-from sweagent.run.run_single import RunSingleActionConfig
-
-try:
-    import flask  # noqa
-except ImportError as e:
-    msg = (
-        "Flask not found. You probably haven't installed the dependencies for SWE-agent. "
-        "Please go to the root of the repository and run `pip install -e .`"
-    )
-    raise RuntimeError(msg) from e
 import atexit
 import copy
 import json
@@ -25,6 +12,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+import flask  # noqa
 import yaml
 from flask import Flask, make_response, render_template, request, session
 from flask_cors import CORS
@@ -35,11 +23,13 @@ from sweagent.agent.agents import AgentConfig
 from sweagent.agent.models import ModelConfig
 from sweagent.api.hooks import AgentUpdateHook, EnvUpdateHook, MainUpdateHook, WebUpdate
 from sweagent.api.utils import AttrDict, ThreadWithExc
+from sweagent.environment.config.deployment import DockerDeploymentConfig
 from sweagent.environment.swe_env import EnvironmentConfig
+from sweagent.run.run_single import RunSingleActionConfig
 
 # baaaaaaad
 sys.path.append(str(PACKAGE_DIR.parent))
-from run import Main, ScriptArguments
+from sweagent.run.run_single import RunSingle, RunSingleConfig
 
 app = Flask(__name__, template_folder=Path(__file__).parent)
 CORS(app)
@@ -63,7 +53,7 @@ def ensure_session_id_set():
 
 
 class MainThread(ThreadWithExc):
-    def __init__(self, settings: ScriptArguments, wu: WebUpdate):
+    def __init__(self, settings: RunSingleConfig, wu: WebUpdate):
         super().__init__()
         self._wu = wu
         self._settings = settings
@@ -73,11 +63,11 @@ class MainThread(ThreadWithExc):
         with redirect_stdout(self._wu.log_stream):
             with redirect_stderr(self._wu.log_stream):
                 try:
-                    main = Main(self._settings)
+                    main = RunSingle.from_config(self._settings)
                     main.add_hook(MainUpdateHook(self._wu))
                     main.agent.add_hook(AgentUpdateHook(self._wu))
                     main.env.add_hook(EnvUpdateHook(self._wu))
-                    main.main()
+                    main.run()
                 except Exception as e:
                     short_msg = str(e)
                     max_len = 350
@@ -155,10 +145,10 @@ def run():
     if test_run:
         model_name = "instant_empty_submit"
     agent_config = OmegaConf.load(CONFIG_DIR / "default_from_url.yaml")
-    defaults = ScriptArguments(
+    defaults = RunSingleConfig(
         suffix="",
         environment=EnvironmentConfig(
-            deployment=DeploymentConfig(),
+            deployment=DockerDeploymentConfig(),
             data_path=run.environment.data_path,
             base_commit=run.environment.base_commit,
             split="dev",
@@ -169,7 +159,7 @@ def run():
         ),
         agent=AgentConfig(),
         skip_existing=False,
-        actions=RunSingleActionConfig(open_pr=False, skip_if_commits_reference_issue=True),
+        actions=RunSingleActionConfig(),
         raise_exceptions=True,
     )
     defaults.agent.model = ModelConfig(

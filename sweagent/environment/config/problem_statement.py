@@ -1,11 +1,11 @@
 import hashlib
+import os
 import uuid
 from pathlib import Path
 from typing import Any, Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from sweagent.utils.config import keys_config
 from sweagent.utils.github import _get_problem_statement_from_github_issue, _parse_gh_issue_url
 from sweagent.utils.log import get_logger
 
@@ -87,9 +87,7 @@ class GithubIssue(BaseModel):
 
     def get_problem_statement(self) -> str:
         owner, repo, issue_number = _parse_gh_issue_url(self.url)
-        return _get_problem_statement_from_github_issue(
-            owner, repo, issue_number, token=keys_config.get("GITHUB_TOKEN")
-        )
+        return _get_problem_statement_from_github_issue(owner, repo, issue_number, token=os.getenv("GITHUB_TOKEN"))
 
 
 ProblemStatementConfig = TextProblemStatement | GithubIssue | EmptyProblemStatement | FileProblemStatement

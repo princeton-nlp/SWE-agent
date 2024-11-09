@@ -19,6 +19,7 @@ from sweagent.run.common import BasicCLI, save_predictions
 from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
 from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
 from sweagent.run.hooks.open_pr import OpenPRConfig, OpenPRHook
+from sweagent.utils.config import load_environment_variables
 from sweagent.utils.log import get_logger
 
 
@@ -34,13 +35,16 @@ class RunSingleActionConfig(BaseModel, cli_implicit_flags=True):
 
 class RunSingleConfig(BaseSettings, cli_implicit_flags=True):
     env: EnvironmentConfig = Field(default_factory=EnvironmentConfig)
-    agent: AgentConfig = Field(default_factory=AgentConfig)
+    agent: AgentConfig
     problem_statement: ProblemStatementConfig = Field(default_factory=EmptyProblemStatement)
     traj_dir: Path = Path(".")
     actions: RunSingleActionConfig = Field(default_factory=RunSingleActionConfig)
 
     print_config: bool = False
     """Print config at the beginning of the run."""
+
+    env_var_path: Path | None = None
+    """Path to a .env file to load environment variables from."""
 
     # pydantic config
     model_config = ConfigDict(extra="forbid")  # type: ignore
@@ -83,6 +87,7 @@ class RunSingle:
         if config.print_config:
             config_str = yaml.dump(config.model_dump())
             logger.info(f"Config:\n {config_str}")
+        load_environment_variables(config.env_var_path)
         self = cls(
             env=SWEEnv.from_config(config.env),
             agent=Agent.from_config(config.agent),

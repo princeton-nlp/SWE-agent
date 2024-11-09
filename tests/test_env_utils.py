@@ -6,7 +6,6 @@ import subprocess
 import pytest
 
 from sweagent.run.hooks.open_pr import _remove_triple_backticks, format_trajectory_markdown
-from sweagent.utils.config import keys_config
 from sweagent.utils.github import (
     InvalidGithubURL,
     _get_associated_commit_urls,
@@ -15,8 +14,6 @@ from sweagent.utils.github import (
     _parse_gh_issue_url,
     _parse_gh_repo_url,
 )
-
-_TOKEN = {"token": keys_config["GITHUB_TOKEN"]}
 
 
 def test_format_trajectory_markdown(test_trajectory):

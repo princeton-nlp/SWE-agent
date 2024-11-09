@@ -26,10 +26,10 @@ class TrajectoryStep(TypedDict):
 
 class _HistoryItem(TypedDict):
     role: str
+    content: str
 
 
 class HistoryItem(_HistoryItem, total=False):
-    content: str | None
     agent: str
     is_demo: bool
     thought: str

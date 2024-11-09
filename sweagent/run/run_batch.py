@@ -8,7 +8,6 @@ import traceback
 from pathlib import Path
 from typing import Self
 
-from pydantic import Field
 from pydantic_settings import BaseSettings
 
 from sweagent.agent.agents import Agent, AgentConfig
@@ -17,15 +16,18 @@ from sweagent.run.batch_instances import BatchInstance, BatchInstanceSourceConfi
 from sweagent.run.common import BasicCLI, save_predictions
 from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
 from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
+from sweagent.utils.config import load_environment_variables
 from sweagent.utils.log import get_logger
 
 
 class RunBatchConfig(BaseSettings, cli_implicit_flags=True):
     instances: BatchInstanceSourceConfig
-    agent: AgentConfig = Field(default_factory=AgentConfig)
+    agent: AgentConfig
     traj_dir: Path = Path(".")
     raise_exceptions: bool = False
     redo_existing: bool = False
+    env_var_path: Path | None = None
+    """Path to a .env file to load environment variables from."""
 
 
 class _BreakLoop(Exception):
@@ -62,6 +64,7 @@ class RunBatch:
 
     @classmethod
     def from_config(cls, config: RunBatchConfig) -> Self:
+        load_environment_variables(config.env_var_path)
         logger = get_logger("RunBatch", emoji="🏃")
         logger.debug("Loading instances from %s", f"{config.instances!r}")
         instances = config.instances.get_instance_configs()

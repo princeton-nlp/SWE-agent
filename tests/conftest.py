@@ -98,8 +98,11 @@ def dummy_env_args() -> EnvironmentConfig:
 
 
 @pytest.fixture
-def dummy_env(dummy_env_args) -> SWEEnv:
-    return SWEEnv.from_config(dummy_env_args)
+def dummy_env(dummy_env_args) -> Generator[SWEEnv, None, None]:
+    env = SWEEnv.from_config(dummy_env_args)
+    env.start()
+    yield env
+    env.close()
 
 
 @contextmanager
