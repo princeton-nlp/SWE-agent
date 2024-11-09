@@ -2,12 +2,12 @@ import json
 import re
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Self
 
 import yaml
-from pydantic import BaseModel, Field, TypeAdapter
+from pydantic import BaseModel, Field
 
-from sweagent.environment.config.deployment import DeploymentConfig, LocalDeploymentConfig
+from sweagent.environment.config.deployment import DeploymentConfig, DockerDeploymentConfig
 from sweagent.environment.config.problem_statement import ProblemStatementConfig, TextProblemStatement
 from sweagent.environment.swe_env import EnvironmentConfig
 
@@ -59,21 +59,35 @@ class SimpleBatchInstance(BaseModel):
     problem_statement: str
     id: str
 
-    def to_full_batch_instance(self, deployment_kwargs: dict[str, Any]) -> BatchInstance:
+    def to_full_batch_instance(self, deployment: DeploymentConfig) -> BatchInstance:
         """Merge the deployment options into the `SimpleBatchInstance` object to get a full `BatchInstance`."""
         # Combine image name and deployment options into a DeploymentConfig object. Because this can be one of many
         # subclasses, we use a TypeAdapter to validate/instantiate the object.
-        if deployment_kwargs.get("type") == "local":
+        if deployment.type == "local":
             if self.image_name:
                 msg = "Local deployment does not support image name"
                 raise ValueError(msg)
-            deployment = LocalDeploymentConfig(**deployment_kwargs)
-        else:
-            deployment = TypeAdapter(DeploymentConfig).validate_python(dict(image=self.image_name, **deployment_kwargs))
+            return BatchInstance(
+                env=EnvironmentConfig(deployment=deployment, repo=None),
+                problem_statement=TextProblemStatement(text=self.problem_statement, id=self.id),
+            )
+        if deployment.type == "dummy":
+            return BatchInstance(
+                env=EnvironmentConfig(deployment=deployment, repo=None),
+                problem_statement=TextProblemStatement(text=self.problem_statement, id=self.id),
+            )
+        deployment.image = self.image_name
         problem_statement = TextProblemStatement(text=self.problem_statement, id=self.id)
         return BatchInstance(
             env=EnvironmentConfig(deployment=deployment, repo=None), problem_statement=problem_statement
         )
+
+    @classmethod
+    def from_swe_bench(cls, instance: dict[str, Any]) -> Self:
+        id_ = instance["instance_id"]
+        id_docker_compatible = id_.replace("__", "_1776_")
+        image_name = f"swebench/sweb.eval.x86_64.{id_docker_compatible}:v1"
+        return cls(image_name=image_name, problem_statement=instance["problem_statement"], id=id_)
 
 
 class InstancesFromFile(BaseModel, AbstractInstanceSource):
@@ -82,8 +96,8 @@ class InstancesFromFile(BaseModel, AbstractInstanceSource):
     path: Path
     filter: str = ".*"
 
-    deployment: dict[str, Any] = Field(default_factory=dict)
-    """Any options for one of the `DeploymentConfig` subclasses."""
+    deployment: DeploymentConfig = Field(default_factory=DockerDeploymentConfig)
+    """Note that the image_name option is overwritten by the images specified in the task instances."""
 
     simple: Literal[True] = True
     """Convenience discriminator for (de)serialization/CLI. Do not change."""
@@ -109,8 +123,9 @@ class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
     split: str = "dev"
     filter: str = ".*"
 
-    deployment: dict[str, Any]
-    """Any options for one of the `DeploymentConfig` subclasses."""
+    deployment: DeploymentConfig = Field(default_factory=DockerDeploymentConfig)
+    """Deployment configuration. Note that the image_name option is overwritten by the images specified in the task instances.
+    """
     type: Literal["huggingface"] = "huggingface"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
@@ -132,16 +147,34 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
 
     flavor: Literal["lite", "verified", "full"] = "lite"
 
-    deployment: dict[str, Any]
-    """Any options for one of the `DeploymentConfig` subclasses."""
+    split: Literal["dev", "test"] = "dev"
+
+    deployment: DeploymentConfig = Field(default_factory=DockerDeploymentConfig)
+    """Deployment configuration. Note that the image_name option is overwritten by the images specified in the task instances.
+    """
 
     type: Literal["swe_bench"] = "swe_bench"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
     filter: str = ".*"
 
+    def _get_huggingface_name(self) -> str:
+        if self.flavor == "full":
+            return "princeton-nlp/SWE-Bench"
+        elif self.flavor == "verified":
+            return "princeton-nlp/SWE-Bench_Verified"
+        elif self.flavor == "lite":
+            return "princeton-nlp/SWE-Bench_Lite"
+        msg = f"Unsupported flavor: {self.flavor}"
+        raise ValueError(msg)
+
     def get_instance_configs(self) -> list[BatchInstance]:
-        raise NotImplementedError
+        from datasets import load_dataset
+
+        ds: list[dict[str, Any]] = load_dataset(self._get_huggingface_name(), split=self.split)  # type: ignore
+        simple_instances = [SimpleBatchInstance.from_swe_bench(instance) for instance in ds]
+        instances = [instance.to_full_batch_instance(self.deployment) for instance in simple_instances]
+        return _filter_batch_items(instances, self.filter)
 
     @property
     def id(self) -> str:
