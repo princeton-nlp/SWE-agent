@@ -32,8 +32,12 @@ class Flake8Error:
 
     @classmethod
     def from_line(cls, line: str):
-        prefix, _sep, problem = line.partition(": ")
-        filename, line_number, col_number = prefix.split(":")
+        try:
+            prefix, _sep, problem = line.partition(": ")
+            filename, line_number, col_number = prefix.split(":")
+        except (ValueError, IndexError) as e:
+            msg = f"Invalid flake8 error line: {line}"
+            raise ValueError(msg) from e
         return cls(filename, int(line_number), int(col_number), problem)
 
 

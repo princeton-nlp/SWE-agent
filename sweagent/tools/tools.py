@@ -75,6 +75,7 @@ class ToolConfig(BaseModel):
         "mkdir -p /root/commands",
         "touch /root/commands/__init__.py",
         "export PATH=$PATH:/root/commands",
+        "flake8 --version || pip install flake8",
     ]
     """Commands to install dependencies and tools.
     These commands are executed in a subprocess and are not part of the environment state.
