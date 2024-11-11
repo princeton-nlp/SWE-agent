@@ -10,6 +10,9 @@ from pydantic import BaseModel, Field
 from sweagent.environment.config.deployment import DeploymentConfig, DockerDeploymentConfig
 from sweagent.environment.config.problem_statement import ProblemStatementConfig, TextProblemStatement
 from sweagent.environment.swe_env import EnvironmentConfig
+from sweagent.utils.log import get_logger
+
+logger = get_logger("config", emoji="⚙️")
 
 
 class AbstractInstanceSource(ABC):
@@ -58,15 +61,23 @@ def _slice_spec_to_slice(slice_spec: str) -> slice:
         return slice(int(parts[0]), int(parts[1]), int(parts[2]))
     msg = (
         f"Invalid slice specification: {slice_spec!r}. "
-        "Here's the expected format: start or start:stop or start:stop:step"
+        "Here's the expected format: stop or start:stop or start:stop:step "
+        "(i.e., it behaves exactly like python's list slicing `list[slice]`)."
     )
     raise ValueError(msg)
 
 
 def _filter_batch_items(instances: list[BatchInstance], *, filter: str, slice: str = "") -> list[BatchInstance]:
+    before_filter = len(instances)
     instances = [instance for instance in instances if re.match(filter, instance.problem_statement.id)]
+    after_filter = len(instances)
+    if before_filter != after_filter:
+        logger.info("Instance filter: %d -> %d instances", before_filter, after_filter)
     if slice:
         instances = instances[_slice_spec_to_slice(slice)]
+        after_slice = len(instances)
+        if before_filter != after_slice:
+            logger.info("Instance slice: %d -> %d instances", before_filter, after_slice)
     return instances
 
 
@@ -120,7 +131,8 @@ class InstancesFromFile(BaseModel, AbstractInstanceSource):
     """Regular expression to filter the instances by instance id."""
     slice: str = ""
     """Select only a slice of the instances (after filtering by `filter`).
-    Possible values are start or start:stop or start:stop:step.
+    Possible values are stop or start:stop or start:stop:step
+    (i.e., it behaves exactly like python's list slicing `list[slice]`).
     """
 
     deployment: DeploymentConfig = Field(default_factory=DockerDeploymentConfig)
@@ -152,7 +164,8 @@ class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
     """Regular expression to filter the instances by instance id."""
     slice: str = ""
     """Select only a slice of the instances (after filtering by `filter`).
-    Possible values are start or start:stop or start:stop:step.
+    Possible values are stop or start:stop or start:stop:step.
+    (i.e., it behaves exactly like python's list slicing `list[slice]`).
     """
 
     deployment: DeploymentConfig = Field(default_factory=DockerDeploymentConfig)
@@ -192,7 +205,8 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
     """Regular expression to filter the instances by instance id."""
     slice: str = ""
     """Select only a slice of the instances (after filtering by `filter`).
-    Possible values are start or start:stop or start:stop:step.
+    Possible values are stop or start:stop or start:stop:step.
+    (i.e., it behaves exactly like python's list slicing `list[slice]`).
     """
 
     def _get_huggingface_name(self) -> str:
@@ -228,7 +242,8 @@ class ExpertInstancesFromFile(BaseModel, AbstractInstanceSource):
     """Regular expression to filter the instances by instance id."""
     slice: str = ""
     """Select only a slice of the instances (after filtering by `filter`).
-    Possible values are start or start:stop or start:stop:step.
+    Possible values are stop or start:stop or start:stop:step.
+    (i.e., it behaves exactly like python's list slicing `list[slice]`).
     """
 
     type: Literal["expert_file"] = "expert_file"

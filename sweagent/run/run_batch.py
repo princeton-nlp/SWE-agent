@@ -86,8 +86,9 @@ class RunBatch:
         logger.info("Loaded %d instances", len(instances))
         if not instances:
             msg = (
-                "No instances to run. You might want to check your instance_filter "
-                "(if supported by your instance source)"
+                "No instances to run. Here are a few things to check:\n"
+                "- With huggingface data: Check that you have the right split (test or dev)\n"
+                "- Check your filter does not exclude all instances (check the info log messages)"
             )
             raise ValueError(msg)
         logger.debug("The first instance is %s", f"{instances[0]!r}")
