@@ -104,7 +104,13 @@ class RunBatch:
 
     def main(self):
         self._chooks.on_start()
-        for instance in self.instances:
+        for i_instance, instance in enumerate(self.instances):
+            self.logger.info(
+                "Starting to run on instance %d/%d: %s",
+                i_instance + 1,
+                len(self.instances),
+                instance.problem_statement.id,
+            )
             try:
                 self.run_instance(instance)
             except _BreakLoop:
@@ -132,7 +138,6 @@ class RunBatch:
     def _run_instance(self, instance: BatchInstance):
         if self.should_skip(instance):
             return
-        self.logger.info("Starting to run on instance %s", instance.problem_statement.id)
         self.logger.info("Starting environment")
         env = SWEEnv.from_config(instance.env)
         env.start()

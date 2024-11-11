@@ -46,8 +46,28 @@ class BatchInstance(BaseModel):
     problem_statement: ProblemStatementConfig
 
 
-def _filter_batch_items(instances: list[BatchInstance], filter: str) -> list[BatchInstance]:
-    return [instance for instance in instances if re.match(filter, instance.problem_statement.id)]
+def _slice_spec_to_slice(slice_spec: str) -> slice:
+    if slice_spec == "":
+        return slice(None)
+    parts = slice_spec.split(":")
+    if len(parts) == 1:
+        return slice(int(parts[0]))
+    if len(parts) == 2:
+        return slice(int(parts[0]), int(parts[1]))
+    if len(parts) == 3:
+        return slice(int(parts[0]), int(parts[1]), int(parts[2]))
+    msg = (
+        f"Invalid slice specification: {slice_spec!r}. "
+        "Here's the expected format: start or start:stop or start:stop:step"
+    )
+    raise ValueError(msg)
+
+
+def _filter_batch_items(instances: list[BatchInstance], *, filter: str, slice: str = "") -> list[BatchInstance]:
+    instances = [instance for instance in instances if re.match(filter, instance.problem_statement.id)]
+    if slice:
+        instances = instances[_slice_spec_to_slice(slice)]
+    return instances
 
 
 class SimpleBatchInstance(BaseModel):
@@ -95,6 +115,11 @@ class InstancesFromFile(BaseModel, AbstractInstanceSource):
 
     path: Path
     filter: str = ".*"
+    """Regular expression to filter the instances by instance id."""
+    slice: str = ""
+    """Select only a slice of the instances (after filtering by `filter`).
+    Possible values are start or start:stop or start:stop:step.
+    """
 
     deployment: DeploymentConfig = Field(default_factory=DockerDeploymentConfig)
     """Note that the image_name option is overwritten by the images specified in the task instances."""
@@ -109,7 +134,7 @@ class InstancesFromFile(BaseModel, AbstractInstanceSource):
         instance_dicts = _load_file(self.path)
         simple_instances = [SimpleBatchInstance(**instance_dict) for instance_dict in instance_dicts]
         instances = [instance.to_full_batch_instance(self.deployment) for instance in simple_instances]
-        return _filter_batch_items(instances, self.filter)
+        return _filter_batch_items(instances, filter=self.filter, slice=self.slice)
 
     @property
     def id(self) -> str:
@@ -122,6 +147,11 @@ class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
     dataset_name: str
     split: str = "dev"
     filter: str = ".*"
+    """Regular expression to filter the instances by instance id."""
+    slice: str = ""
+    """Select only a slice of the instances (after filtering by `filter`).
+    Possible values are start or start:stop or start:stop:step.
+    """
 
     deployment: DeploymentConfig = Field(default_factory=DockerDeploymentConfig)
     """Deployment configuration. Note that the image_name option is overwritten by the images specified in the task instances.
@@ -135,7 +165,7 @@ class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
         ds: list[dict[str, Any]] = load_dataset(self.dataset_name, split=self.split)  # type: ignore
         simple_instances: list[SimpleBatchInstance] = [SimpleBatchInstance(**instance) for instance in ds]
         instances = [instance.to_full_batch_instance(self.deployment) for instance in simple_instances]
-        return _filter_batch_items(instances, self.filter)
+        return _filter_batch_items(instances, filter=self.filter, slice=self.slice)
 
     @property
     def id(self) -> str:
@@ -157,6 +187,11 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
     """Discriminator for (de)serialization/CLI. Do not change."""
 
     filter: str = ".*"
+    """Regular expression to filter the instances by instance id."""
+    slice: str = ""
+    """Select only a slice of the instances (after filtering by `filter`).
+    Possible values are start or start:stop or start:stop:step.
+    """
 
     def _get_huggingface_name(self) -> str:
         if self.flavor == "full":
@@ -174,7 +209,7 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
         ds: list[dict[str, Any]] = load_dataset(self._get_huggingface_name(), split=self.split)  # type: ignore
         simple_instances = [SimpleBatchInstance.from_swe_bench(instance) for instance in ds]
         instances = [instance.to_full_batch_instance(self.deployment) for instance in simple_instances]
-        return _filter_batch_items(instances, self.filter)
+        return _filter_batch_items(instances, filter=self.filter, slice=self.slice)
 
     @property
     def id(self) -> str:
@@ -188,6 +223,11 @@ class ExpertInstancesFromFile(BaseModel, AbstractInstanceSource):
 
     path: Path
     filter: str = ".*"
+    """Regular expression to filter the instances by instance id."""
+    slice: str = ""
+    """Select only a slice of the instances (after filtering by `filter`).
+    Possible values are start or start:stop or start:stop:step.
+    """
 
     type: Literal["expert_file"] = "expert_file"
     """Discriminator for (de)serialization/CLI. Do not change."""
@@ -195,7 +235,7 @@ class ExpertInstancesFromFile(BaseModel, AbstractInstanceSource):
     def get_instance_configs(self) -> list[BatchInstance]:
         instance_dicts = _load_file(self.path)
         instances = [BatchInstance(**instance_dict) for instance_dict in instance_dicts]
-        return _filter_batch_items(instances, self.filter)
+        return _filter_batch_items(instances, filter=self.filter, slice=self.slice)
 
     @property
     def id(self) -> str:
