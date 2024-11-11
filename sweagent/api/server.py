@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import atexit
-import copy
 import json
 import sys
-import tempfile
 import time
 import traceback
 from contextlib import redirect_stderr, redirect_stdout
@@ -19,13 +16,10 @@ from flask_cors import CORS
 from flask_socketio import SocketIO
 
 from sweagent import CONFIG_DIR, PACKAGE_DIR
-from sweagent.agent.agents import AgentConfig
-from sweagent.agent.models import ModelConfig
 from sweagent.api.hooks import AgentUpdateHook, EnvUpdateHook, MainUpdateHook, WebUpdate
 from sweagent.api.utils import AttrDict, ThreadWithExc
-from sweagent.environment.config.deployment import DockerDeploymentConfig
-from sweagent.environment.swe_env import EnvironmentConfig
-from sweagent.run.run_single import RunSingleActionConfig
+from sweagent.environment.config.problem_statement import problem_statement_from_simplified_input
+from sweagent.environment.config.repo import repo_from_simplified_input
 
 # baaaaaaad
 sys.path.append(str(PACKAGE_DIR.parent))
@@ -98,19 +92,6 @@ def handle_connect():
     print("Client connected")
 
 
-def write_env_yaml(data) -> str:
-    data: Any = AttrDict(copy.deepcopy(dict(data)))
-    if not data.install_command_active:
-        data.install = ""
-    del data.install_command_active
-    data.pip_packages = [p.strip() for p in data.pip_packages.split("\n") if p.strip()]
-    path = Path(tempfile.NamedTemporaryFile(delete=False, suffix=".yml").name)
-    # Make sure that the file is deleted when the program exits
-    atexit.register(path.unlink)
-    path.write_text(yaml.dump(dict(data)))
-    return str(path)
-
-
 @app.route("/run", methods=["GET", "OPTIONS"])
 def run():
     session_id = ensure_session_id_set()
@@ -130,46 +111,32 @@ def run():
     print(run.environment)
     print(run.environment.base_commit)
     model_name: str = run.agent.model.model_name
-    environment_setup = ""
-    environment_input_type = run.environment.environment_setup.input_type
-    if environment_input_type == "manual":
-        environment_setup = str(write_env_yaml(run.environment.environment_setup.manual))
-    elif environment_input_type == "script_path":
-        environment_setup = run.environment.environment_setup.script_path["script_path"]
-    else:
-        msg = f"Unknown input type: {environment_input_type}"
-        raise ValueError(msg)
-    if not environment_setup.strip():
-        environment_setup = None
     test_run: bool = run.extra.test_run
     if test_run:
         model_name = "instant_empty_submit"
-    agent_config = OmegaConf.load(CONFIG_DIR / "default_from_url.yaml")
-    defaults = RunSingleConfig(
-        suffix="",
-        environment=EnvironmentConfig(
-            deployment=DockerDeploymentConfig(),
-            data_path=run.environment.data_path,
-            base_commit=run.environment.base_commit,
-            split="dev",
-            verbose=True,
-            install_environment=True,
-            repo_path=run.environment.repo_path,
-            environment_setup=environment_setup,
-        ),
-        agent=AgentConfig(),
-        skip_existing=False,
-        actions=RunSingleActionConfig(),
-        raise_exceptions=True,
+    default_config = yaml.safe_load(Path(CONFIG_DIR / "default_from_url.yaml").read_text())
+    config = {
+        **default_config,
+        "agent": {
+            "model": {
+                "model_name": model_name,
+            },
+        },
+        "environment": {
+            "image_name": run.environment.image_name,
+            "script": run.environment.script,
+        },
+    }
+    config["problem_statement"] = problem_statement_from_simplified_input(
+        input=run.problem_statement.input,
+        type=run.problem_statement.type,
     )
-    defaults.agent.model = ModelConfig(
-        name=model_name,
-        total_cost_limit=0.0,
-        per_instance_cost_limit=3.0,
-        temperature=0.0,
-        top_p=0.95,
+    config["environment"]["repo"] = repo_from_simplified_input(
+        input=run.environment.repo_path,
+        base_commit=run.environment.base_commit,
+        type="auto",
     )
-    config = ScriptArguments(**OmegaConf.merge(agent_config, defaults).to_container())
+    config = RunSingleConfig.model_validate(**config)
     thread = MainThread(config, wu)
     THREADS[session_id] = thread
     thread.start()

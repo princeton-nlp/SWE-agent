@@ -109,3 +109,25 @@ class GithubRepoConfig(BaseModel):
 
 
 RepoConfig = LocalRepoConfig | GithubRepoConfig
+
+
+def repo_from_simplified_input(
+    *, input: str, base_commit: str = "HEAD", type: Literal["local", "github", "auto"] = "auto"
+) -> RepoConfig:
+    """Get repo config from a simplified input.
+
+    Args:
+        input: Local path or GitHub URL
+        type: The type of repo. Set to "auto" to automatically detect the type.
+    """
+    if type == "local":
+        return LocalRepoConfig(path=input, base_commit=base_commit)
+    if type == "github":
+        return GithubRepoConfig(url=input, base_commit=base_commit)
+    if type == "auto":
+        if input.startswith("https://github.com/"):
+            return GithubRepoConfig(url=input, base_commit=base_commit)
+        else:
+            return LocalRepoConfig(path=input, base_commit=base_commit)
+    msg = f"Unknown repo type: {type}"
+    raise ValueError(msg)

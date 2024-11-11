@@ -91,3 +91,23 @@ class GithubIssue(BaseModel):
 
 
 ProblemStatementConfig = TextProblemStatement | GithubIssue | EmptyProblemStatement | FileProblemStatement
+
+
+def problem_statement_from_simplified_input(
+    *, input: str, type: Literal["text", "text_file", "github_issue"]
+) -> ProblemStatementConfig:
+    """Get a problem statement from a simplified input.
+
+    Args:
+        input: Url/path/text
+        type: The type of problem statement
+    """
+    if type == "text":
+        return TextProblemStatement(text=input)
+    elif type == "text_file":
+        return FileProblemStatement(path=Path(input))
+    elif type == "github_issue":
+        return GithubIssue(url=input)
+    else:
+        msg = f"Unknown problem statement type: {type}"
+        raise ValueError(msg)

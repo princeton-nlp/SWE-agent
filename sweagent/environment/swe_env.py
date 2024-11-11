@@ -21,7 +21,10 @@ class EnvironmentConfig(BaseModel):
 
     deployment: DeploymentConfig = Field(default_factory=DockerDeploymentConfig)
     repo: RepoConfig | None = None
+    # fixme: Actually run these
     startup_commands: list[str] = []
+    """Execute these commands before starting to run the agent. They will be executed in the same
+    shell as the agent."""
 
     # pydantic config
     model_config = ConfigDict(extra="forbid")

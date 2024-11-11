@@ -22,22 +22,16 @@ function Run() {
         model_name: "gpt4",
       },
     },
+    problem_statement: {
+      type: "",
+      input: "",
+    },
     environment: {
-      data_path: "",
-      repo_path: "",
-      base_commit: "",
-      environment_setup: {
-        input_type: "manual",
-        manual: {
-          python: "3.10",
-          config_type: "manual",
-          install: "pip install --editable .",
-          install_command_active: true,
-          pip_packages: "",
-        },
-        script_path: {
-          script_path: "",
-        },
+      image_name: "",
+      script: "",
+      repo: {
+        type: "",
+        input: "",
       },
     },
     extra: {

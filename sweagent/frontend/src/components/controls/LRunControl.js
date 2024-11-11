@@ -92,116 +92,43 @@ function LRunControl({
   }
 
   function getEnvInput() {
-    // Get environment configuration input controls based on the
-    // "Environment type" dropdown menu.
-    // if (envInputType === "conda") {
-    //   return (
-    //     <div className="input-group mb-3">
-    //       <span className="input-group-text">Conda environment</span>
-    //       <input
-    //         type="text"
-    //         className="form-control"
-    //         onChange={(e) =>
-    //           setRunConfig(draft => {draft.environment.environment_setup.packages = e.target.value})
-    //         }
-    //         placeholder="/path/to/conda_env.yml"
-    //       />
-    //     </div>
-    //   );
-    // }
-    const envInputType = runConfig.environment.environment_setup.input_type;
-    if (envInputType === "script_path") {
-      return (
-        <div>
-          <div className="input-group mb-3">
-            <span className="input-group-text">Setup script</span>
-            <input
-              type="text"
-              className="form-control"
-              onChange={(e) =>
-                setRunConfig((draft) => {
-                  draft.environment.environment_setup.script_path.script_path =
-                    e.target.value;
-                })
-              }
-              placeholder="/path/to/setup.sh"
-              defaultValue=""
-            />
-          </div>
-          <div className="alert alert-info" role="alert">
-            The script will be sourced (every line will be run as if it were
-            typed into the shell), so make sure there is no exit commands as it
-            will close the environment.
-          </div>
-        </div>
-      );
-    }
-    if (envInputType === "manual") {
-      return (
-        <div>
-          <div className="input-group mb-3">
-            <span className="input-group-text">Python version</span>
-            <input
-              type="text"
-              className="form-control"
-              onChange={(e) =>
-                setRunConfig((draft) => {
-                  draft.environment.environment_setup.manual.python =
-                    e.target.value ||
-                    runConfigDefault.environment.environment_setup.manual
-                      .python;
-                })
-              }
-              placeholder={
-                runConfigDefault.environment.environment_setup.manual.python
-              }
-              defaultValue=""
-            />
-          </div>
-          <div className="input-group mb-3">
-            <div className="input-group-text">
-              <input
-                className="form-check-input mt-0"
-                type="checkbox"
-                aria-label="Run installation command"
-                defaultChecked={true}
-                onChange={(e) =>
-                  setRunConfig((draft) => {
-                    draft.environment.environment_setup.manual.install_command_active =
-                      e.target.checked;
-                  })
-                }
-              />
-            </div>
-            <span className="input-group-text">Installation command</span>
-            <input
-              type="text"
-              className="form-control"
-              aria-label="Text input with checkbox"
-              placeholder={defaultInstallCommand}
-              onChange={(e) =>
-                setRunConfig((draft) => {
-                  draft.environment.environment_setup.manual.install =
-                    e.target.value;
-                })
-              }
-            />
-          </div>
-
-          <textarea
+    return (
+      <div>
+        <div className="input-group mb-3">
+          <span className="input-group-text">Docker image name</span>
+          <input
+            type="text"
             className="form-control"
             onChange={(e) =>
               setRunConfig((draft) => {
-                draft.environment.environment_setup.manual.pip_packages =
-                  e.target.value;
+                draft.environment.image_name = e.target.value;
               })
             }
-            rows="5"
-            placeholder="pip installable packages list, one per line (i.e., requirements.txt)."
+            placeholder={runConfigDefault.environment.image_name}
+            defaultValue=""
           />
         </div>
-      );
-    }
+        <div className="input-group mb-3">
+          <span className="input-group-text">Setup script</span>
+          <input
+            type="text"
+            className="form-control"
+            onChange={(e) =>
+              setRunConfig((draft) => {
+                draft.environment.script = e.target.value;
+              })
+            }
+            placeholder="/path/to/setup.sh"
+            defaultValue=""
+          />
+        </div>
+        <div className="alert alert-info" role="alert">
+          The script will be sourced (every line will be run as if it were typed
+          into the shell), so make sure there is no exit commands as it will
+          close the environment.
+        </div>
+      </div>
+    );
   }
 
   function onTabClicked(keyClicked) {
@@ -242,7 +169,7 @@ function LRunControl({
               <input
                 type="text"
                 className="form-control"
-                placeholder="Local repo path or GitHub repo URL. Optional when using GitHub issue as problem source."
+                placeholder="Local repo path or GitHub repo URL."
                 onChange={(e) =>
                   setRunConfig((draft) => {
                     draft.environment.repo_path = e.target.value;
@@ -280,8 +207,8 @@ function LRunControl({
               />
             </div>
             <div className="alert alert-info" role="alert">
-              Please make sure that you have your API keys configured in
-              keys.cfg
+              See litellm for different models. Please make sure that you have
+              your API keys configured in .env.
             </div>
           </div>
         </Tab>
@@ -293,29 +220,6 @@ function LRunControl({
               here (though SWE-agent will try to figure them out if they
               aren't).
             </p>
-            <div className="input-group mb-3">
-              <span className="input-group-text">
-                Environment specification
-              </span>
-              <select
-                className="form-select"
-                aria-label="Select problem statement type"
-                onChange={(e) =>
-                  setRunConfig((draft) => {
-                    draft.environment.environment_setup.input_type =
-                      e.target.value;
-                  })
-                }
-                defaultValue={
-                  runConfigDefault.environment.environment_setup.input_type
-                }
-              >
-                <option value="manual">Python version and packages</option>
-                <option value="script_path">Path to shell script</option>
-                {/* Currently broken */}
-                {/* <option value="conda">Conda environment</option> */}
-              </select>
-            </div>
             {getEnvInput()}
           </div>
         </Tab>
