@@ -104,7 +104,9 @@ class SimpleBatchInstance(BaseModel):
 
     @classmethod
     def from_swe_bench(cls, instance: dict[str, Any]) -> Self:
+        """Convert instances from the classical SWE-bench dataset to the `SimpleBatchInstance` format."""
         id_ = instance["instance_id"]
+        # Docker doesn't allow double underscore, so we replace them with a magic token
         id_docker_compatible = id_.replace("__", "_1776_")
         image_name = f"swebench/sweb.eval.x86_64.{id_docker_compatible}:v1"
         return cls(image_name=image_name, problem_statement=instance["problem_statement"], id=id_)
@@ -132,7 +134,7 @@ class InstancesFromFile(BaseModel, AbstractInstanceSource):
 
     def get_instance_configs(self) -> list[BatchInstance]:
         instance_dicts = _load_file(self.path)
-        simple_instances = [SimpleBatchInstance(**instance_dict) for instance_dict in instance_dicts]
+        simple_instances = [SimpleBatchInstance.model_validate(instance_dict) for instance_dict in instance_dicts]
         instances = [instance.to_full_batch_instance(self.deployment) for instance in simple_instances]
         return _filter_batch_items(instances, filter=self.filter, slice=self.slice)
 
@@ -163,7 +165,7 @@ class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
         from datasets import load_dataset
 
         ds: list[dict[str, Any]] = load_dataset(self.dataset_name, split=self.split)  # type: ignore
-        simple_instances: list[SimpleBatchInstance] = [SimpleBatchInstance(**instance) for instance in ds]
+        simple_instances: list[SimpleBatchInstance] = [SimpleBatchInstance.model_validate(instance) for instance in ds]
         instances = [instance.to_full_batch_instance(self.deployment) for instance in simple_instances]
         return _filter_batch_items(instances, filter=self.filter, slice=self.slice)
 
@@ -234,7 +236,7 @@ class ExpertInstancesFromFile(BaseModel, AbstractInstanceSource):
 
     def get_instance_configs(self) -> list[BatchInstance]:
         instance_dicts = _load_file(self.path)
-        instances = [BatchInstance(**instance_dict) for instance_dict in instance_dicts]
+        instances = [BatchInstance.model_validate(instance_dict) for instance_dict in instance_dicts]
         return _filter_batch_items(instances, filter=self.filter, slice=self.slice)
 
     @property

@@ -13,3 +13,5 @@ flask-cors
 flask-socketio
 pydantic
 python-dotenv
+pydantic_settings
+litellm
