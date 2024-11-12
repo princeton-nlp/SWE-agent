@@ -494,6 +494,9 @@ class Agent:
         """Handles special actions like `skip`, `exit_cost`, etc."""
         assert self._env is not None
         assert self.tools is not None
+        if action == "exit":
+            self.logger.info("Exit command found. Stopping.")
+            return "Exited", True, info
         if action == "skip":
             observation = "Skipped"
             info["exit_status"] = "skipped"
