@@ -97,6 +97,7 @@ class RunBatch:
             agent=Agent.from_config(config.agent),
             output_dir=config.output_dir,
             raise_exceptions=config.raise_exceptions,
+            redo_existing=config.redo_existing,
         )
 
     def add_hook(self, hook: RunHook) -> None:
