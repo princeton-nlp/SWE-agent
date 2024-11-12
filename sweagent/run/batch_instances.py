@@ -93,7 +93,7 @@ class SimpleBatchInstance(BaseModel):
     image_name: str
     problem_statement: str
     id: str
-    repo_name: str
+    repo_name: str = ""
     """The repo name or path within the docker container/environment."""
     base_commit: str = "HEAD"
     """Used to reset repo."""
@@ -105,7 +105,10 @@ class SimpleBatchInstance(BaseModel):
         # Very important: Make a copy of the deployment config because it will be shared among instances!!!
         deployment = deployment.model_copy()
         problem_statement = TextProblemStatement(text=self.problem_statement, id=self.id)
-        repo = PreExistingRepo(repo_name=self.repo_name, base_commit=self.base_commit)
+        if self.repo_name:
+            repo = PreExistingRepo(repo_name=self.repo_name, base_commit=self.base_commit)
+        else:
+            repo = None
         if deployment.type == "local":
             if self.image_name:
                 msg = "Local deployment does not support image name"
