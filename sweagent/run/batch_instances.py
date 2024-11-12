@@ -68,14 +68,14 @@ def _slice_spec_to_slice(slice_spec: str) -> slice:
     raise ValueError(msg)
 
 
-def _filter_batch_items(instances: list[BatchInstance], *, filter: str, slice: str = "") -> list[BatchInstance]:
+def _filter_batch_items(instances: list[BatchInstance], *, filter_: str, slice_: str = "") -> list[BatchInstance]:
     before_filter = len(instances)
-    instances = [instance for instance in instances if re.match(filter, instance.problem_statement.id)]
+    instances = [instance for instance in instances if re.match(filter_, instance.problem_statement.id)]
     after_filter = len(instances)
     if before_filter != after_filter:
         logger.info("Instance filter: %d -> %d instances", before_filter, after_filter)
-    if slice:
-        instances = instances[_slice_spec_to_slice(slice)]
+    if slice_:
+        instances = instances[_slice_spec_to_slice(slice_)]
         after_slice = len(instances)
         if before_filter != after_slice:
             logger.info("Instance slice: %d -> %d instances", before_filter, after_slice)
@@ -163,7 +163,7 @@ class InstancesFromFile(BaseModel, AbstractInstanceSource):
         instance_dicts = _load_file(self.path)
         simple_instances = [SimpleBatchInstance.model_validate(instance_dict) for instance_dict in instance_dicts]
         instances = [instance.to_full_batch_instance(self.deployment) for instance in simple_instances]
-        return _filter_batch_items(instances, filter=self.filter, slice=self.slice)
+        return _filter_batch_items(instances, filter_=self.filter, slice_=self.slice)
 
     @property
     def id(self) -> str:
@@ -195,7 +195,7 @@ class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
         ds: list[dict[str, Any]] = load_dataset(self.dataset_name, split=self.split)  # type: ignore
         simple_instances: list[SimpleBatchInstance] = [SimpleBatchInstance.model_validate(instance) for instance in ds]
         instances = [instance.to_full_batch_instance(self.deployment) for instance in simple_instances]
-        return _filter_batch_items(instances, filter=self.filter, slice=self.slice)
+        return _filter_batch_items(instances, filter_=self.filter, slice_=self.slice)
 
     @property
     def id(self) -> str:
@@ -241,7 +241,7 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
         instances = [
             SimpleBatchInstance.from_swe_bench(instance).to_full_batch_instance(self.deployment) for instance in ds
         ]
-        return _filter_batch_items(instances, filter=self.filter, slice=self.slice)
+        return _filter_batch_items(instances, filter_=self.filter, slice_=self.slice)
 
     @property
     def id(self) -> str:
@@ -268,7 +268,7 @@ class ExpertInstancesFromFile(BaseModel, AbstractInstanceSource):
     def get_instance_configs(self) -> list[BatchInstance]:
         instance_dicts = _load_file(self.path)
         instances = [BatchInstance.model_validate(instance_dict) for instance_dict in instance_dicts]
-        return _filter_batch_items(instances, filter=self.filter, slice=self.slice)
+        return _filter_batch_items(instances, filter_=self.filter, slice_=self.slice)
 
     @property
     def id(self) -> str:

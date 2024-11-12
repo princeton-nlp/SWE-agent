@@ -112,12 +112,9 @@ class SWEEnv:
     def _reset_repository(self) -> None:
         """Clean repository of any modifications + Checkout base commit"""
         if self.repo is not None:
-            # todo: This is part of our commands, not the environment
             startup_commands = [
                 f"cd /{self.repo.repo_name}",
                 "export ROOT=$(pwd -P)",
-            ]
-            startup_commands += [
                 "git status",
                 "git restore .",
                 f"git reset --hard {self.repo.base_commit}",
@@ -191,7 +188,7 @@ class SWEEnv:
         output = r.output
         self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
         if check and r.exit_code != 0:
-            self.logger.error(f"{error_msg}: {output}")
+            self.logger.error(f"{error_msg}:\n{output}")
             self.close()
             msg = f"Command {input!r} failed ({r.exit_code=}): {error_msg}"
             raise RuntimeError(msg)
