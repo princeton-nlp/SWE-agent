@@ -35,6 +35,11 @@ class DockerDeploymentConfig(BaseModel):
 
     image: str = "sweagent/swe-agent:latest"
 
+    startup_timeout: float = 60.0
+    """Timeout for the startup of the docker container.
+    This can take a while especially if swe-rex isn't installed yet.
+    """
+
     type: Literal["docker"] = "docker"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
@@ -44,6 +49,11 @@ class DockerDeploymentConfig(BaseModel):
 
 class ModalDeploymentConfig(BaseModel):
     image: str = "sweagent/swe-agent:latest"
+
+    startup_timeout: float = 60.0
+    """Timeout for the startup of the modal app.
+    This can take a while especially if swe-rex isn't installed yet.
+    """
 
     type: Literal["modal"] = "modal"
     """Discriminator for (de)serialization/CLI. Do not change."""

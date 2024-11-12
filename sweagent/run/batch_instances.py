@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from sweagent.environment.config.deployment import DeploymentConfig, DockerDeploymentConfig
 from sweagent.environment.config.problem_statement import ProblemStatementConfig, TextProblemStatement
+from sweagent.environment.config.repo import PreExistingRepo
 from sweagent.environment.swe_env import EnvironmentConfig
 from sweagent.utils.log import get_logger
 
@@ -84,43 +85,55 @@ def _filter_batch_items(instances: list[BatchInstance], *, filter: str, slice: s
 class SimpleBatchInstance(BaseModel):
     """A simple way to configure a single instance in a batch of instances that all
     use similar deployment configurations.
+
+    Predominantly used for benchmarking purposes. Assumes that the repository is already
+    present in the docker container.
     """
 
     image_name: str
     problem_statement: str
     id: str
+    repo_name: str
+    """The repo name or path within the docker container/environment."""
+    base_commit: str = "HEAD"
+    """Used to reset repo."""
 
     def to_full_batch_instance(self, deployment: DeploymentConfig) -> BatchInstance:
         """Merge the deployment options into the `SimpleBatchInstance` object to get a full `BatchInstance`."""
         # Combine image name and deployment options into a DeploymentConfig object. Because this can be one of many
         # subclasses, we use a TypeAdapter to validate/instantiate the object.
+        problem_statement = TextProblemStatement(text=self.problem_statement, id=self.id)
+        repo = PreExistingRepo(repo_name=self.repo_name, base_commit=self.base_commit)
         if deployment.type == "local":
             if self.image_name:
                 msg = "Local deployment does not support image name"
                 raise ValueError(msg)
             return BatchInstance(
-                env=EnvironmentConfig(deployment=deployment, repo=None),
-                problem_statement=TextProblemStatement(text=self.problem_statement, id=self.id),
+                env=EnvironmentConfig(deployment=deployment, repo=repo), problem_statement=problem_statement
             )
         if deployment.type == "dummy":
             return BatchInstance(
-                env=EnvironmentConfig(deployment=deployment, repo=None),
-                problem_statement=TextProblemStatement(text=self.problem_statement, id=self.id),
+                env=EnvironmentConfig(deployment=deployment, repo=repo), problem_statement=problem_statement
             )
         deployment.image = self.image_name
-        problem_statement = TextProblemStatement(text=self.problem_statement, id=self.id)
         return BatchInstance(
-            env=EnvironmentConfig(deployment=deployment, repo=None), problem_statement=problem_statement
+            env=EnvironmentConfig(deployment=deployment, repo=repo), problem_statement=problem_statement
         )
 
     @classmethod
     def from_swe_bench(cls, instance: dict[str, Any]) -> Self:
         """Convert instances from the classical SWE-bench dataset to the `SimpleBatchInstance` format."""
-        id_ = instance["instance_id"]
+        iid = instance["instance_id"]
         # Docker doesn't allow double underscore, so we replace them with a magic token
-        id_docker_compatible = id_.replace("__", "_1776_")
+        id_docker_compatible = iid.replace("__", "_1776_")
         image_name = f"swebench/sweb.eval.x86_64.{id_docker_compatible}:v1"
-        return cls(image_name=image_name, problem_statement=instance["problem_statement"], id=id_)
+        return cls(
+            image_name=image_name,
+            problem_statement=instance["problem_statement"],
+            id=iid,
+            repo_name="testbed",
+            base_commit=instance["base_commit"],
+        )
 
 
 class InstancesFromFile(BaseModel, AbstractInstanceSource):

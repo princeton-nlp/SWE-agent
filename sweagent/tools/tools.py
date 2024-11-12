@@ -225,6 +225,7 @@ class ToolHandler:
             return {}
         output = env.communicate(self.config.state_command.name, check=True).strip()
         if not output:
+            self.logger.warning("State command %s returned empty output", self.config.state_command.name)
             return {}
         try:
             state = json.loads(output)

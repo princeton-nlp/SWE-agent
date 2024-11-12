@@ -24,6 +24,25 @@ class Repo(Protocol):
     def copy(self, deployment: AbstractDeployment): ...
 
 
+class PreExistingRepo(BaseModel):
+    """Use this to specify a repository that already exists on the deployment.
+    This is important because we need to cd to the repo before running the agent.
+
+    Note: The repository must be at the root of the deployment.
+    """
+
+    repo_name: str
+    """The repo name (the repository must be located at the root of the deployment)."""
+    base_commit: str = "HEAD"
+    """Used to reset repo."""
+
+    type: Literal["preexisting"] = "preexisting"
+    """Discriminator for (de)serialization/CLI. Do not change."""
+
+    def copy(self, deployment: AbstractDeployment):
+        pass
+
+
 class LocalRepoConfig(BaseModel):
     path: str = ""
     base_commit: str = "HEAD"
@@ -108,22 +127,25 @@ class GithubRepoConfig(BaseModel):
         )
 
 
-RepoConfig = LocalRepoConfig | GithubRepoConfig
+RepoConfig = LocalRepoConfig | GithubRepoConfig | PreExistingRepo
 
 
 def repo_from_simplified_input(
-    *, input: str, base_commit: str = "HEAD", type: Literal["local", "github", "auto"] = "auto"
+    *, input: str, base_commit: str = "HEAD", type: Literal["local", "github", "preexisting", "auto"] = "auto"
 ) -> RepoConfig:
     """Get repo config from a simplified input.
 
     Args:
         input: Local path or GitHub URL
-        type: The type of repo. Set to "auto" to automatically detect the type.
+        type: The type of repo. Set to "auto" to automatically detect the type
+            (does not work for preexisting repos).
     """
     if type == "local":
         return LocalRepoConfig(path=input, base_commit=base_commit)
     if type == "github":
         return GithubRepoConfig(url=input, base_commit=base_commit)
+    if type == "preexisting":
+        return PreExistingRepo(repo_name=input, base_commit=base_commit)
     if type == "auto":
         if input.startswith("https://github.com/"):
             return GithubRepoConfig(url=input, base_commit=base_commit)

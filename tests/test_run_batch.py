@@ -82,3 +82,25 @@ def test_empty_instances_expert(test_data_sources_path: Path, tmp_path: Path):
     ]
     with pytest.raises(ValueError, match="No instances to run"):
         main(cmd)
+
+
+# This doesn't work because we need to retrieve environment variables from the environment
+# in order to format our templates.
+# def test_run_batch_swe_bench_instances(tmp_path: Path):
+#     cmd = [
+#         "run-batch",
+#         "--agent.model.name",
+#         "instant_empty_submit",
+#         "--instances.flavor",
+#         "lite",
+#         "--instances.split",
+#         "test",
+#         "--instances.slice",
+#         "0:1",
+#         "--output_dir",
+#         str(tmp_path),
+#         "--raise_exceptions",
+#         "--instances.deployment.type",
+#         "dummy",
+#     ]
+#     main(cmd)

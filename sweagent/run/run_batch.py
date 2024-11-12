@@ -128,12 +128,14 @@ class RunBatch:
         except KeyboardInterrupt:
             raise _BreakLoop
         except SystemExit:
+            if self._raise_exceptions:
+                raise
             self.logger.critical("❌ Exiting because SystemExit was called")
             raise _BreakLoop
         except Exception as e:
             self.logger.error(traceback.format_exc())
             if self._raise_exceptions:
-                raise _BreakLoop
+                raise
             self.logger.warning(f"❌ Failed on {instance.problem_statement.id}: {e}")
 
     def _run_instance(self, instance: BatchInstance):

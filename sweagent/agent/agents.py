@@ -304,17 +304,24 @@ class Agent:
         # Populate selected template(s) with information (e.g., issue, arguments, state)
         messages = []
         assert self._problem_statement is not None
+
+        format_dict = dict(
+            command_docs=self.tools.config.command_docs,
+            **self.tools.config.env_variables,
+            **state,
+            observation=observation or "",
+            **self._forwarded_vars,
+            problem_statement=self._problem_statement.get_problem_statement(),
+        )
+
         for template in templates:
-            messages.append(
-                template.format(
-                    command_docs=self.tools.config.command_docs,
-                    **self.tools.config.env_variables,
-                    **state,
-                    observation=observation or "",
-                    **self._forwarded_vars,
-                    problem_statement=self._problem_statement.get_problem_statement(),
-                ),
-            )
+            try:
+                messages.append(
+                    template.format(**format_dict),
+                )
+            except KeyError:
+                self.logger.debug("The following keys are available: %s", format_dict.keys())
+                raise
 
         message = "\n".join(messages)
 
