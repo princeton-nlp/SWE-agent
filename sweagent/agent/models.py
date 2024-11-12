@@ -327,8 +327,10 @@ class LiteLLMModel(AbstractModel):
 
     def _query(self, messages: list[dict[str, str]]) -> str:
         input_tokens: int = litellm.utils.token_counter(messages=messages, model=self.args.name)
-        max_input_tokens: int = litellm.utils.get_max_tokens(model=self.args.name)  # type: ignore
-        if input_tokens > max_input_tokens:
+        max_input_tokens: int | None = litellm.model_cost.get(self.args.name, {}).get("max_input_tokens")
+        if max_input_tokens is None:
+            logger.warning(f"No max input tokens found for model {self.args.name!r}")
+        elif input_tokens > max_input_tokens:
             msg = f"Input tokens {input_tokens} exceed max tokens {max_input_tokens}"
             raise ContextWindowExceededError(msg)
         extra_args = {}
