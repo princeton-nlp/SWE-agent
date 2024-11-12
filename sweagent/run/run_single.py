@@ -128,8 +128,6 @@ class RunSingle:
         self._chooks.on_start()
         self.logger.info("Starting environment")
         self.env.start()
-        self.logger.info("Resetting environment")
-        self.env.reset()
         self.logger.info("Running agent")
         self._chooks.on_instance_start(index=0, env=self.env, problem_statement=self.problem_statement)
         result = self.agent.run(

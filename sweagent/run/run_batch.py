@@ -145,8 +145,6 @@ class RunBatch:
         self.logger.info("Starting environment")
         env = SWEEnv.from_config(instance.env)
         env.start()
-        self.logger.info("Resetting environment")
-        env.reset()
         self.logger.info("Running agent")
         self._chooks.on_instance_start(index=0, env=env, problem_statement=instance.problem_statement)
         result = self.agent.run(

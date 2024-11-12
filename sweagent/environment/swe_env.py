@@ -71,8 +71,9 @@ class SWEEnv:
         self._chook.add_hook(hook)
 
     def start(self) -> None:
-        """Start the environment"""
+        """Start the environment and reset it to a clean state."""
         self._init_deployment()
+        self.reset()
 
     def _copy_repo(self) -> None:
         """Clone/copy repository/codebase in container"""
@@ -88,15 +89,9 @@ class SWEEnv:
 
     # todo: Get rid of return type here?
     def reset(self) -> tuple[str | None, dict]:
-        """Reset the container between each task instance.
-
-        * Clones instance's repository
-        * Cleans repository of prior modifications
-        * Resets environment variables
-        * Check out base commit
-
-        Args:
-            index: index of task instance to reset to
+        """Reset the environment to a clean state.
+        Gets called by `start`, but can also be called independently to reset the
+        environment to a clean state before a new attempt.
 
         Returns:
             observation: output from container
@@ -112,6 +107,7 @@ class SWEEnv:
     def _reset_repository(self) -> None:
         """Clean repository of any modifications + Checkout base commit"""
         if self.repo is not None:
+            self.logger.debug("Resetting repository %s to commit %s", self.repo.repo_name, self.repo.base_commit)
             startup_commands = [
                 f"cd /{self.repo.repo_name}",
                 "export ROOT=$(pwd -P)",
@@ -126,15 +122,6 @@ class SWEEnv:
                 error_msg="Failed to clean repository",
             )
 
-    # todo: Shouldn't this be the same as reset meanwhile?
-    def reset_for_new_attempt(
-        self,
-    ) -> None:
-        """Compared to `reset`, which prepares the container for a new instance,
-        this prepares the container for taking another shot at the same instance.
-        """
-        self._reset_repository()
-
     def close(self) -> None:
         """Shoutdown SWE-ReX deployment etc."""
         self.logger.info("Beginning environment shutdown...")
@@ -142,10 +129,6 @@ class SWEEnv:
         self._chook.on_close()
 
     # MARK: Helper functions #
-
-    def reset_container(self) -> None:
-        self.close()
-        self._init_deployment()
 
     def _init_deployment(
         self,

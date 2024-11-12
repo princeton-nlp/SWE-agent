@@ -224,7 +224,7 @@ class Agent:
         """Setup the agent for a new attempt. This includes resetting the model stats."""
         if self._i_attempt > 0:
             assert self._env is not None  # mypy
-            self._env.reset_for_new_attempt()
+            self._env.reset()
         self.model.reset_stats()
         self.add_system_message_to_history()
         self.add_demonstrations_to_history()
@@ -571,18 +571,20 @@ class Agent:
             )
         except RuntimeError as e:
             if not self._catch_errors:
+                self._env.close()
                 raise
             observation = e.args[1] if len(e.args) > 1 else ""
             observation += "COMMAND FAILED TO EXECUTE. RESTARTING PROCESS."
             info["exit_status"] = "exit_environment_error"
             self.logger.warning(f"Failed to execute command: {e}\nRESTARTING PROCESS.")
-            # todo: Are we doing this here or somewhere else?
-            self._env.reset_container()
+            self._env.close()
             return observation, True, info
         # todo: Should this also be handled in the exit status?
         except Exception:
             if not self._catch_errors:
+                self._env.close()
                 raise
+            self._env.close()
             observation = "Unknown exception"
             self.logger.exception("Unknown exception")
             return observation, True, info
