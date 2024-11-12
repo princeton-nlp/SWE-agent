@@ -148,7 +148,7 @@ class ToolHandler:
         # partially initialized in `install_commands`.
         self._reset_commands = []
         self._command_patterns = self._get_command_patterns()
-        self.logger = get_logger("Tools", emoji="🔧")
+        self.logger = get_logger("Tools", emoji="🧰")
 
     @classmethod
     def from_config(cls, config: ToolConfig) -> Self:

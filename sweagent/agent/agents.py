@@ -406,9 +406,7 @@ class Agent:
                 "agent": self.name,
             },
         )
-
-        self.logger.info(f"💭 THOUGHT ({self.name})\n{thought}")
-        self.logger.info(f"🎬 ACTION ({self.name})\n{action}")
+        self.logger.info(f"💭 THOUGHT\n{thought}\n🎬 ACTION\n{action.strip()}")
 
         return thought, action, output
 

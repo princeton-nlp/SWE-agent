@@ -12,7 +12,7 @@ from swerex.runtime.abstract import Command, UploadRequest
 
 from sweagent.utils.log import get_logger
 
-logger = get_logger("Config", emoji="⚙️")
+logger = get_logger("Config", emoji="🔧")
 
 
 class Repo(Protocol):
