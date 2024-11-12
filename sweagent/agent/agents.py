@@ -383,14 +383,14 @@ class Agent:
                 "exit_error",
                 f"exit due to runtime error: {e}",
             )
-        except ContextWindowExceededError:
-            self.logger.warning("Context window exceeded")
+        except ContextWindowExceededError as e:
+            self.logger.error("Context window exceeded: %s", e)
             return "Exit due to context window", "exit_context", "Exit due to context window"
-        except CostLimitExceededError:
-            self.logger.warning("Cost limit exceeded")
+        except CostLimitExceededError as e:
+            self.logger.error("Cost limit exceeded: %s", e)
             return "Exit due to cost limit", "exit_cost", "Exit due to cost limit"
         except RetryError as e:
-            self.logger.warning(f"Retry error: {e}")
+            self.logger.error("Retry error: %s", e)
             return (
                 f"Exit due to retry error: {e}",
                 "exit_api",
