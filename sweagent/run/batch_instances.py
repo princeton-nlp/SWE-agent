@@ -102,6 +102,8 @@ class SimpleBatchInstance(BaseModel):
         """Merge the deployment options into the `SimpleBatchInstance` object to get a full `BatchInstance`."""
         # Combine image name and deployment options into a DeploymentConfig object. Because this can be one of many
         # subclasses, we use a TypeAdapter to validate/instantiate the object.
+        # Very important: Make a copy of the deployment config because it will be shared among instances!!!
+        deployment = deployment.model_copy()
         problem_statement = TextProblemStatement(text=self.problem_statement, id=self.id)
         repo = PreExistingRepo(repo_name=self.repo_name, base_commit=self.base_commit)
         if deployment.type == "local":
@@ -236,8 +238,9 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
         from datasets import load_dataset
 
         ds: list[dict[str, Any]] = load_dataset(self._get_huggingface_name(), split=self.split)  # type: ignore
-        simple_instances = [SimpleBatchInstance.from_swe_bench(instance) for instance in ds]
-        instances = [instance.to_full_batch_instance(self.deployment) for instance in simple_instances]
+        instances = [
+            SimpleBatchInstance.from_swe_bench(instance).to_full_batch_instance(self.deployment) for instance in ds
+        ]
         return _filter_batch_items(instances, filter=self.filter, slice=self.slice)
 
     @property

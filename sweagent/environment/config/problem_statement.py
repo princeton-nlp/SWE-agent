@@ -52,6 +52,9 @@ class TextProblemStatement(BaseModel):
     def __repr__(self) -> str:
         return f"TextProblemStatement(id={self.id}, text={self.text[:30]}...)"
 
+    def __str__(self) -> str:
+        return f"id={self.id}, text={self.text[:30]}..."
+
 
 class FileProblemStatement(BaseModel):
     path: Path
