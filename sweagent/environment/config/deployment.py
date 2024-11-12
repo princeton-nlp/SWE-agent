@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from swerex.deployment import get_deployment
 from swerex.deployment.abstract import AbstractDeployment
 
@@ -18,6 +18,8 @@ class DummyDeploymentConfig(BaseModel):
     type: Literal["dummy"] = "dummy"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
+    model_config = ConfigDict(extra="forbid")
+
     def get_deployment(self) -> AbstractDeployment:
         return _get_deployment(self)
 
@@ -25,6 +27,8 @@ class DummyDeploymentConfig(BaseModel):
 class LocalDeploymentConfig(BaseModel):
     type: Literal["local"] = "local"
     """Discriminator for (de)serialization/CLI. Do not change."""
+
+    model_config = ConfigDict(extra="forbid")
 
     def get_deployment(self) -> AbstractDeployment:
         return _get_deployment(self)
@@ -43,6 +47,8 @@ class DockerDeploymentConfig(BaseModel):
     type: Literal["docker"] = "docker"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
+    model_config = ConfigDict(extra="forbid")
+
     def get_deployment(self) -> AbstractDeployment:
         return _get_deployment(self)
 
@@ -57,6 +63,8 @@ class ModalDeploymentConfig(BaseModel):
 
     type: Literal["modal"] = "modal"
     """Discriminator for (de)serialization/CLI. Do not change."""
+
+    model_config = ConfigDict(extra="forbid")
 
     def get_deployment(self) -> AbstractDeployment:
         return _get_deployment(self)
