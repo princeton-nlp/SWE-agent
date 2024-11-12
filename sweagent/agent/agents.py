@@ -9,6 +9,7 @@ from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field
 from simple_parsing.helpers.fields import field
+from swerex.runtime.abstract import BashIncorrectSyntaxError
 from tenacity import RetryError
 
 from sweagent import __version__, get_agent_commit_hash
@@ -56,6 +57,14 @@ class TemplateConfig(BaseModel):
     put_demos_in_history: bool = False
     """If True, add demonstration to history instead of as a single message"""
 
+    shell_check_error_template: str = (
+        "Your bash command contained syntax errors and was NOT executed. "
+        "Please fix the syntax errors and try again. This can be the result "
+        "of not adhering to the syntax for multi-line commands. Here is the output of `bash -n`:\n"
+        "{bash_stdout}\n{bash_stderr}"
+    )
+    """Message template for when the agent's bash command contains syntax errors."""
+
     def model_post_init(self, __context):
         self.demonstrations = _convert_paths_to_abspath(self.demonstrations)
         if self.next_step_no_output_template is None:
@@ -71,6 +80,10 @@ class AgentConfig(BaseModel):
 
     # pydantic config
     model_config = ConfigDict(extra="forbid")
+
+
+class BlockedActionError(Exception):
+    """Raised when the agent's action is blocked"""
 
 
 # todo: separate out from_config. In particular separate out model (as a class, etc.). Agent should only take templates, tools, history processor and model.
@@ -283,6 +296,18 @@ class Agent:
                 },
             )
 
+    def _get_format_dict(self, *, observation: str = "", state: dict[str, str] | None = None) -> dict[str, Any]:
+        """Get the dictionary of key value pairs used to format the templates"""
+        if state is None:
+            state = {}
+        return dict(
+            command_docs=self.tools.config.command_docs,
+            **self.tools.config.env_variables,
+            **state,
+            observation=observation or "",
+            **self._forwarded_vars,
+        )
+
     def add_to_history(self, observation: str, state: dict[str, str]) -> None:
         """Add observation to history, as well as the instance template or demonstrations if we're
         at the start of a new attempt.
@@ -305,20 +330,10 @@ class Agent:
         messages = []
         assert self._problem_statement is not None
 
-        format_dict = dict(
-            command_docs=self.tools.config.command_docs,
-            **self.tools.config.env_variables,
-            **state,
-            observation=observation or "",
-            **self._forwarded_vars,
-            problem_statement=self._problem_statement.get_problem_statement(),
-        )
-
+        format_dict = self._get_format_dict(observation=observation, state=state)
         for template in templates:
             try:
-                messages.append(
-                    template.format(**format_dict),
-                )
+                messages.append(template.format(**format_dict))
             except KeyError:
                 self.logger.debug("The following keys are available: %s", format_dict.keys())
                 raise
@@ -356,24 +371,20 @@ class Agent:
         assert self.traj_path is not None
         self.traj_path.write_text(json.dumps(data, indent=2))
 
-    def forward_model(self, observation: str, state: dict[str, str]) -> tuple[str, str, str]:
+    def forward_model(self, history: list[dict[str, str]]) -> tuple[str, str, str]:
         """This method is called by `self.step`. It forwards the model
         and checks the output for malformattings or blocked actions.
 
         Args:
-            observation: Observation from the last step
-            state: Environment state as extracted by the state commands.
 
         Returns:
             thought: model reasoning
             action: action that the model proposes
             output: raw model output (not output of the action)
         """
-        self.add_to_history(observation, state)
-        self._chook.on_model_query(messages=self.local_history, agent=self.name)
+        self._chook.on_model_query(messages=history, agent=self.name)
         try:
-            output = self.model.query(self.local_history)
-            thought, action, output = self.check_format_and_requery(output)
+            output = self.model.query(history)  # type: ignore
         except KeyboardInterrupt:
             raise
         except RuntimeError as e:
@@ -397,101 +408,55 @@ class Agent:
                 f"exit due to retry error: {e}",
             )
 
-        self._append_history(
-            {
-                "role": "assistant",
-                "content": output,
-                "thought": thought,
-                "action": action,
-                "agent": self.name,
-            },
-        )
+        if isinstance(self.model, HumanModel):
+            thought, action = "", output
+        else:
+            thought, action = self.tools.parse_actions(output)
+
         self.logger.info(f"💭 THOUGHT\n{thought}\n🎬 ACTION\n{action.strip()}")
 
         return thought, action, output
 
-    def retry_after_format_fail(self, output: str) -> str:
-        """Ask the model to correct after a malformatted model output.
+    def get_model_requery_history(self, error_template: str, *, output: str, **kwargs: str) -> list[dict[str, str]]:
+        """Ask the model to correct after a hitting one of the following errors:
 
-        This involves adding temporary history based on the error template and querying the model.
+        1. Malformatted output (could not parse action)
+        2. Blocked action (command is on the blocklist)
+        3. Bash command syntax error
+
+        At the time this function is called, the proposed action and observation are not part of the history
+        yet.
+
+        This function adds temporary history based on the error template and queries the model.
         If the model is able to correct itself, the records of the mistakes will not be part of the history
         (but they are saved in the trajectory).
-        """
-        format_error_template = self.tools.config.format_error_template
 
-        self.logger.warning(f"MALFORMED OUTPUT\n{output}")
-        self.logger.warning(f"FORMAT ERROR\n{format_error_template}")
-
-        temp_history = self.local_history + [
-            {"role": "assistant", "content": output, "agent": self.name},
-            {"role": "user", "content": format_error_template, "agent": self.name},
-        ]
-        return self.model.query(temp_history)
-
-    def retry_after_blocklist_fail(self, output: str, action: str) -> str:
-        """Ask the model to correct after a disallowed command
-
-        This involves adding temporary history based on the error template and querying the model.
-        If the model is able to correct itself, the records of the mistakes will not be part of the history
-        (but they are saved in the trajectory).
-        """
-        name = action.strip().split()[0]
-        blocklist_error_message = self.tools.config.filter.blocklist_error_template.format(name=name)
-
-        self.logger.warning(f"BLOCKLISTED OUTPUT\n{output}")
-        self.logger.warning(f"BLOCKLIST ERROR\n{blocklist_error_message}")
-
-        temp_history = self.local_history + [
-            {"role": "assistant", "content": output, "agent": self.name},
-            {"role": "user", "content": blocklist_error_message, "agent": self.name},
-        ]
-        return self.model.query(temp_history)
-
-    def check_format_and_requery(
-        self,
-        output: str,
-    ) -> tuple[str, str, str]:
-        """Checks model output. If the output is malformatted or the action is blocked, call
-        `self.retry_after_format_fail` or `self.retry_after_blocklist_fail`, else return
-        parsed output.
-
-        Try to parse the output into a thought and action. Retry if the output is malformatted or the action is blocked.
+        Args:
+            error_template: error template
+            output: model output
+            **kwargs: keyword arguments to be passed to the error template
 
         Returns:
-            thought: model reasoning
-            action: action that the model proposes
-            output: raw model output
+            model output after requery
         """
-        # Condition for handling outputs with no thought (just action)
-        if isinstance(self.model, HumanModel):
-            # Need special attention, because HumanModel doesn't know how to format actions
-            # because it depends on the action parser in tools
-            return "", output, output
+        error_template = error_template.format(**kwargs, **self._get_format_dict())
 
-        format_fails = blocklist_fails = 0
+        self.logger.warning(f"{error_template}")
 
-        while format_fails + blocklist_fails <= 2:
-            try:
-                thought, action = self.tools.parse_actions(
-                    output,
-                )
-            except KeyboardInterrupt:
-                raise
-            except FormatError:
-                format_fails += 1
-                output = self.retry_after_format_fail(output)
-                continue
-            if self.tools.should_block_action(action):
-                blocklist_fails += 1
-                output = self.retry_after_blocklist_fail(output, action)
-            else:
-                return thought, action, output
-        self.logger.warning(f"Malformat limit reached: \n{output}")
-        return "Exit due to format error", "exit_format", output
+        return self.local_history + [
+            {"role": "assistant", "content": output, "agent": self.name},
+            {"role": "user", "content": error_template, "agent": self.name},
+        ]
 
     # todo: add a hook here
     def handle_special_actions(self, action: str, info: AgentInfo) -> tuple[str, bool, AgentInfo] | None:
-        """Handles special actions like `skip`, `exit_cost`, etc."""
+        """Handles special actions like `skip`, `exit_cost`, etc.
+
+        Returns:
+            observation: observation
+            done: whether the task is done
+            info: additional information (`AgentInfo`)
+        """
         assert self._env is not None
         assert self.tools is not None
         if action == "skip":
@@ -607,6 +572,9 @@ class Agent:
             done: whether task is over
             info: additional information (e.g. debugging information)
         """
+        if self.tools.should_block_action(action):
+            raise BlockedActionError(action)
+
         info: AgentInfo = {}
         # Make sure to have the right keys even if the submission is missing/empty
         info.update(self._get_edited_files_with_context(patch=""))  # type: ignore
@@ -622,8 +590,7 @@ class Agent:
         """Run a step of the agent:
 
         1. Take the last observation, combine it with all other context
-           (i.e., the history of thoughts and actions). This is done by
-           `self.forward`.
+           (i.e., the history of thoughts and actions).
         2. Execute the action and return the new observation. This is done by
            `self._env.step`.
         3. Save the new trajectory etc.
@@ -634,23 +601,66 @@ class Agent:
         """
 
         assert self._env is not None
-
-        # Forward model and get actions
         self._chook.on_step_start()
+
+        # Add current state and observation to history
         state = self.tools.get_state(env=self._env)
-        thought, raw_action, output = self.forward_model(observation, state)
-        self._chook.on_actions_generated(thought=thought, action=raw_action, output=output)
-        run_action: str = self.tools.guard_multiline_input(raw_action).strip()
+        self.add_to_history(observation, state)
 
-        # Execute action
-        execution_t0 = time.perf_counter()
-        self._chook.on_action_started(action=run_action)
-        observation, done, _info = self.handle_action(run_action)
-        self.info.update(_info)
-        self._chook.on_action_executed(obs=observation, done=done)
-        execution_time = time.perf_counter() - execution_t0
+        n_fails = 0
 
-        # Bookkeeping
+        temporary_history = self.local_history
+        while n_fails < 3:
+            try:
+                # Forward model and get actions
+                thought, raw_action, output = self.forward_model(history=temporary_history)
+                self._chook.on_actions_generated(thought=thought, action=raw_action, output=output)
+                run_action: str = self.tools.guard_multiline_input(raw_action).strip()
+                # Execute action
+                execution_t0 = time.perf_counter()
+                self._chook.on_action_started(action=run_action)
+                observation, done, _info = self.handle_action(run_action)
+                self.info.update(_info)
+                self._chook.on_action_executed(obs=observation, done=done)
+                execution_time = time.perf_counter() - execution_t0
+                break
+            except FormatError:
+                n_fails += 1
+                temporary_history = self.get_model_requery_history(
+                    error_template=self.tools.config.format_error_template,
+                    output=output,
+                )
+            except BlockedActionError:
+                n_fails += 1
+                temporary_history = self.get_model_requery_history(
+                    error_template=self.tools.config.filter.blocklist_error_template,
+                    output=output,
+                    action=run_action,
+                )
+            except BashIncorrectSyntaxError:
+                n_fails += 1
+                temporary_history = self.get_model_requery_history(
+                    error_template=self.templates.shell_check_error_template,
+                    output=output,
+                    action=run_action,
+                )
+        else:
+            thought, raw_action, output = (
+                "Exit due to repeated format/blocklist/bash syntax errors",
+                "exit_format",
+                output,
+            )
+
+        # Add to history and trajectory
+        self._append_history(
+            {
+                "role": "assistant",
+                "content": output,
+                "thought": thought,
+                "action": raw_action,
+                "agent": self.name,
+            },
+        )
         trajectory_step = TrajectoryStep(
             {
                 "action": raw_action,
