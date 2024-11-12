@@ -137,7 +137,7 @@ class RunBatch:
             self.logger.error(traceback.format_exc())
             if self._raise_exceptions:
                 raise
-            self.logger.warning(f"❌ Failed on {instance.problem_statement.id}: {e}")
+            self.logger.error(f"❌ Failed on {instance.problem_statement.id}: {e}")
 
     def _run_instance(self, instance: BatchInstance):
         if self.should_skip(instance):

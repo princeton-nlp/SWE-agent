@@ -35,7 +35,7 @@ class RetryConfig(PydanticBaseModel):
 class GenericAPIModelConfig(PydanticBaseModel):
     name: str
     """Arguments configuring the model and its behavior."""
-    per_instance_cost_limit: float = 0.0
+    per_instance_cost_limit: float = 3.0
     """Cost limit for every instance (task)"""
     total_cost_limit: float = 0.0
     """Total cost limit"""
@@ -325,13 +325,12 @@ class LiteLLMModel(AbstractModel):
             msg = "Instance cost limit exceeded"
             raise InstanceCostLimitExceededError(msg)
 
-    def _query(self, history: History) -> str:
-        input_tokens: int = litellm.utils.token_counter(messages=history, model=self.args.name)
+    def _query(self, messages: list[dict[str, str]]) -> str:
+        input_tokens: int = litellm.utils.token_counter(messages=messages, model=self.args.name)
         max_input_tokens: int = litellm.utils.get_max_tokens(model=self.args.name)  # type: ignore
         if input_tokens > max_input_tokens:
             msg = f"Input tokens {input_tokens} exceed max tokens {max_input_tokens}"
             raise ContextWindowExceededError(msg)
-        messages = self._history_to_messages(history)
         extra_args = {}
         if self.args.api_base:
             # Not assigned a default value in litellm, so only pass this if it's set
@@ -373,7 +372,8 @@ class LiteLLMModel(AbstractModel):
             ),
         ):
             with attempt:
-                result = self._query(history)
+                messages = self._history_to_messages(history)
+                result = self._query(messages)
         return result
 
     def _history_to_messages(
