@@ -24,7 +24,7 @@ class AbstractAgentHook:
 
     def on_action_started(self, *, action: str): ...
 
-    def on_action_executed(self, *, obs: str, done: bool): ...
+    def on_action_executed(self, *, obs: str): ...
 
     def on_step_done(self, *, trajectory_step: TrajectoryStep, model_stats: APIStats): ...
 
@@ -78,9 +78,9 @@ class CombinedAgentHook(AbstractAgentHook):
         for hook in self.hooks:
             hook.on_action_started(action=action)
 
-    def on_action_executed(self, *, obs: str, done: bool):
+    def on_action_executed(self, *, obs: str):
         for hook in self.hooks:
-            hook.on_action_executed(obs=obs, done=done)
+            hook.on_action_executed(obs=obs)
 
     def on_step_done(self, *, trajectory_step: TrajectoryStep, model_stats: APIStats):
         for hook in self.hooks:
