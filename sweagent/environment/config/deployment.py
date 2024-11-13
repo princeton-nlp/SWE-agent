@@ -56,7 +56,7 @@ class DockerDeploymentConfig(BaseModel):
 class ModalDeploymentConfig(BaseModel):
     image: str = "sweagent/swe-agent:latest"
 
-    startup_timeout: float = 60.0
+    startup_timeout: float = 200.0
     """Timeout for the startup of the modal app.
     This can take a while especially if swe-rex isn't installed yet.
     """
