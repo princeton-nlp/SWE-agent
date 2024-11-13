@@ -264,7 +264,7 @@ class ToolHandler:
             output: `submit` observation
 
         Returns:
-            submission: diff patch submission
+            submission: diff patch submission or None if no submission was found
         """
         pattern = r"\<\<SUBMISSION\|\|(.*)\|\|SUBMISSION\>\>"
         match = re.search(pattern, output, re.DOTALL)
