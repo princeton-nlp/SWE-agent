@@ -15,6 +15,19 @@ from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 from typing_extensions import TypedDict
 
 
+class StepOutput(BaseModel):
+    thought: str = ""
+    action: str = ""
+    output: str = ""
+    observation: str = ""
+    execution_time: float = 0.0
+    done: bool = False
+    exit_status: str | None = None
+    submission: str | None = None
+    state: dict[str, str] = {}
+    """State of the environment at the end of the step"""
+
+
 class TrajectoryStep(TypedDict):
     action: str
     observation: str

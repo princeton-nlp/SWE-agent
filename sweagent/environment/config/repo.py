@@ -44,7 +44,7 @@ class PreExistingRepo(BaseModel):
 
 
 class LocalRepoConfig(BaseModel):
-    path: str = ""
+    path: Path
     base_commit: str = "HEAD"
 
     type: Literal["local"] = "local"
@@ -67,7 +67,9 @@ class LocalRepoConfig(BaseModel):
         return self
 
     def copy(self, deployment: AbstractDeployment):
-        asyncio.run(deployment.runtime.upload(UploadRequest(source_path=self.path, target_path=f"/{self.repo_name}")))
+        asyncio.run(
+            deployment.runtime.upload(UploadRequest(source_path=str(self.path), target_path=f"/{self.repo_name}"))
+        )
         r = asyncio.run(deployment.runtime.execute(Command(command=f"chown -R root:root {self.repo_name}", shell=True)))
         if r.exit_code != 0:
             msg = f"Failed to change permissions on copied repository (exit code: {r.exit_code}, stdout: {r.stdout}, stderr: {r.stderr})"
@@ -141,7 +143,7 @@ def repo_from_simplified_input(
             (does not work for preexisting repos).
     """
     if type == "local":
-        return LocalRepoConfig(path=input, base_commit=base_commit)
+        return LocalRepoConfig(path=Path(input), base_commit=base_commit)
     if type == "github":
         return GithubRepoConfig(url=input, base_commit=base_commit)
     if type == "preexisting":
@@ -150,6 +152,6 @@ def repo_from_simplified_input(
         if input.startswith("https://github.com/"):
             return GithubRepoConfig(url=input, base_commit=base_commit)
         else:
-            return LocalRepoConfig(path=input, base_commit=base_commit)
+            return LocalRepoConfig(path=Path(input), base_commit=base_commit)
     msg = f"Unknown repo type: {type}"
     raise ValueError(msg)

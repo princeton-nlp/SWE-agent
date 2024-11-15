@@ -162,14 +162,6 @@ class SWEEnv:
         Returns:
             output: output from container
         """
-        if input.strip() == "exit":
-            self.close()
-            # we shouldn't actually get here because `exit` should be handled by the agent,
-            # So we need to make sure to quit here, because else we will have already closed the environment
-            # and the agent will continue to run.
-            msg = "Exit command found. This should usually be handled by the agent."
-            raise RuntimeError(msg)
-
         self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
         r = asyncio.run(self.deployment.runtime.run_in_session(BashAction(command=input, timeout=timeout)))
         output = r.output
