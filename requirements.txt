@@ -15,3 +15,5 @@ pydantic
 python-dotenv
 pydantic_settings
 litellm
+GitPython
+ghapi
