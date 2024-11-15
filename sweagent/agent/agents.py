@@ -310,7 +310,14 @@ class Agent:
         )
 
     def _add_templated_messages_to_history(self, templates: list[str], **kwargs: str) -> None:
-        # Populate selected template(s) with information (e.g., issue, arguments, state)
+        """Populate selected template(s) with information (e.g., issue, arguments, state)
+        and add to history.
+
+        Args:
+            templates: templates to populate and add to history
+            **kwargs: keyword arguments to be passed to the templates (in addition to the
+                ones in `self._get_format_dict`)
+        """
         messages = []
 
         format_dict = self._get_format_dict(**kwargs)
@@ -327,6 +334,7 @@ class Agent:
         self._append_history({"role": "user", "content": message, "agent": self.name})
 
     def add_step_to_history(self, step: StepOutput) -> None:
+        """Adds a step (command that was run and output) to the model history"""
         self._append_history(
             {
                 "role": "assistant",
@@ -511,9 +519,10 @@ class Agent:
         Returns:
             step_output: step output
         """
-        # this data will be attached to the exception if one occurs
-        # because some of the specific exception handling requires knowledge
-        # of the raw model output etc.
+        # we continuously add actions, output etc. to the step object
+        # because some of the specific exception handling requires some of these
+        # attributes (e.g., if we want to requery the model for a bash syntax error, we
+        # need to have the previous model output to format the requery template)
         step = StepOutput()
         try:
             # Forward model and get actions
@@ -528,6 +537,7 @@ class Agent:
             self._chook.on_actions_generated(step=step)
             return self.handle_action(step)
         except Exception as e:
+            # Attach the step object to the exception
             e.step = step  # type: ignore
             raise
 
@@ -544,6 +554,28 @@ class Agent:
         Returns:
             step_output: step output
         """
+
+        def handle_error_with_autosubmission(exit_status: str, message: str) -> StepOutput:
+            """Attempts to autosubmit (extract patch from the environment) and stops the loop."""
+            self.logger.warning(message)
+            return self.attempt_autosubmission_after_error(
+                StepOutput(
+                    thought=message,
+                    exit_status=exit_status,
+                    output=message,
+                    done=True,
+                )
+            )
+
+        def handle_error_with_retry(exception: Exception, template: str) -> list[dict[str, str]]:
+            """Requeries the model if the error is a format/blocklist/bash syntax error."""
+            step = getattr(exception, "step", StepOutput())
+            self.add_step_to_trajectory(step)
+            return self.get_model_requery_history(
+                error_template=template,
+                **step.model_dump(),
+            )
+
         n_fails = 0
         while n_fails < 3:
             try:
@@ -558,96 +590,51 @@ class Agent:
 
             except FormatError as e:
                 n_fails += 1
-                step = getattr(e, "step", StepOutput())
-                self.add_step_to_trajectory(step)
-                history = self.get_model_requery_history(
-                    error_template=self.tools.config.format_error_template,
-                    **step.model_dump(),
-                )
+                history = handle_error_with_retry(exception=e, template=self.tools.config.format_error_template)
             except BlockedActionError as e:
                 n_fails += 1
-                step = getattr(e, "step", StepOutput())
-                self.add_step_to_trajectory(step)
-                history = self.get_model_requery_history(
-                    error_template=self.tools.config.filter.blocklist_error_template,
-                    **step.model_dump(),
+                history = handle_error_with_retry(
+                    exception=e, template=self.tools.config.filter.blocklist_error_template
                 )
             except BashIncorrectSyntaxError as e:
                 n_fails += 1
-                step = getattr(e, "step", StepOutput())
-                self.add_step_to_trajectory(step)
-                history = self.get_model_requery_history(
-                    error_template=self.templates.shell_check_error_template,
-                    **step.model_dump(),
-                )
+                history = handle_error_with_retry(exception=e, template=self.templates.shell_check_error_template)
 
             # Errors that cause exit
 
             except ContextWindowExceededError:
-                self.logger.warning("Context window exceeded")
-                return self.attempt_autosubmission_after_error(
-                    StepOutput(
-                        thought="Exit due to context window",
-                        exit_status="exit_context",
-                        output="Exit due to context window",
-                        done=True,
-                    )
+                return handle_error_with_autosubmission(
+                    "exit_context",
+                    "Exit due to context window",
                 )
             except CostLimitExceededError:
-                self.logger.warning("Cost limit exceeded")
-                return self.attempt_autosubmission_after_error(
-                    StepOutput(
-                        thought="Exit due to cost limit",
-                        exit_status="exit_cost",
-                        output="Exit due to cost limit",
-                        done=True,
-                    )
+                return handle_error_with_autosubmission(
+                    "exit_cost",
+                    "Exit due to cost limit",
                 )
             except RetryError as e:
-                self.logger.warning(f"Retry error: {e}")
-                return self.attempt_autosubmission_after_error(
-                    StepOutput(
-                        thought=f"Exit due to retry error: {e}",
-                        exit_status="exit_api",
-                        output=f"exit due to retry error: {e}",
-                        done=True,
-                    )
+                return handle_error_with_autosubmission(
+                    "exit_api",
+                    f"Exit due to retry error: {e}",
                 )
             except SweRexception as e:
-                self.logger.exception(f"Swerexception: {e}")
-                return self.attempt_autosubmission_after_error(
-                    StepOutput(
-                        thought=f"Exit due to environment error: {e}",
-                        exit_status="exit_environment_error",
-                        output=f"exit due to environment error: {e}",
-                        done=True,
-                    )
+                return handle_error_with_autosubmission(
+                    "exit_environment_error",
+                    f"Exit due to environment error: {e}",
                 )
             except RuntimeError as e:
-                self.logger.exception(f"Runtime error: {e}")
-                return self.attempt_autosubmission_after_error(
-                    StepOutput(
-                        thought=f"Exit due to runtime error: {e}",
-                        exit_status="exit_error",
-                        output=f"exit due to runtime error: {e}",
-                        done=True,
-                    )
+                return handle_error_with_autosubmission(
+                    "exit_error",
+                    f"Exit due to runtime error: {e}",
                 )
             except Exception as e:
-                self.logger.exception(f"Unknown error: {e}")
-                return self.attempt_autosubmission_after_error(
-                    StepOutput(
-                        thought="Exit due to unknown error",
-                        exit_status="exit_error",
-                        output=f"Exit due to unknown error: {e}",
-                        done=True,
-                    )
+                return handle_error_with_autosubmission(
+                    "exit_error",
+                    f"Exit due to unknown error: {e}",
                 )
-        return StepOutput(
-            thought="Exit due to repeated format/blocklist/bash syntax errors",
-            exit_status="exit_format",
-            output="Exit due to repeated format/blocklist/bash syntax errors",
-            done=True,
+        return handle_error_with_autosubmission(
+            "exit_format",
+            "Exit due to repeated format/blocklist/bash syntax errors",
         )
 
     def add_step_to_trajectory(self, step: StepOutput) -> None:
