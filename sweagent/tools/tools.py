@@ -33,7 +33,6 @@ class ToolFilterConfig(BaseModel):
         "ipython",
         "bash",
         "sh",
-        "exit",
         "/bin/bash",
         "/bin/sh",
         "nohup",

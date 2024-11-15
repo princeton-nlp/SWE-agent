@@ -492,6 +492,13 @@ class Agent:
         if self.tools.should_block_action(step.action):
             raise BlockedActionError()
 
+        if step.action.strip() == "exit":
+            self.logger.info("Exiting agent")
+            step.done = True
+            step.observation = "Exited"
+            step.exit_status = "exit_command"
+            return step
+
         assert self._env is not None
         self._chook.on_action_started(step=step)
         execution_t0 = time.perf_counter()

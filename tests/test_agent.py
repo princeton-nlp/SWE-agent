@@ -183,3 +183,13 @@ def test_successful_submission(dummy_env: SWEEnv, default_agent: Agent, tmp_path
     assert a.info["exit_status"] == "submitted"  # type: ignore
     assert a.info["submission"] == "test"  # type: ignore
     assert a.trajectory[-1]["observation"] == "test"
+
+
+def test_human_exit(dummy_env: SWEEnv, default_agent: Agent, tmp_path):
+    a = default_agent
+    a.model = PredeterminedTestModel(["```\nexit\n```"])  # type: ignore
+    a.setup(dummy_env, EmptyProblemStatement())
+    r = a.step()
+    assert r.done
+    assert r.exit_status == "exit_command"
+    assert r.action.strip() == "exit"

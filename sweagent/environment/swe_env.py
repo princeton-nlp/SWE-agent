@@ -162,10 +162,6 @@ class SWEEnv:
         Returns:
             output: output from container
         """
-        if input.strip() == "exit":
-            asyncio.run(self.deployment.stop())
-            return ""
-
         self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
         r = asyncio.run(self.deployment.runtime.run_in_session(BashAction(command=input, timeout=timeout)))
         output = r.output
