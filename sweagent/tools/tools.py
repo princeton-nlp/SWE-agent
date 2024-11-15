@@ -149,6 +149,8 @@ class ToolHandler:
         self._reset_commands = []
         self._command_patterns = self._get_command_patterns()
         self.logger = get_logger("Tools", emoji="🧰")
+        # For testing: Return this state instead of querying the environment
+        self.mock_state: dict[str, str] | None = None
 
     @classmethod
     def from_config(cls, config: ToolConfig) -> Self:
@@ -221,6 +223,8 @@ class ToolHandler:
         """If a state command is defined, execute it in the environment parse it as json and return the result.
         This can be used to extract environment variables etc. from the environment.
         """
+        if self.mock_state is not None:
+            return self.mock_state
         if not self.config.state_command:
             return {}
         output = env.communicate(self.config.state_command.name, check=True).strip()

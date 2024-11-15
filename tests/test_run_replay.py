@@ -13,11 +13,11 @@ from sweagent.run.run_replay import RunReplay, RunReplayConfig
 @pytest.fixture
 def rr_config(swe_agent_test_repo_traj, tmp_path, swe_agent_test_repo_clone):
     return RunReplayConfig(
-        traj_path=str(swe_agent_test_repo_traj),
-        config_path=str(CONFIG_DIR / "default_from_url.yaml"),
+        traj_path=swe_agent_test_repo_traj,
+        config_path=CONFIG_DIR / "default_from_url.yaml",
         deployment=DockerDeploymentConfig(),
-        output_dir=str(tmp_path),
-        repo=LocalRepoConfig(path=str(swe_agent_test_repo_clone)),
+        output_dir=tmp_path,
+        repo=LocalRepoConfig(path=swe_agent_test_repo_clone),
     )
 
 
