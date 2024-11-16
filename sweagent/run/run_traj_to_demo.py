@@ -57,7 +57,7 @@ def save_demo(data, file, traj_path):
         f.write(f"{header}\n{content}")
 
 
-def convert_traj_to_action_demo(traj_path: str, output_file: str = None, include_user: bool = False):
+def convert_traj_to_action_demo(traj_path: str, output_file: str | Path, include_user: bool = False):
     with open(traj_path) as file:
         traj = json.load(file)
 
@@ -71,7 +71,7 @@ def convert_traj_to_action_demo(traj_path: str, output_file: str = None, include
     print(f"Saved demo to {output_file}")
 
 
-def main(traj_path: str, output_dir: str = None, suffix: str = "", overwrite: bool = False, include_user: bool = False):
+def main(traj_path: str, output_dir: str, suffix: str = "", overwrite: bool = False, include_user: bool = False):
     filename = (
         "/".join([Path(traj_path).parent.name + suffix, Path(traj_path).name.rsplit(".traj", 1)[0]]) + ".demo.yaml"
     )
@@ -93,7 +93,7 @@ def string2bool(s):
         raise ValueError(msg)
 
 
-if __name__ == "__main__":
+def run_from_cli(args: list[str] | None = None):
     parser = ArgumentParser()
     parser.add_argument("traj_path", type=str, help="Path to trajectory file")
     parser.add_argument("--output_dir", type=str, help="Output directory for action demos", default="./demos")
@@ -106,5 +106,9 @@ if __name__ == "__main__":
         default=False,
         nargs="?",
     )
-    args = parser.parse_args()
-    main(**vars(args))
+    parsed_args = parser.parse_args(args)
+    main(**vars(parsed_args))
+
+
+if __name__ == "__main__":
+    run_from_cli()
