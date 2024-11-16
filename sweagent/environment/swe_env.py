@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import asyncio
 import logging
 import shlex
@@ -8,9 +6,9 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field
 from swerex.deployment.abstract import AbstractDeployment
+from swerex.deployment.config import DeploymentConfig, DockerDeploymentConfig
 from swerex.runtime.abstract import BashAction, CreateBashSessionRequest
 
-from sweagent.environment.config.deployment import DeploymentConfig, DockerDeploymentConfig
 from sweagent.environment.config.repo import Repo, RepoConfig
 from sweagent.environment.hooks.abstract import CombinedEnvHooks, EnvHook
 from sweagent.utils.log import get_logger
@@ -19,7 +17,9 @@ from sweagent.utils.log import get_logger
 class EnvironmentConfig(BaseModel):
     """Configure data sources and setup instructions for the environment in which we solve the tasks."""
 
-    deployment: DeploymentConfig = Field(default_factory=DockerDeploymentConfig)
+    deployment: DeploymentConfig = Field(
+        default_factory=lambda: DockerDeploymentConfig(image="sweagent/swe-agent:latest")
+    )
     repo: RepoConfig | None = None
     # fixme: Actually run these
     startup_commands: list[str] = []

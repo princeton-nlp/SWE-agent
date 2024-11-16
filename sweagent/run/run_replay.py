@@ -11,11 +11,11 @@ import yaml
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from swerex.deployment.abstract import AbstractDeployment
+from swerex.deployment.config import DeploymentConfig, DockerDeploymentConfig
 
 from sweagent import CONFIG_DIR
 from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.agent.models import ReplayModelConfig
-from sweagent.environment.config.deployment import DeploymentConfig, DockerDeploymentConfig
 from sweagent.environment.config.problem_statement import EmptyProblemStatement
 from sweagent.environment.config.repo import RepoConfig
 from sweagent.environment.swe_env import SWEEnv

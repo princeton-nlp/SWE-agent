@@ -6,8 +6,8 @@ from typing import Any, Literal, Self
 
 import yaml
 from pydantic import BaseModel, Field
+from swerex.deployment.config import DeploymentConfig, DockerDeploymentConfig
 
-from sweagent.environment.config.deployment import DeploymentConfig, DockerDeploymentConfig
 from sweagent.environment.config.problem_statement import ProblemStatementConfig, TextProblemStatement
 from sweagent.environment.config.repo import PreExistingRepo
 from sweagent.environment.swe_env import EnvironmentConfig
@@ -120,7 +120,7 @@ class SimpleBatchInstance(BaseModel):
             return BatchInstance(
                 env=EnvironmentConfig(deployment=deployment, repo=repo), problem_statement=problem_statement
             )
-        deployment.image = self.image_name
+        deployment.image = self.image_name  # type: ignore
         return BatchInstance(
             env=EnvironmentConfig(deployment=deployment, repo=repo), problem_statement=problem_statement
         )
@@ -153,7 +153,9 @@ class InstancesFromFile(BaseModel, AbstractInstanceSource):
     (i.e., it behaves exactly like python's list slicing `list[slice]`).
     """
 
-    deployment: DeploymentConfig = Field(default_factory=DockerDeploymentConfig)
+    deployment: DeploymentConfig = Field(
+        default_factory=lambda: DockerDeploymentConfig(image="sweagent/swe-agent:latest")
+    )
     """Note that the image_name option is overwritten by the images specified in the task instances."""
 
     simple: Literal[True] = True
@@ -186,7 +188,9 @@ class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
     (i.e., it behaves exactly like python's list slicing `list[slice]`).
     """
 
-    deployment: DeploymentConfig = Field(default_factory=DockerDeploymentConfig)
+    deployment: DeploymentConfig = Field(
+        default_factory=lambda: DockerDeploymentConfig(image="sweagent/swe-agent:latest")
+    )
     """Deployment configuration. Note that the image_name option is overwritten by the images specified in the task instances.
     """
     type: Literal["huggingface"] = "huggingface"
@@ -212,7 +216,9 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
 
     split: Literal["dev", "test"] = "dev"
 
-    deployment: DeploymentConfig = Field(default_factory=DockerDeploymentConfig)
+    deployment: DeploymentConfig = Field(
+        default_factory=lambda: DockerDeploymentConfig(image="sweagent/swe-agent:latest")
+    )
     """Deployment configuration. Note that the image_name option is overwritten by the images specified in the task instances.
     """
 
