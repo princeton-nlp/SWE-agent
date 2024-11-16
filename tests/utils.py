@@ -12,7 +12,7 @@ def make_python_tool_importable(file_path: str | Path, module_name: str | None =
         module_name: Name of the module to import the script as. If None, the filename stem is used.
     """
     # Convert to absolute path if needed
-    abs_path = Path(file_path).resolve()
+    abs_path = Path(file_path).resolve().as_posix()
     module_name = Path(file_path).stem if module_name is None else module_name
 
     if module_name in sys.modules:
