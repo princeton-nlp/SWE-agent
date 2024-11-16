@@ -444,21 +444,7 @@ agent:
     parse_command: {}
     parse_function: {}
     put_demos_in_history: false
-    state_command:
-      arguments: null
-      code: |
-        state() {
-          local working_dir="$PWD";
-          if [ -z $CURRENT_FILE ]; then
-              echo '{"open_file": "n/a", "working_dir": "'$working_dir'"}';
-          else
-              echo '{"open_file": "'$(realpath $CURRENT_FILE)'", "working_dir": "'$working_dir'"}';
-          fi
-        };
-      docstring: null
-      end_name: null
-      name: state
-      signature: null
+    state_command: _state
     strategy_template: null
     submit_command: submit
     subroutine_types: []

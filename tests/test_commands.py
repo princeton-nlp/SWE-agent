@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import sys
+from tests.utils import make_python_tool_importable
 
-sys.path.append("config/commands")
-
-
-from _split_string import Flake8Error, _update_previous_errors, format_flake8_output
+make_python_tool_importable("tools/edit_linting/bin/_split_string", "split_string")
+from split_string import Flake8Error, _update_previous_errors, format_flake8_output
 
 
 def test_partition_flake8_line():
