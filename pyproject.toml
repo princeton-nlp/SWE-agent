@@ -36,6 +36,27 @@ classifiers = [
   "Programming Language :: Python :: 3 :: Only",
 ]
 
+dependencies = [
+    "datasets",
+    "numpy",
+    "pandas",
+    "rich",
+    "ruamel.yaml",
+    "tenacity",
+    "unidiff",
+    "simple-parsing",
+    "rich-argparse",
+    "flask",
+    "flask-cors",
+    "flask-socketio",
+    "pydantic",
+    "python-dotenv",
+    "pydantic_settings",
+    "litellm",
+    "GitPython",
+    "ghapi",
+]
+
 [project.scripts]
 sweagent = "sweagent.run.run:main"
 

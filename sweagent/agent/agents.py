@@ -78,6 +78,11 @@ class AgentConfig(BaseModel):
     history_processor: HistoryProcessor = Field(default_factory=DefaultHistoryProcessor)
     model: ModelConfig
 
+    max_requeries: int = 3
+    """Maximum number of times to requery the model after an error, such as a
+    formatting error, a blocked action, or a bash syntax error.
+    """
+
     # pydantic config
     model_config = ConfigDict(extra="forbid")
 
@@ -102,6 +107,7 @@ class Agent:
         tools: ToolHandler,
         history_processor: HistoryProcessor,
         model: AbstractModel,
+        max_requeries: int = 3,
         name: str = "main",
         _catch_errors: bool = True,
         _always_require_zero_exit_code: bool = False,
@@ -117,7 +123,7 @@ class Agent:
         self.templates = templates
         self.tools = tools
         self.history_processor = history_processor
-
+        self.max_requeries = max_requeries
         self.logger = get_logger("agent", emoji="🤠")
 
         # Set in run method
@@ -148,6 +154,7 @@ class Agent:
             tools=ToolHandler.from_config(config.tools),
             history_processor=config.history_processor,
             model=model,
+            max_requeries=config.max_requeries,
         )
 
     def add_hook(self, hook: AbstractAgentHook) -> None:
@@ -584,7 +591,7 @@ class Agent:
             )
 
         n_fails = 0
-        while n_fails < 3:
+        while n_fails < self.max_requeries:
             try:
                 return self.forward(history)
 

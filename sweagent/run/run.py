@@ -5,14 +5,10 @@ Specify one of the subcommands.
 import argparse
 import sys
 
-from sweagent.run.run_batch import run_from_cli as run_batch_main
-from sweagent.run.run_replay import run_from_cli as run_replay_main
-from sweagent.run.run_single import run_from_cli as run_single_main
-
 
 def get_cli():
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("command", choices=["run", "run-batch", "run-replay"], nargs="?")
+    parser.add_argument("command", choices=["run", "run-batch", "run-replay", "traj-to-demo", "run-api"], nargs="?")
     parser.add_argument("-h", "--help", action="store_true", help="Show this help message and exit")
     return parser
 
@@ -36,11 +32,25 @@ def main(args: list[str] | None = None):
         cli.print_help()
         sys.exit(2)
     if command == "run":
+        from sweagent.run.run_single import run_from_cli as run_single_main
+
         run_single_main(remaining_args)
     elif command == "run-batch":
+        from sweagent.run.run_batch import run_from_cli as run_batch_main
+
         run_batch_main(remaining_args)
     elif command == "run-replay":
+        from sweagent.run.run_replay import run_from_cli as run_replay_main
+
         run_replay_main(remaining_args)
+    elif command == "traj-to-demo":
+        from sweagent.run.run_traj_to_demo import run_from_cli as convert_traj_to_demo_main
+
+        convert_traj_to_demo_main(remaining_args)
+    elif command == "run-api":
+        from sweagent.api.server import run_from_cli as run_api_main
+
+        run_api_main(remaining_args)
     else:
         msg = f"Unknown command: {command}"
         raise ValueError(msg)
