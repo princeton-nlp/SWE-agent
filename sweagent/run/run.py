@@ -8,7 +8,7 @@ import sys
 
 def get_cli():
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("command", choices=["run", "run-batch", "run-replay", "traj-to-demo"], nargs="?")
+    parser.add_argument("command", choices=["run", "run-batch", "run-replay", "traj-to-demo", "run-api"], nargs="?")
     parser.add_argument("-h", "--help", action="store_true", help="Show this help message and exit")
     return parser
 
@@ -47,6 +47,10 @@ def main(args: list[str] | None = None):
         from sweagent.run.run_traj_to_demo import run_from_cli as convert_traj_to_demo_main
 
         convert_traj_to_demo_main(remaining_args)
+    elif command == "run-api":
+        from sweagent.api.server import run_from_cli as run_api_main
+
+        run_api_main(remaining_args)
     else:
         msg = f"Unknown command: {command}"
         raise ValueError(msg)
