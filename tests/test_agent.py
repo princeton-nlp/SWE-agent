@@ -1,6 +1,7 @@
 import pytest
 import yaml
-from swerex.runtime.abstract import Action, BashObservation, Observation, SweRexception
+from swerex.exceptions import SweRexception
+from swerex.runtime.abstract import Action, BashObservation, Observation
 from swerex.runtime.dummy import DummyRuntime
 
 from sweagent import CONFIG_DIR

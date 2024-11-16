@@ -9,7 +9,7 @@ from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field
 from simple_parsing.helpers.fields import field
-from swerex.runtime.abstract import BashIncorrectSyntaxError, SweRexception
+from swerex.exceptions import BashIncorrectSyntaxError, SweRexception
 from tenacity import RetryError
 
 from sweagent import __version__, get_agent_commit_hash

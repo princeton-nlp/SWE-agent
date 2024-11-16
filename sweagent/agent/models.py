@@ -9,7 +9,7 @@ import litellm
 import litellm.types.utils
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ConfigDict, Field, SecretStr
-from swerex.runtime.abstract import SweRexception
+from swerex.exceptions import SweRexception
 from tenacity import (
     Retrying,
     retry_if_not_exception_type,
