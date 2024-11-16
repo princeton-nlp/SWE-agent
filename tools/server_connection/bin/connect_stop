@@ -1,0 +1,10 @@
+source /root/tools/server_connection/lib/utils.sh
+
+main() {
+    _connect_command "SESSION=connect"
+    _connect_command "quit"
+    _connect_command "STOP"
+    unset INTERACTIVE_SESSION
+}
+
+main "$@"

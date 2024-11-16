@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+source /root/tools/defaults/lib/utils.sh
+
+main() {
+    local CURRENT_FILE=$(_read_env CURRENT_FILE)
+    local CURRENT_LINE=$(_read_env CURRENT_LINE)
+    local WINDOW=$(_read_env WINDOW)
+    local OVERLAP=$(_read_env OVERLAP)
+
+    if [ -z "$CURRENT_FILE" ]
+    then
+        echo "No file open. Use the open command first."
+        exit 1
+    fi
+    _write_env CURRENT_LINE $(jq -n "$CURRENT_LINE + $WINDOW - $OVERLAP") || exit 1
+    _constrain_line || exit 1
+    _print || exit 1
+    _scroll_warning_message || exit 1
+}
+
+main "$@"

@@ -1,0 +1,39 @@
+main() {
+    if [ $# -eq 1 ]; then
+        local search_term="$1"
+        local dir="./"
+    elif [ $# -eq 2 ]; then
+        local search_term="$1"
+        if [ -d "$2" ]; then
+            local dir="$2"
+        else
+            echo "Directory $2 not found"
+            return
+        fi
+    else
+        echo "Usage: search_dir <search_term> [<dir>]"
+        return
+    fi
+    dir=$(realpath "$dir")
+    local matches=$(find "$dir" -type f ! -path '*/.*' -exec grep -nIH -- "$search_term" {} + | cut -d: -f1 | sort | uniq -c)
+    # if no matches, return
+    if [ -z "$matches" ]; then
+        echo "No matches found for \"$search_term\" in $dir"
+        return
+    fi
+    # Calculate total number of matches
+    local num_matches=$(echo "$matches" | awk '{sum+=$1} END {print sum}')
+    # calculate total number of files matched
+    local num_files=$(echo "$matches" | wc -l | awk '{$1=$1; print $0}')
+    # if num_files is > 100, print an error
+    if [ $num_files -gt 100 ]; then
+        echo "More than $num_files files matched for \"$search_term\" in $dir. Please narrow your search."
+        return
+    fi
+
+    echo "Found $num_matches matches for \"$search_term\" in $dir:"
+    echo "$matches" | awk '{$2=$2; gsub(/^\.+\/+/, "./", $2); print $2 " ("$1" matches)"}'
+    echo "End of matches for \"$search_term\" in $dir"
+}
+
+main "$@"

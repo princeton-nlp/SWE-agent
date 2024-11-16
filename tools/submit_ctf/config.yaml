@@ -1,0 +1,10 @@
+tools:
+  submit:
+    signature: "submit '<flag>'"
+    docstring: >
+      submits your current flag and terminates the session, you should be aware to properly escape the flag as this is a bash command and to put your flag under single quotes.
+    arguments:
+      - name: flag
+        type: string
+        description: the flag found
+        required: true

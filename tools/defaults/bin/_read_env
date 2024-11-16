@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+
+import json
+import os
+import sys
+
+SWE_AGENT_ENV_FILE = os.environ.get("SWE_AGENT_ENV_FILE", "/root/.swe-agent-env")
+
+def read_env(var_name, default_value=None):
+    if not os.path.exists(SWE_AGENT_ENV_FILE):
+        with open(SWE_AGENT_ENV_FILE, "w") as f:
+            json.dump({}, f)
+        return default_value
+    with open(SWE_AGENT_ENV_FILE, "r") as f:
+        env = json.load(f)
+    return env.get(var_name, default_value)
+
+if __name__ == "__main__":
+    var_name = sys.argv[1]
+    default_value = sys.argv[2] if len(sys.argv) > 2 else ""
+    print(read_env(var_name, default_value))

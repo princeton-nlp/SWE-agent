@@ -10,12 +10,11 @@ from pydantic import BaseModel
 
 
 class Command(BaseModel):
-    code: str
     name: str
     docstring: str | None = None
     # if there is an end_name, then it is a multi-line command
     end_name: str | None = None
-    arguments: dict | None = None
+    arguments: list[dict] | None = None
     signature: str | None = None
 
 
@@ -100,14 +99,14 @@ class ParseCommandBash(AbstractParseCommand, BaseModel):
                     if "signature" in docs_dict:
                         signature = docs_dict["signature"]
                     elif arguments is not None:
-                        for param, settings in arguments.items():
-                            if settings["required"]:
+                        for argument in arguments:
+                            param = argument["name"]
+                            if argument["required"]:
                                 signature += f" <{param}>"
                             else:
                                 signature += f" [<{param}>]"
                 command = Command.model_validate(
                     {
-                        "code": code,
                         "docstring": docstring,
                         "end_name": end_name,
                         "name": name,
@@ -139,8 +138,9 @@ class ParseCommandBash(AbstractParseCommand, BaseModel):
             name = Path(path).name.rsplit(".", 1)[0]
             if signature is None and arguments is not None:
                 signature = name
-                for param, settings in arguments.items():
-                    if settings["required"]:
+                for argument in arguments:
+                    param = argument["name"]
+                    if argument["required"]:
                         signature += f" <{param}>"
                     else:
                         signature += f" [<{param}>]"
@@ -187,14 +187,16 @@ class ParseCommandDetailed(ParseCommandBash):
         signature = cmd.name
         if "arguments" in cmd.__dict__ and cmd.arguments is not None:
             if cmd.end_name is None:
-                for param, settings in cmd.arguments.items():
-                    if settings["required"]:
+                for argument in cmd.arguments:
+                    param = argument["name"]
+                    if argument["required"]:
                         signature += f" <{param}>"
                     else:
                         signature += f" [<{param}>]"
             else:
-                for param, settings in list(cmd.arguments.items())[:-1]:
-                    if settings["required"]:
+                for argument in cmd.arguments[:-1]:
+                    param = argument["name"]
+                    if argument["required"]:
                         signature += f" <{param}>"
                     else:
                         signature += f" [<{param}>]"
@@ -218,9 +220,10 @@ class ParseCommandDetailed(ParseCommandBash):
                 docs += f"  signature: {self.get_signature(cmd)}\n"
             if "arguments" in cmd.__dict__ and cmd.arguments is not None:
                 docs += "  arguments:\n"
-                for param, settings in cmd.arguments.items():
-                    req_string = "required" if settings["required"] else "optional"
-                    docs += f"    - {param} ({settings['type']}) [{req_string}]: {settings['description']}\n"
+                for argument in cmd.arguments:
+                    param = argument["name"]
+                    req_string = "required" if argument["required"] else "optional"
+                    docs += f"    - {param} ({argument['type']}) [{req_string}]: {argument['description']}\n"
             docs += "\n"
         return docs
 

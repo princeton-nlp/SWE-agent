@@ -1,0 +1,12 @@
+main() {
+    if [ -z "$1" ]; then
+        echo "Usage: submit <flag>"
+        return
+    fi
+
+    echo -n "<<SUBMISSION||"
+    echo -n "$@"
+    echo "||SUBMISSION>>"
+}
+
+main "$@"

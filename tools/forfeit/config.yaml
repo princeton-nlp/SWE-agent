@@ -1,0 +1,5 @@
+tools:
+  exit_forfeit:
+    signature: "exit_forfeit"
+    docstring: "Give up on the current challenge and terminate the session."
+    arguments: []

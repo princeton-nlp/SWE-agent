@@ -1,0 +1,37 @@
+tools:
+  find_file:
+    signature: "find_file <file_name> [<dir>]"
+    docstring: "finds all files with the given name in dir. If dir is not provided, searches in the current directory"
+    arguments:
+      - name: file_name
+        type: string
+        description: "the name of the file to search for"
+        required: true
+      - name: dir
+        type: string
+        description: "the directory to search in (if not provided, searches in the current directory)"
+        required: false
+  search_dir:
+    signature: "search_dir <search_term> [<dir>]"
+    docstring: "searches for search_term in all files in dir. If dir is not provided, searches in the current directory"
+    arguments:
+      - name: search_term
+        type: string
+        description: "the term to search for"
+        required: true
+      - name: dir
+        type: string
+        description: "the directory to search in (if not provided, searches in the current directory)"
+        required: false
+  search_file:
+    signature: "search_file <search_term> [<file>]"
+    docstring: "searches for search_term in file. If file is not provided, searches in the current open file"
+    arguments:
+      - name: search_term
+        type: string
+        description: "the term to search for"
+        required: true
+      - name: file
+        type: string
+        description: "the file to search in (if not provided, searches in the current open file)"
+        required: false

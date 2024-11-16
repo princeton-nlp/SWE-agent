@@ -1,18 +1,19 @@
 import asyncio
 import json
 import re
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Self
 
+import yaml
 from pydantic import BaseModel, Field
 from swerex.runtime.abstract import Command as RexCommand
-from swerex.runtime.abstract import WriteFileRequest
+from swerex.runtime.abstract import UploadRequest
 
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.tools.commands import Command, ParseCommand, ParseCommandBash
 from sweagent.tools.parsing import ParseFunction, ThoughtActionParser
 from sweagent.tools.utils import _guard_multiline_input
-from sweagent.utils.config import _convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 
 
@@ -52,7 +53,7 @@ class ToolFilterConfig(BaseModel):
 
 class ToolConfig(BaseModel):
     filter: ToolFilterConfig = ToolFilterConfig()
-    command_files: list[Path] = []
+    bundles: list[Path] = []
 
     env_variables: dict[str, Any] = {}
     """Shorthand to set environment variables for the tools, effectively
@@ -71,12 +72,6 @@ class ToolConfig(BaseModel):
     multi_line_command_endings: dict[str, str] = {}
     submit_command_end_name: str | None = None
 
-    install_commands: list[str] = [
-        "mkdir -p /root/commands",
-        "touch /root/commands/__init__.py",
-        "export PATH=$PATH:/root/commands",
-        "flake8 --version || pip install flake8",
-    ]
     """Commands to install dependencies and tools.
     These commands are executed in a subprocess and are not part of the environment state.
     """
@@ -86,12 +81,7 @@ class ToolConfig(BaseModel):
     Unlike `install_commands`, these commands are part of the environment state.
     """
 
-    state_command: Command = Command(
-        name="state",
-        code="""state() {
-            echo '{"working_dir": "'$(realpath --relative-to=$ROOT/.. $PWD)'"}';
-        };""",
-    )
+    state_command: str = "_state"
     """Should extract environment state in a json readable form"""
 
     execution_timeout: int = 30
@@ -101,19 +91,28 @@ class ToolConfig(BaseModel):
     """Timeout used for each of the installation commands"""
 
     # todo: move to ToolHandler?
-    @property
+    @cached_property
     def commands(self) -> list[Command]:
         """Read command files and returned parsed command objects"""
         commands = []
-        for file in self.command_files:
-            parsed_commands = self.parse_command.parse_command_file(file)
-            commands.extend([command for command in parsed_commands if not command.name.startswith("_")])
+        tool_sources = {}  # Track which file each tool comes from
+        for path in self.bundles:
+            config = yaml.safe_load((path / "config.yaml").read_text())
+            for tool, tool_config in config.get("tools", {}).items():
+                if tool in [x.name for x in commands]:
+                    existing_source = tool_sources[tool]
+                    msg = (
+                        f"Tool '{tool}' is defined multiple times:\n"
+                        f"  - First definition in: {existing_source}\n"
+                        f"  - Duplicate definition in: {path}"
+                    )
+                    raise ValueError(msg)
+                commands.append(Command(name=tool, **tool_config))
+                tool_sources[tool] = path
         return commands
 
     # todo: can some of these be moved to ToolHandler?
     def model_post_init(self, __context):
-        self.command_files = _convert_paths_to_abspath(self.command_files)
-
         # for caching:
         commands = self.commands
 
@@ -159,7 +158,6 @@ class ToolHandler:
 
     def install(self, env: SWEEnv) -> None:
         self._install_commands(env)
-        self._make_state_command_available(env)
         self.reset(env)
 
     def reset(self, env: SWEEnv) -> None:
@@ -169,45 +167,62 @@ class ToolHandler:
 
     def _install_commands(self, env: SWEEnv) -> None:
         """Make sure all commands are available in the container"""
-        for file in self.config.command_files:
-            contents = file.read_text()
-            source = False
-            mark_executable = False
-            if not contents.strip().startswith("#!"):
-                if file.suffix == ".sh":
-                    name = file.name
-                    source = True
-                elif file.name.startswith("_"):
-                    name = file.name
-                else:
-                    msg = (
-                        f"Non-shell script file {file} does not start with shebang.\n"
-                        "Either add a shebang (#!) or change the file extension to .sh if you want to source it.\n"
-                        "You can override this behavior by adding an underscore to the file name (e.g. _utils.py)."
-                    )
-                    raise ValueError(msg)
-            else:
-                name = file.name.rpartition(".")[0]
-                mark_executable = True
-
-            # todo: Do this with the environment?
-            self.logger.debug(f"Installing command {name} ({source=}, {mark_executable=})")
+        self._set_env_variables(env)
+        for bundle in self.config.bundles:
+            # write all files in bundle to /root/tools/
             asyncio.run(
-                env.deployment.runtime.write_file(WriteFileRequest(content=contents, path=f"/root/commands/{name}"))
-            )
-            if source:
-                self._reset_commands.append(f"source '/root/commands/{name}'")
-            if mark_executable:
-                asyncio.run(
-                    env.deployment.runtime.execute(
-                        RexCommand(command=f"chmod +x '/root/commands/{name}'", shell=True, check=True)
+                env.deployment.runtime.upload(
+                    UploadRequest(
+                        source_path=bundle.as_posix(),
+                        target_path=f"/root/tools/{bundle.name}",
                     )
                 )
-        for command in self.config.install_commands:
-            env.communicate(command, check=True, timeout=self.config.install_timeout)
-
-    def _make_state_command_available(self, env: SWEEnv) -> None:
-        env.communicate(self.config.state_command.code, check=True, timeout=1)
+            )
+            asyncio.run(
+                env.deployment.runtime.execute(
+                    RexCommand(command=f"export PATH=$PATH:/root/tools/{bundle.name}/bin", shell=True, check=True)
+                )
+            )
+            asyncio.run(
+                env.deployment.runtime.execute(
+                    RexCommand(command=f"chmod +x /root/tools/{bundle.name}/bin/*", shell=True, check=False)
+                )
+            )  # check false because bin might not exist
+            if (bundle / "install.sh").exists():
+                asyncio.run(
+                    env.deployment.runtime.execute(
+                        RexCommand(
+                            command=f"cd /root/tools/{bundle.name}; bash install.sh",
+                            shell=True,
+                            check=True,
+                        )
+                    )
+                )
+            # always make all files in bin executable
+            asyncio.run(
+                env.deployment.runtime.execute(
+                    RexCommand(
+                        command=f"chmod +x /root/tools/{bundle.name}/bin/*",
+                        shell=True,
+                        check=True,
+                    )
+                )
+            )
+        # check that all commands are available
+        missing_tools = []
+        for command in self.config.commands:
+            try:
+                asyncio.run(
+                    env.deployment.runtime.execute(RexCommand(command=f"which {command.name}", shell=True, check=True))
+                )
+            except Exception:
+                missing_tools.append(command.name)
+        if missing_tools:
+            msg = (
+                f"The following tools were included in the tool config but are not available in the container: "
+                f"{missing_tools}. Please review the tool configs."
+            )
+            raise RuntimeError(msg)
 
     def _set_env_variables(self, env: SWEEnv) -> None:
         _env_setters = [f"export {k}={v}" for k, v in self.config.env_variables.items()]
@@ -223,7 +238,7 @@ class ToolHandler:
         """
         if not self.config.state_command:
             return {}
-        output = env.communicate(self.config.state_command.name, check=True).strip()
+        output = env.communicate(self.config.state_command, check=True).strip()
         if not output:
             self.logger.warning("State command %s returned empty output", self.config.state_command.name)
             return {}

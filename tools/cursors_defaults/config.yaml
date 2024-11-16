@@ -1,0 +1,49 @@
+tools:
+  goto:
+    signature: "goto <line_number>"
+    docstring: "moves the window to show <line_number>"
+    arguments:
+      - name: line_number
+        type: integer
+        description: "the line number to move the window to"
+        required: true
+  open:
+    signature: "open <path> [<line_number>]"
+    docstring: "opens the file at the given path in the editor. If line_number is provided, the window will be centered on that line"
+    arguments:
+      - name: path
+        type: string
+        description: "the path to the file to open"
+        required: true
+      - name: line_number
+        type: integer
+        description: "the line number to move the window to (if not provided, the window will start at the top of the file)"
+        required: false
+  create:
+    signature: "create <filename>"
+    docstring: "creates and opens a new file with the given name"
+    arguments:
+      - name: filename
+        type: string
+        description: "the name of the file to create"
+        required: true
+  scroll_up:
+    signature: "scroll_up"
+    docstring: "moves the window up {WINDOW} lines"
+    arguments: []
+  scroll_down:
+    signature: "scroll_down"
+    docstring: "moves the window down {WINDOW} lines"
+    arguments: []
+  set_cursors:
+    signature: "set_cursors <start_line> <end_line>"
+    docstring: "sets the start and end cursors to the given line numbers"
+    arguments:
+      - name: start_line
+        type: integer
+        description: "the line number to set the start cursor to"
+        required: true
+      - name: end_line
+        type: integer
+        description: "the line number to set the end cursor to"
+        required: true

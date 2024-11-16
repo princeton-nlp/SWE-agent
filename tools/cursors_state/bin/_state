@@ -1,0 +1,12 @@
+source /root/tools/cursors_defaults/lib/utils.sh
+
+main() {
+    local CURRENT_FILE=$(_read_env CURRENT_FILE)
+    if [ -z "$CURRENT_FILE" ]; then
+        echo '{"open_file": "n/a", "working_dir": "'$PWD'"}';
+    else
+        echo '{"open_file": "'$(realpath "$CURRENT_FILE")'", "working_dir": "'$PWD'"}';
+    fi
+}
+
+main "$@"

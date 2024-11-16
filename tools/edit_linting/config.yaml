@@ -1,0 +1,27 @@
+tools:
+  edit:
+    signature: |
+      edit <start_line>:<end_line>
+      <replacement_text>
+      end_of_edit
+    docstring: >
+      replaces lines <start_line> through <end_line> (inclusive) with the given text
+      in the open file. The replacement text is terminated by a line with only
+      end_of_edit on it. All of the <replacement text> will be entered, so make
+      sure your indentation is formatted properly. Python files will be checked
+      for syntax errors after the edit. If the system detects a syntax error,
+      the edit will not be executed.
+    end_name: "end_of_edit"
+    arguments:
+      - name: start_line
+        type: integer
+        description: "the line number to start the edit at"
+        required: true
+      - name: end_line
+        type: integer
+        description: "the line number to end the edit at (inclusive)"
+        required: true
+      - name: replacement_text
+        type: string
+        description: "the text to replace the current selection with"
+        required: true

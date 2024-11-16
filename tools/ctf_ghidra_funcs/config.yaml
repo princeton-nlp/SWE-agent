@@ -1,0 +1,25 @@
+tools:
+  disassemble:
+    signature: "disassemble <binary_path> [--function_name <function_name>]"
+    docstring: "Disassembles a binary and prints the disassembly of a given function name"
+    arguments:
+      - name: binary_path
+        type: string
+        description: The path to the binary to be disassembled
+        required: true
+      - name: function_name
+        type: string
+        description: The function name to be disassembled, or main by default
+        required: false
+  decompile:
+    signature: "decompile <binary_path> [--function_name <function_name>]"
+    docstring: "Decompile a binary and prints the decompilation of a given function name"
+    arguments:
+      - name: binary_path
+        type: string
+        description: The path to the binary to be decompiled
+        required: true
+      - name: function_name
+        type: string
+        description: The function name to be decompiled, or main by default
+        required: false

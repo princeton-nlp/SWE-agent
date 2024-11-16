@@ -123,7 +123,7 @@ class Agent:
 
     @classmethod
     def from_config(cls, config: AgentConfig) -> Self:
-        model = get_model(config.model, config.tools.commands)
+        model = get_model(config.model)
         return cls(
             templates=config.templates,
             tools=ToolHandler.from_config(config.tools),
