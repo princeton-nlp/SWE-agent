@@ -18,7 +18,7 @@ from sweagent.utils.log import get_logger
 
 
 class ToolFilterConfig(BaseModel):
-    blocklist_error_template: str = "Interactive operation '{name}' is not supported by this environment"
+    blocklist_error_template: str = "Interactive operation '{action}' is not supported by this environment."
     blocklist: list[str] = [
         "vim",
         "vi",
@@ -34,7 +34,6 @@ class ToolFilterConfig(BaseModel):
         "ipython",
         "bash",
         "sh",
-        "exit",
         "/bin/bash",
         "/bin/sh",
         "nohup",
@@ -148,6 +147,8 @@ class ToolHandler:
         self._reset_commands = []
         self._command_patterns = self._get_command_patterns()
         self.logger = get_logger("Tools", emoji="🧰")
+        # For testing: Return this state instead of querying the environment
+        self.mock_state: dict[str, str] | None = None
 
     @classmethod
     def from_config(cls, config: ToolConfig) -> Self:
@@ -236,6 +237,8 @@ class ToolHandler:
         """If a state command is defined, execute it in the environment parse it as json and return the result.
         This can be used to extract environment variables etc. from the environment.
         """
+        if self.mock_state is not None:
+            return self.mock_state
         if not self.config.state_command:
             return {}
         output = env.communicate(self.config.state_command, check=True).strip()
@@ -279,7 +282,7 @@ class ToolHandler:
             output: `submit` observation
 
         Returns:
-            submission: diff patch submission
+            submission: diff patch submission or None if no submission was found
         """
         pattern = r"\<\<SUBMISSION\|\|(.*)\|\|SUBMISSION\>\>"
         match = re.search(pattern, output, re.DOTALL)

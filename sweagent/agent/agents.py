@@ -9,6 +9,7 @@ from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field
 from simple_parsing.helpers.fields import field
+from swerex.exceptions import BashIncorrectSyntaxError, SweRexception
 from tenacity import RetryError
 
 from sweagent import __version__, get_agent_commit_hash
@@ -27,7 +28,7 @@ from sweagent.environment.config.problem_statement import ProblemStatement, Prob
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.tools.parsing import FormatError
 from sweagent.tools.tools import ToolConfig, ToolHandler
-from sweagent.types import AgentInfo, AgentRunResult, History, HistoryItem, Trajectory, TrajectoryStep
+from sweagent.types import AgentInfo, AgentRunResult, History, HistoryItem, StepOutput, Trajectory, TrajectoryStep
 from sweagent.utils.config import _convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 from sweagent.utils.patch_formatter import PatchFormatter
@@ -56,6 +57,14 @@ class TemplateConfig(BaseModel):
     put_demos_in_history: bool = False
     """If True, add demonstration to history instead of as a single message"""
 
+    shell_check_error_template: str = (
+        "Your bash command contained syntax errors and was NOT executed. "
+        "Please fix the syntax errors and try again. This can be the result "
+        "of not adhering to the syntax for multi-line commands. Here is the output of `bash -n`:\n"
+        "{bash_stdout}\n{bash_stderr}"
+    )
+    """Message template for when the agent's bash command contains syntax errors."""
+
     def model_post_init(self, __context):
         self.demonstrations = _convert_paths_to_abspath(self.demonstrations)
         if self.next_step_no_output_template is None:
@@ -71,6 +80,16 @@ class AgentConfig(BaseModel):
 
     # pydantic config
     model_config = ConfigDict(extra="forbid")
+
+
+class BlockedActionError(Exception):
+    """Raised when the agent's action is blocked"""
+
+
+class Skipped(Exception): ...
+
+
+class Submitted(Exception): ...
 
 
 # todo: separate out from_config. In particular separate out model (as a class, etc.). Agent should only take templates, tools, history processor and model.
@@ -222,12 +241,13 @@ class Agent:
 
     def setup_attempt(self) -> None:
         """Setup the agent for a new attempt. This includes resetting the model stats."""
+        assert self._env is not None
         if self._i_attempt > 0:
-            assert self._env is not None  # mypy
             self._env.reset()
         self.model.reset_stats()
         self.add_system_message_to_history()
         self.add_demonstrations_to_history()
+        self.add_instance_template_to_history(state=self.tools.get_state(self._env))
 
     def add_system_message_to_history(self) -> None:
         """Add system message to history"""
@@ -254,11 +274,6 @@ class Agent:
         # Load history
         self.logger.info(f"DEMONSTRATION: {demonstration_path}")
         demo_history = json.loads(Path(demonstration_path).read_text())["history"]
-        demo_history = [
-            entry
-            for entry in demo_history
-            if ("agent" not in entry) or ("agent" in entry and entry["agent"] == self.name)
-        ]
 
         if self.templates.put_demos_in_history:
             if self.templates.demonstration_template is not None:
@@ -283,42 +298,32 @@ class Agent:
                 },
             )
 
-    def add_to_history(self, observation: str, state: dict[str, str]) -> None:
-        """Add observation to history, as well as the instance template or demonstrations if we're
-        at the start of a new attempt.
-        """
-        templates: list[str] = []
-        # Determine observation template based on what prior observation was
-        if self.history[-1]["role"] == "system" or self.history[-1].get("is_demo", False):
-            # Show instance template if prev. obs. was initial system message
-            templates = [self.templates.instance_template]
-            if self.templates.strategy_template is not None:
-                templates.append(self.templates.strategy_template)
-        elif observation is None or observation.strip() == "":
-            # Show no output template if observation content was empty
-            templates = [self.templates.next_step_no_output_template]
-        else:
-            # Show standard output template if there is observation content
-            templates = [self.templates.next_step_template]
-
-        # Populate selected template(s) with information (e.g., issue, arguments, state)
-        messages = []
+    def _get_format_dict(self, **kwargs) -> dict[str, Any]:
+        """Get the dictionary of key value pairs used to format the templates"""
         assert self._problem_statement is not None
-
-        format_dict = dict(
+        return dict(
             command_docs=self.tools.config.command_docs,
             **self.tools.config.env_variables,
-            **state,
-            observation=observation or "",
+            **kwargs,
             **self._forwarded_vars,
             problem_statement=self._problem_statement.get_problem_statement(),
         )
 
+    def _add_templated_messages_to_history(self, templates: list[str], **kwargs: str) -> None:
+        """Populate selected template(s) with information (e.g., issue, arguments, state)
+        and add to history.
+
+        Args:
+            templates: templates to populate and add to history
+            **kwargs: keyword arguments to be passed to the templates (in addition to the
+                ones in `self._get_format_dict`)
+        """
+        messages = []
+
+        format_dict = self._get_format_dict(**kwargs)
         for template in templates:
             try:
-                messages.append(
-                    template.format(**format_dict),
-                )
+                messages.append(template.format(**format_dict))
             except KeyError:
                 self.logger.debug("The following keys are available: %s", format_dict.keys())
                 raise
@@ -327,6 +332,41 @@ class Agent:
 
         self.logger.info(f"🤖 MODEL INPUT\n{message}")
         self._append_history({"role": "user", "content": message, "agent": self.name})
+
+    def add_step_to_history(self, step: StepOutput) -> None:
+        """Adds a step (command that was run and output) to the model history"""
+        self._append_history(
+            {
+                "role": "assistant",
+                "content": step.output,
+                "thought": step.thought,
+                "action": step.action,
+                "agent": self.name,
+            },
+        )
+
+        if step.observation is None or step.observation.strip() == "":
+            # Show no output template if observation content was empty
+            templates = [self.templates.next_step_no_output_template]
+        else:
+            # Show standard output template if there is observation content
+            templates = [self.templates.next_step_template]
+
+        self._add_templated_messages_to_history(templates, observation=step.observation, **step.state)
+
+    def add_instance_template_to_history(self, state: dict[str, str]) -> None:
+        """Add observation to history, as well as the instance template or demonstrations if we're
+        at the start of a new attempt.
+        """
+        templates: list[str] = []
+        # Determine observation template based on what prior observation was
+        assert self.history[-1]["role"] == "system" or self.history[-1].get("is_demo", False)
+        # Show instance template if prev. obs. was initial system message
+        templates = [self.templates.instance_template]
+        if self.templates.strategy_template is not None:
+            templates.append(self.templates.strategy_template)
+
+        self._add_templated_messages_to_history(templates, **state)
 
     def save_trajectory(
         self,
@@ -356,199 +396,76 @@ class Agent:
         assert self.traj_path is not None
         self.traj_path.write_text(json.dumps(data, indent=2))
 
-    def forward_model(self, observation: str, state: dict[str, str]) -> tuple[str, str, str]:
-        """This method is called by `self.step`. It forwards the model
-        and checks the output for malformattings or blocked actions.
+    def get_model_requery_history(self, error_template: str, *, output: str, **kwargs: str) -> list[dict[str, str]]:
+        """Ask the model to correct after a hitting one of the following errors:
+
+        1. Malformatted output (could not parse action)
+        2. Blocked action (command is on the blocklist)
+        3. Bash command syntax error
+
+        At the time this function is called, the proposed action and observation are not part of the history
+        yet.
+
+        This function adds temporary history based on the error template and queries the model.
+        If the model is able to correct itself, the records of the mistakes will not be part of the history
+        (but they are saved in the trajectory).
 
         Args:
-            observation: Observation from the last step
-            state: Environment state as extracted by the state commands.
+            error_template: error template
+            output: model output
+            **kwargs: keyword arguments to be passed to the error template
 
         Returns:
-            thought: model reasoning
-            action: action that the model proposes
-            output: raw model output (not output of the action)
+            model output after requery
         """
-        self.add_to_history(observation, state)
-        self._chook.on_model_query(messages=self.local_history, agent=self.name)
+        format_dict = {**kwargs, **self._get_format_dict()}
+        error_template = error_template.format(**format_dict)
+
+        self.logger.warning(f"{error_template}")
+
+        return self.local_history + [
+            {"role": "assistant", "content": output, "agent": self.name},
+            {"role": "user", "content": error_template, "agent": self.name},
+        ]
+
+    def attempt_autosubmission_after_error(self, step: StepOutput) -> StepOutput:
+        """For most exceptions, we attempt to still extract the patch and submit that.
+        This means we send the `submit` command to the runtime and parse the output.
+        """
+        step = step.model_copy()
+        step.done = True
+        assert self._env is not None
         try:
-            output = self.model.query(self.local_history)
-            thought, action, output = self.check_format_and_requery(output)
-        except KeyboardInterrupt:
-            raise
-        except RuntimeError as e:
-            self.logger.exception(f"Runtime error: {e}")
-            return (
-                f"Exit due to runtime error: {e}",
-                "exit_error",
-                f"exit due to runtime error: {e}",
-            )
-        except ContextWindowExceededError as e:
-            self.logger.error("Context window exceeded: %s", e)
-            return "Exit due to context window", "exit_context", "Exit due to context window"
-        except CostLimitExceededError as e:
-            self.logger.error("Cost limit exceeded: %s", e)
-            return "Exit due to cost limit", "exit_cost", "Exit due to cost limit"
-        except RetryError as e:
-            self.logger.error("Retry error: %s", e)
-            return (
-                f"Exit due to retry error: {e}",
-                "exit_api",
-                f"exit due to retry error: {e}",
-            )
+            observation = self._env.communicate(input="submit")
+        except Exception as e:
+            self.logger.debug("Failed to submit after error, got %s", e)
+            return step
+        step = self.handle_submission(step, observation=observation)
+        if step.submission:
+            self.logger.info("Exiting with autosubmission")
+            step.observation = "Exited (autosubmitted)"
+        return step
 
-        self._append_history(
-            {
-                "role": "assistant",
-                "content": output,
-                "thought": thought,
-                "action": action,
-                "agent": self.name,
-            },
-        )
-        self.logger.info(f"💭 THOUGHT\n{thought}\n🎬 ACTION\n{action.strip()}")
-
-        return thought, action, output
-
-    def retry_after_format_fail(self, output: str) -> str:
-        """Ask the model to correct after a malformatted model output.
-
-        This involves adding temporary history based on the error template and querying the model.
-        If the model is able to correct itself, the records of the mistakes will not be part of the history
-        (but they are saved in the trajectory).
-        """
-        format_error_template = self.tools.config.format_error_template
-
-        self.logger.warning(f"MALFORMED OUTPUT\n{output}")
-        self.logger.warning(f"FORMAT ERROR\n{format_error_template}")
-
-        temp_history = self.local_history + [
-            {"role": "assistant", "content": output, "agent": self.name},
-            {"role": "user", "content": format_error_template, "agent": self.name},
-        ]
-        return self.model.query(temp_history)
-
-    def retry_after_blocklist_fail(self, output: str, action: str) -> str:
-        """Ask the model to correct after a disallowed command
-
-        This involves adding temporary history based on the error template and querying the model.
-        If the model is able to correct itself, the records of the mistakes will not be part of the history
-        (but they are saved in the trajectory).
-        """
-        name = action.strip().split()[0]
-        blocklist_error_message = self.tools.config.filter.blocklist_error_template.format(name=name)
-
-        self.logger.warning(f"BLOCKLISTED OUTPUT\n{output}")
-        self.logger.warning(f"BLOCKLIST ERROR\n{blocklist_error_message}")
-
-        temp_history = self.local_history + [
-            {"role": "assistant", "content": output, "agent": self.name},
-            {"role": "user", "content": blocklist_error_message, "agent": self.name},
-        ]
-        return self.model.query(temp_history)
-
-    def check_format_and_requery(
-        self,
-        output: str,
-    ) -> tuple[str, str, str]:
-        """Checks model output. If the output is malformatted or the action is blocked, call
-        `self.retry_after_format_fail` or `self.retry_after_blocklist_fail`, else return
-        parsed output.
-
-        Try to parse the output into a thought and action. Retry if the output is malformatted or the action is blocked.
-
-        Returns:
-            thought: model reasoning
-            action: action that the model proposes
-            output: raw model output
-        """
-        # Condition for handling outputs with no thought (just action)
-        if isinstance(self.model, HumanModel):
-            # Need special attention, because HumanModel doesn't know how to format actions
-            # because it depends on the action parser in tools
-            return "", output, output
-
-        format_fails = blocklist_fails = 0
-
-        while format_fails + blocklist_fails <= 2:
-            try:
-                thought, action = self.tools.parse_actions(
-                    output,
-                )
-            except KeyboardInterrupt:
-                raise
-            except FormatError:
-                format_fails += 1
-                output = self.retry_after_format_fail(output)
-                continue
-            if self.tools.should_block_action(action):
-                blocklist_fails += 1
-                output = self.retry_after_blocklist_fail(output, action)
-            else:
-                return thought, action, output
-        self.logger.warning(f"Malformat limit reached: \n{output}")
-        return "Exit due to format error", "exit_format", output
-
-    # todo: add a hook here
-    def handle_special_actions(self, action: str, info: AgentInfo) -> tuple[str, bool, AgentInfo] | None:
-        """Handles special actions like `skip`, `exit_cost`, etc."""
-        assert self._env is not None
-        assert self.tools is not None
-        if action == "exit":
-            self.logger.info("Exit command found. Stopping.")
-            return "Exited", True, info
-        if action == "skip":
-            observation = "Skipped"
-            info["exit_status"] = "skipped"
-            return observation, True, info
-        if action == "exit_forfeit":
-            observation = "Exited"
-            info["exit_status"] = action
-            return observation, True, info
-        if action in {"exit_context", "exit_cost", "exit_error", "exit_format", "exit_api"}:
-            try:
-                return self.attempt_autosubmission_after_error(action, info)
-            except KeyboardInterrupt:
-                raise
-            except:
-                observation = "Exited"
-                info["exit_status"] = action
-                return observation, True, info
-        return None
-
-    def attempt_autosubmission_after_error(self, action: str, info: AgentInfo) -> tuple[str, bool, AgentInfo]:
-        """If we hit exit_cost or similar exit statuses, we attempt to still extract the patch/submission
-        and submit this. This means we send the `submit` command to the runtime and parse the output.
-        """
-        assert self._env is not None
-        assert self.tools is not None
-        observation = self._env.communicate(input="submit")
-        submission = self.tools.parse_submission_cmd_output(observation)
-        assert submission is not None and submission.strip() != "", AssertionError("No submission found.")
-        self.logger.info(f"Found submission: {submission}")
-        info["exit_status"] = f"submitted ({action})"
-        info["submission"] = submission
-        info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
-        observation = "Exited (autosubmitted)"
-        self.logger.info("Exiting with autosubmission")
-        return observation, True, info
-
-    def handle_submission(self, observation: str, info: AgentInfo) -> tuple[str, bool, AgentInfo] | None:
+    def handle_submission(self, step: StepOutput, *, observation="") -> StepOutput:
         """Check if there was a submission in the observation and handle it.
 
-        Returns:
-            None if no submission was found, else tuple of observation, done, info
+        Args:
+            step:
+            observation: If specified, will use this rather than stepobservation
         """
+        step = step.model_copy()
         assert self.tools is not None
-        submission = self.tools.parse_submission_cmd_output(observation)
-        if submission is None:
-            return None
-        self.logger.info(f"Found submission: {submission}")
-        info["exit_status"] = "submitted"
-        info["submission"] = submission if submission.strip() != "" else None
-        info.update(self._get_edited_files_with_context(patch=submission))  # type: ignore
-        observation = submission if submission.strip() != "" else ""
-        return observation, True, info
+        submission = self.tools.parse_submission_cmd_output(observation or step.observation)
+        if submission is not None:
+            step.submission = submission
+            step.observation = submission
+            if not step.exit_status:
+                step.exit_status = "submitted"
+            else:
+                step.exit_status = f"submitted ({step.exit_status})"
+            step.done = True
+            self.logger.info(f"Found submission: {submission}")
+        return step
 
     def _get_edited_files_with_context(self, patch: str) -> dict[str, str]:
         """Get the edited files with context from the patch"""
@@ -562,115 +479,214 @@ class Agent:
             out[f"edited_files{context_length}"] = value
         return out
 
-    def execute_action_in_runtime(self, action: str, info: AgentInfo) -> tuple[str, bool, AgentInfo]:
-        assert self._env is not None
-        # Attempt to run action in container
-        try:
-            observation = self._env.communicate(
-                input=action,
-                timeout=self.tools.config.execution_timeout,
-                set_last_action=True,
-                check=self._always_require_zero_exit_code,
-            )
-        except RuntimeError as e:
-            if not self._catch_errors:
-                self._env.close()
-                raise
-            observation = e.args[1] if len(e.args) > 1 else ""
-            observation += "COMMAND FAILED TO EXECUTE. RESTARTING PROCESS."
-            info["exit_status"] = "exit_environment_error"
-            self.logger.warning(f"Failed to execute command: {e}\nRESTARTING PROCESS.")
-            self._env.close()
-            return observation, True, info
-        # todo: Should this also be handled in the exit status?
-        except Exception:
-            if not self._catch_errors:
-                self._env.close()
-                raise
-            self._env.close()
-            observation = "Unknown exception"
-            self.logger.exception("Unknown exception")
-            return observation, True, info
-
-        # Check if there was a submission
-        submission_result = self.handle_submission(observation, info)
-        if submission_result is not None:
-            return submission_result
-
-        return observation, False, info
-
-    def handle_action(self, action: str) -> tuple[str, bool, AgentInfo]:
+    def handle_action(self, step: StepOutput) -> StepOutput:
         """Runs an action proposed by the agent in the environment and returns the corresponding output.
 
         Args:
             action: command to run in bash shell
+            output: output from model (only used for error handling)
 
         Returns:
-            observation:  output from container
-            done: whether task is over
-            info: additional information (e.g. debugging information)
+            action_execution_output: action execution output
         """
-        info: AgentInfo = {}
-        # Make sure to have the right keys even if the submission is missing/empty
-        info.update(self._get_edited_files_with_context(patch=""))  # type: ignore
+        if self.tools.should_block_action(step.action):
+            raise BlockedActionError()
 
-        # Handle special actions
-        special_action_result = self.handle_special_actions(action, info)
-        if special_action_result is not None:
-            return special_action_result
-
-        return self.execute_action_in_runtime(action, info)
-
-    def step(self, observation: str) -> tuple[str, bool]:
-        """Run a step of the agent:
-
-        1. Take the last observation, combine it with all other context
-           (i.e., the history of thoughts and actions). This is done by
-           `self.forward`.
-        2. Execute the action and return the new observation. This is done by
-           `self._env.step`.
-        3. Save the new trajectory etc.
-
-        Returns:
-            observation: Observation
-            done: Whether `submit` or another exit reason was called
-        """
+        if step.action.strip() == "exit":
+            self.logger.info("Exiting agent")
+            step.done = True
+            step.observation = "Exited"
+            step.exit_status = "exit_command"
+            return step
 
         assert self._env is not None
-
-        # Forward model and get actions
-        self._chook.on_step_start()
-        state = self.tools.get_state(env=self._env)
-        thought, raw_action, output = self.forward_model(observation, state)
-        self._chook.on_actions_generated(thought=thought, action=raw_action, output=output)
-        run_action: str = self.tools.guard_multiline_input(raw_action).strip()
-
-        # Execute action
+        self._chook.on_action_started(step=step)
         execution_t0 = time.perf_counter()
-        self._chook.on_action_started(action=run_action)
-        observation, done, _info = self.handle_action(run_action)
-        self.info.update(_info)
-        self._chook.on_action_executed(obs=observation, done=done)
-        execution_time = time.perf_counter() - execution_t0
+        run_action: str = self.tools.guard_multiline_input(step.action).strip()
+        step.observation = self._env.communicate(
+            input=run_action,
+            timeout=self.tools.config.execution_timeout,
+            set_last_action=True,
+            check=self._always_require_zero_exit_code,
+        )
+        step.execution_time = time.perf_counter() - execution_t0
+        self._chook.on_action_executed(step=step)
+        step.state = self.tools.get_state(env=self._env)
+        return self.handle_submission(step)
 
-        # Bookkeeping
+    def forward(self, history: list[dict[str, str]]) -> StepOutput:
+        """Forward the model without handling errors.
+
+        All exceptions raised will contain the `StepOutput` object
+        with some of the attributes set.
+
+        Args:
+            history: history to query the model with
+
+        Returns:
+            step_output: step output
+        """
+        # we continuously add actions, output etc. to the step object
+        # because some of the specific exception handling requires some of these
+        # attributes (e.g., if we want to requery the model for a bash syntax error, we
+        # need to have the previous model output to format the requery template)
+        step = StepOutput()
+        try:
+            # Forward model and get actions
+            self._chook.on_model_query(messages=history, agent=self.name)
+            output = self.model.query(history)  # type: ignore
+            step.output = output
+            if isinstance(self.model, HumanModel):
+                step.thought, step.action = "", output
+            else:
+                step.thought, step.action = self.tools.parse_actions(output)
+            self.logger.info(f"💭 THOUGHT\n{step.thought}\n🎬 ACTION\n{step.action.strip()}")
+            self._chook.on_actions_generated(step=step)
+            return self.handle_action(step)
+        except Exception as e:
+            # Attach the step object to the exception
+            e.step = step  # type: ignore
+            raise
+
+    def forward_with_handling(self, history: list[dict[str, str]]) -> StepOutput:
+        """Forward the model and handle errors, requerying the model if we can.
+        For example, if the model outputs a bash command that has syntax errors,
+        we will not execute it but requery the model for a corrected command.
+
+        Note: This will update the trajectory, but not the history.
+
+        Args:
+            history: history to forward
+
+        Returns:
+            step_output: step output
+        """
+
+        def handle_error_with_autosubmission(exit_status: str, message: str) -> StepOutput:
+            """Attempts to autosubmit (extract patch from the environment) and stops the loop."""
+            self.logger.warning(message)
+            return self.attempt_autosubmission_after_error(
+                StepOutput(
+                    thought=message,
+                    exit_status=exit_status,
+                    output=message,
+                    done=True,
+                )
+            )
+
+        def handle_error_with_retry(exception: Exception, template: str) -> list[dict[str, str]]:
+            """Requeries the model if the error is a format/blocklist/bash syntax error."""
+            step = getattr(exception, "step", StepOutput())
+            self.add_step_to_trajectory(step)
+            return self.get_model_requery_history(
+                error_template=template,
+                **step.model_dump(),
+            )
+
+        n_fails = 0
+        while n_fails < 3:
+            try:
+                return self.forward(history)
+
+            # Errors that are raised
+
+            except KeyboardInterrupt:
+                raise
+
+            # Errors that cause requery
+
+            except FormatError as e:
+                n_fails += 1
+                history = handle_error_with_retry(exception=e, template=self.tools.config.format_error_template)
+            except BlockedActionError as e:
+                n_fails += 1
+                history = handle_error_with_retry(
+                    exception=e, template=self.tools.config.filter.blocklist_error_template
+                )
+            except BashIncorrectSyntaxError as e:
+                n_fails += 1
+                history = handle_error_with_retry(exception=e, template=self.templates.shell_check_error_template)
+
+            # Errors that cause exit
+
+            except ContextWindowExceededError:
+                return handle_error_with_autosubmission(
+                    "exit_context",
+                    "Exit due to context window",
+                )
+            except CostLimitExceededError:
+                return handle_error_with_autosubmission(
+                    "exit_cost",
+                    "Exit due to cost limit",
+                )
+            except RetryError as e:
+                return handle_error_with_autosubmission(
+                    "exit_api",
+                    f"Exit due to retry error: {e}",
+                )
+            except SweRexception as e:
+                return handle_error_with_autosubmission(
+                    "exit_environment_error",
+                    f"Exit due to environment error: {e}",
+                )
+            except RuntimeError as e:
+                return handle_error_with_autosubmission(
+                    "exit_error",
+                    f"Exit due to runtime error: {e}",
+                )
+            except Exception as e:
+                return handle_error_with_autosubmission(
+                    "exit_error",
+                    f"Exit due to unknown error: {e}",
+                )
+        return handle_error_with_autosubmission(
+            "exit_format",
+            "Exit due to repeated format/blocklist/bash syntax errors",
+        )
+
+    def add_step_to_trajectory(self, step: StepOutput) -> None:
         trajectory_step = TrajectoryStep(
             {
-                "action": raw_action,
-                "observation": observation,
-                "response": output,
-                "state": state,
-                "thought": thought,
-                "execution_time": execution_time,
+                "action": step.action,
+                "observation": step.observation,
+                "response": step.output,
+                "thought": step.thought,
+                "execution_time": step.execution_time,
+                "state": step.state,
             },
         )
         self.trajectory.append(trajectory_step)
+
+    def step(self) -> StepOutput:
+        """Run a step of the agent. This is a wrapper around `self.forward_with_handling`
+        with additional bookkeeping:
+
+        1. Update message history with performed action and observation
+        2. Update trajectory with the final executed result
+        3. Update the info dictionary
+
+        Returns:
+            step_output: step output (same as the output of `self.forward_with_handling`)
+        """
+
+        assert self._env is not None
+        self._chook.on_step_start()
+
+        step_output = self.forward_with_handling(self.local_history)
+        if not step_output.done:
+            self.add_step_to_history(step_output)
+
+        self.info["submission"] = step_output.submission
+        self.info["exit_status"] = step_output.exit_status  # type: ignore
+        self.info.update(self._get_edited_files_with_context(patch=step_output.submission or ""))  # type: ignore
         model_stats: APIStats = self.model.stats
         self.info["model_stats"] = model_stats.model_dump()
-        self._chook.on_step_done(trajectory_step=trajectory_step, model_stats=model_stats)
-        return observation, done
 
-    # todo: Set env already in __init__, i.e., initialize a new agent class for every instance?
+        self.add_step_to_trajectory(step_output)
+
+        self._chook.on_step_done(step=step_output)
+        return step_output
+
     def run(
         self,
         env: SWEEnv,
@@ -684,16 +700,14 @@ class Agent:
             setup_args: Arguments to pass to the agent's setup method.
             env: The environment to run the agent on.
             traj_dir: Directory to save the trajectory to
-            init_model_stats: Initial model stats to use for the run.
         """
         self.setup(env=env, problem_statement=problem_statement, output_dir=output_dir)
 
         # Run action/observation loop
         self._chook.on_run_start()
-        done = False
-        observation = ""
-        while not done:
-            observation, done = self.step(observation)
+        step_output = StepOutput()
+        while not step_output.done:
+            step_output = self.step()
             self.save_trajectory()
         self._chook.on_run_done(trajectory=self.trajectory, info=self.info)
 

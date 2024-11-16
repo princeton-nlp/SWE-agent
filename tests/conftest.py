@@ -9,8 +9,8 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
+from swerex.deployment.config import DockerDeploymentConfig, DummyDeploymentConfig
 
-from sweagent.environment.config.deployment import DockerDeploymentConfig, DummyDeploymentConfig
 from sweagent.environment.config.repo import LocalRepoConfig
 from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
 
@@ -83,7 +83,7 @@ def test_env_args(
     subprocess.run(clone_cmd, check=True)
     test_env_args = EnvironmentConfig(
         deployment=DockerDeploymentConfig(image="sweagent/swe-agent:latest"),
-        repo=LocalRepoConfig(path=str(local_repo_path)),
+        repo=LocalRepoConfig(path=local_repo_path),
     )
     yield test_env_args
     shutil.rmtree(local_repo_path)

@@ -1,8 +1,8 @@
 import json
 
 import pytest
+from swerex.deployment.config import DockerDeploymentConfig
 
-from sweagent.environment.config.deployment import DockerDeploymentConfig
 from sweagent.environment.config.problem_statement import TextProblemStatement
 from sweagent.environment.config.repo import PreExistingRepo
 from sweagent.run.batch_instances import BatchInstance, SimpleBatchInstance, SWEBenchInstances, _slice_spec_to_slice
@@ -10,7 +10,9 @@ from sweagent.run.batch_instances import BatchInstance, SimpleBatchInstance, SWE
 
 def test_simple_batch_from_swe_bench_to_full_batch_instance(test_data_sources_path):
     sb_instance = json.loads((test_data_sources_path / "swe-bench-dev-easy.json").read_text())[0]
-    instance = SimpleBatchInstance.from_swe_bench(sb_instance).to_full_batch_instance(DockerDeploymentConfig())
+    instance = SimpleBatchInstance.from_swe_bench(sb_instance).to_full_batch_instance(
+        DockerDeploymentConfig(image="sweagent/swe-agent:latest")
+    )
     assert isinstance(instance.env.repo, PreExistingRepo)
     assert instance.env.repo.repo_name == "testbed"
     assert isinstance(instance.env.deployment, DockerDeploymentConfig)

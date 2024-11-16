@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
-from swerex.runtime.abstract import CommandTimeoutError
+from swerex.exceptions import CommandTimeoutError
 
 from sweagent.environment.hooks.abstract import EnvHook
 

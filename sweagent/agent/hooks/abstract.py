@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sweagent.agent.models import APIStats
-from sweagent.types import AgentInfo, Trajectory, TrajectoryStep
+from sweagent.types import AgentInfo, StepOutput, Trajectory
 
 if TYPE_CHECKING:
     # avoid circular import
@@ -20,13 +19,13 @@ class AbstractAgentHook:
 
     def on_step_start(self): ...
 
-    def on_actions_generated(self, *, thought: str, action: str, output: str): ...
+    def on_actions_generated(self, *, step: StepOutput): ...
 
-    def on_action_started(self, *, action: str): ...
+    def on_action_started(self, *, step: StepOutput): ...
 
-    def on_action_executed(self, *, obs: str, done: bool): ...
+    def on_action_executed(self, *, step: StepOutput): ...
 
-    def on_step_done(self, *, trajectory_step: TrajectoryStep, model_stats: APIStats): ...
+    def on_step_done(self, *, step: StepOutput): ...
 
     def on_run_done(self, *, trajectory: Trajectory, info: AgentInfo): ...
 
@@ -70,21 +69,21 @@ class CombinedAgentHook(AbstractAgentHook):
         for hook in self.hooks:
             hook.on_step_start()
 
-    def on_actions_generated(self, *, thought: str, action: str, output: str):
+    def on_actions_generated(self, *, step: StepOutput):
         for hook in self.hooks:
-            hook.on_actions_generated(thought=thought, action=action, output=output)
+            hook.on_actions_generated(step=step)
 
-    def on_action_started(self, *, action: str):
+    def on_action_started(self, *, step: StepOutput):
         for hook in self.hooks:
-            hook.on_action_started(action=action)
+            hook.on_action_started(step=step)
 
-    def on_action_executed(self, *, obs: str, done: bool):
+    def on_action_executed(self, *, step: StepOutput):
         for hook in self.hooks:
-            hook.on_action_executed(obs=obs, done=done)
+            hook.on_action_executed(step=step)
 
-    def on_step_done(self, *, trajectory_step: TrajectoryStep, model_stats: APIStats):
+    def on_step_done(self, *, step: StepOutput):
         for hook in self.hooks:
-            hook.on_step_done(trajectory_step=trajectory_step, model_stats=model_stats)
+            hook.on_step_done(step=step)
 
     def on_run_done(self, *, trajectory: Trajectory, info: AgentInfo):
         for hook in self.hooks:

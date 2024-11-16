@@ -1,6 +1,7 @@
 - env:
     deployment:
       type: docker
+      image: sweagent/swe-agent:latest
   problem_statement:
     type: text
     text: "A simple test problem"
@@ -8,6 +9,7 @@
 - env:
     deployment:
       type: docker
+      image: sweagent/swe-agent:latest
   problem_statement:
     type: text
     text: "A simple test problem 2"

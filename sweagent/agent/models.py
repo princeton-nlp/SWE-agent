@@ -9,6 +9,7 @@ import litellm
 import litellm.types.utils
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ConfigDict, Field, SecretStr
+from swerex.exceptions import SweRexception
 from tenacity import (
     Retrying,
     retry_if_not_exception_type,
@@ -261,7 +262,7 @@ class PredeterminedTestModel(AbstractModel):
         self._idx += 1
         output = self._outputs[self._idx]
         if output == "raise_runtime":
-            raise RuntimeError()
+            raise SweRexception()
         elif output == "raise_cost":
             raise CostLimitExceededError()
         elif output == "raise_context":

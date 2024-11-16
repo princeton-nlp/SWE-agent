@@ -3,9 +3,9 @@ from __future__ import annotations
 import subprocess
 
 import pytest
+from swerex.deployment.config import DockerDeploymentConfig
 
 from sweagent import CONFIG_DIR
-from sweagent.environment.config.deployment import DockerDeploymentConfig
 from sweagent.environment.config.repo import LocalRepoConfig
 from sweagent.run.run_replay import RunReplay, RunReplayConfig
 
@@ -13,11 +13,11 @@ from sweagent.run.run_replay import RunReplay, RunReplayConfig
 @pytest.fixture
 def rr_config(swe_agent_test_repo_traj, tmp_path, swe_agent_test_repo_clone):
     return RunReplayConfig(
-        traj_path=str(swe_agent_test_repo_traj),
-        config_path=str(CONFIG_DIR / "default_from_url.yaml"),
-        deployment=DockerDeploymentConfig(),
-        output_dir=str(tmp_path),
-        repo=LocalRepoConfig(path=str(swe_agent_test_repo_clone)),
+        traj_path=swe_agent_test_repo_traj,
+        config_path=CONFIG_DIR / "default_from_url.yaml",
+        deployment=DockerDeploymentConfig(image="sweagent/swe-agent:latest"),
+        output_dir=tmp_path,
+        repo=LocalRepoConfig(path=swe_agent_test_repo_clone),
     )
 
 
