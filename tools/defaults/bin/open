@@ -5,8 +5,7 @@ source /root/tools/defaults/lib/utils.sh
 main() {
     local WINDOW=$(_read_env WINDOW)
 
-    if [ -z "$1" ]
-    then
+    if [ $# -eq 0 ]; then
         echo "Usage: open \"<file>\""
         exit 1
     fi
@@ -19,7 +18,7 @@ main() {
     fi
 
     # Check if the second argument is provided
-    if [ -n "$2" ]; then
+    if [ $# -ge 2 ]; then
         # Check if the provided argument is a valid number
         if ! [[ $2 =~ ^[0-9]+$ ]]; then
             echo "Usage: open \"<file>\" [<line_number>]"

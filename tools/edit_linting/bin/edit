@@ -12,6 +12,13 @@ main() {
         return
     fi
 
+    if [ $# -eq 0 ]; then
+        echo "Usage: edit <start_line>:<end_line>"
+        echo "<replacement_text>"
+        echo "end_of_edit"
+        return
+    fi
+
     local start_line="$(echo $1: | cut -d: -f1)"
     local end_line="$(echo $1: | cut -d: -f2)"
 

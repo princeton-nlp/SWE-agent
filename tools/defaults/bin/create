@@ -3,22 +3,23 @@ set -euo pipefail
 source /root/tools/defaults/lib/utils.sh
 
 main() {
-    if [ -z "$1" ]; then
+    local filename="${1:-}"
+    if [ -z "${filename}" ]; then
         echo "Usage: create <filename>"
         exit 1
     fi
 
     # Check if the file already exists
-    if [ -e "$1" ]; then
-        echo "Error: File '$1' already exists."
-        open "$1" || exit 1
+    if [ -e "${filename}" ]; then
+        echo "Error: File '${filename}' already exists."
+        open "${filename}" || exit 1
         exit 1
     fi
 
     # Create the file an empty new line
-    printf "\n" > "$1"
+    printf "\n" > "${filename}"
     # Use the existing open command to open the created file
-    open "$1" || exit 1
+    open "${filename}" || exit 1
 }
 
 main "$@"
