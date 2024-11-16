@@ -11,7 +11,7 @@ import yaml
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from swerex.deployment.abstract import AbstractDeployment
-from swerex.deployment.config import DeploymentConfig, DockerDeploymentConfig
+from swerex.deployment.config import DeploymentConfig, DockerDeploymentConfig, get_deployment
 
 from sweagent import CONFIG_DIR
 from sweagent.agent.agents import Agent, AgentConfig
@@ -75,7 +75,7 @@ class RunReplay:
         return cls(
             traj_path=config.traj_path,
             config_path=config.config_path,
-            deployment=config.deployment.get_deployment(),
+            deployment=get_deployment(config.deployment),
             repo=config.repo,
             output_dir=config.output_dir,
             **kwargs,

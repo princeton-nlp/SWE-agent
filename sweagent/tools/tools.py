@@ -179,26 +179,14 @@ class ToolHandler:
                     )
                 )
             )
-            asyncio.run(
-                env.deployment.runtime.execute(
-                    RexCommand(command=f"export PATH=$PATH:/root/tools/{bundle.name}/bin", shell=True, check=True)
-                )
-            )
+            env.communicate(f"export PATH=$PATH:/root/tools/{bundle.name}/bin", check=True)
             asyncio.run(
                 env.deployment.runtime.execute(
                     RexCommand(command=f"chmod +x /root/tools/{bundle.name}/bin/*", shell=True, check=False)
                 )
             )  # check false because bin might not exist
             if (bundle / "install.sh").exists():
-                asyncio.run(
-                    env.deployment.runtime.execute(
-                        RexCommand(
-                            command=f"cd /root/tools/{bundle.name}; bash install.sh",
-                            shell=True,
-                            check=True,
-                        )
-                    )
-                )
+                env.communicate(f"cd /root/tools/{bundle.name}; bash install.sh", check=True)
             # always make all files in bin executable
             asyncio.run(
                 env.deployment.runtime.execute(
@@ -213,9 +201,7 @@ class ToolHandler:
         missing_tools = []
         for command in self.config.commands:
             try:
-                asyncio.run(
-                    env.deployment.runtime.execute(RexCommand(command=f"which {command.name}", shell=True, check=True))
-                )
+                env.communicate(f"which {command.name}", check=True)
             except Exception:
                 missing_tools.append(command.name)
         if missing_tools:

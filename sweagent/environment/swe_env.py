@@ -6,7 +6,7 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field
 from swerex.deployment.abstract import AbstractDeployment
-from swerex.deployment.config import DeploymentConfig, DockerDeploymentConfig
+from swerex.deployment.config import DeploymentConfig, DockerDeploymentConfig, get_deployment
 from swerex.runtime.abstract import BashAction, CreateBashSessionRequest
 
 from sweagent.environment.config.repo import Repo, RepoConfig
@@ -56,7 +56,7 @@ class SWEEnv:
     @classmethod
     def from_config(cls, config: EnvironmentConfig) -> Self:
         return cls(
-            deployment=config.deployment.get_deployment(),
+            deployment=get_deployment(config.deployment),
             repo=config.repo,
             startup_commands=config.startup_commands,
         )

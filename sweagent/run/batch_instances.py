@@ -6,7 +6,12 @@ from typing import Any, Literal, Self
 
 import yaml
 from pydantic import BaseModel, Field
-from swerex.deployment.config import DeploymentConfig, DockerDeploymentConfig
+from swerex.deployment.config import (
+    DeploymentConfig,
+    DockerDeploymentConfig,
+    DummyDeploymentConfig,
+    LocalDeploymentConfig,
+)
 
 from sweagent.environment.config.problem_statement import ProblemStatementConfig, TextProblemStatement
 from sweagent.environment.config.repo import PreExistingRepo
@@ -109,14 +114,14 @@ class SimpleBatchInstance(BaseModel):
             repo = PreExistingRepo(repo_name=self.repo_name, base_commit=self.base_commit)
         else:
             repo = None
-        if deployment.type == "local":
+        if isinstance(deployment, LocalDeploymentConfig):
             if self.image_name:
-                msg = "Local deployment does not support image name"
+                msg = "Local deployment does not support image_name"
                 raise ValueError(msg)
             return BatchInstance(
                 env=EnvironmentConfig(deployment=deployment, repo=repo), problem_statement=problem_statement
             )
-        if deployment.type == "dummy":
+        if isinstance(deployment, DummyDeploymentConfig):
             return BatchInstance(
                 env=EnvironmentConfig(deployment=deployment, repo=repo), problem_statement=problem_statement
             )
