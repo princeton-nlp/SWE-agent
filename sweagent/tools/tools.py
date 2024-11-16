@@ -169,6 +169,7 @@ class ToolHandler:
     def _install_commands(self, env: SWEEnv) -> None:
         """Make sure all commands are available in the container"""
         self._set_env_variables(env)
+        cwd = env.communicate("pwd", check=True).strip()
         for bundle in self.config.bundles:
             # write all files in bundle to /root/tools/
             asyncio.run(
@@ -190,13 +191,10 @@ class ToolHandler:
             # always make all files in bin executable
             asyncio.run(
                 env.deployment.runtime.execute(
-                    RexCommand(
-                        command=f"chmod +x /root/tools/{bundle.name}/bin/*",
-                        shell=True,
-                        check=True,
-                    )
+                    RexCommand(command=f"chmod +x /root/tools/{bundle.name}/bin/*", shell=True, check=True)
                 )
             )
+        env.communicate(f"cd {cwd}", check=True)
         # check that all commands are available
         missing_tools = []
         for command in self.config.commands:
