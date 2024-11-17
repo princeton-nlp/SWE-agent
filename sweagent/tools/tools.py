@@ -148,7 +148,7 @@ class ToolHandler:
         self._command_patterns = self._get_command_patterns()
         self.logger = get_logger("Tools", emoji="🧰")
         # For testing: Return this state instead of querying the environment
-        self.mock_state: dict[str, str] | None = None
+        self.mock_state: dict[str, str] | None = {"open_file": "", "working_dir": ""}
 
     @classmethod
     def from_config(cls, config: ToolConfig) -> Self:

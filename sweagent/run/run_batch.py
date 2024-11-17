@@ -4,6 +4,7 @@ Run on a batch of instances/issues. For example run on all of SWE-bench.
 
 import getpass
 import json
+import logging
 import sys
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -116,9 +117,11 @@ class RunBatch:
             )
             raise ValueError(msg)
         logger.debug("The first instance is %s", f"{instances[0]!r}")
+        agent = Agent.from_config(config.agent)
+        agent.logger.setLevel(logging.DEBUG if config.num_workers == 1 else logging.WARNING)
         return cls(
             instances=instances,
-            agent=Agent.from_config(config.agent),
+            agent=agent,
             output_dir=config.output_dir,
             raise_exceptions=config.raise_exceptions,
             redo_existing=config.redo_existing,
@@ -133,71 +136,74 @@ class RunBatch:
         self._chooks.on_start()
 
         if self._num_workers <= 1:
-            # Run sequentially if num_workers is 1
-            for i_instance, instance in enumerate(self.instances):
-                self.logger.info(
-                    "Starting to run on instance %d/%d: %s",
-                    i_instance + 1,
-                    len(self.instances),
-                    instance.problem_statement.id,
-                )
-                try:
-                    self.run_instance(instance)
-                except _BreakLoop:
-                    self.logger.info("Stopping loop over instances")
-                    break
+            self.main_single_worker()
         else:
-            self._main_progress_bar = Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                BarColumn(),
-                TaskProgressColumn(),
-                TimeElapsedColumn(),
-                TimeRemainingColumn(),
-            )
-            self._task_progress_bar = Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                TimeElapsedColumn(),
-            )
-            self._main_progress_bar.add_task("[cyan]Overall Progress", total=len(self.instances))
+            self.main_multi_worker()
 
-            group = Group(self._main_progress_bar, self._task_progress_bar)
-
-            with Live(group):
-                # Run in parallel with thread pool
-                with ThreadPoolExecutor(max_workers=self._num_workers) as executor:
-                    # Submit all tasks
-                    future_to_instance = {
-                        executor.submit(self.run_instance, instance): (i, instance)
-                        for i, instance in enumerate(self.instances)
-                    }
-
-                    # Process completed tasks as they finish
-                    try:
-                        for future in as_completed(future_to_instance):
-                            i, instance = future_to_instance[future]
-                            future.result()  # This will raise any exceptions from run_instance
-                            self.logger.info(
-                                "Completed instance %d/%d: %s",
-                                i + 1,
-                                len(self.instances),
-                                instance.problem_statement.id,
-                            )
-                    except (KeyboardInterrupt, _BreakLoop):
-                        self.logger.info("Received keyboard interrupt, stopping parallel execution")
-                        executor.shutdown(wait=False, cancel_futures=True)
-                        raise _BreakLoop
-
-        self.logger.info("Done")
         self._chooks.on_end()
 
-    def run_instance(self, instance: BatchInstance):
-        assert self._main_progress_bar is not None
-        assert self._task_progress_bar is not None
+    def main_single_worker(self):
+        # Run sequentially if num_workers is 1
+        for i_instance, instance in enumerate(self.instances):
+            self.logger.info(
+                "Starting to run on instance %d/%d: %s",
+                i_instance + 1,
+                len(self.instances),
+                instance.problem_statement.id,
+            )
+            try:
+                self.run_instance(instance)
+            except _BreakLoop:
+                self.logger.info("Stopping loop over instances")
+                break
 
-        with self._progress_lock:
-            spinner_task_id = self._task_progress_bar.add_task(f"Task {instance.problem_statement.id}", total=None)
+    def main_multi_worker(self):
+        self._main_progress_bar = Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            TimeElapsedColumn(),
+            TimeRemainingColumn(),
+        )
+        self._task_progress_bar = Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            TimeElapsedColumn(),
+        )
+        self._main_progress_bar.add_task("[cyan]Overall Progress", total=len(self.instances))
+
+        group = Group(self._main_progress_bar, self._task_progress_bar)
+
+        with Live(group):
+            # Run in parallel with thread pool
+            with ThreadPoolExecutor(max_workers=self._num_workers) as executor:
+                # Submit all tasks
+                future_to_instance = {
+                    executor.submit(self.run_instance, instance): (i, instance)
+                    for i, instance in enumerate(self.instances)
+                }
+
+                # Process completed tasks as they finish
+                try:
+                    for future in as_completed(future_to_instance):
+                        i, instance = future_to_instance[future]
+                        future.result()  # This will raise any exceptions from run_instance
+                        self.logger.info(
+                            "Completed instance %d/%d: %s",
+                            i + 1,
+                            len(self.instances),
+                            instance.problem_statement.id,
+                        )
+                except (KeyboardInterrupt, _BreakLoop):
+                    self.logger.info("Received keyboard interrupt, stopping parallel execution")
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    raise _BreakLoop
+
+    def run_instance(self, instance: BatchInstance):
+        if self._task_progress_bar is not None:
+            with self._progress_lock:
+                spinner_task_id = self._task_progress_bar.add_task(f"Task {instance.problem_statement.id}", total=None)
 
         # Either catch and silence exception, or raise _BreakLoop to stop the loop
         # over the instances
@@ -216,15 +222,19 @@ class RunBatch:
                 raise
             self.logger.error(f"❌ Failed on {instance.problem_statement.id}: {e}")
 
-        with self._progress_lock:
-            self._task_progress_bar.remove_task(spinner_task_id)
-            self._main_progress_bar.update(TaskID(0), advance=1)
+        if self._task_progress_bar is not None:
+            assert self._main_progress_bar is not None
+            with self._progress_lock:
+                self._task_progress_bar.remove_task(spinner_task_id)
+                self._main_progress_bar.update(TaskID(0), advance=1)
 
     def _run_instance(self, instance: BatchInstance):
         if self.should_skip(instance):
             return
         self.logger.info("Starting environment")
         env = SWEEnv.from_config(instance.env)
+        env.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.INFO)
+        env.deployment.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)  # type: ignore
         env.start()
         self.logger.info("Running agent")
         self._chooks.on_instance_start(index=0, env=env, problem_statement=instance.problem_statement)
