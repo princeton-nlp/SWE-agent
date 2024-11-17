@@ -23,7 +23,7 @@ def _interpret_level_from_env(level: str | None, *, default=logging.DEBUG) -> in
 
 
 _STREAM_LEVEL = _interpret_level_from_env(os.environ.get("SWE_AGENT_LOG_STREAM_LEVEL"))
-_FILE_LEVEL = _interpret_level_from_env(os.environ.get("SWE_AGENT_LOG_FILE_LEVEL"), default=logging.TRACE)
+_FILE_LEVEL = _interpret_level_from_env(os.environ.get("SWE_AGENT_LOG_FILE_LEVEL"), default=logging.TRACE)  # type: ignore
 
 
 class _RichHandlerWithEmoji(RichHandler):

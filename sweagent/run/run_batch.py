@@ -6,6 +6,7 @@ import getpass
 import json
 import sys
 import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Self
 
@@ -29,6 +30,8 @@ class RunBatchConfig(BaseSettings, cli_implicit_flags=True):
     redo_existing: bool = False
     env_var_path: Path | None = None
     """Path to a .env file to load environment variables from."""
+    num_workers: int = 1
+    """Number of parallel workers to use. Default is 1 (sequential execution)."""
 
     def set_default_output_dir(self) -> None:
         # Needs to be called explicitly, because self._config_files will be setup
@@ -57,12 +60,14 @@ class RunBatch:
         hooks: list[RunHook] | None = None,
         raise_exceptions: bool = False,
         redo_existing: bool = False,
+        num_workers: int = 1,
     ):
         """Note: When initializing this class, make sure to add the hooks that are required by your actions.
         See `from_config` for an example.
 
         Args:
             hooks: If not specified, the default hooks will be used.
+            num_workers: Number of parallel workers to use. Default is 1 (sequential execution).
         """
         self.logger = get_logger("Run", emoji="🏃")
         self.instances = instances
@@ -72,6 +77,7 @@ class RunBatch:
         self._raise_exceptions = raise_exceptions
         self._chooks = CombinedRunHooks()
         self._redo_existing = redo_existing
+        self._num_workers = num_workers
         for hook in hooks or [SaveApplyPatchHook()]:
             self.add_hook(hook)
 
@@ -98,6 +104,7 @@ class RunBatch:
             output_dir=config.output_dir,
             raise_exceptions=config.raise_exceptions,
             redo_existing=config.redo_existing,
+            num_workers=config.num_workers,
         )
 
     def add_hook(self, hook: RunHook) -> None:
@@ -106,18 +113,51 @@ class RunBatch:
 
     def main(self):
         self._chooks.on_start()
-        for i_instance, instance in enumerate(self.instances):
-            self.logger.info(
-                "Starting to run on instance %d/%d: %s",
-                i_instance + 1,
-                len(self.instances),
-                instance.problem_statement.id,
-            )
-            try:
-                self.run_instance(instance)
-            except _BreakLoop:
-                self.logger.info("Stopping loop over instances")
-                break
+
+        if self._num_workers <= 1:
+            # Run sequentially if num_workers is 1
+            for i_instance, instance in enumerate(self.instances):
+                self.logger.info(
+                    "Starting to run on instance %d/%d: %s",
+                    i_instance + 1,
+                    len(self.instances),
+                    instance.problem_statement.id,
+                )
+                try:
+                    self.run_instance(instance)
+                except _BreakLoop:
+                    self.logger.info("Stopping loop over instances")
+                    break
+        else:
+            # Run in parallel with thread pool
+            with ThreadPoolExecutor(max_workers=self._num_workers) as executor:
+                # Submit all tasks
+                future_to_instance = {
+                    executor.submit(self.run_instance, instance): (i, instance)
+                    for i, instance in enumerate(self.instances)
+                }
+
+                # Process completed tasks as they finish
+                try:
+                    for future in as_completed(future_to_instance):
+                        i, instance = future_to_instance[future]
+                        try:
+                            future.result()  # This will raise any exceptions from run_instance
+                            self.logger.info(
+                                "Completed instance %d/%d: %s",
+                                i + 1,
+                                len(self.instances),
+                                instance.problem_statement.id,
+                            )
+                        except _BreakLoop:
+                            self.logger.info("Stopping parallel execution")
+                            executor.shutdown(wait=False, cancel_futures=True)
+                            break
+                except KeyboardInterrupt:
+                    self.logger.info("Received keyboard interrupt, stopping parallel execution")
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    raise _BreakLoop
+
         self.logger.info("Done")
         self._chooks.on_end()
 
