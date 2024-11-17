@@ -8,9 +8,22 @@ import sys
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from threading import Lock
 from typing import Self
 
 from pydantic_settings import BaseSettings
+from rich.console import Group
+from rich.live import Live
+from rich.progress import (
+    BarColumn,
+    Progress,
+    SpinnerColumn,
+    TaskID,
+    TaskProgressColumn,
+    TextColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+)
 
 from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.environment.swe_env import SWEEnv
@@ -81,6 +94,11 @@ class RunBatch:
         for hook in hooks or [SaveApplyPatchHook()]:
             self.add_hook(hook)
 
+        self._main_progress_bar: Progress | None = None
+        self._task_progress_bar: Progress | None = None
+        self._spinner_tasks: dict[TaskID, TaskID] = {}
+        self._progress_lock = Lock()
+
     @classmethod
     def from_config(cls, config: RunBatchConfig) -> Self:
         load_environment_variables(config.env_var_path)
@@ -129,19 +147,36 @@ class RunBatch:
                     self.logger.info("Stopping loop over instances")
                     break
         else:
-            # Run in parallel with thread pool
-            with ThreadPoolExecutor(max_workers=self._num_workers) as executor:
-                # Submit all tasks
-                future_to_instance = {
-                    executor.submit(self.run_instance, instance): (i, instance)
-                    for i, instance in enumerate(self.instances)
-                }
+            self._main_progress_bar = Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TaskProgressColumn(),
+                TimeElapsedColumn(),
+                TimeRemainingColumn(),
+            )
+            self._task_progress_bar = Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                TimeElapsedColumn(),
+            )
+            self._main_progress_bar.add_task("[cyan]Overall Progress", total=len(self.instances))
 
-                # Process completed tasks as they finish
-                try:
-                    for future in as_completed(future_to_instance):
-                        i, instance = future_to_instance[future]
-                        try:
+            group = Group(self._main_progress_bar, self._task_progress_bar)
+
+            with Live(group):
+                # Run in parallel with thread pool
+                with ThreadPoolExecutor(max_workers=self._num_workers) as executor:
+                    # Submit all tasks
+                    future_to_instance = {
+                        executor.submit(self.run_instance, instance): (i, instance)
+                        for i, instance in enumerate(self.instances)
+                    }
+
+                    # Process completed tasks as they finish
+                    try:
+                        for future in as_completed(future_to_instance):
+                            i, instance = future_to_instance[future]
                             future.result()  # This will raise any exceptions from run_instance
                             self.logger.info(
                                 "Completed instance %d/%d: %s",
@@ -149,19 +184,21 @@ class RunBatch:
                                 len(self.instances),
                                 instance.problem_statement.id,
                             )
-                        except _BreakLoop:
-                            self.logger.info("Stopping parallel execution")
-                            executor.shutdown(wait=False, cancel_futures=True)
-                            break
-                except KeyboardInterrupt:
-                    self.logger.info("Received keyboard interrupt, stopping parallel execution")
-                    executor.shutdown(wait=False, cancel_futures=True)
-                    raise _BreakLoop
+                    except (KeyboardInterrupt, _BreakLoop):
+                        self.logger.info("Received keyboard interrupt, stopping parallel execution")
+                        executor.shutdown(wait=False, cancel_futures=True)
+                        raise _BreakLoop
 
         self.logger.info("Done")
         self._chooks.on_end()
 
     def run_instance(self, instance: BatchInstance):
+        assert self._main_progress_bar is not None
+        assert self._task_progress_bar is not None
+
+        with self._progress_lock:
+            spinner_task_id = self._task_progress_bar.add_task(f"Task {instance.problem_statement.id}", total=None)
+
         # Either catch and silence exception, or raise _BreakLoop to stop the loop
         # over the instances
         try:
@@ -178,6 +215,10 @@ class RunBatch:
             if self._raise_exceptions:
                 raise
             self.logger.error(f"❌ Failed on {instance.problem_statement.id}: {e}")
+
+        with self._progress_lock:
+            self._task_progress_bar.remove_task(spinner_task_id)
+            self._main_progress_bar.update(TaskID(0), advance=1)
 
     def _run_instance(self, instance: BatchInstance):
         if self.should_skip(instance):

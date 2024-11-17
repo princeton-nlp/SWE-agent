@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import time
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Annotated, Any, Literal
@@ -82,6 +83,9 @@ class InstantEmptySubmitModelConfig(GenericAPIModelConfig):
 
     name: Literal["instant_empty_submit"] = "instant_empty_submit"
     """Do not change. Used for (de)serialization."""
+
+    delay: float = 0.0
+    """Delay before answering"""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -273,10 +277,12 @@ class PredeterminedTestModel(AbstractModel):
 class InstantEmptySubmitTestModel(AbstractModel):
     def __init__(self, args: InstantEmptySubmitModelConfig, commands: list[Command]):
         """This model immediately submits. Useful for testing purposes"""
-        super().__init__(args, commands)
+        self.config: InstantEmptySubmitModelConfig = args
+        self.stats = APIStats()
         self._action_idx = 0
 
     def query(self, history: list[dict[str, str]]) -> str:
+        time.sleep(self.config.delay)
         # Need to at least do _something_ to submit
         if self._action_idx == 0:
             self._action_idx = 1
