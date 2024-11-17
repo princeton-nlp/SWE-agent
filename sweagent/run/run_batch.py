@@ -68,7 +68,7 @@ class RunBatch:
     def __init__(
         self,
         instances: list[BatchInstance],
-        agent: Agent,
+        agent_config: AgentConfig,
         *,
         output_dir: Path = Path("."),
         hooks: list[RunHook] | None = None,
@@ -85,7 +85,7 @@ class RunBatch:
         """
         self.logger = get_logger("Run", emoji="🏃")
         self.instances = instances
-        self.agent = agent
+        self.agent_config = agent_config
         self.output_dir = output_dir
         self._hooks = []
         self._raise_exceptions = raise_exceptions
@@ -117,11 +117,9 @@ class RunBatch:
             )
             raise ValueError(msg)
         logger.debug("The first instance is %s", f"{instances[0]!r}")
-        agent = Agent.from_config(config.agent)
-        agent.logger.setLevel(logging.DEBUG if config.num_workers == 1 else logging.WARNING)
         return cls(
             instances=instances,
-            agent=agent,
+            agent_config=config.agent,
             output_dir=config.output_dir,
             raise_exceptions=config.raise_exceptions,
             redo_existing=config.redo_existing,
@@ -231,6 +229,8 @@ class RunBatch:
     def _run_instance(self, instance: BatchInstance):
         if self.should_skip(instance):
             return
+        agent = Agent.from_config(self.agent_config)
+        agent.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)
         self.logger.info("Starting environment")
         env = SWEEnv.from_config(instance.env)
         env.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.INFO)
@@ -238,7 +238,7 @@ class RunBatch:
         env.start()
         self.logger.info("Running agent")
         self._chooks.on_instance_start(index=0, env=env, problem_statement=instance.problem_statement)
-        result = self.agent.run(
+        result = agent.run(
             problem_statement=instance.problem_statement,
             env=env,
             output_dir=Path(self.output_dir),
