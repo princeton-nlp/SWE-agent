@@ -2,7 +2,7 @@ import json
 import re
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Literal, Self
+from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, Field
@@ -12,6 +12,7 @@ from swerex.deployment.config import (
     DummyDeploymentConfig,
     LocalDeploymentConfig,
 )
+from typing_extensions import Self
 
 from sweagent.environment.config.problem_statement import ProblemStatementConfig, TextProblemStatement
 from sweagent.environment.config.repo import PreExistingRepo

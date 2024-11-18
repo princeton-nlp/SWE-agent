@@ -3,12 +3,13 @@ import json
 import re
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Self
+from typing import Any
 
 import yaml
 from pydantic import BaseModel, Field
 from swerex.runtime.abstract import Command as RexCommand
 from swerex.runtime.abstract import UploadRequest
+from typing_extensions import Self
 
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.tools.commands import Command, ParseCommand, ParseCommandBash

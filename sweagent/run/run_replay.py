@@ -5,13 +5,14 @@ import sys
 import tempfile
 from getpass import getpass
 from pathlib import Path
-from typing import Any, Self
+from typing import Any
 
 import yaml
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from swerex.deployment.abstract import AbstractDeployment
 from swerex.deployment.config import DeploymentConfig, DockerDeploymentConfig, get_deployment
+from typing_extensions import Self
 
 from sweagent import CONFIG_DIR
 from sweagent.agent.agents import Agent, AgentConfig

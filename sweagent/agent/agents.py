@@ -5,12 +5,13 @@ import json
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Self
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 from simple_parsing.helpers.fields import field
 from swerex.exceptions import BashIncorrectSyntaxError, SweRexception
 from tenacity import RetryError
+from typing_extensions import Self
 
 from sweagent import __version__, get_agent_commit_hash
 from sweagent.agent.history_processors import DefaultHistoryProcessor, HistoryProcessor
