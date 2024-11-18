@@ -2,7 +2,6 @@
 Run on a batch of instances/issues. For example run on all of SWE-bench.
 """
 
-import collections
 import getpass
 import json
 import logging
@@ -10,28 +9,16 @@ import sys
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from threading import Lock
 from typing import Self
 
 from pydantic_settings import BaseSettings
-from rich.console import Group
 from rich.live import Live
-from rich.progress import (
-    BarColumn,
-    Progress,
-    SpinnerColumn,
-    TaskID,
-    TaskProgressColumn,
-    TextColumn,
-    TimeElapsedColumn,
-    TimeRemainingColumn,
-)
-from rich.table import Table
 
 from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.agent.hooks.status import SetStatusAgentHook
 from sweagent.environment.hooks.status import SetStatusEnvironmentHook
 from sweagent.environment.swe_env import SWEEnv
+from sweagent.run._progress import RunBatchProgressManager
 from sweagent.run.batch_instances import BatchInstance, BatchInstanceSourceConfig
 from sweagent.run.common import BasicCLI, save_predictions
 from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
@@ -99,13 +86,7 @@ class RunBatch:
         for hook in hooks or [SaveApplyPatchHook()]:
             self.add_hook(hook)
 
-        self._spinner_tasks: dict[str, TaskID] = {}
-        self._progress_lock = Lock()
-        self._main_progress_bar: Progress | None = None
-        self._task_progress_bar: Progress | None = None
-        self._exit_status_table: Table | None = None
-        self._exit_status_histogram = collections.defaultdict(int)
-        self._render_group: Group | None = None
+        self._progress_manager = RunBatchProgressManager(num_instances=len(instances))
 
     @classmethod
     def from_config(cls, config: RunBatchConfig) -> Self:
@@ -164,25 +145,8 @@ class RunBatch:
 
     def main_multi_worker(self):
         add_logger_names_to_stream_handlers()
-        self._main_progress_bar = Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            TaskProgressColumn(),
-            TimeElapsedColumn(),
-            TimeRemainingColumn(),
-        )
-        self._task_progress_bar = Progress(
-            SpinnerColumn(),
-            TextColumn("{task.fields[instance_id]}: "),
-            TextColumn("{task.fields[status]}"),
-            TimeElapsedColumn(),
-        )
-        self._main_progress_bar.add_task("[cyan]Overall Progress", total=len(self.instances))
 
-        self._render_group = Group(Table(), self._main_progress_bar, self._task_progress_bar)
-
-        with Live(self._render_group):
+        with Live(self._progress_manager.render_group):
             # Run in parallel with thread pool
             with ThreadPoolExecutor(max_workers=self._num_workers) as executor:
                 # Submit all tasks
@@ -208,18 +172,10 @@ class RunBatch:
                     raise _BreakLoop
 
     def run_instance(self, instance: BatchInstance):
-        if self._task_progress_bar is not None:
-            with self._progress_lock:
-                self._spinner_tasks[instance.problem_statement.id] = self._task_progress_bar.add_task(
-                    description=f"Task {instance.problem_statement.id}",
-                    status="Task initialized",
-                    total=None,
-                    instance_id=instance.problem_statement.id,
-                )
+        self._progress_manager.on_instance_start(instance.problem_statement.id)
 
         if self.should_skip(instance):
-            self._exit_status_histogram["skipped"] += 1
-            self._update_exit_status_table()
+            self._progress_manager.on_instance_skipped(instance.problem_statement.id)
             return
 
         # Either catch and silence exception, or raise _BreakLoop to stop the loop
@@ -238,47 +194,24 @@ class RunBatch:
             if self._raise_exceptions:
                 raise
             self.logger.error(f"❌ Failed on {instance.problem_statement.id}: {e}")
-            self._exit_status_histogram[f"Uncaught {type(e).__name__}"] += 1
-        else:
-            self._exit_status_histogram[result.info.get("exit_status", "unknown_exit")] += 1  # type: ignore
+            self._progress_manager.on_uncaught_exception(instance.problem_statement.id, e)
         finally:
-            self._update_exit_status_table()
-
-        if self._task_progress_bar is not None:
-            assert self._main_progress_bar is not None
-            with self._progress_lock:
-                self._task_progress_bar.remove_task(self._spinner_tasks[instance.problem_statement.id])
-                self._main_progress_bar.update(TaskID(0), advance=1)
-
-    def _update_exit_status_table(self):
-        self.logger.info("Updating exit status table")
-        t = Table()
-        t.add_column("Exit Status")
-        t.add_column("Count")
-        t.show_header = False
-        with self._progress_lock:
-            t.show_header = True
-            # self._exit_status_table.rows.clear()
-            for status, count in self._exit_status_histogram.items():
-                t.add_row(status, str(count))
-        assert self._render_group is not None
-        self._render_group.renderables[0] = t
-
-    def _update_task_progress(self, instance_id: str, message: str):
-        assert self._task_progress_bar is not None
-        assert self._main_progress_bar is not None
-        with self._progress_lock:
-            self._task_progress_bar.update(self._spinner_tasks[instance_id], status=message, instance_id=instance_id)
+            self._progress_manager.update_exit_status_table()
+        self._progress_manager.on_instance_end(
+            instance.problem_statement.id, exit_status=result.info.get("exit_status", "unknown_exit")
+        )
 
     def _run_instance(self, instance: BatchInstance):
         self.agent_config.name = f"{instance.problem_statement.id}"
         agent = Agent.from_config(self.agent_config)
         agent.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)
-        agent.add_hook(SetStatusAgentHook(instance.problem_statement.id, self._update_task_progress))
-        self._update_task_progress(instance.problem_statement.id, "Starting environment")
+        agent.add_hook(SetStatusAgentHook(instance.problem_statement.id, self._progress_manager.update_task_progress))
+        self._progress_manager.update_task_progress(instance.problem_statement.id, "Starting environment")
         instance.env.name = f"{instance.problem_statement.id}"
         env = SWEEnv.from_config(instance.env)
-        env.add_hook(SetStatusEnvironmentHook(instance.problem_statement.id, self._update_task_progress))
+        env.add_hook(
+            SetStatusEnvironmentHook(instance.problem_statement.id, self._progress_manager.update_task_progress)
+        )
         env.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.INFO)
         env.deployment.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)  # type: ignore
         env.start()
