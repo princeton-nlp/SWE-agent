@@ -45,6 +45,8 @@ class AbstractAgentHook:
 
     def on_setup_done(self): ...
 
+    def on_tools_installation_started(self): ...
+
 
 class CombinedAgentHook(AbstractAgentHook):
     def __init__(self, hooks: list[AbstractAgentHook] | None = None):
@@ -100,3 +102,10 @@ class CombinedAgentHook(AbstractAgentHook):
             hook.on_query_message_added(
                 role=role, content=content, agent=agent, is_demo=is_demo, thought=thought, action=action
             )
+
+    def on_setup_done(self):
+        return super().on_setup_done()
+
+    def on_tools_installation_started(self):
+        for hook in self.hooks:
+            hook.on_tools_installation_started()

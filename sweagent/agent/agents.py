@@ -18,10 +18,10 @@ from sweagent.agent.history_processors import DefaultHistoryProcessor, HistoryPr
 from sweagent.agent.hooks.abstract import AbstractAgentHook, CombinedAgentHook
 from sweagent.agent.models import (
     AbstractModel,
-    APIStats,
     ContextWindowExceededError,
     CostLimitExceededError,
     HumanModel,
+    InstanceStats,
     ModelConfig,
     get_model,
 )
@@ -685,7 +685,7 @@ class Agent:
         self.info["submission"] = step_output.submission
         self.info["exit_status"] = step_output.exit_status  # type: ignore
         self.info.update(self._get_edited_files_with_context(patch=step_output.submission or ""))  # type: ignore
-        model_stats: APIStats = self.model.stats
+        model_stats: InstanceStats = self.model.stats
         self.info["model_stats"] = model_stats.model_dump()
 
         self.add_step_to_trajectory(step_output)

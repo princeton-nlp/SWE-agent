@@ -5,6 +5,7 @@ import random
 import time
 from abc import ABC, abstractmethod
 from pathlib import Path
+from threading import Lock
 from typing import Annotated, Any, Literal
 
 import litellm
@@ -115,17 +116,23 @@ ModelConfig = Annotated[
 ]
 
 
-class APIStats(PydanticBaseModel):
+class GlobalStats(PydanticBaseModel):
     total_cost: float = 0
     """Cumulative cost for all instances so far"""
 
+
+GLOBAL_STATS = GlobalStats()
+GLOBAL_STATS_LOCK = Lock()
+
+
+class InstanceStats(PydanticBaseModel):
     instance_cost: float = 0
     tokens_sent: int = 0
     tokens_received: int = 0
     api_calls: int = 0
 
-    def __add__(self, other: APIStats) -> APIStats:
-        return APIStats(
+    def __add__(self, other: InstanceStats) -> InstanceStats:
+        return InstanceStats(
             **{field: getattr(self, field) + getattr(other, field) for field in self.model_fields.keys()},
         )
 
@@ -149,10 +156,10 @@ class TotalCostLimitExceededError(CostLimitExceededError):
 class AbstractModel(ABC):
     def __init__(self, config: PydanticBaseModel, commands: list[Command]):
         self.config: PydanticBaseModel
-        self.stats: APIStats
+        self.stats: InstanceStats
 
     def reset_stats(self):
-        self.stats = APIStats()
+        self.stats = InstanceStats()
 
     @abstractmethod
     def query(self, history: History, action_prompt: str = "> ") -> str: ...
@@ -161,7 +168,7 @@ class AbstractModel(ABC):
 class HumanModel(AbstractModel):
     def __init__(self, config: HumanModelConfig, commands: list[Command]):
         self.config = config
-        self.stats = APIStats()
+        self.stats = InstanceStats()
 
         # Determine which commands require multi-line input
         self.multi_line_command_endings = {
@@ -216,7 +223,7 @@ class HumanThoughtModel(HumanModel):
 class ReplayModel(AbstractModel):
     def __init__(self, config: ReplayModelConfig, commands: list[Command]):
         self.config = config
-        self.stats = APIStats()
+        self.stats = InstanceStats()
 
         if not self.config.replay_path.exists():
             msg = f"Replay file {self.config.replay_path} not found"
@@ -261,7 +268,7 @@ class PredeterminedTestModel(AbstractModel):
     def __init__(self, outputs: list[str]):
         self._outputs = outputs
         self._idx = -1
-        self.stats = APIStats()
+        self.stats = InstanceStats()
 
     def query(self, *args, **kwargs) -> str:
         self._idx += 1
@@ -279,7 +286,7 @@ class InstantEmptySubmitTestModel(AbstractModel):
     def __init__(self, args: InstantEmptySubmitModelConfig, commands: list[Command]):
         """This model immediately submits. Useful for testing purposes"""
         self.config: InstantEmptySubmitModelConfig = args
-        self.stats = APIStats()
+        self.stats = InstanceStats()
         self._action_idx = 0
 
     def query(self, history: list[dict[str, str]]) -> str:
@@ -299,10 +306,11 @@ class LiteLLMModel(AbstractModel):
     def __init__(self, args: ModelConfig, commands: list[Command]):
         self.args = args
         self.commands = commands
-        self.stats = APIStats()
+        self.stats = InstanceStats()
 
     def _update_stats(self, *, input_tokens: int, output_tokens: int, cost: float) -> None:
-        self.stats.total_cost += cost
+        with GLOBAL_STATS_LOCK:
+            GLOBAL_STATS.total_cost += cost
         self.stats.instance_cost += cost
         self.stats.tokens_sent += input_tokens
         self.stats.tokens_received += output_tokens
@@ -318,13 +326,13 @@ class LiteLLMModel(AbstractModel):
         logger.debug(
             f"total_tokens_sent={self.stats.tokens_sent:,}, "
             f"total_tokens_received={self.stats.tokens_received:,}, "
-            f"total_cost={self.stats.total_cost:.2f}, "
+            f"total_cost={GLOBAL_STATS.total_cost:.2f}, "
             f"total_api_calls={self.stats.api_calls:,}",
         )
 
         # Check whether total cost or instance cost limits have been exceeded
-        if 0 < self.args.total_cost_limit <= self.stats.total_cost:
-            logger.warning(f"Cost {self.stats.total_cost:.2f} exceeds limit {self.args.total_cost_limit:.2f}")
+        if 0 < self.args.total_cost_limit <= GLOBAL_STATS.total_cost:
+            logger.warning(f"Cost {GLOBAL_STATS.total_cost:.2f} exceeds limit {self.args.total_cost_limit:.2f}")
             msg = "Total cost limit exceeded"
             raise TotalCostLimitExceededError(msg)
 

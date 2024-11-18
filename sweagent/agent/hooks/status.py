@@ -20,3 +20,6 @@ class SetStatusAgentHook(AbstractAgentHook):
 
     def on_step_done(self, *, step: StepOutput, info: AgentInfo):
         self._cost = info.get("cost", 0.0)
+
+    def on_tools_installation_started(self):
+        self._update("Installing tools...")
