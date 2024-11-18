@@ -33,7 +33,7 @@ class RunBatchProgressManager:
 
         self._lock = Lock()
 
-        self.exit_status_histogram = collections.defaultdict(int)
+        self._instances_by_exit_status = collections.defaultdict(list)
         self._main_progress_bar = Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -62,12 +62,13 @@ class RunBatchProgressManager:
         t = Table()
         t.add_column("Exit Status")
         t.add_column("Count")
+        t.add_column("Most recent")
         t.show_header = False
         with self._lock:
             t.show_header = True
             # self._exit_status_table.rows.clear()
-            for status, count in self.exit_status_histogram.items():
-                t.add_row(status, str(count))
+            for status, instances in self._instances_by_exit_status.items():
+                t.add_row(status, str(len(instances)), instances[-1])
         assert self.render_group is not None
         self.render_group.renderables[0] = t
 
@@ -87,7 +88,7 @@ class RunBatchProgressManager:
             )
 
     def on_instance_end(self, instance_id: str, exit_status: str):
-        self.exit_status_histogram[exit_status] += 1
+        self._instances_by_exit_status[exit_status].append(instance_id)
         with self._lock:
             self._task_progress_bar.remove_task(self._spinner_tasks[instance_id])
             self._main_progress_bar.update(TaskID(0), advance=1)
@@ -95,5 +96,5 @@ class RunBatchProgressManager:
 
     def on_uncaught_exception(self, instance_id: str, exception: Exception):
         with self._lock:
-            self.exit_status_histogram[f"Uncaught {type(exception).__name__}"] += 1
+            self._instances_by_exit_status[f"Uncaught {type(exception).__name__}"].append(instance_id)
         self.update_exit_status_table()

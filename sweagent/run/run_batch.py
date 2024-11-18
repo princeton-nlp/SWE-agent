@@ -210,6 +210,8 @@ class RunBatch:
         self._progress_manager.update_instance_status(instance.problem_statement.id, "Starting environment")
         instance.env.name = f"{instance.problem_statement.id}"
         env = SWEEnv.from_config(instance.env)
+        env.deployment.logger = get_logger(f"rex-{instance.problem_statement.id}", emoji="🦖")
+        env.deployment.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)
         env.add_hook(
             SetStatusEnvironmentHook(instance.problem_statement.id, self._progress_manager.update_instance_status)
         )
