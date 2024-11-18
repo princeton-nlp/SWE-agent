@@ -205,12 +205,12 @@ class RunBatch:
         self.agent_config.name = f"{instance.problem_statement.id}"
         agent = Agent.from_config(self.agent_config)
         agent.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)
-        agent.add_hook(SetStatusAgentHook(instance.problem_statement.id, self._progress_manager.update_task_progress))
-        self._progress_manager.update_task_progress(instance.problem_statement.id, "Starting environment")
+        agent.add_hook(SetStatusAgentHook(instance.problem_statement.id, self._progress_manager.update_instance_status))
+        self._progress_manager.update_instance_status(instance.problem_statement.id, "Starting environment")
         instance.env.name = f"{instance.problem_statement.id}"
         env = SWEEnv.from_config(instance.env)
         env.add_hook(
-            SetStatusEnvironmentHook(instance.problem_statement.id, self._progress_manager.update_task_progress)
+            SetStatusEnvironmentHook(instance.problem_statement.id, self._progress_manager.update_instance_status)
         )
         env.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.INFO)
         env.deployment.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)  # type: ignore
