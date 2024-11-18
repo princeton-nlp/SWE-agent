@@ -24,6 +24,7 @@ from sweagent.run.batch_instances import BatchInstance, BatchInstanceSourceConfi
 from sweagent.run.common import BasicCLI, save_predictions
 from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
 from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
+from sweagent.types import AgentRunResult
 from sweagent.utils.config import load_environment_variables
 from sweagent.utils.log import add_logger_names_to_stream_handlers, get_logger
 
@@ -119,7 +120,7 @@ class RunBatch:
         hook.on_init(run=self)
         self._hooks.append(hook)
 
-    def main(self):
+    def main(self) -> None:
         self._chooks.on_start()
 
         if self._num_workers <= 1:
@@ -129,8 +130,7 @@ class RunBatch:
 
         self._chooks.on_end()
 
-    def main_single_worker(self):
-        # Run sequentially if num_workers is 1
+    def main_single_worker(self) -> None:
         for i_instance, instance in enumerate(self.instances):
             self.logger.info(
                 "Starting to run on instance %d/%d: %s",
@@ -144,37 +144,27 @@ class RunBatch:
                 self.logger.info("Stopping loop over instances")
                 break
 
-    def main_multi_worker(self):
+    def main_multi_worker(self) -> None:
         add_logger_names_to_stream_handlers()
 
         with Live(self._progress_manager.render_group):
-            # Run in parallel with thread pool
             with ThreadPoolExecutor(max_workers=self._num_workers) as executor:
-                # Submit all tasks
-                future_to_instance = {
-                    executor.submit(self.run_instance, instance): (i, instance)
-                    for i, instance in enumerate(self.instances)
-                }
-
-                # Process completed tasks as they finish
+                futures = [executor.submit(self.run_instance, instance) for instance in self.instances]
                 try:
-                    for future in as_completed(future_to_instance):
-                        i, instance = future_to_instance[future]
-                        future.result()  # This will raise any exceptions from run_instance
-                        self.logger.info(
-                            "Completed instance %d/%d: %s",
-                            i + 1,
-                            len(self.instances),
-                            instance.problem_statement.id,
-                        )
+                    for future in as_completed(futures):
+                        future.result()
                 except (KeyboardInterrupt, _BreakLoop):
-                    self.logger.info("Received keyboard interrupt, stopping parallel execution")
+                    msg = (
+                        "Received keyboard interrupt, waiting for running instances "
+                        "to finish, but cancelled everything else"
+                    )
+                    self.logger.info(msg)
                     executor.shutdown(wait=False, cancel_futures=True)
                     raise _BreakLoop
 
         self._progress_manager.print_report()
 
-    def run_instance(self, instance: BatchInstance):
+    def run_instance(self, instance: BatchInstance) -> None:
         self._progress_manager.on_instance_start(instance.problem_statement.id)
 
         if self.should_skip(instance):
@@ -205,7 +195,7 @@ class RunBatch:
         finally:
             self._progress_manager.update_exit_status_table()
 
-    def _run_instance(self, instance: BatchInstance):
+    def _run_instance(self, instance: BatchInstance) -> AgentRunResult:
         self.agent_config.name = f"{instance.problem_statement.id}"
         agent = Agent.from_config(self.agent_config)
         agent.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)
