@@ -28,6 +28,7 @@ class ToolFilterConfig(BaseModel):
         "nohup",
         "git",
         "gdb",
+        "less",
     ]
     blocklist_standalone: list[str] = [
         "python",
