@@ -107,3 +107,10 @@ class RunBatchProgressManager:
 
     def on_uncaught_exception(self, instance_id: str, exception: Exception):
         self.on_instance_end(instance_id, f"Uncaught {type(exception).__name__}")
+
+    def print_report(self) -> None:
+        """Print complete list of instances and their exit statuses."""
+        for status, instances in self._instances_by_exit_status.items():
+            print(f"{status}: {len(instances)}")
+            for instance in instances:
+                print(f"  {instance}")
