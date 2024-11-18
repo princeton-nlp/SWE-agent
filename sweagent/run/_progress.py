@@ -16,6 +16,8 @@ from rich.progress import (
 )
 from rich.table import Table
 
+from sweagent.agent.models import GLOBAL_STATS
+
 
 class RunBatchProgressManager:
     def __init__(
@@ -36,7 +38,7 @@ class RunBatchProgressManager:
         self._instances_by_exit_status = collections.defaultdict(list)
         self._main_progress_bar = Progress(
             SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
+            TextColumn("[progress.description]{task.description} (${task.fields[total_cost]})"),
             BarColumn(),
             TaskProgressColumn(),
             TimeElapsedColumn(),
@@ -52,7 +54,9 @@ class RunBatchProgressManager:
         with one task for each instance.
         """
 
-        self._main_progress_bar.add_task("[cyan]Overall Progress", total=num_instances)
+        self._main_task_id = self._main_progress_bar.add_task(
+            "[cyan]Overall Progress", total=num_instances, total_cost=0
+        )
 
         self.render_group = Group(Table(), self._main_progress_bar, self._task_progress_bar)
 
@@ -68,16 +72,21 @@ class RunBatchProgressManager:
             t.show_header = True
             # self._exit_status_table.rows.clear()
             for status, instances in self._instances_by_exit_status.items():
-                instances_str = ", ".join(reversed(instances))[:40]
+                instances_str = ", ".join(reversed(instances))[:40] + "..."
                 t.add_row(status, str(len(instances)), instances_str)
         assert self.render_group is not None
         self.render_group.renderables[0] = t
+
+    def _update_total_costs(self):
+        with self._lock:
+            self._main_progress_bar.update(self._main_task_id, total_cost=f"{GLOBAL_STATS.total_cost:.2f}")
 
     def update_instance_status(self, instance_id: str, message: str):
         assert self._task_progress_bar is not None
         assert self._main_progress_bar is not None
         with self._lock:
             self._task_progress_bar.update(self._spinner_tasks[instance_id], status=message, instance_id=instance_id)
+        self._update_total_costs()
 
     def on_instance_start(self, instance_id: str):
         with self._lock:
@@ -94,6 +103,7 @@ class RunBatchProgressManager:
             self._task_progress_bar.remove_task(self._spinner_tasks[instance_id])
             self._main_progress_bar.update(TaskID(0), advance=1)
         self.update_exit_status_table()
+        self._update_total_costs()
 
     def on_uncaught_exception(self, instance_id: str, exception: Exception):
         self.on_instance_end(instance_id, f"Uncaught {type(exception).__name__}")
