@@ -97,8 +97,3 @@ class RunBatchProgressManager:
         with self._lock:
             self.exit_status_histogram[f"Uncaught {type(exception).__name__}"] += 1
         self.update_exit_status_table()
-
-    def on_instance_skipped(self, instance_id: str):
-        with self._lock:
-            self.exit_status_histogram["skipped"] += 1
-        self.update_exit_status_table()

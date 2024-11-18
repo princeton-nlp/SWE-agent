@@ -175,7 +175,7 @@ class RunBatch:
         self._progress_manager.on_instance_start(instance.problem_statement.id)
 
         if self.should_skip(instance):
-            self._progress_manager.on_instance_skipped(instance.problem_statement.id)
+            self._progress_manager.on_instance_end(instance.problem_statement.id, exit_status="skipped")
             return
 
         # Either catch and silence exception, or raise _BreakLoop to stop the loop
