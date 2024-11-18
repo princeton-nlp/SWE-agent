@@ -29,10 +29,10 @@ class EnvironmentConfig(BaseModel):
     # pydantic config
     model_config = ConfigDict(extra="forbid")
 
+    name: str = "main"
+
 
 class SWEEnv:
-    name = "swe_main"
-
     def __init__(
         self,
         *,
@@ -40,14 +40,15 @@ class SWEEnv:
         repo: Repo | RepoConfig | None,
         startup_commands: list[str],
         hooks: list[EnvHook] | None = None,
+        name: str = "main",
     ):
         """This class represents the environment in which we solve the tasks."""
         super().__init__()
         self.deployment = deployment
         self.repo = repo
         self._startup_commands = startup_commands
-        self.logger = get_logger("swe_env", emoji="🌱")
-
+        self.logger = get_logger(f"env-{name}", emoji="🌱")
+        self.name = name
         self.clean_multi_line_functions = lambda x: x
         self._chook = CombinedEnvHooks()
         for hook in hooks or []:
@@ -59,6 +60,7 @@ class SWEEnv:
             deployment=get_deployment(config.deployment),
             repo=config.repo,
             startup_commands=config.startup_commands,
+            name=config.name,
         )
 
     def add_hook(self, hook: EnvHook) -> None:

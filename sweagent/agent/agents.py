@@ -124,7 +124,7 @@ class Agent:
         self.tools = tools
         self.history_processor = history_processor
         self.max_requeries = max_requeries
-        self.logger = get_logger("agent", emoji="🤠")
+        self.logger = get_logger(f"agent-{name}", emoji="🤠")
 
         # Set in run method
         self._env: SWEEnv | None = None

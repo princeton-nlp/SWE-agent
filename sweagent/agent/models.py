@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import random
 import time
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -282,7 +283,7 @@ class InstantEmptySubmitTestModel(AbstractModel):
         self._action_idx = 0
 
     def query(self, history: list[dict[str, str]]) -> str:
-        time.sleep(self.config.delay)
+        time.sleep(random.uniform(0, self.config.delay))
         # Need to at least do _something_ to submit
         if self._action_idx == 0:
             self._action_idx = 1

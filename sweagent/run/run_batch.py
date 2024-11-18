@@ -37,7 +37,7 @@ from sweagent.run.common import BasicCLI, save_predictions
 from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
 from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
 from sweagent.utils.config import load_environment_variables
-from sweagent.utils.log import get_logger
+from sweagent.utils.log import add_logger_names_to_stream_handlers, get_logger
 
 
 class RunBatchConfig(BaseSettings, cli_implicit_flags=True):
@@ -163,6 +163,7 @@ class RunBatch:
                 break
 
     def main_multi_worker(self):
+        add_logger_names_to_stream_handlers()
         self._main_progress_bar = Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -270,16 +271,17 @@ class RunBatch:
             self._task_progress_bar.update(self._spinner_tasks[instance_id], status=message, instance_id=instance_id)
 
     def _run_instance(self, instance: BatchInstance):
+        self.agent_config.name = f"{instance.problem_statement.id}"
         agent = Agent.from_config(self.agent_config)
         agent.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)
         agent.add_hook(SetStatusAgentHook(instance.problem_statement.id, self._update_task_progress))
         self._update_task_progress(instance.problem_statement.id, "Starting environment")
+        instance.env.name = f"{instance.problem_statement.id}"
         env = SWEEnv.from_config(instance.env)
         env.add_hook(SetStatusEnvironmentHook(instance.problem_statement.id, self._update_task_progress))
         env.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.INFO)
         env.deployment.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)  # type: ignore
         env.start()
-        self.logger.info("Running agent")
         self._chooks.on_instance_start(index=0, env=env, problem_statement=instance.problem_statement)
         try:
             result = agent.run(

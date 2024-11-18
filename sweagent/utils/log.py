@@ -24,6 +24,7 @@ def _interpret_level_from_env(level: str | None, *, default=logging.DEBUG) -> in
 
 _STREAM_LEVEL = _interpret_level_from_env(os.environ.get("SWE_AGENT_LOG_STREAM_LEVEL"))
 _FILE_LEVEL = _interpret_level_from_env(os.environ.get("SWE_AGENT_LOG_FILE_LEVEL"), default=logging.TRACE)  # type: ignore
+_INCLUDE_LOGGER_NAME_IN_STREAM_HANDLER = False
 
 
 class _RichHandlerWithEmoji(RichHandler):
@@ -58,6 +59,8 @@ def get_logger(name: str, *, emoji: str = "") -> logging.Logger:
     _SET_UP_LOGGERS.add(name)
     for handler in _ADDITIONAL_HANDLERS:
         logger.addHandler(handler)
+    if _INCLUDE_LOGGER_NAME_IN_STREAM_HANDLER:
+        add_logger_name_to_stream_handler(logger)
     return logger
 
 
@@ -73,6 +76,20 @@ def add_file_handler(path: PurePath | str) -> None:
         logger = logging.getLogger(name)
         logger.addHandler(handler)
     _ADDITIONAL_HANDLERS.append(handler)
+
+
+def add_logger_name_to_stream_handler(logger: logging.Logger) -> None:
+    for handler in logger.handlers:
+        if isinstance(handler, _RichHandlerWithEmoji):
+            formatter = logging.Formatter("[%(name)s] %(message)s")
+            handler.setFormatter(formatter)
+
+
+def add_logger_names_to_stream_handlers() -> None:
+    global _INCLUDE_LOGGER_NAME_IN_STREAM_HANDLER
+    _INCLUDE_LOGGER_NAME_IN_STREAM_HANDLER = True
+    for logger in _SET_UP_LOGGERS:
+        add_logger_name_to_stream_handler(logging.getLogger(logger))
 
 
 default_logger = get_logger("swe-agent")
