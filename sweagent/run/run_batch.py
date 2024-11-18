@@ -13,6 +13,7 @@ from typing import Self
 
 from pydantic_settings import BaseSettings
 from rich.live import Live
+from swerex.deployment.hooks.status import SetStatusDeploymentHook
 
 from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.agent.hooks.status import SetStatusAgentHook
@@ -191,10 +192,10 @@ class RunBatch:
             raise _BreakLoop
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            if self._raise_exceptions:
-                raise
             self.logger.error(f"❌ Failed on {instance.problem_statement.id}: {e}")
             self._progress_manager.on_uncaught_exception(instance.problem_statement.id, e)
+            if self._raise_exceptions:
+                raise
         else:
             self._progress_manager.on_instance_end(
                 instance.problem_statement.id, exit_status=result.info.get("exit_status", "unknown_exit")
@@ -217,6 +218,9 @@ class RunBatch:
         )
         env.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.INFO)
         env.deployment.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)  # type: ignore
+        env.deployment.add_hook(
+            SetStatusDeploymentHook(instance.problem_statement.id, self._progress_manager.update_instance_status)
+        )
         env.start()
         self._chooks.on_instance_start(index=0, env=env, problem_statement=instance.problem_statement)
         try:
