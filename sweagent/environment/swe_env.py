@@ -136,6 +136,7 @@ class SWEEnv:
         """Handles container initialization. Defines container name and creates it.
         If cached_image is provided, it will use that image name instead of the default.
         """
+        self._chook.on_start_deployment()
         asyncio.run(self.deployment.start())
         asyncio.run(self.deployment.runtime.create_session(CreateBashSessionRequest(startup_source=["/root/.bashrc"])))
         self.logger.info("Environment Initialized")

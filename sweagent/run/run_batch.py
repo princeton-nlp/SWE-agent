@@ -27,6 +27,8 @@ from rich.progress import (
 )
 
 from sweagent.agent.agents import Agent, AgentConfig
+from sweagent.agent.hooks.status import SetStatusAgentHook
+from sweagent.environment.hooks.status import SetStatusEnvironmentHook
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.run.batch_instances import BatchInstance, BatchInstanceSourceConfig
 from sweagent.run.common import BasicCLI, save_predictions
@@ -97,7 +99,7 @@ class RunBatch:
 
         self._main_progress_bar: Progress | None = None
         self._task_progress_bar: Progress | None = None
-        self._spinner_tasks: dict[TaskID, TaskID] = {}
+        self._spinner_tasks: dict[str, TaskID] = {}
         self._progress_lock = Lock()
 
     @classmethod
@@ -166,7 +168,8 @@ class RunBatch:
         )
         self._task_progress_bar = Progress(
             SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
+            TextColumn("{task.fields[instance_id]}: "),
+            TextColumn("{task.fields[status]}"),
             TimeElapsedColumn(),
         )
         self._main_progress_bar.add_task("[cyan]Overall Progress", total=len(self.instances))
@@ -201,7 +204,12 @@ class RunBatch:
     def run_instance(self, instance: BatchInstance):
         if self._task_progress_bar is not None:
             with self._progress_lock:
-                spinner_task_id = self._task_progress_bar.add_task(f"Task {instance.problem_statement.id}", total=None)
+                self._spinner_tasks[instance.problem_statement.id] = self._task_progress_bar.add_task(
+                    description=f"Task {instance.problem_statement.id}",
+                    status="Task initialized",
+                    total=None,
+                    instance_id=instance.problem_statement.id,
+                )
 
         # Either catch and silence exception, or raise _BreakLoop to stop the loop
         # over the instances
@@ -223,16 +231,24 @@ class RunBatch:
         if self._task_progress_bar is not None:
             assert self._main_progress_bar is not None
             with self._progress_lock:
-                self._task_progress_bar.remove_task(spinner_task_id)
+                self._task_progress_bar.remove_task(self._spinner_tasks[instance.problem_statement.id])
                 self._main_progress_bar.update(TaskID(0), advance=1)
+
+    def _update_task_progress(self, instance_id: str, message: str):
+        assert self._task_progress_bar is not None
+        assert self._main_progress_bar is not None
+        with self._progress_lock:
+            self._task_progress_bar.update(self._spinner_tasks[instance_id], status=message, instance_id=instance_id)
 
     def _run_instance(self, instance: BatchInstance):
         if self.should_skip(instance):
             return
         agent = Agent.from_config(self.agent_config)
         agent.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)
-        self.logger.info("Starting environment")
+        agent.add_hook(SetStatusAgentHook(instance.problem_statement.id, self._update_task_progress))
+        self._update_task_progress(instance.problem_statement.id, "Starting environment")
         env = SWEEnv.from_config(instance.env)
+        env.add_hook(SetStatusEnvironmentHook(instance.problem_statement.id, self._update_task_progress))
         env.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.INFO)
         env.deployment.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)  # type: ignore
         env.start()
