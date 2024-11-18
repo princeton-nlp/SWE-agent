@@ -587,6 +587,7 @@ class Agent:
             return self.get_model_requery_history(
                 error_template=template,
                 **step.model_dump(),
+                **getattr(exception, "extra_info", {}),
             )
 
         n_fails = 0
@@ -611,7 +612,10 @@ class Agent:
                 )
             except BashIncorrectSyntaxError as e:
                 n_fails += 1
-                history = handle_error_with_retry(exception=e, template=self.templates.shell_check_error_template)
+                history = handle_error_with_retry(
+                    exception=e,
+                    template=self.templates.shell_check_error_template,
+                )
 
             # Errors that cause exit
 
