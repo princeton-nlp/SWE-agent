@@ -689,7 +689,7 @@ class Agent:
 
         self.add_step_to_trajectory(step_output)
 
-        self._chook.on_step_done(step=step_output)
+        self._chook.on_step_done(step=step_output, info=self.info)
         return step_output
 
     def run(

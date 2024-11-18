@@ -62,13 +62,14 @@ class RunBatchProgressManager:
         t = Table()
         t.add_column("Exit Status")
         t.add_column("Count")
-        t.add_column("Most recent")
+        t.add_column("Most recent instances")
         t.show_header = False
         with self._lock:
             t.show_header = True
             # self._exit_status_table.rows.clear()
             for status, instances in self._instances_by_exit_status.items():
-                t.add_row(status, str(len(instances)), instances[-1])
+                instances_str = ", ".join(reversed(instances))[:40]
+                t.add_row(status, str(len(instances)), instances_str)
         assert self.render_group is not None
         self.render_group.renderables[0] = t
 
