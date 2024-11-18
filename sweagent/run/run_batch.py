@@ -2,6 +2,7 @@
 Run on a batch of instances/issues. For example run on all of SWE-bench.
 """
 
+import collections
 import getpass
 import json
 import logging
@@ -25,6 +26,7 @@ from rich.progress import (
     TimeElapsedColumn,
     TimeRemainingColumn,
 )
+from rich.table import Table
 
 from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.agent.hooks.status import SetStatusAgentHook
@@ -97,10 +99,13 @@ class RunBatch:
         for hook in hooks or [SaveApplyPatchHook()]:
             self.add_hook(hook)
 
-        self._main_progress_bar: Progress | None = None
-        self._task_progress_bar: Progress | None = None
         self._spinner_tasks: dict[str, TaskID] = {}
         self._progress_lock = Lock()
+        self._main_progress_bar: Progress | None = None
+        self._task_progress_bar: Progress | None = None
+        self._exit_status_table: Table | None = None
+        self._exit_status_histogram = collections.defaultdict(int)
+        self._render_group: Group | None = None
 
     @classmethod
     def from_config(cls, config: RunBatchConfig) -> Self:
@@ -174,9 +179,9 @@ class RunBatch:
         )
         self._main_progress_bar.add_task("[cyan]Overall Progress", total=len(self.instances))
 
-        group = Group(self._main_progress_bar, self._task_progress_bar)
+        self._render_group = Group(Table(), self._main_progress_bar, self._task_progress_bar)
 
-        with Live(group):
+        with Live(self._render_group):
             # Run in parallel with thread pool
             with ThreadPoolExecutor(max_workers=self._num_workers) as executor:
                 # Submit all tasks
@@ -211,10 +216,15 @@ class RunBatch:
                     instance_id=instance.problem_statement.id,
                 )
 
+        if self.should_skip(instance):
+            self._exit_status_histogram["skipped"] += 1
+            self._update_exit_status_table()
+            return
+
         # Either catch and silence exception, or raise _BreakLoop to stop the loop
         # over the instances
         try:
-            self._run_instance(instance)
+            result = self._run_instance(instance)
         except KeyboardInterrupt:
             raise _BreakLoop
         except SystemExit:
@@ -227,12 +237,31 @@ class RunBatch:
             if self._raise_exceptions:
                 raise
             self.logger.error(f"❌ Failed on {instance.problem_statement.id}: {e}")
+            self._exit_status_histogram[f"Uncaught {type(e).__name__}"] += 1
+        else:
+            self._exit_status_histogram[result.info.get("exit_status", "unknown_exit")] += 1  # type: ignore
+        finally:
+            self._update_exit_status_table()
 
         if self._task_progress_bar is not None:
             assert self._main_progress_bar is not None
             with self._progress_lock:
                 self._task_progress_bar.remove_task(self._spinner_tasks[instance.problem_statement.id])
                 self._main_progress_bar.update(TaskID(0), advance=1)
+
+    def _update_exit_status_table(self):
+        self.logger.info("Updating exit status table")
+        t = Table()
+        t.add_column("Exit Status")
+        t.add_column("Count")
+        t.show_header = False
+        with self._progress_lock:
+            t.show_header = True
+            # self._exit_status_table.rows.clear()
+            for status, count in self._exit_status_histogram.items():
+                t.add_row(status, str(count))
+        assert self._render_group is not None
+        self._render_group.renderables[0] = t
 
     def _update_task_progress(self, instance_id: str, message: str):
         assert self._task_progress_bar is not None
@@ -241,8 +270,6 @@ class RunBatch:
             self._task_progress_bar.update(self._spinner_tasks[instance_id], status=message, instance_id=instance_id)
 
     def _run_instance(self, instance: BatchInstance):
-        if self.should_skip(instance):
-            return
         agent = Agent.from_config(self.agent_config)
         agent.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)
         agent.add_hook(SetStatusAgentHook(instance.problem_statement.id, self._update_task_progress))
@@ -254,14 +281,17 @@ class RunBatch:
         env.start()
         self.logger.info("Running agent")
         self._chooks.on_instance_start(index=0, env=env, problem_statement=instance.problem_statement)
-        result = agent.run(
-            problem_statement=instance.problem_statement,
-            env=env,
-            output_dir=Path(self.output_dir),
-        )
+        try:
+            result = agent.run(
+                problem_statement=instance.problem_statement,
+                env=env,
+                output_dir=Path(self.output_dir),
+            )
+        finally:
+            env.close()
         save_predictions(self.output_dir, instance.problem_statement.id, result)
         self._chooks.on_instance_completed(result=result)
-        env.close()
+        return result
 
     def should_skip(self, instance: BatchInstance) -> bool:
         """Check if we should skip this instance"""
