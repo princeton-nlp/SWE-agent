@@ -195,11 +195,12 @@ class RunBatch:
                 raise
             self.logger.error(f"❌ Failed on {instance.problem_statement.id}: {e}")
             self._progress_manager.on_uncaught_exception(instance.problem_statement.id, e)
+        else:
+            self._progress_manager.on_instance_end(
+                instance.problem_statement.id, exit_status=result.info.get("exit_status", "unknown_exit")
+            )
         finally:
             self._progress_manager.update_exit_status_table()
-        self._progress_manager.on_instance_end(
-            instance.problem_statement.id, exit_status=result.info.get("exit_status", "unknown_exit")
-        )
 
     def _run_instance(self, instance: BatchInstance):
         self.agent_config.name = f"{instance.problem_statement.id}"
