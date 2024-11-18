@@ -96,6 +96,4 @@ class RunBatchProgressManager:
         self.update_exit_status_table()
 
     def on_uncaught_exception(self, instance_id: str, exception: Exception):
-        with self._lock:
-            self._instances_by_exit_status[f"Uncaught {type(exception).__name__}"].append(instance_id)
-        self.update_exit_status_table()
+        self.on_instance_end(instance_id, f"Uncaught {type(exception).__name__}")
