@@ -240,6 +240,7 @@ class Agent:
         self._forwarded_vars = {}
         # if self._rloop is not None:
         #     self._forwarded_vars = self._rloop.get_forwarded_vars()
+        self._chook.on_tools_installation_started()
         self.tools.install(self._env)
         self.setup_attempt()
 

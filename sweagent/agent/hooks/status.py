@@ -22,4 +22,4 @@ class SetStatusAgentHook(AbstractAgentHook):
         self._cost = info["model_stats"]["instance_cost"]  # type: ignore
 
     def on_tools_installation_started(self):
-        self._update("Installing tools...")
+        self._update("Installing tools")
