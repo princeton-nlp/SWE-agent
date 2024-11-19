@@ -145,18 +145,13 @@ class RunBatch:
         self._chooks.on_end()
 
     def main_single_worker(self) -> None:
-        for i_instance, instance in enumerate(self.instances):
-            self.logger.info(
-                "Starting to run on instance %d/%d: %s",
-                i_instance + 1,
-                len(self.instances),
-                instance.problem_statement.id,
-            )
-            try:
-                self.run_instance(instance)
-            except _BreakLoop:
-                self.logger.info("Stopping loop over instances")
-                break
+        with Live(self._progress_manager.render_group):
+            for instance in self.instances:
+                try:
+                    self.run_instance(instance)
+                except _BreakLoop:
+                    self.logger.info("Stopping loop over instances")
+                    break
 
     def main_multi_worker(self) -> None:
         add_logger_names_to_stream_handlers()
@@ -179,6 +174,7 @@ class RunBatch:
                     self._progress_manager.print_report()
 
     def run_instance(self, instance: BatchInstance) -> None:
+        self.logger.info("Running on instance %s", instance.problem_statement.id)
         register_thread_name(instance.problem_statement.id)
         self._add_instance_log_file_handlers(instance.problem_statement.id, multi_worker=self._num_workers > 1)
         # Let's add some randomness to avoid any potential race conditions
