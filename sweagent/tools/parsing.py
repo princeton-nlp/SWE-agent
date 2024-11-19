@@ -229,6 +229,8 @@ class FunctionCallingParser(AbstractParseFunction, BaseModel):
     Please make sure your output includes a thought and exactly _ONE_ tool call.
 
     Make sure your tool call doesn't include any extra arguments that are not in the allowed arguments, and only use the allowed commands.
+
+    You must invoke the tool directly using the function call format.
     """
 
     type: Literal["function_calling"] = "function_calling"
@@ -273,7 +275,10 @@ class FunctionCallingParser(AbstractParseFunction, BaseModel):
         tool_calls = model_response.get("tool_calls", None)
         if tool_calls is None or len(tool_calls) != 1:
             num_tools = len(tool_calls) if tool_calls else 0
-            msg = f"Expected exactly one tool call in model response - received {num_tools} tool calls."
+            msg = (
+                f"Expected exactly one tool call in model response - received {num_tools} "
+                f"tool calls with message: {message}"
+            )
             raise FormatError(msg)
         tool_call = tool_calls[0]
         action = self._parse_tool_call(tool_call, commands)

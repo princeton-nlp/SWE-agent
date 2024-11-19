@@ -578,6 +578,7 @@ class Agent:
         except Exception as e:
             # Attach the step object to the exception
             e.step = step  # type: ignore
+            self.logger.exception("Error in forward", exc_info=e)
             raise
 
     def forward_with_handling(self, history: list[dict[str, str]]) -> StepOutput:
