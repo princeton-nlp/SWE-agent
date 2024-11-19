@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import random
+import time
 from abc import ABC, abstractmethod
 from pathlib import Path
+from threading import Lock
 from typing import Annotated, Any, Literal
 
 import litellm
@@ -83,6 +86,9 @@ class InstantEmptySubmitModelConfig(GenericAPIModelConfig):
     name: Literal["instant_empty_submit"] = "instant_empty_submit"
     """Do not change. Used for (de)serialization."""
 
+    delay: float = 0.0
+    """Delay before answering"""
+
     model_config = ConfigDict(extra="forbid")
 
 
@@ -110,17 +116,23 @@ ModelConfig = Annotated[
 ]
 
 
-class APIStats(PydanticBaseModel):
+class GlobalStats(PydanticBaseModel):
     total_cost: float = 0
     """Cumulative cost for all instances so far"""
 
+
+GLOBAL_STATS = GlobalStats()
+GLOBAL_STATS_LOCK = Lock()
+
+
+class InstanceStats(PydanticBaseModel):
     instance_cost: float = 0
     tokens_sent: int = 0
     tokens_received: int = 0
     api_calls: int = 0
 
-    def __add__(self, other: APIStats) -> APIStats:
-        return APIStats(
+    def __add__(self, other: InstanceStats) -> InstanceStats:
+        return InstanceStats(
             **{field: getattr(self, field) + getattr(other, field) for field in self.model_fields.keys()},
         )
 
@@ -144,10 +156,10 @@ class TotalCostLimitExceededError(CostLimitExceededError):
 class AbstractModel(ABC):
     def __init__(self, config: PydanticBaseModel, tools: ToolConfig):
         self.config: PydanticBaseModel
-        self.stats: APIStats
+        self.stats: InstanceStats
 
     def reset_stats(self):
-        self.stats = APIStats()
+        self.stats = InstanceStats()
 
     @abstractmethod
     def query(self, history: History, action_prompt: str = "> ") -> dict: ...
@@ -156,7 +168,7 @@ class AbstractModel(ABC):
 class HumanModel(AbstractModel):
     def __init__(self, config: HumanModelConfig, tools: ToolConfig):
         self.config = config
-        self.stats = APIStats()
+        self.stats = InstanceStats()
 
         # Determine which commands require multi-line input
         self.multi_line_command_endings = {
@@ -211,7 +223,7 @@ class HumanThoughtModel(HumanModel):
 class ReplayModel(AbstractModel):
     def __init__(self, config: ReplayModelConfig, tools: ToolConfig):
         self.config = config
-        self.stats = APIStats()
+        self.stats = InstanceStats()
 
         if not self.config.replay_path.exists():
             msg = f"Replay file {self.config.replay_path} not found"
@@ -256,7 +268,7 @@ class PredeterminedTestModel(AbstractModel):
     def __init__(self, outputs: list[str]):
         self._outputs = outputs
         self._idx = -1
-        self.stats = APIStats()
+        self.stats = InstanceStats()
 
     def query(self, *args, **kwargs) -> dict:
         self._idx += 1
@@ -274,9 +286,12 @@ class InstantEmptySubmitTestModel(AbstractModel):
     def __init__(self, args: InstantEmptySubmitModelConfig, tools: ToolConfig):
         """This model immediately submits. Useful for testing purposes"""
         super().__init__(args, tools)
+        self.config: InstantEmptySubmitModelConfig = args
+        self.stats = InstanceStats()
         self._action_idx = 0
 
     def query(self, history: list[dict[str, str]]) -> dict:
+        time.sleep(random.uniform(0, self.config.delay))
         # Need to at least do _something_ to submit
         if self._action_idx == 0:
             self._action_idx = 1
@@ -291,8 +306,8 @@ class InstantEmptySubmitTestModel(AbstractModel):
 class LiteLLMModel(AbstractModel):
     def __init__(self, args: ModelConfig, tools: ToolConfig):
         self.args = args
+        self.stats = InstanceStats()
         self.tools = tools
-        self.stats = APIStats()
         if tools.use_function_calling:
             assert litellm.supports_function_calling(
                 model=self.args.name
@@ -300,7 +315,8 @@ class LiteLLMModel(AbstractModel):
         self.model_max_tokens = litellm.model_cost.get(self.args.name, {}).get("max_tokens")
 
     def _update_stats(self, *, input_tokens: int, output_tokens: int, cost: float) -> None:
-        self.stats.total_cost += cost
+        with GLOBAL_STATS_LOCK:
+            GLOBAL_STATS.total_cost += cost
         self.stats.instance_cost += cost
         self.stats.tokens_sent += input_tokens
         self.stats.tokens_received += output_tokens
@@ -316,13 +332,13 @@ class LiteLLMModel(AbstractModel):
         logger.debug(
             f"total_tokens_sent={self.stats.tokens_sent:,}, "
             f"total_tokens_received={self.stats.tokens_received:,}, "
-            f"total_cost={self.stats.total_cost:.2f}, "
+            f"total_cost={GLOBAL_STATS.total_cost:.2f}, "
             f"total_api_calls={self.stats.api_calls:,}",
         )
 
         # Check whether total cost or instance cost limits have been exceeded
-        if 0 < self.args.total_cost_limit <= self.stats.total_cost:
-            logger.warning(f"Cost {self.stats.total_cost:.2f} exceeds limit {self.args.total_cost_limit:.2f}")
+        if 0 < self.args.total_cost_limit <= GLOBAL_STATS.total_cost:
+            logger.warning(f"Cost {GLOBAL_STATS.total_cost:.2f} exceeds limit {self.args.total_cost_limit:.2f}")
             msg = "Total cost limit exceeded"
             raise TotalCostLimitExceededError(msg)
 
@@ -330,36 +346,6 @@ class LiteLLMModel(AbstractModel):
             logger.warning(f"Cost {self.stats.instance_cost:.2f} exceeds limit {self.args.per_instance_cost_limit:.2f}")
             msg = "Instance cost limit exceeded"
             raise InstanceCostLimitExceededError(msg)
-
-    # def _query(self, messages: list[dict[str, str]]) -> dict:
-    #     input_tokens: int = litellm.utils.token_counter(messages=messages, model=self.args.name)
-    #     max_input_tokens: int | None = litellm.model_cost.get(self.args.name, {}).get("max_input_tokens")
-    #     if max_input_tokens is None:
-    #         logger.warning(f"No max input tokens found for model {self.args.name!r}")
-    #     elif input_tokens > max_input_tokens:
-    #         msg = f"Input tokens {input_tokens} exceed max tokens {max_input_tokens}"
-    #         raise ContextWindowExceededError(msg)
-    #     extra_args = {}
-    #     if self.args.api_base:
-    #         # Not assigned a default value in litellm, so only pass this if it's set
-    #         extra_args["api_base"] = self.args.api_base
-    #     response: litellm.types.utils.ModelResponse = litellm.completion(  # type: ignore
-    #         model=self.args.name,
-    #         messages=messages,
-    #         temperature=self.args.temperature,
-    #         top_p=self.args.top_p,
-    #         api_version=self.args.api_version,
-    #         api_key=self.args.api_key.get_secret_value() if self.args.api_key else None,
-    #         **self.args.completion_kwargs,
-    #         **extra_args,
-    #     )
-    #     choices: litellm.types.utils.Choices = response.choices  # type: ignore
-    #     output = choices[0].message.content
-    #     cost = litellm.cost_calculator.completion_cost(response)
-    #     output_tokens = litellm.utils.token_counter(text=output, model=self.args.name)
-    #     self._update_stats(input_tokens=input_tokens, output_tokens=output_tokens, cost=cost)
-
-    #     return {"message": output}
 
     def _query(self, messages: list[dict[str, str]]) -> dict:
         input_tokens: int = litellm.utils.token_counter(messages=messages, model=self.args.name)

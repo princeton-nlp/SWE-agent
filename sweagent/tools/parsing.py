@@ -270,9 +270,10 @@ class FunctionCallingParser(AbstractParseFunction, BaseModel):
 
     def __call__(self, model_response: dict, commands: list[Command], strict=False):
         message = model_response["message"]
-        tool_calls = model_response["tool_calls"]
+        tool_calls = model_response.get("tool_calls", None)
         if tool_calls is None or len(tool_calls) != 1:
-            msg = f"Expected exactly one tool call in model response - received {len(tool_calls)} tool calls."
+            num_tools = len(tool_calls) if tool_calls else 0
+            msg = f"Expected exactly one tool call in model response - received {num_tools} tool calls."
             raise FormatError(msg)
         tool_call = tool_calls[0]
         action = self._parse_tool_call(tool_call, commands)
@@ -333,12 +334,16 @@ class JsonParser(AbstractParseFunction, BaseModel):
                     raise FormatError(msg)
 
             thought = data["thought"]
-
-            # Generate action
             commands_dict = {c.name: c for c in commands}
             command = commands_dict.get(data_command["name"])
+
+            # Handle command parsing based on strict mode
             if command is None:
-                action = " ".join([data_command["name"], *data_command["arguments"].values()])
+                if strict:
+                    msg = f"Command '{data_command['name']}' not found in list of available commands."
+                    raise FormatError(msg)
+                # In non-strict mode, just join command name with argument values
+                return thought, " ".join([data_command["name"], *data_command.get("arguments", {}).values()])
 
             # Format arguments using their individual argument_format
             formatted_args = {}
@@ -349,6 +354,10 @@ class JsonParser(AbstractParseFunction, BaseModel):
                         if _should_quote(value, command):
                             value = quote(value)
                         formatted_args[arg.name] = arg.argument_format.format(value=value)
+                    elif strict and arg.required:
+                        msg = f"Required argument '{arg.name}' missing for command '{command.name}'"
+                        raise FormatError(msg)
+
             # Use the formatted arguments with invoke_format
             action = command.invoke_format.format(**formatted_args).strip()
             return thought, action

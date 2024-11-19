@@ -31,6 +31,7 @@ def main(args: list[str] | None = None):
     elif not command:
         cli.print_help()
         sys.exit(2)
+    # Defer imports to avoid unnecessary long loading times
     if command == "run":
         from sweagent.run.run_single import run_from_cli as run_single_main
 

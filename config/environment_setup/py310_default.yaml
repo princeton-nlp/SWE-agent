@@ -1,4 +1,0 @@
-python: '3.10'
-# Use uv pip for speedup, but fallback to classic pip if we fail
-# Upgrade pip to avoid https://stackoverflow.com/a/73779542/
-install: 'uv pip install -e . || (python -m pip install --upgrade pip && python -m pip install -e .)'

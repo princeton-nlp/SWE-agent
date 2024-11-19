@@ -12,7 +12,7 @@ build-backend = "setuptools.build_meta"  # If not defined, then legacy behavior 
 
 [project]
 name = "sweagent"
-dynamic = ["version", "dependencies"]
+dynamic = ["version"]
 description = "The official SWE-agent package - an open source Agent Computer Interface for running language models as software engineers."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -77,7 +77,6 @@ include-package-data = true
 
 [tool.setuptools.dynamic]
 version = {attr = "sweagent.__version__"}
-dependencies = {file = ["requirements.txt"]}
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -5,28 +5,33 @@ import json
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Self
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 from simple_parsing.helpers.fields import field
 from swerex.exceptions import BashIncorrectSyntaxError, SweRexception
 from tenacity import RetryError
+from typing_extensions import Self
 
 from sweagent import __version__, get_agent_commit_hash
 from sweagent.agent.history_processors import DefaultHistoryProcessor, HistoryProcessor
 from sweagent.agent.hooks.abstract import AbstractAgentHook, CombinedAgentHook
 from sweagent.agent.models import (
     AbstractModel,
-    APIStats,
     ContextWindowExceededError,
     CostLimitExceededError,
     HumanModel,
+    HumanThoughtModel,
+    InstanceStats,
     ModelConfig,
     get_model,
 )
 from sweagent.environment.config.problem_statement import ProblemStatement, ProblemStatementConfig
 from sweagent.environment.swe_env import SWEEnv
-from sweagent.tools.parsing import FormatError
+from sweagent.tools.parsing import (
+    FormatError,
+    ThoughtActionParser,
+)
 from sweagent.tools.tools import ToolConfig, ToolHandler
 from sweagent.types import AgentInfo, AgentRunResult, History, StepOutput, Trajectory, TrajectoryStep
 from sweagent.utils.config import _convert_paths_to_abspath
@@ -97,8 +102,6 @@ class Skipped(Exception): ...
 class Submitted(Exception): ...
 
 
-# todo: separate out from_config. In particular separate out model (as a class, etc.). Agent should only take templates, tools, history processor and model.
-#    slight problem: get_model needs commands....
 class Agent:
     def __init__(
         self,
@@ -124,7 +127,7 @@ class Agent:
         self.tools = tools
         self.history_processor = history_processor
         self.max_requeries = max_requeries
-        self.logger = get_logger("agent", emoji="🤠")
+        self.logger = get_logger(f"agent-{name}", emoji="🤠")
 
         # Set in run method
         self._env: SWEEnv | None = None
@@ -241,6 +244,7 @@ class Agent:
         self._forwarded_vars = {}
         # if self._rloop is not None:
         #     self._forwarded_vars = self._rloop.get_forwarded_vars()
+        self._chook.on_tools_installation_started()
         self.tools.install(self._env)
         self.setup_attempt()
 
@@ -557,11 +561,15 @@ class Agent:
             self._chook.on_model_query(messages=history, agent=self.name)
             output = self.model.query(history)
             step.output = output["message"]
-            if isinstance(self.model, HumanModel):
+            if isinstance(self.model, HumanThoughtModel):
+                # TODO: This might be a bit hacky
+                # consider changing sweagent/tools/tools.py:ToolConfig to enforce this.
+                step.thought, step.action = ThoughtActionParser()(output, self.tools.config.commands)
+            elif isinstance(self.model, HumanModel):
                 step.thought, step.action = "", output["message"]
             else:
                 step.thought, step.action = self.tools.parse_actions(output)
-            if output["tool_calls"]:
+            if output.get("tool_calls", None) is not None:
                 step.tool_call_ids = [call["id"] for call in output["tool_calls"]]
                 step.tool_calls = output["tool_calls"]
             self.logger.info(f"💭 THOUGHT\n{step.thought}\n🎬 ACTION\n{step.action.strip()}")
@@ -605,6 +613,7 @@ class Agent:
             return self.get_model_requery_history(
                 error_template=template,
                 **step.model_dump(),
+                **getattr(exception, "extra_info", {}),
             )
 
         n_fails = 0
@@ -629,7 +638,10 @@ class Agent:
                 )
             except BashIncorrectSyntaxError as e:
                 n_fails += 1
-                history = handle_error_with_retry(exception=e, template=self.templates.shell_check_error_template)
+                history = handle_error_with_retry(
+                    exception=e,
+                    template=self.templates.shell_check_error_template,
+                )
 
             # Errors that cause exit
 
@@ -667,6 +679,10 @@ class Agent:
                     "exit_error",
                     f"Exit due to unknown error: {e}",
                 )
+        self.logger.exception(
+            "Exit due to repeated format/blocklist/bash syntax errors",
+            exc_info=True,
+        )
         return handle_error_with_autosubmission(
             "exit_format",
             "Exit due to repeated format/blocklist/bash syntax errors",
@@ -707,12 +723,12 @@ class Agent:
         self.info["submission"] = step_output.submission
         self.info["exit_status"] = step_output.exit_status  # type: ignore
         self.info.update(self._get_edited_files_with_context(patch=step_output.submission or ""))  # type: ignore
-        model_stats: APIStats = self.model.stats
+        model_stats: InstanceStats = self.model.stats
         self.info["model_stats"] = model_stats.model_dump()
 
         self.add_step_to_trajectory(step_output)
 
-        self._chook.on_step_done(step=step_output)
+        self._chook.on_step_done(step=step_output, info=self.info)
         return step_output
 
     def run(

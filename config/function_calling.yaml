@@ -86,7 +86,7 @@ agent:
       - tools/edit_linting
       - tools/submit
       - tools/state
-    include_bash_tool: true
+    enable_bash_tool: true
     parse_command:
       type: detailed
     state_command: _state

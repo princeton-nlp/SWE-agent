@@ -3,12 +3,13 @@ import json
 import re
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Self
+from typing import Any
 
 import yaml
 from pydantic import BaseModel, Field
 from swerex.runtime.abstract import Command as RexCommand
 from swerex.runtime.abstract import UploadRequest
+from typing_extensions import Self
 
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.tools.commands import BASH_COMMAND, Command, ParseCommand, ParseCommandBash
@@ -27,6 +28,7 @@ class ToolFilterConfig(BaseModel):
         "nohup",
         "git",
         "gdb",
+        "less",
     ]
     blocklist_standalone: list[str] = [
         "python",
@@ -61,10 +63,10 @@ class ToolConfig(BaseModel):
 
     submit_command: str = "submit"
 
-    parse_function: ParseFunction | None = Field(default=None)
+    parse_function: ParseFunction = Field(default_factory=FunctionCallingParser)
     parse_command: ParseCommand = Field(default_factory=ParseCommandBash)
 
-    include_bash_tool: bool = True
+    enable_bash_tool: bool = True
 
     format_error_template: str = None  # type: ignore
     """Defaults to format_error_template in ParseFunction"""
@@ -114,7 +116,7 @@ class ToolConfig(BaseModel):
                     raise ValueError(msg)
                 commands.append(Command(name=tool, **tool_config))
                 tool_sources[tool] = path
-        if self.include_bash_tool:
+        if self.enable_bash_tool:
             commands.append(BASH_COMMAND)
         return commands
 
@@ -131,11 +133,11 @@ class ToolConfig(BaseModel):
         }
         self.tools
 
-        # assert not self.include_bash_tool and parse_function is not FunctionCallingParser
-        if self.include_bash_tool and not (
+        # assert not self.enable_bash_tool and parse_function is FunctionCallingParser or JsonParser
+        if not self.enable_bash_tool and not (
             isinstance(self.parse_function, FunctionCallingParser) or isinstance(self.parse_function, JsonParser)
         ):
-            msg = "Bash tool can only be used with function calling parser or JSON parser."
+            msg = f"Bash tool can only be disabled if {FunctionCallingParser.type} parser or {JsonParser.type} parser is used."
             raise ValueError(msg)
 
         self.multi_line_command_endings = multi_line_command_endings
@@ -168,7 +170,7 @@ class ToolHandler:
         self._command_patterns = self._get_command_patterns()
         self.logger = get_logger("Tools", emoji="🧰")
         # For testing: Return this state instead of querying the environment
-        self.mock_state: dict[str, str] | None = None
+        self.mock_state: dict[str, str] | None = {"open_file": "", "working_dir": ""}
 
     @classmethod
     def from_config(cls, config: ToolConfig) -> Self:
@@ -184,7 +186,7 @@ class ToolHandler:
     def reset(self, env: SWEEnv) -> None:
         self.logger.info("Resetting tools")
         self._set_env_variables(env)
-        env.communicate(" && ".join(self._reset_commands), check=True)
+        env.communicate(" && ".join(self._reset_commands), check=True, timeout=self.config.install_timeout)
 
     def _install_commands(self, env: SWEEnv) -> None:
         """Make sure all commands are available in the container"""
@@ -207,7 +209,9 @@ class ToolHandler:
                 )
             )  # check false because bin might not exist
             if (bundle / "install.sh").exists():
-                env.communicate(f"cd /root/tools/{bundle.name}; bash install.sh", check=True)
+                env.communicate(
+                    f"cd /root/tools/{bundle.name}; bash install.sh", check=True, timeout=self.config.install_timeout
+                )
             # always make all files in bin executable
             asyncio.run(
                 env.deployment.runtime.execute(

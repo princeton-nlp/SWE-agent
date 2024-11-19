@@ -1,7 +1,7 @@
 import asyncio
 import os
 from pathlib import Path
-from typing import Literal, Protocol, Self
+from typing import Literal, Protocol
 
 import pydantic
 from git import InvalidGitRepositoryError
@@ -9,6 +9,7 @@ from git import Repo as GitRepo
 from pydantic import BaseModel
 from swerex.deployment.abstract import AbstractDeployment
 from swerex.runtime.abstract import Command, UploadRequest
+from typing_extensions import Self
 
 from sweagent.utils.log import get_logger
 

@@ -2,7 +2,10 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
-source "$SCRIPT_DIR/lib/utils.sh"
+
+if [ -f "$SCRIPT_DIR/lib/utils.sh" ]; then
+    source "$SCRIPT_DIR/lib/utils.sh"
+fi
 
 if [ -z "$WINDOW" ]; then
     echo "Error: WINDOW not set"

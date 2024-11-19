@@ -4,21 +4,31 @@ Run on a batch of instances/issues. For example run on all of SWE-bench.
 
 import getpass
 import json
+import logging
+import random
 import sys
+import time
 import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Self
 
 from pydantic_settings import BaseSettings
+from rich.live import Live
+from swerex.deployment.hooks.status import SetStatusDeploymentHook
 
 from sweagent.agent.agents import Agent, AgentConfig
+from sweagent.agent.hooks.status import SetStatusAgentHook
+from sweagent.environment.hooks.status import SetStatusEnvironmentHook
 from sweagent.environment.swe_env import SWEEnv
+from sweagent.run._progress import RunBatchProgressManager
 from sweagent.run.batch_instances import BatchInstance, BatchInstanceSourceConfig
 from sweagent.run.common import BasicCLI, save_predictions
 from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
 from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
+from sweagent.types import AgentRunResult
 from sweagent.utils.config import load_environment_variables
-from sweagent.utils.log import get_logger
+from sweagent.utils.log import add_logger_names_to_stream_handlers, get_logger
 
 
 class RunBatchConfig(BaseSettings, cli_implicit_flags=True):
@@ -29,6 +39,13 @@ class RunBatchConfig(BaseSettings, cli_implicit_flags=True):
     redo_existing: bool = False
     env_var_path: Path | None = None
     """Path to a .env file to load environment variables from."""
+    num_workers: int = 1
+    """Number of parallel workers to use. Default is 1 (sequential execution)."""
+    random_delay_multiplier: float = 0.3
+    """We will wait for a random amount of time between 0 and `random_delay_multiplier`
+    times the number of instances at the start of each instance. This is to avoid any
+    potential race conditions.
+    """
 
     def set_default_output_dir(self) -> None:
         # Needs to be called explicitly, because self._config_files will be setup
@@ -51,29 +68,34 @@ class RunBatch:
     def __init__(
         self,
         instances: list[BatchInstance],
-        agent: Agent,
+        agent_config: AgentConfig,
         *,
         output_dir: Path = Path("."),
         hooks: list[RunHook] | None = None,
         raise_exceptions: bool = False,
         redo_existing: bool = False,
+        num_workers: int = 1,
     ):
         """Note: When initializing this class, make sure to add the hooks that are required by your actions.
         See `from_config` for an example.
 
         Args:
             hooks: If not specified, the default hooks will be used.
+            num_workers: Number of parallel workers to use. Default is 1 (sequential execution).
         """
         self.logger = get_logger("Run", emoji="🏃")
         self.instances = instances
-        self.agent = agent
+        self.agent_config = agent_config
         self.output_dir = output_dir
         self._hooks = []
         self._raise_exceptions = raise_exceptions
         self._chooks = CombinedRunHooks()
         self._redo_existing = redo_existing
+        self._num_workers = num_workers
         for hook in hooks or [SaveApplyPatchHook()]:
             self.add_hook(hook)
+
+        self._progress_manager = RunBatchProgressManager(num_instances=len(instances))
 
     @classmethod
     def from_config(cls, config: RunBatchConfig) -> Self:
@@ -94,18 +116,28 @@ class RunBatch:
         logger.debug("The first instance is %s", f"{instances[0]!r}")
         return cls(
             instances=instances,
-            agent=Agent.from_config(config.agent),
+            agent_config=config.agent,
             output_dir=config.output_dir,
             raise_exceptions=config.raise_exceptions,
             redo_existing=config.redo_existing,
+            num_workers=config.num_workers,
         )
 
     def add_hook(self, hook: RunHook) -> None:
         hook.on_init(run=self)
         self._hooks.append(hook)
 
-    def main(self):
+    def main(self) -> None:
         self._chooks.on_start()
+
+        if self._num_workers <= 1:
+            self.main_single_worker()
+        else:
+            self.main_multi_worker()
+
+        self._chooks.on_end()
+
+    def main_single_worker(self) -> None:
         for i_instance, instance in enumerate(self.instances):
             self.logger.info(
                 "Starting to run on instance %d/%d: %s",
@@ -118,14 +150,40 @@ class RunBatch:
             except _BreakLoop:
                 self.logger.info("Stopping loop over instances")
                 break
-        self.logger.info("Done")
-        self._chooks.on_end()
 
-    def run_instance(self, instance: BatchInstance):
+    def main_multi_worker(self) -> None:
+        add_logger_names_to_stream_handlers()
+
+        with Live(self._progress_manager.render_group):
+            with ThreadPoolExecutor(max_workers=self._num_workers) as executor:
+                futures = [executor.submit(self.run_instance, instance) for instance in self.instances]
+                try:
+                    for future in as_completed(futures):
+                        future.result()
+                except (KeyboardInterrupt, _BreakLoop):
+                    msg = (
+                        "Received keyboard interrupt, waiting for running instances "
+                        "to finish, but cancelled everything else"
+                    )
+                    self.logger.info(msg)
+                    executor.shutdown(wait=False, cancel_futures=True)
+                finally:
+                    self._progress_manager.print_report()
+
+    def run_instance(self, instance: BatchInstance) -> None:
+        # Let's add some randomness to avoid any potential race conditions
+        time.sleep(random.random() * 0.3 * (len(self.instances) - 1))
+
+        self._progress_manager.on_instance_start(instance.problem_statement.id)
+
+        if self.should_skip(instance):
+            self._progress_manager.on_instance_end(instance.problem_statement.id, exit_status="skipped")
+            return
+
         # Either catch and silence exception, or raise _BreakLoop to stop the loop
         # over the instances
         try:
-            self._run_instance(instance)
+            result = self._run_instance(instance)
         except KeyboardInterrupt:
             raise _BreakLoop
         except SystemExit:
@@ -135,26 +193,48 @@ class RunBatch:
             raise _BreakLoop
         except Exception as e:
             self.logger.error(traceback.format_exc())
+            self.logger.error(f"❌ Failed on {instance.problem_statement.id}: {e}")
+            self._progress_manager.on_uncaught_exception(instance.problem_statement.id, e)
             if self._raise_exceptions:
                 raise
-            self.logger.error(f"❌ Failed on {instance.problem_statement.id}: {e}")
+        else:
+            self._progress_manager.on_instance_end(
+                instance.problem_statement.id, exit_status=result.info.get("exit_status", "unknown_exit")
+            )
+        finally:
+            self._progress_manager.update_exit_status_table()
 
-    def _run_instance(self, instance: BatchInstance):
-        if self.should_skip(instance):
-            return
-        self.logger.info("Starting environment")
+    def _run_instance(self, instance: BatchInstance) -> AgentRunResult:
+        self.agent_config.name = f"{instance.problem_statement.id}"
+        agent = Agent.from_config(self.agent_config)
+        agent.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)
+        agent.add_hook(SetStatusAgentHook(instance.problem_statement.id, self._progress_manager.update_instance_status))
+        self._progress_manager.update_instance_status(instance.problem_statement.id, "Starting environment")
+        instance.env.name = f"{instance.problem_statement.id}"
         env = SWEEnv.from_config(instance.env)
-        env.start()
-        self.logger.info("Running agent")
-        self._chooks.on_instance_start(index=0, env=env, problem_statement=instance.problem_statement)
-        result = self.agent.run(
-            problem_statement=instance.problem_statement,
-            env=env,
-            output_dir=Path(self.output_dir),
+        env.deployment.logger = get_logger(f"rex-{instance.problem_statement.id}", emoji="🦖")
+        env.deployment.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)
+        env.add_hook(
+            SetStatusEnvironmentHook(instance.problem_statement.id, self._progress_manager.update_instance_status)
         )
+        env.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.INFO)
+        env.deployment.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)  # type: ignore
+        env.deployment.add_hook(
+            SetStatusDeploymentHook(instance.problem_statement.id, self._progress_manager.update_instance_status)
+        )
+        env.start()
+        self._chooks.on_instance_start(index=0, env=env, problem_statement=instance.problem_statement)
+        try:
+            result = agent.run(
+                problem_statement=instance.problem_statement,
+                env=env,
+                output_dir=Path(self.output_dir),
+            )
+        finally:
+            env.close()
         save_predictions(self.output_dir, instance.problem_statement.id, result)
         self._chooks.on_instance_completed(result=result)
-        env.close()
+        return result
 
     def should_skip(self, instance: BatchInstance) -> bool:
         """Check if we should skip this instance"""

@@ -15,6 +15,9 @@ class EnvHook:
     def on_copy_repo_started(self, repo: RepoConfig | Repo) -> None:
         """Gets called when the repository is being cloned to the container"""
 
+    def on_start_deployment(self) -> None:
+        """Gets called when the deployment is being started"""
+
     def on_install_env_started(self) -> None:
         """Called when we start installing the environment"""
 
@@ -39,6 +42,10 @@ class CombinedEnvHooks(EnvHook):
     def on_copy_repo_started(self, repo: RepoConfig | Repo) -> None:
         for hook in self._hooks:
             hook.on_copy_repo_started(repo=repo)
+
+    def on_start_deployment(self) -> None:
+        for hook in self._hooks:
+            hook.on_start_deployment()
 
     def on_install_env_started(self) -> None:
         for hook in self._hooks:

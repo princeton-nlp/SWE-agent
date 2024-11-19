@@ -25,7 +25,7 @@ class AbstractAgentHook:
 
     def on_action_executed(self, *, step: StepOutput): ...
 
-    def on_step_done(self, *, step: StepOutput): ...
+    def on_step_done(self, *, step: StepOutput, info: AgentInfo): ...
 
     def on_run_done(self, *, trajectory: Trajectory, info: AgentInfo): ...
 
@@ -46,6 +46,8 @@ class AbstractAgentHook:
     ): ...
 
     def on_setup_done(self): ...
+
+    def on_tools_installation_started(self): ...
 
 
 class CombinedAgentHook(AbstractAgentHook):
@@ -83,9 +85,9 @@ class CombinedAgentHook(AbstractAgentHook):
         for hook in self.hooks:
             hook.on_action_executed(step=step)
 
-    def on_step_done(self, *, step: StepOutput):
+    def on_step_done(self, *, step: StepOutput, info: AgentInfo):
         for hook in self.hooks:
-            hook.on_step_done(step=step)
+            hook.on_step_done(step=step, info=info)
 
     def on_run_done(self, *, trajectory: Trajectory, info: AgentInfo):
         for hook in self.hooks:
@@ -118,3 +120,10 @@ class CombinedAgentHook(AbstractAgentHook):
                 tool_calls=tool_calls,
                 tool_call_ids=tool_call_ids,
             )
+
+    def on_setup_done(self):
+        return super().on_setup_done()
+
+    def on_tools_installation_started(self):
+        for hook in self.hooks:
+            hook.on_tools_installation_started()
