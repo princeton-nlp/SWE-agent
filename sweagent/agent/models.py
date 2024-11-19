@@ -312,7 +312,9 @@ class LiteLLMModel(AbstractModel):
             assert litellm.supports_function_calling(
                 model=self.args.name
             ), f"Model {self.args.name} does not support function calling"
-        self.model_max_tokens = litellm.model_cost.get(self.args.name, {}).get("max_tokens")
+        self.model_max_input_tokens = litellm.model_cost.get(self.args.name, {}).get("max_input_tokens")
+        self.model_max_output_tokens = litellm.model_cost.get(self.args.name, {}).get("max_output_tokens")
+        self.lm_provider = litellm.model_cost[self.args.name]["litellm_provider"]
 
     def _update_stats(self, *, input_tokens: int, output_tokens: int, cost: float) -> None:
         with GLOBAL_STATS_LOCK:
@@ -349,10 +351,10 @@ class LiteLLMModel(AbstractModel):
 
     def _query(self, messages: list[dict[str, str]]) -> dict:
         input_tokens: int = litellm.utils.token_counter(messages=messages, model=self.args.name)
-        if self.model_max_tokens is None:
+        if self.model_max_input_tokens is None:
             logger.warning(f"No max input tokens found for model {self.args.name!r}")
-        elif input_tokens > self.model_max_tokens:
-            msg = f"Input tokens {input_tokens} exceed max tokens {self.model_max_tokens}"
+        elif input_tokens > self.model_max_input_tokens:
+            msg = f"Input tokens {input_tokens} exceed max tokens {self.model_max_input_tokens}"
             raise ContextWindowExceededError(msg)
         extra_args = {}
         if self.args.api_base:
@@ -361,7 +363,8 @@ class LiteLLMModel(AbstractModel):
         if self.tools.use_function_calling:
             extra_args["tools"] = self.tools.tools
         # We need to always set max_tokens for anthropic models
-        completion_kwargs = {**self.args.completion_kwargs, "max_tokens": self.model_max_tokens}
+        if self.lm_provider == "anthropic":
+            completion_kwargs = {**self.args.completion_kwargs, "max_tokens": self.model_max_output_tokens}
         response: litellm.types.utils.ModelResponse = litellm.completion(  # type: ignore
             model=self.args.name,
             messages=messages,
