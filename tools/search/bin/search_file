@@ -18,6 +18,7 @@ main() {
             return  # Exit if the file is not valid
         fi
     else
+        local CURRENT_FILE=$(_read_env CURRENT_FILE)
         # Check if a file is open
         if [ -z "${CURRENT_FILE:-}" ]; then
             echo "No file open. Use the open command first."
