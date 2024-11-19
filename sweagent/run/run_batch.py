@@ -33,6 +33,7 @@ from sweagent.utils.log import (
     add_logger_names_to_stream_handlers,
     get_logger,
     register_thread_name,
+    remove_file_handler,
     set_default_stream_level,
 )
 
@@ -209,6 +210,7 @@ class RunBatch:
             )
         finally:
             self._progress_manager.update_exit_status_table()
+            self._remove_instance_log_file_handlers(instance.problem_statement.id)
 
     def _run_instance(self, instance: BatchInstance) -> AgentRunResult:
         self.agent_config.name = f"{instance.problem_statement.id}"
@@ -269,7 +271,16 @@ class RunBatch:
         filename_template = f"{instance_id}.{{level}}.log"
         for level in ["trace", "debug", "info"]:
             filter = instance_id if multi_worker else ""
-            add_file_handler(self.output_dir / filename_template.format(level=level), filter=filter, level=level)
+            add_file_handler(
+                self.output_dir / filename_template.format(level=level),
+                filter=filter,
+                level=level,
+                id_=f"{instance_id}-{level}",
+            )
+
+    def _remove_instance_log_file_handlers(self, instance_id: str) -> None:
+        for level in ["trace", "debug", "info"]:
+            remove_file_handler(f"{instance_id}-{level}")
 
 
 def run_from_config(args: RunBatchConfig):

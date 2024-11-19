@@ -3,13 +3,14 @@ from __future__ import annotations
 import logging
 import os
 import threading
+import uuid
 from pathlib import PurePath
 
 from rich.logging import RichHandler
 from rich.text import Text
 
-_SET_UP_LOGGERS = set()
-_ADDITIONAL_HANDLERS = []
+_SET_UP_LOGGERS: set[str] = set()
+_ADDITIONAL_HANDLERS: dict[str, logging.Handler] = {}
 
 logging.TRACE = 5  # type: ignore
 logging.addLevelName(logging.TRACE, "TRACE")  # type: ignore
@@ -73,7 +74,7 @@ def get_logger(name: str, *, emoji: str = "") -> logging.Logger:
     logger.addHandler(handler)
     logger.propagate = False
     _SET_UP_LOGGERS.add(name)
-    for handler in _ADDITIONAL_HANDLERS:
+    for handler in _ADDITIONAL_HANDLERS.values():
         if getattr(handler, "my_filter", "") in name:
             logger.addHandler(handler)
     if _INCLUDE_LOGGER_NAME_IN_STREAM_HANDLER:
@@ -81,12 +82,15 @@ def get_logger(name: str, *, emoji: str = "") -> logging.Logger:
     return logger
 
 
-def add_file_handler(path: PurePath | str, *, filter: str = "", level: int | str = _FILE_LEVEL) -> None:
+def add_file_handler(path: PurePath | str, *, filter: str = "", level: int | str = _FILE_LEVEL, id_: str = "") -> str:
     """Adds a file handler to all loggers that we have set up
     and all future loggers that will be set up with `get_logger`.
 
     Args:
         filter: If provided, only add the handler to loggers that contain the filter string.
+
+    Returns:
+        The id of the handler. This can be used to remove the handler later.
     """
     handler = logging.FileHandler(path)
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
@@ -98,7 +102,18 @@ def add_file_handler(path: PurePath | str, *, filter: str = "", level: int | str
         logger = logging.getLogger(name)
         logger.addHandler(handler)
     handler.my_filter = filter  # type: ignore
-    _ADDITIONAL_HANDLERS.append(handler)
+    if not id_:
+        id_ = str(uuid.uuid4())
+    _ADDITIONAL_HANDLERS[id_] = handler
+    return id_
+
+
+def remove_file_handler(id_: str) -> None:
+    """Remove a file handler by its id."""
+    handler = _ADDITIONAL_HANDLERS.pop(id_)
+    for log_name in _SET_UP_LOGGERS:
+        logger = logging.getLogger(log_name)
+        logger.removeHandler(handler)
 
 
 def _add_logger_name_to_stream_handler(logger: logging.Logger) -> None:
