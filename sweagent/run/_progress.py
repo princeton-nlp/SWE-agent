@@ -68,7 +68,7 @@ class RunBatchProgressManager:
             "[cyan]Overall Progress", total=num_instances, total_cost=0
         )
 
-        self.render_group = Group(Table(), self._main_progress_bar, self._task_progress_bar)
+        self.render_group = Group(Table(), self._task_progress_bar, self._main_progress_bar)
 
     def update_exit_status_table(self):
         # We cannot update the existing table, so we need to create a new one and
