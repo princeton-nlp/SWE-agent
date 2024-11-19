@@ -160,9 +160,8 @@ class RunBatch:
                     )
                     self.logger.info(msg)
                     executor.shutdown(wait=False, cancel_futures=True)
-                    raise _BreakLoop
-
-        self._progress_manager.print_report()
+                finally:
+                    self._progress_manager.print_report()
 
     def run_instance(self, instance: BatchInstance) -> None:
         self._progress_manager.on_instance_start(instance.problem_statement.id)

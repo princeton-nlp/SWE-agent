@@ -19,6 +19,11 @@ from rich.table import Table
 from sweagent.agent.models import GLOBAL_STATS
 
 
+def _shorten_str(s: str, max_len: int) -> str:
+    s = s[: max_len - 3] + "..." if len(s) > max_len else s
+    return f"{s:<{max_len}}"
+
+
 class RunBatchProgressManager:
     def __init__(
         self,
@@ -46,7 +51,7 @@ class RunBatchProgressManager:
         )
         self._task_progress_bar = Progress(
             SpinnerColumn(),
-            TextColumn("{task.fields[instance_id]}: "),
+            TextColumn("{task.fields[instance_id]}"),
             TextColumn("{task.fields[status]}"),
             TimeElapsedColumn(),
         )
@@ -72,7 +77,7 @@ class RunBatchProgressManager:
             t.show_header = True
             # self._exit_status_table.rows.clear()
             for status, instances in self._instances_by_exit_status.items():
-                instances_str = ", ".join(reversed(instances))[:40] + "..."
+                instances_str = _shorten_str(", ".join(reversed(instances)), 40)
                 t.add_row(status, str(len(instances)), instances_str)
         assert self.render_group is not None
         self.render_group.renderables[0] = t
@@ -85,7 +90,11 @@ class RunBatchProgressManager:
         assert self._task_progress_bar is not None
         assert self._main_progress_bar is not None
         with self._lock:
-            self._task_progress_bar.update(self._spinner_tasks[instance_id], status=message, instance_id=instance_id)
+            self._task_progress_bar.update(
+                self._spinner_tasks[instance_id],
+                status=_shorten_str(message, 30),
+                instance_id=_shorten_str(instance_id, 25),
+            )
         self._update_total_costs()
 
     def on_instance_start(self, instance_id: str):
