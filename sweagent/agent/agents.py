@@ -564,10 +564,7 @@ class Agent:
             if isinstance(self.model, HumanThoughtModel):
                 # TODO: This might be a bit hacky
                 # consider changing sweagent/tools/tools.py:ToolConfig to enforce this.
-                step.thought, step.action = ThoughtActionParser()(
-                    output["message"],
-                    self.tools.config.commands
-                )
+                step.thought, step.action = ThoughtActionParser()(output, self.tools.config.commands)
             elif isinstance(self.model, HumanModel):
                 step.thought, step.action = "", output["message"]
             else:

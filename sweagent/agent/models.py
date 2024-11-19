@@ -180,7 +180,7 @@ class HumanModel(AbstractModel):
             command.name: command.end_name for command in tools.commands if command.end_name is not None
         }
 
-    def query(self, history: History, action_prompt: str = "> ") -> dict:
+    def _query(self, history: History, action_prompt: str = "> ") -> dict:
         """Logic for handling user input to pass to SWEEnv"""
         action = input(action_prompt)
         command_name = action.split()[0] if action.strip() else ""
@@ -204,7 +204,11 @@ class HumanModel(AbstractModel):
                     break
                 buffer.append(action)
             action = "\n".join(buffer)
-        return {"message": action}
+        return action
+
+    def query(self, history: History, action_prompt: str = "> ") -> dict:
+        """Wrapper to separate action prompt from formatting"""
+        return {"message": self._query(history, action_prompt)}
 
 
 class HumanThoughtModel(HumanModel):
@@ -220,7 +224,7 @@ class HumanThoughtModel(HumanModel):
             thought_all += thought
             thought = input("... ")
 
-        action = super().query(history, action_prompt="Action: ")
+        action = super()._query(history, action_prompt="Action: ")
 
         return {"message": f"{thought_all}\n```\n{action}\n```"}
 
