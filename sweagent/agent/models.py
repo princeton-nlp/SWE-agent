@@ -363,8 +363,9 @@ class LiteLLMModel(AbstractModel):
         if self.tools.use_function_calling:
             extra_args["tools"] = self.tools.tools
         # We need to always set max_tokens for anthropic models
+        completion_kwargs = self.args.completion_kwargs
         if self.lm_provider == "anthropic":
-            completion_kwargs = {**self.args.completion_kwargs, "max_tokens": self.model_max_output_tokens}
+            completion_kwargs["max_tokens"] = self.model_max_output_tokens
         response: litellm.types.utils.ModelResponse = litellm.completion(  # type: ignore
             model=self.args.name,
             messages=messages,
