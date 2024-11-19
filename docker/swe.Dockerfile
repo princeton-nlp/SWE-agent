@@ -1,6 +1,7 @@
 FROM ubuntu:jammy
 
 ARG TARGETARCH
+ENV PYTHONDONTWRITEBYTECODE=1
 
 # Install third party tools
 RUN apt-get update && \
