@@ -33,7 +33,7 @@ from sweagent.tools.parsing import (
     ThoughtActionParser,
 )
 from sweagent.tools.tools import ToolConfig, ToolHandler
-from sweagent.types import AgentInfo, AgentRunResult, History, HistoryItem, StepOutput, Trajectory, TrajectoryStep
+from sweagent.types import AgentInfo, AgentRunResult, History, StepOutput, Trajectory, TrajectoryStep
 from sweagent.utils.config import _convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 from sweagent.utils.patch_formatter import PatchFormatter
@@ -151,10 +151,10 @@ class Agent:
 
     @classmethod
     def from_config(cls, config: AgentConfig) -> Self:
-        model = get_model(config.model)
+        model = get_model(config.model, config.tools)
         return cls(
             templates=config.templates,
-            tools=ToolHandler.from_config(config.tools),
+            tools=ToolHandler(config.tools),
             history_processor=config.history_processor,
             model=model,
             max_requeries=config.max_requeries,
@@ -208,7 +208,7 @@ class Agent:
     # Methods
     # -------
 
-    def _append_history(self, item: HistoryItem) -> None:
+    def _append_history(self, item: dict[str, Any]) -> None:
         """Adds an item to the history."""
         self._chook.on_query_message_added(**item)
         self.history.append(item)
@@ -269,7 +269,7 @@ class Agent:
             problem_statement=self._problem_statement.get_problem_statement(),
         )
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
-        self._append_history(HistoryItem({"role": "system", "content": system_msg, "agent": self.name}))
+        self._append_history({"role": "system", "content": system_msg, "agent": self.name})
 
     def add_demonstrations_to_history(self) -> None:
         """Add demonstrations to history"""
@@ -290,6 +290,7 @@ class Agent:
             if self.templates.demonstration_template is not None:
                 self.logger.warning("Demonstration template is ignored for put_demos_in_history=True")
             # Add demonstration to history directly as separate messages
+            # TODO: check that this still works with function calling
             for entry in demo_history:
                 if entry["role"] != "system":
                     entry["is_demo"] = True
@@ -320,12 +321,15 @@ class Agent:
             problem_statement=self._problem_statement.get_problem_statement(),
         )
 
-    def _add_templated_messages_to_history(self, templates: list[str], **kwargs: str) -> None:
+    def _add_templated_messages_to_history(
+        self, templates: list[str], tool_call_ids: list[str] | None = None, **kwargs: str
+    ) -> None:
         """Populate selected template(s) with information (e.g., issue, arguments, state)
         and add to history.
 
         Args:
             templates: templates to populate and add to history
+            tool_call_ids: tool call ids to be added to the history
             **kwargs: keyword arguments to be passed to the templates (in addition to the
                 ones in `self._get_format_dict`)
         """
@@ -342,7 +346,12 @@ class Agent:
         message = "\n".join(messages)
 
         self.logger.info(f"🤖 MODEL INPUT\n{message}")
-        self._append_history({"role": "user", "content": message, "agent": self.name})
+        history_item = {"role": "user", "content": message, "agent": self.name}
+        if tool_call_ids:
+            assert len(tool_call_ids) == 1, "This should be ensured by the FunctionCalling parse method"
+            history_item["role"] = "tool"
+            history_item["tool_call_ids"] = tool_call_ids
+        self._append_history(history_item)
 
     def add_step_to_history(self, step: StepOutput) -> None:
         """Adds a step (command that was run and output) to the model history"""
@@ -353,6 +362,7 @@ class Agent:
                 "thought": step.thought,
                 "action": step.action,
                 "agent": self.name,
+                "tool_calls": step.tool_calls,
             },
         )
 
@@ -362,8 +372,12 @@ class Agent:
         else:
             # Show standard output template if there is observation content
             templates = [self.templates.next_step_template]
-
-        self._add_templated_messages_to_history(templates, observation=step.observation, **step.state)
+        self._add_templated_messages_to_history(
+            templates,
+            observation=step.observation,
+            tool_call_ids=step.tool_call_ids,
+            **step.state,
+        )
 
     def add_instance_template_to_history(self, state: dict[str, str]) -> None:
         """Add observation to history, as well as the instance template or demonstrations if we're
@@ -545,22 +559,26 @@ class Agent:
         try:
             # Forward model and get actions
             self._chook.on_model_query(messages=history, agent=self.name)
-            output = self.model.query(history)  # type: ignore
-            step.output = output
+            output = self.model.query(history)
+            step.output = output["message"]
             if isinstance(self.model, HumanThoughtModel):
                 # TODO: This might be a bit hacky
                 # consider changing sweagent/tools/tools.py:ToolConfig to enforce this.
                 step.thought, step.action = ThoughtActionParser()(output, self.tools.config.commands)
             elif isinstance(self.model, HumanModel):
-                step.thought, step.action = "", output
+                step.thought, step.action = "", output["message"]
             else:
                 step.thought, step.action = self.tools.parse_actions(output)
+            if output.get("tool_calls", None) is not None:
+                step.tool_call_ids = [call["id"] for call in output["tool_calls"]]
+                step.tool_calls = output["tool_calls"]
             self.logger.info(f"💭 THOUGHT\n{step.thought}\n🎬 ACTION\n{step.action.strip()}")
             self._chook.on_actions_generated(step=step)
             return self.handle_action(step)
         except Exception as e:
             # Attach the step object to the exception
             e.step = step  # type: ignore
+            self.logger.exception("Error in forward", exc_info=e)
             raise
 
     def forward_with_handling(self, history: list[dict[str, str]]) -> StepOutput:
@@ -639,25 +657,33 @@ class Agent:
                     "Exit due to cost limit",
                 )
             except RetryError as e:
+                self.logger.exception(f"Exiting due to retry error: {e}", exc_info=True)
                 return handle_error_with_autosubmission(
                     "exit_api",
                     f"Exit due to retry error: {e}",
                 )
             except SweRexception as e:
+                self.logger.exception(f"Exiting due to environment error: {e}", exc_info=True)
                 return handle_error_with_autosubmission(
                     "exit_environment_error",
                     f"Exit due to environment error: {e}",
                 )
             except RuntimeError as e:
+                self.logger.exception(f"Exiting due to runtime error: {e}", exc_info=True)
                 return handle_error_with_autosubmission(
                     "exit_error",
                     f"Exit due to runtime error: {e}",
                 )
             except Exception as e:
+                self.logger.exception(f"Exiting due to unknown error: {e}", exc_info=True)
                 return handle_error_with_autosubmission(
                     "exit_error",
                     f"Exit due to unknown error: {e}",
                 )
+        self.logger.exception(
+            "Exit due to repeated format/blocklist/bash syntax errors",
+            exc_info=True,
+        )
         return handle_error_with_autosubmission(
             "exit_format",
             "Exit due to repeated format/blocklist/bash syntax errors",

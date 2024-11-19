@@ -20,7 +20,7 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from sweagent.tools.commands import Command
+from sweagent.tools.tools import ToolConfig
 from sweagent.types import History, HistoryItem
 from sweagent.utils.log import get_logger
 
@@ -154,7 +154,7 @@ class TotalCostLimitExceededError(CostLimitExceededError):
 
 
 class AbstractModel(ABC):
-    def __init__(self, config: PydanticBaseModel, commands: list[Command]):
+    def __init__(self, config: PydanticBaseModel, tools: ToolConfig):
         self.config: PydanticBaseModel
         self.stats: InstanceStats
 
@@ -162,20 +162,20 @@ class AbstractModel(ABC):
         self.stats = InstanceStats()
 
     @abstractmethod
-    def query(self, history: History, action_prompt: str = "> ") -> str: ...
+    def query(self, history: History, action_prompt: str = "> ") -> dict: ...
 
 
 class HumanModel(AbstractModel):
-    def __init__(self, config: HumanModelConfig, commands: list[Command]):
+    def __init__(self, config: HumanModelConfig, tools: ToolConfig):
         self.config = config
         self.stats = InstanceStats()
 
         # Determine which commands require multi-line input
         self.multi_line_command_endings = {
-            command.name: command.end_name for command in commands if command.end_name is not None
+            command.name: command.end_name for command in tools.commands if command.end_name is not None
         }
 
-    def query(self, history: History, action_prompt: str = "> ") -> str:
+    def query(self, history: History, action_prompt: str = "> ") -> dict:
         """Logic for handling user input to pass to SWEEnv"""
         action = input(action_prompt)
         command_name = action.split()[0] if action.strip() else ""
@@ -199,11 +199,11 @@ class HumanModel(AbstractModel):
                     break
                 buffer.append(action)
             action = "\n".join(buffer)
-        return action
+        return {"message": action}
 
 
 class HumanThoughtModel(HumanModel):
-    def query(self, history: History) -> str:
+    def query(self, history: History) -> dict:
         """Logic for handling user input (both thought + action) to pass to SWEEnv"""
         thought_all = ""
         thought = input("Thought (end w/ END_THOUGHT): ")
@@ -217,11 +217,11 @@ class HumanThoughtModel(HumanModel):
 
         action = super().query(history, action_prompt="Action: ")
 
-        return f"{thought_all}\n```\n{action}\n```"
+        return {"message": f"{thought_all}\n```\n{action}\n```"}
 
 
 class ReplayModel(AbstractModel):
-    def __init__(self, config: ReplayModelConfig, commands: list[Command]):
+    def __init__(self, config: ReplayModelConfig, tools: ToolConfig):
         self.config = config
         self.stats = InstanceStats()
 
@@ -240,7 +240,7 @@ class ReplayModel(AbstractModel):
         self._replay_idx += 1
         self._action_idx = 0
 
-    def query(self, history: History) -> str:
+    def query(self, history: History) -> dict:
         """Logic for tracking which replay action to pass to SWEEnv"""
         self.stats.api_calls += 1
         actions = self._replays[self._replay_idx]
@@ -261,7 +261,7 @@ class ReplayModel(AbstractModel):
         if action == "submit":
             self._next_replay()
 
-        return action
+        return {"message": action}
 
 
 class PredeterminedTestModel(AbstractModel):
@@ -270,7 +270,7 @@ class PredeterminedTestModel(AbstractModel):
         self._idx = -1
         self.stats = InstanceStats()
 
-    def query(self, *args, **kwargs) -> str:
+    def query(self, *args, **kwargs) -> dict:
         self._idx += 1
         output = self._outputs[self._idx]
         if output == "raise_runtime":
@@ -279,17 +279,18 @@ class PredeterminedTestModel(AbstractModel):
             raise CostLimitExceededError()
         elif output == "raise_context":
             raise ContextWindowExceededError()
-        return output
+        return {"message": output}
 
 
 class InstantEmptySubmitTestModel(AbstractModel):
-    def __init__(self, args: InstantEmptySubmitModelConfig, commands: list[Command]):
+    def __init__(self, args: InstantEmptySubmitModelConfig, tools: ToolConfig):
         """This model immediately submits. Useful for testing purposes"""
+        super().__init__(args, tools)
         self.config: InstantEmptySubmitModelConfig = args
         self.stats = InstanceStats()
         self._action_idx = 0
 
-    def query(self, history: list[dict[str, str]]) -> str:
+    def query(self, history: list[dict[str, str]]) -> dict:
         time.sleep(random.uniform(0, self.config.delay))
         # Need to at least do _something_ to submit
         if self._action_idx == 0:
@@ -299,14 +300,21 @@ class InstantEmptySubmitTestModel(AbstractModel):
             self._action_idx = 0
             action = "DISCUSSION\nThe task should be resolved, so let's submit the patch.\n\n```\nsubmit\n```\n"
         self.stats.api_calls += 1
-        return action
+        return {"message": action}
 
 
 class LiteLLMModel(AbstractModel):
-    def __init__(self, args: ModelConfig, commands: list[Command]):
+    def __init__(self, args: ModelConfig, tools: ToolConfig):
         self.args = args
-        self.commands = commands
         self.stats = InstanceStats()
+        self.tools = tools
+        if tools.use_function_calling:
+            assert litellm.supports_function_calling(
+                model=self.args.name
+            ), f"Model {self.args.name} does not support function calling"
+        self.model_max_input_tokens = litellm.model_cost.get(self.args.name, {}).get("max_input_tokens")
+        self.model_max_output_tokens = litellm.model_cost.get(self.args.name, {}).get("max_output_tokens")
+        self.lm_provider = litellm.model_cost[self.args.name]["litellm_provider"]
 
     def _update_stats(self, *, input_tokens: int, output_tokens: int, cost: float) -> None:
         with GLOBAL_STATS_LOCK:
@@ -341,18 +349,22 @@ class LiteLLMModel(AbstractModel):
             msg = "Instance cost limit exceeded"
             raise InstanceCostLimitExceededError(msg)
 
-    def _query(self, messages: list[dict[str, str]]) -> str:
+    def _query(self, messages: list[dict[str, str]]) -> dict:
         input_tokens: int = litellm.utils.token_counter(messages=messages, model=self.args.name)
-        max_input_tokens: int | None = litellm.model_cost.get(self.args.name, {}).get("max_input_tokens")
-        if max_input_tokens is None:
+        if self.model_max_input_tokens is None:
             logger.warning(f"No max input tokens found for model {self.args.name!r}")
-        elif input_tokens > max_input_tokens:
-            msg = f"Input tokens {input_tokens} exceed max tokens {max_input_tokens}"
+        elif input_tokens > self.model_max_input_tokens:
+            msg = f"Input tokens {input_tokens} exceed max tokens {self.model_max_input_tokens}"
             raise ContextWindowExceededError(msg)
         extra_args = {}
         if self.args.api_base:
             # Not assigned a default value in litellm, so only pass this if it's set
             extra_args["api_base"] = self.args.api_base
+        if self.tools.use_function_calling:
+            extra_args["tools"] = self.tools.tools
+        # We need to always set max_tokens for anthropic models
+        if self.lm_provider == "anthropic":
+            completion_kwargs = {**self.args.completion_kwargs, "max_tokens": self.model_max_output_tokens}
         response: litellm.types.utils.ModelResponse = litellm.completion(  # type: ignore
             model=self.args.name,
             messages=messages,
@@ -360,18 +372,24 @@ class LiteLLMModel(AbstractModel):
             top_p=self.args.top_p,
             api_version=self.args.api_version,
             api_key=self.args.api_key.get_secret_value() if self.args.api_key else None,
-            **self.args.completion_kwargs,
+            **completion_kwargs,
             **extra_args,
         )
         choices: litellm.types.utils.Choices = response.choices  # type: ignore
-        output = choices[0].message.content
+        output = choices[0].message.content or ""
+        output_dict = {"message": output}
         cost = litellm.cost_calculator.completion_cost(response)
         output_tokens = litellm.utils.token_counter(text=output, model=self.args.name)
         self._update_stats(input_tokens=input_tokens, output_tokens=output_tokens, cost=cost)
+        if self.tools.use_function_calling:
+            if response.choices[0].message.tool_calls:
+                tool_calls = [call.to_dict() for call in response.choices[0].message.tool_calls]
+            else:
+                tool_calls = []
+            output_dict["tool_calls"] = tool_calls
+        return output_dict
 
-        return output
-
-    def query(self, history: History) -> str:
+    def query(self, history: History) -> dict:
         for attempt in Retrying(
             stop=stop_after_attempt(self.args.retry.retries),
             wait=wait_random_exponential(min=self.args.retry.min_wait, max=self.args.retry.max_wait),
@@ -403,25 +421,39 @@ class LiteLLMModel(AbstractModel):
                 return "user" if self.args.convert_system_to_user else "system"
             return history_item["role"]
 
-        return [{"role": get_role(history_item), "content": history_item["content"]} for history_item in history]
+        messages = []
+        for history_item in history:
+            role = get_role(history_item)
+            if role == "tool":
+                messages.append(
+                    {
+                        "role": role,
+                        "content": history_item["content"],
+                        "tool_call_id": history_item["tool_call_ids"][0],  # Only one tool call per observations
+                    }
+                )
+            elif "tool_calls" in history_item:
+                messages.append(
+                    {"role": role, "content": history_item["content"], "tool_calls": history_item["tool_calls"]}
+                )
+            else:
+                messages.append({"role": role, "content": history_item["content"]})
+        return messages
 
 
-def get_model(args: ModelConfig, commands: list[Command] | None = None) -> AbstractModel:
+def get_model(args: ModelConfig, tools: ToolConfig) -> AbstractModel:
     """Returns correct model object given arguments and commands"""
-    if commands is None:
-        commands = []
-
     if args.name == "human":
         assert isinstance(args, HumanModelConfig)
-        return HumanModel(args, commands)
+        return HumanModel(args, tools)
     if args.name == "human_thought":
         assert isinstance(args, HumanThoughtModelConfig)
-        return HumanThoughtModel(args, commands)
+        return HumanThoughtModel(args, tools)
     if args.name == "replay":
         assert isinstance(args, ReplayModelConfig)
-        return ReplayModel(args, commands)
+        return ReplayModel(args, tools)
     elif args.name == "instant_empty_submit":
         assert isinstance(args, InstantEmptySubmitModelConfig)
-        return InstantEmptySubmitTestModel(args, commands)
+        return InstantEmptySubmitTestModel(args, tools)
     assert isinstance(args, GenericAPIModelConfig)
-    return LiteLLMModel(args, commands)
+    return LiteLLMModel(args, tools)

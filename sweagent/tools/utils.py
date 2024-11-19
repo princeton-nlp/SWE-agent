@@ -1,5 +1,8 @@
 import re
 from collections.abc import Callable
+from typing import Any
+
+from sweagent.tools.commands import Command
 
 
 def _guard_multiline_input(action: str, match_fct: Callable[[str], re.Match | None]) -> str:
@@ -31,3 +34,10 @@ def _guard_multiline_input(action: str, match_fct: Callable[[str], re.Match | No
             parsed_action.append(rem_action)
             rem_action = ""
     return "\n".join(parsed_action)
+
+
+def _should_quote(value: Any, command: Command) -> bool:
+    """Returns True if the value should be quoted, False otherwise."""
+    if command.name == "bash":
+        return False
+    return isinstance(value, str) and command.end_name is None
