@@ -40,18 +40,14 @@ from sweagent.utils.log import (
 
 
 class RunBatchConfig(BaseSettings, cli_implicit_flags=True):
-    instances: BatchInstanceSourceConfig = Field(alias="i", description="Instances to run. Alias: `i` or `instances`.")
-    agent: AgentConfig = Field(alias="a", description="Agent options. Alias: `a` or `agent`.")
-    output_dir: Path = Field(
-        default=Path("DEFAULT"), validation_alias="o", description="Output directory. Alias: `o` or `output_dir`."
-    )
+    instances: BatchInstanceSourceConfig = Field(description="Instances to run.")
+    agent: AgentConfig = Field(description="Agent options.")
+    output_dir: Path = Field(default=Path("DEFAULT"), description="Output directory.")
     raise_exceptions: bool = False
     redo_existing: bool = False
     env_var_path: Path | None = None
     """Path to a .env file to load environment variables from."""
-    num_workers: int = Field(
-        default=1, alias="nw", description="Number of parallel workers to use. Alias: `nw` or `num_workers`."
-    )
+    num_workers: int = Field(default=1, description="Number of parallel workers to use.")
     random_delay_multiplier: float = 0.3
     """We will wait for a random amount of time between 0 and `random_delay_multiplier`
     times the number of workers at the start of each instance. This is to avoid any

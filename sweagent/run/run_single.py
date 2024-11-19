@@ -35,18 +35,12 @@ class RunSingleActionConfig(BaseModel, cli_implicit_flags=True):
 
 
 class RunSingleConfig(BaseSettings, cli_implicit_flags=True):
-    env: EnvironmentConfig = Field(
-        default_factory=EnvironmentConfig, validation_alias="e", description="Environment options."
-    )
-    agent: AgentConfig = Field(validation_alias="a", description="Agent options. Alias: `a` or `agent`.")
+    env: EnvironmentConfig = Field(default_factory=EnvironmentConfig, description="Environment options.")
+    agent: AgentConfig = Field(description="Agent options.")
     problem_statement: ProblemStatementConfig = Field(
-        default_factory=EmptyProblemStatement,
-        validation_alias="ps",
-        description="Problem statement options. Alias: `ps` or `problem_statement`.",
+        default_factory=EmptyProblemStatement, description="Problem statement options."
     )
-    output_dir: Path = Field(
-        default=Path("DEFAULT"), validation_alias="o", description="Output directory. Alias: `o` or `output_dir`."
-    )
+    output_dir: Path = Field(default=Path("DEFAULT"), description="Output directory.")
 
     actions: RunSingleActionConfig = Field(default_factory=RunSingleActionConfig)
 

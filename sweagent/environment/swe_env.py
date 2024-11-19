@@ -19,13 +19,11 @@ class EnvironmentConfig(BaseModel):
 
     deployment: DeploymentConfig = Field(
         default_factory=lambda: DockerDeploymentConfig(image="sweagent/swe-agent:latest"),
-        validation_alias="d",
-        description="Deployment options (alias: `d` or `deployment`).",
+        description="Deployment options.",
     )
     repo: RepoConfig | None = Field(
         default=None,
-        validation_alias="r",
-        description="Repository options (alias: `r` or `repo`).",
+        description="Repository options.",
     )
     # fixme: Actually run these
     startup_commands: list[str] = []
