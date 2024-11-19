@@ -445,17 +445,30 @@ class LiteLLMModel(AbstractModel):
 
 def get_model(args: ModelConfig, tools: ToolConfig) -> AbstractModel:
     """Returns correct model object given arguments and commands"""
+    # Convert GenericAPIModelConfig to specific model config if needed
+    if isinstance(args, GenericAPIModelConfig) and not isinstance(
+        args, HumanModelConfig | HumanThoughtModelConfig | ReplayModelConfig | InstantEmptySubmitModelConfig
+    ):
+        if args.name == "human":
+            args = HumanModelConfig(**args.model_dump())
+        elif args.name == "human_thought":
+            args = HumanThoughtModelConfig(**args.model_dump())
+        elif args.name == "replay":
+            args = ReplayModelConfig(**args.model_dump())
+        elif args.name == "instant_empty_submit":
+            args = InstantEmptySubmitModelConfig(**args.model_dump())
+
     if args.name == "human":
-        assert isinstance(args, HumanModelConfig)
+        assert isinstance(args, HumanModelConfig), f"Expected {HumanModelConfig}, got {args}"
         return HumanModel(args, tools)
     if args.name == "human_thought":
-        assert isinstance(args, HumanThoughtModelConfig)
+        assert isinstance(args, HumanThoughtModelConfig), f"Expected {HumanThoughtModelConfig}, got {args}"
         return HumanThoughtModel(args, tools)
     if args.name == "replay":
-        assert isinstance(args, ReplayModelConfig)
+        assert isinstance(args, ReplayModelConfig), f"Expected {ReplayModelConfig}, got {args}"
         return ReplayModel(args, tools)
     elif args.name == "instant_empty_submit":
-        assert isinstance(args, InstantEmptySubmitModelConfig)
+        assert isinstance(args, InstantEmptySubmitModelConfig), f"Expected {InstantEmptySubmitModelConfig}, got {args}"
         return InstantEmptySubmitTestModel(args, tools)
-    assert isinstance(args, GenericAPIModelConfig)
+    assert isinstance(args, GenericAPIModelConfig), f"Expected {GenericAPIModelConfig}, got {args}"
     return LiteLLMModel(args, tools)
