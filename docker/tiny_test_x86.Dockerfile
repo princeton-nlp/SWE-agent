@@ -1,4 +1,4 @@
-FROM python:3.11.10-bullseye
+FROM --platform=linux/x86_64 python:3.11.10-bullseye
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
