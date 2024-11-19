@@ -166,7 +166,7 @@ class ToolHandler:
     def reset(self, env: SWEEnv) -> None:
         self.logger.info("Resetting tools")
         self._set_env_variables(env)
-        env.communicate(" && ".join(self._reset_commands), check=True)
+        env.communicate(" && ".join(self._reset_commands), check=True, timeout=self.config.install_timeout)
 
     def _install_commands(self, env: SWEEnv) -> None:
         """Make sure all commands are available in the container"""
@@ -189,7 +189,9 @@ class ToolHandler:
                 )
             )  # check false because bin might not exist
             if (bundle / "install.sh").exists():
-                env.communicate(f"cd /root/tools/{bundle.name}; bash install.sh", check=True)
+                env.communicate(
+                    f"cd /root/tools/{bundle.name}; bash install.sh", check=True, timeout=self.config.install_timeout
+                )
             # always make all files in bin executable
             asyncio.run(
                 env.deployment.runtime.execute(

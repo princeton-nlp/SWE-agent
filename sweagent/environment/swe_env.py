@@ -122,6 +122,8 @@ class SWEEnv:
                 input=" && ".join(startup_commands),
                 check=True,
                 error_msg="Failed to clean repository",
+                # Sometimes this is slow because it rebuilds some index
+                timeout=120,
             )
 
     def close(self) -> None:
