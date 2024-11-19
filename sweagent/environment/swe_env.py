@@ -18,7 +18,7 @@ class EnvironmentConfig(BaseModel):
     """Configure data sources and setup instructions for the environment in which we solve the tasks."""
 
     deployment: DeploymentConfig = Field(
-        default_factory=lambda: DockerDeploymentConfig(image="sweagent/swe-agent:latest"),
+        default_factory=lambda: DockerDeploymentConfig(image="python:3.11"),
         description="Deployment options.",
     )
     repo: RepoConfig | None = Field(

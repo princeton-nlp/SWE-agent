@@ -15,7 +15,7 @@ def rr_config(swe_agent_test_repo_traj, tmp_path, swe_agent_test_repo_clone):
     return RunReplayConfig(
         traj_path=swe_agent_test_repo_traj,
         config_path=CONFIG_DIR / "default_from_url.yaml",
-        deployment=DockerDeploymentConfig(image="sweagent/swe-agent:latest"),
+        deployment=DockerDeploymentConfig(image="python:3.11"),
         output_dir=tmp_path,
         repo=LocalRepoConfig(path=swe_agent_test_repo_clone),
     )

@@ -82,7 +82,7 @@ def test_env_args(
     clone_cmd = ["git", "clone", "https://github.com/swe-agent/test-repo", str(local_repo_path)]
     subprocess.run(clone_cmd, check=True)
     test_env_args = EnvironmentConfig(
-        deployment=DockerDeploymentConfig(image="sweagent/swe-agent:latest"),
+        deployment=DockerDeploymentConfig(image="python:3.11"),
         repo=LocalRepoConfig(path=local_repo_path),
     )
     yield test_env_args

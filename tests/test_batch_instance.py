@@ -11,7 +11,7 @@ from sweagent.run.batch_instances import BatchInstance, SimpleBatchInstance, SWE
 def test_simple_batch_from_swe_bench_to_full_batch_instance(test_data_sources_path):
     sb_instance = json.loads((test_data_sources_path / "swe-bench-dev-easy.json").read_text())[0]
     instance = SimpleBatchInstance.from_swe_bench(sb_instance).to_full_batch_instance(
-        DockerDeploymentConfig(image="sweagent/swe-agent:latest")
+        DockerDeploymentConfig(image="python:3.11")
     )
     assert isinstance(instance.env.repo, PreExistingRepo)
     assert instance.env.repo.repo_name == "testbed"
