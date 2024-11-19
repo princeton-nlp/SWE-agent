@@ -37,12 +37,16 @@ class RetryConfig(PydanticBaseModel):
 
 
 class GenericAPIModelConfig(PydanticBaseModel):
-    name: str
+    name: str = Field(alias="n", description="Model name. Alias: `n` or `name`.")
     """Arguments configuring the model and its behavior."""
-    per_instance_cost_limit: float = 3.0
-    """Cost limit for every instance (task)"""
-    total_cost_limit: float = 0.0
-    """Total cost limit"""
+    per_instance_cost_limit: float = Field(
+        default=3.0,
+        alias="ic",
+        description="Cost limit for every instance (task). Alias: `ic` or `per_instance_cost_limit`.",
+    )
+    total_cost_limit: float = Field(
+        default=0.0, alias="tc", description="Total cost limit. Alias: `tc` or `total_cost_limit`."
+    )
     temperature: float = 1.0
     """Sampling temperature"""
     top_p: float = 1.0
@@ -71,11 +75,11 @@ class GenericAPIModelConfig(PydanticBaseModel):
 
 
 class ReplayModelConfig(GenericAPIModelConfig):
-    replay_path: Path
-    """Path to replay file when using the replay model"""
+    replay_path: Path = Field(
+        alias="p", description="Path to replay file when using the replay model. Alias: `p` or `replay_path`."
+    )
 
-    name: Literal["replay"] = "replay"
-    """Do not change. Used for (de)serialization."""
+    name: Literal["replay"] = Field(default="replay", alias="n", description="Model name. Alias: `n` or `name`.")
 
     model_config = ConfigDict(extra="forbid")
 
@@ -83,8 +87,9 @@ class ReplayModelConfig(GenericAPIModelConfig):
 class InstantEmptySubmitModelConfig(GenericAPIModelConfig):
     """Model that immediately submits an empty patch"""
 
-    name: Literal["instant_empty_submit"] = "instant_empty_submit"
-    """Do not change. Used for (de)serialization."""
+    name: Literal["instant_empty_submit"] = Field(
+        default="instant_empty_submit", alias="n", description="Model name. Alias: `n` or `name`."
+    )
 
     delay: float = 0.0
     """Delay before answering"""
@@ -93,25 +98,25 @@ class InstantEmptySubmitModelConfig(GenericAPIModelConfig):
 
 
 class HumanModelConfig(GenericAPIModelConfig):
-    name: Literal["human"] = "human"
-    """Do not change. Used for (de)serialization."""
+    name: Literal["human"] = Field(default="human", alias="n", description="Model name. Alias: `n` or `name`.")
 
     model_config = ConfigDict(extra="forbid")
 
 
 class HumanThoughtModelConfig(HumanModelConfig):
-    name: Literal["human_thought"] = "human_thought"
-    """Do not change. Used for (de)serialization."""
+    name: Literal["human_thought"] = Field(
+        default="human_thought", alias="n", description="Model name. Alias: `n` or `name`."
+    )
 
     model_config = ConfigDict(extra="forbid")
 
 
 ModelConfig = Annotated[
-    ReplayModelConfig
+    GenericAPIModelConfig
+    | ReplayModelConfig
     | InstantEmptySubmitModelConfig
     | HumanModelConfig
-    | HumanThoughtModelConfig
-    | GenericAPIModelConfig,
+    | HumanThoughtModelConfig,
     Field(union_mode="left_to_right"),
 ]
 

@@ -13,6 +13,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Self
 
+from pydantic import Field
 from pydantic_settings import BaseSettings
 from rich.live import Live
 from swerex.deployment.hooks.status import SetStatusDeploymentHook
@@ -39,15 +40,18 @@ from sweagent.utils.log import (
 
 
 class RunBatchConfig(BaseSettings, cli_implicit_flags=True):
-    instances: BatchInstanceSourceConfig
-    agent: AgentConfig
-    output_dir: Path = Path("DEFAULT")
+    instances: BatchInstanceSourceConfig = Field(alias="i", description="Instances to run. Alias: `i` or `instances`.")
+    agent: AgentConfig = Field(alias="a", description="Agent options. Alias: `a` or `agent`.")
+    output_dir: Path = Field(
+        default=Path("DEFAULT"), validation_alias="o", description="Output directory. Alias: `o` or `output_dir`."
+    )
     raise_exceptions: bool = False
     redo_existing: bool = False
     env_var_path: Path | None = None
     """Path to a .env file to load environment variables from."""
-    num_workers: int = 1
-    """Number of parallel workers to use. Default is 1 (sequential execution)."""
+    num_workers: int = Field(
+        default=1, alias="nw", description="Number of parallel workers to use. Alias: `nw` or `num_workers`."
+    )
     random_delay_multiplier: float = 0.3
     """We will wait for a random amount of time between 0 and `random_delay_multiplier`
     times the number of workers at the start of each instance. This is to avoid any

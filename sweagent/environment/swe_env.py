@@ -18,9 +18,15 @@ class EnvironmentConfig(BaseModel):
     """Configure data sources and setup instructions for the environment in which we solve the tasks."""
 
     deployment: DeploymentConfig = Field(
-        default_factory=lambda: DockerDeploymentConfig(image="sweagent/swe-agent:latest")
+        default_factory=lambda: DockerDeploymentConfig(image="sweagent/swe-agent:latest"),
+        validation_alias="d",
+        description="Deployment options (alias: `d` or `deployment`).",
     )
-    repo: RepoConfig | None = None
+    repo: RepoConfig | None = Field(
+        default=None,
+        validation_alias="r",
+        description="Repository options (alias: `r` or `repo`).",
+    )
     # fixme: Actually run these
     startup_commands: list[str] = []
     """Execute these commands before starting to run the agent. They will be executed in the same

@@ -169,7 +169,9 @@ class InstancesFromFile(BaseModel, AbstractInstanceSource):
     """Shuffle the instances (before filtering and slicing)."""
 
     deployment: DeploymentConfig = Field(
-        default_factory=lambda: DockerDeploymentConfig(image="sweagent/swe-agent:latest")
+        default_factory=lambda: DockerDeploymentConfig(image="sweagent/swe-agent:latest"),
+        alias="d",
+        description="Deployment options. Alias: `d` or `deployment`.",
     )
     """Note that the image_name option is overwritten by the images specified in the task instances."""
 
@@ -206,7 +208,9 @@ class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
     """Shuffle the instances (before filtering and slicing)."""
 
     deployment: DeploymentConfig = Field(
-        default_factory=lambda: DockerDeploymentConfig(image="sweagent/swe-agent:latest")
+        default_factory=lambda: DockerDeploymentConfig(image="sweagent/swe-agent:latest"),
+        alias="d",
+        description="Deployment options. Alias: `d` or `deployment`.",
     )
     """Deployment configuration. Note that the image_name option is overwritten by the images specified in the task instances.
     """
@@ -234,7 +238,9 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
     split: Literal["dev", "test"] = "dev"
 
     deployment: DeploymentConfig = Field(
-        default_factory=lambda: DockerDeploymentConfig(image="sweagent/swe-agent:latest")
+        default_factory=lambda: DockerDeploymentConfig(image="sweagent/swe-agent:latest"),
+        alias="d",
+        description="Deployment options. Alias: `d` or `deployment`.",
     )
     """Deployment configuration. Note that the image_name option is overwritten by the images specified in the task instances.
     """

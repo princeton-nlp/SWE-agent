@@ -81,7 +81,7 @@ class AgentConfig(BaseModel):
     templates: TemplateConfig = Field(default_factory=TemplateConfig)
     tools: ToolConfig = Field(default_factory=ToolConfig)
     history_processor: HistoryProcessor = Field(default_factory=DefaultHistoryProcessor)
-    model: ModelConfig
+    model: ModelConfig = Field(alias="m", description="Model options. Alias: `m` or `model`.")
 
     max_requeries: int = 3
     """Maximum number of times to requery the model after an error, such as a
