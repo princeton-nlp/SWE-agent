@@ -35,12 +35,14 @@ class AbstractAgentHook:
     def on_query_message_added(
         self,
         *,
+        agent: str,
         role: str,
         content: str,
-        agent: str,
         is_demo: bool = False,
         thought: str = "",
         action: str = "",
+        tool_calls: list[dict[str, str]] | None = None,
+        tool_call_ids: list[str] | None = None,
     ): ...
 
     def on_setup_done(self): ...
@@ -94,9 +96,25 @@ class CombinedAgentHook(AbstractAgentHook):
             hook.on_model_query(messages=messages, agent=agent)
 
     def on_query_message_added(
-        self, *, role: str, content: str, agent: str, is_demo: bool = False, thought: str = "", action: str = ""
+        self,
+        *,
+        agent: str,
+        role: str,
+        content: str,
+        is_demo: bool = False,
+        thought: str = "",
+        action: str = "",
+        tool_calls: list[dict[str, str]] | None = None,
+        tool_call_ids: list[str] | None = None,
     ):
         for hook in self.hooks:
             hook.on_query_message_added(
-                role=role, content=content, agent=agent, is_demo=is_demo, thought=thought, action=action
+                agent=agent,
+                role=role,
+                content=content,
+                is_demo=is_demo,
+                thought=thought,
+                action=action,
+                tool_calls=tool_calls,
+                tool_call_ids=tool_call_ids,
             )

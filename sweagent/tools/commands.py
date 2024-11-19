@@ -1,21 +1,103 @@
 from __future__ import annotations
 
 import re
+import string
 from abc import ABC, abstractmethod
+from functools import cached_property
 from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
+
+ARGUMENT_NAME_PATTERN = r"[a-zA-Z_][a-zA-Z0-9_-]+"
+
+
+def _extract_keys(format_string: str) -> set[str]:
+    """Given a format string, returns a set of all the keys in the format string."""
+    formatter = string.Formatter()
+    keys = set()
+    for _, field_name, _, _ in formatter.parse(format_string):
+        if field_name is not None:
+            keys.add(field_name)
+    return keys
+
+
+class Argument(BaseModel):
+    name: str
+    type: str
+    description: str
+    required: bool
+    enum: list[str] | None = None
+    argument_format: str = "{value}"  # how to invoke the argument in the command
 
 
 class Command(BaseModel):
     name: str
-    docstring: str | None = None
+    docstring: str | None
+    signature: str | None = None
     # if there is an end_name, then it is a multi-line command
     end_name: str | None = None
-    arguments: list[dict] | None = None
-    signature: str | None = None
+    arguments: list[Argument] | None = None
+
+    @cached_property
+    def invoke_format(self) -> str:
+        if self.signature:
+            return re.sub(rf"\[?<({ARGUMENT_NAME_PATTERN})>\]?", r"{\1}", self.signature)
+        else:
+            # cmd arg_format_1 arg_format_2 ...
+            _invoke_format = f"{self.name} "
+            for arg in self.arguments:
+                _invoke_format += f"{{{arg.name}}} "
+            return _invoke_format
+
+    def get_function_calling_tool(self) -> dict:
+        tool = {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.docstring or "",
+            },
+        }
+        properties = {}
+        required = []
+        if self.arguments:
+            for arg in self.arguments:
+                properties[arg.name] = {"type": arg.type, "description": arg.description}
+
+                if arg.required:
+                    required.append(arg.name)
+
+                # Handle enum if present
+                if arg.enum:
+                    properties[arg.name]["enum"] = arg.enum
+        tool["function"]["parameters"] = {"type": "object", "properties": properties, "required": required}
+        return tool
+
+    @model_validator(mode="after")
+    def validate_arguments(self) -> Command:
+        """Validates that optional arguments come after required arguments and argument names are unique."""
+        if not self.arguments:
+            return self
+        found_optional = False
+        for arg in self.arguments:
+            if found_optional and arg.required:
+                msg = f"Command '{self.name}': Required argument '{arg.name}' cannot come after optional arguments"
+                raise ValueError(msg)
+            if not arg.required:
+                found_optional = True
+        duplicates = {arg.name for arg in self.arguments if self.arguments.count(arg) > 1}
+        if duplicates:
+            msg = f"Command '{self.name}': Duplicate argument names: {duplicates}"
+            raise ValueError(msg)
+        for arg in self.arguments:
+            if not re.match(ARGUMENT_NAME_PATTERN, arg.name):
+                msg = f"Command '{self.name}': Invalid argument name: '{arg.name}'"
+                raise ValueError(msg)
+        if _extract_keys(self.invoke_format) != {arg.name for arg in self.arguments}:
+            msg = f"Command '{self.name}': Argument names in signature / invoke_format do not match argument names"
+            raise ValueError(msg)
+        return self
 
 
 class AbstractParseCommand(ABC):
@@ -221,11 +303,26 @@ class ParseCommandDetailed(ParseCommandBash):
             if "arguments" in cmd.__dict__ and cmd.arguments is not None:
                 docs += "  arguments:\n"
                 for argument in cmd.arguments:
-                    param = argument["name"]
-                    req_string = "required" if argument["required"] else "optional"
-                    docs += f"    - {param} ({argument['type']}) [{req_string}]: {argument['description']}\n"
+                    param = argument.name
+                    req_string = "required" if argument.required else "optional"
+                    docs += f"    - {param} ({argument.type}) [{req_string}]: {argument.description}\n"
             docs += "\n"
         return docs
 
 
 ParseCommand = ParseCommandBash | ParseCommandDetailed
+
+# Default Bash tool
+BASH_COMMAND = Command(
+    name="bash",
+    signature="<command>",
+    docstring="runs the given command directly in bash",
+    arguments=[
+        Argument(
+            name="command",
+            type="string",
+            description="a command to run directly in the current shell",
+            required=True,
+        )
+    ],
+)

@@ -2,15 +2,15 @@
 
 import json
 import re
-import shlex
-import string
 import textwrap
 from abc import ABC, abstractmethod
-from typing import Any, Literal
+from shlex import quote
+from typing import Literal
 
 from pydantic import BaseModel
 
 from sweagent.tools.commands import Command
+from sweagent.tools.utils import _should_quote
 
 
 class FormatError(Exception):
@@ -53,11 +53,11 @@ class ActionParser(AbstractParseFunction, BaseModel):
     type: Literal["action"] = "action"
     """Type for (de)serialization. Do not change."""
 
-    def __call__(self, model_response, commands: list[Command], strict=False):
-        if model_response.split():
-            action = model_response.strip().split()[0]
+    def __call__(self, model_response: dict, commands: list[Command], strict=False):
+        if model_response["message"].split():
+            action = model_response["message"].strip().split()[0]
             if action in {command.name for command in commands}:
-                return model_response, model_response
+                return model_response["message"], model_response["message"]
         msg = "First word in model response is not a valid command."
         raise FormatError(msg)
 
@@ -86,7 +86,7 @@ class ThoughtActionParser(AbstractParseFunction, BaseModel):
     type: Literal["thought_action"] = "thought_action"
     """Type for (de)serialization. Do not change."""
 
-    def __call__(self, model_response, commands: list[Command], strict=False):
+    def __call__(self, model_response: dict, commands: list[Command], strict=False):
         """
         Parses the action from the output of the API call.
         We assume that the action is the last code block in the model_response.
@@ -105,7 +105,7 @@ class ThoughtActionParser(AbstractParseFunction, BaseModel):
         code_block_pat = re.compile(r"^```(\S*)\s*\n|^```\s*$", re.MULTILINE)
         stack = []
         last_valid_block = None
-        for match in code_block_pat.finditer(model_response):
+        for match in code_block_pat.finditer(model_response["message"]):
             if stack and not match.group(1):  # Closing of a code block
                 start = stack.pop()
                 # Check if it's not nested within another block
@@ -115,8 +115,8 @@ class ThoughtActionParser(AbstractParseFunction, BaseModel):
                 stack.append(match)
         if last_valid_block:
             start, end = last_valid_block
-            thought = model_response[: start.start()] + model_response[end.end() :]
-            return thought, model_response[start.end() : end.start()]
+            thought = model_response["message"][: start.start()] + model_response["message"][end.end() :]
+            return thought, model_response["message"][start.end() : end.start()]
         msg = "No action found in model response."
         raise FormatError(msg)
 
@@ -139,7 +139,7 @@ class XMLThoughtActionParser(AbstractParseFunction, BaseModel):
     type: Literal["xml_thought_action"] = "xml_thought_action"
     """Type for (de)serialization. Do not change."""
 
-    def __call__(self, model_response, commands: list[Command], strict=False) -> tuple[str, str]:
+    def __call__(self, model_response: dict, commands: list[Command], strict=False) -> tuple[str, str]:
         """
         Parses the action from the output of the API call.
         We assume that the action is the last code block in the model_response.
@@ -155,17 +155,21 @@ class XMLThoughtActionParser(AbstractParseFunction, BaseModel):
 
         In this case, only the second code block will be parsed as the action.
         """
-        if "<command>" not in model_response or "</command>" not in model_response:
+        if "<command>" not in model_response["message"] or "</command>" not in model_response["message"]:
             msg = "No action found in model response."
             raise FormatError(msg)
         # `action` is everything between the last <command> and </command> tags
-        start_action = model_response.rfind("<command>") + len("<command>")  # start after the last <command> tag
-        end_thought = model_response.rfind("<command>")  # end before the last <command> tag
-        end_action = model_response.rfind("</command>")  # end before the last </command> tag
-        restart_thought = model_response.rfind("</command>") + len("</command>")  # start after the last </command> tag
+        start_action = model_response["message"].rfind("<command>") + len(
+            "<command>"
+        )  # start after the last <command> tag
+        end_thought = model_response["message"].rfind("<command>")  # end before the last <command> tag
+        end_action = model_response["message"].rfind("</command>")  # end before the last </command> tag
+        restart_thought = model_response["message"].rfind("</command>") + len(
+            "</command>"
+        )  # start after the last </command> tag
         # `thought` is everything not in between <command> and </command> tags (includes after the last </command> tag)
-        action = model_response[start_action:end_action]
-        thought = model_response[:end_thought] + model_response[restart_thought:]
+        action = model_response["message"][start_action:end_action]
+        thought = model_response["message"][:end_thought] + model_response["message"][restart_thought:]
 
         return thought.strip(), action.strip()
 
@@ -210,11 +214,69 @@ class Identity(AbstractParseFunction, BaseModel):
     type: Literal["identity"] = "identity"
     """Type for (de)serialization. Do not change."""
 
-    def __call__(self, model_response, commands: list[Command], strict=False) -> tuple[str, str]:
+    def __call__(self, model_response: dict, commands: list[Command], strict=False) -> tuple[str, str]:
         """
         This doesn't do any parsing. It just returns the model response as the thought and action.
         """
-        return model_response, model_response
+        return model_response["message"], model_response["message"]
+
+
+class FunctionCallingParser(AbstractParseFunction, BaseModel):
+    """Expects the model response to be a LiteLLM tool call."""
+
+    error_message: str = """\
+    Your output could not be parsed as a tool call.
+    Please make sure your output includes a thought and exactly _ONE_ tool call.
+
+    Make sure your tool call doesn't include any extra arguments that are not in the allowed arguments, and only use the allowed commands.
+    """
+
+    type: Literal["function_calling"] = "function_calling"
+    """Type for (de)serialization. Do not change."""
+
+    def _parse_tool_call(self, tool_call: dict, commands: list[Command]):
+        name = tool_call["function"]["name"]
+        command = {c.name: c for c in commands}.get(name)
+        if not command:
+            msg = f"Command '{name}' not found in list of available commands."
+            raise FormatError(msg)
+        try:
+            values = json.loads(tool_call["function"]["arguments"])
+        except json.JSONDecodeError:
+            msg = "Tool call arguments are not valid JSON."
+            raise FormatError(msg)
+        required_args = {arg.name for arg in command.arguments if arg.required}
+        missing_args = required_args - values.keys()
+        if missing_args:
+            msg = f"Required argument(s) missing: {', '.join(missing_args)}"
+            raise FormatError(msg)
+        valid_args = {arg.name for arg in command.arguments}
+        extra_args = set(values.keys()) - valid_args
+        if command.end_name:
+            # sometimes the model will include the end_name in the arguments - just ignore it
+            extra_args.discard(command.end_name)
+        if extra_args:
+            msg = f"Unexpected argument(s): {', '.join(extra_args)}"
+            raise FormatError(msg)
+        formatted_args = {
+            arg.name: arg.argument_format.format(
+                value=quote(values[arg.name]) if _should_quote(values[arg.name], command) else values[arg.name]
+            )
+            if arg.name in values
+            else ""
+            for arg in command.arguments
+        }
+        return command.invoke_format.format(**formatted_args).strip()
+
+    def __call__(self, model_response: dict, commands: list[Command], strict=False):
+        message = model_response["message"]
+        tool_calls = model_response["tool_calls"]
+        if tool_calls is None or len(tool_calls) != 1:
+            msg = f"Expected exactly one tool call in model response - received {len(tool_calls)} tool calls."
+            raise FormatError(msg)
+        tool_call = tool_calls[0]
+        action = self._parse_tool_call(tool_call, commands)
+        return message, action
 
 
 class JsonParser(AbstractParseFunction, BaseModel):
@@ -229,7 +291,7 @@ class JsonParser(AbstractParseFunction, BaseModel):
     type: Literal["json"] = "json"
     """Type for (de)serialization. Do not change."""
 
-    def __call__(self, model_response, commands: list[Command], strict=False):
+    def __call__(self, model_response: dict, commands: list[Command], strict=False):
         """Parses the action from the output of the API call.
         We assume that model output is a JSON object with the following fields:
         {
@@ -245,7 +307,7 @@ class JsonParser(AbstractParseFunction, BaseModel):
         }
         """
         try:
-            data = json.loads(model_response)
+            data = json.loads(model_response["message"])
             if not isinstance(data, dict):
                 msg = "Model output is not a JSON object."
                 raise FormatError(msg)
@@ -276,44 +338,31 @@ class JsonParser(AbstractParseFunction, BaseModel):
             commands_dict = {c.name: c for c in commands}
             command = commands_dict.get(data_command["name"])
             if command is None:
-                action = data_command["name"]
-                if "arguments" in data_command:
-                    action += " " + " ".join(data_command["arguments"].values())
-            else:
-                signature = command.signature
-                assert signature is not None
-                signature = signature.replace("[", "").replace("]", "").replace("<", "{").replace(">", "}")
-                signature_args = _extract_keys(signature)
-                command_args = {k: "" for k in signature_args}
+                action = " ".join([data_command["name"], *data_command["arguments"].values()])
 
-                if "arguments" in data_command:
-                    for arg in signature_args:
-                        if arg in data_command["arguments"]:
-                            value = data_command["arguments"][arg]
-                            if _should_quote(value, command):
-                                value = shlex.quote(value)
-                            command_args[arg] = value
-                action = signature.format(**command_args)
-            action = action.strip()
+            # Format arguments using their individual argument_format
+            formatted_args = {}
+            if command.arguments:
+                for arg in command.arguments:
+                    if arg.name in data_command.get("arguments", {}):
+                        value = data_command["arguments"][arg.name]
+                        if _should_quote(value, command):
+                            value = quote(value)
+                        formatted_args[arg.name] = arg.argument_format.format(value=value)
+            # Use the formatted arguments with invoke_format
+            action = command.invoke_format.format(**formatted_args).strip()
             return thought, action
         except json.JSONDecodeError:
             msg = "Model output is not valid JSON."
             raise FormatError(msg)
 
 
-ParseFunction = ActionParser | ThoughtActionParser | XMLThoughtActionParser | EditFormat | Identity | JsonParser
-
-
-def _extract_keys(format_string: str) -> set[str]:
-    """Given a format string, returns a set of all the keys in the format string."""
-    formatter = string.Formatter()
-    keys = set()
-    for _, field_name, _, _ in formatter.parse(format_string):
-        if field_name is not None:
-            keys.add(field_name)
-    return keys
-
-
-def _should_quote(value: Any, command: Command) -> bool:
-    """Returns True if the value should be quoted, False otherwise."""
-    return isinstance(value, str) and command.end_name is None
+ParseFunction = (
+    ActionParser
+    | ThoughtActionParser
+    | XMLThoughtActionParser
+    | FunctionCallingParser
+    | EditFormat
+    | Identity
+    | JsonParser
+)

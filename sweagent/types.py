@@ -25,6 +25,8 @@ class StepOutput(BaseModel):
     exit_status: str | None = None
     submission: str | None = None
     state: dict[str, str] = {}
+    tool_calls: list[dict[str, str]] | None = None
+    tool_call_ids: list[str] | None = None
     """State of the environment at the end of the step"""
 
 
@@ -47,6 +49,8 @@ class HistoryItem(_HistoryItem, total=False):
     is_demo: bool
     thought: str
     action: str | None
+    tool_calls: list[dict[str, str]] | None = None
+    tool_call_ids: list[str] | None = None
 
 
 History = list[HistoryItem]

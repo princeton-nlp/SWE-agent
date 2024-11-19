@@ -11,8 +11,8 @@ from swerex.runtime.abstract import Command as RexCommand
 from swerex.runtime.abstract import UploadRequest
 
 from sweagent.environment.swe_env import SWEEnv
-from sweagent.tools.commands import Command, ParseCommand, ParseCommandBash
-from sweagent.tools.parsing import ParseFunction, ThoughtActionParser
+from sweagent.tools.commands import BASH_COMMAND, Command, ParseCommand, ParseCommandBash
+from sweagent.tools.parsing import FunctionCallingParser, JsonParser, ParseFunction
 from sweagent.tools.utils import _guard_multiline_input
 from sweagent.utils.log import get_logger
 
@@ -61,8 +61,10 @@ class ToolConfig(BaseModel):
 
     submit_command: str = "submit"
 
-    parse_function: ParseFunction = Field(default_factory=ThoughtActionParser)
+    parse_function: ParseFunction | None = Field(default=None)
     parse_command: ParseCommand = Field(default_factory=ParseCommandBash)
+
+    include_bash_tool: bool = True
 
     format_error_template: str = None  # type: ignore
     """Defaults to format_error_template in ParseFunction"""
@@ -89,6 +91,10 @@ class ToolConfig(BaseModel):
     install_timeout: int = 300
     """Timeout used for each of the installation commands"""
 
+    @property
+    def use_function_calling(self) -> bool:
+        return isinstance(self.parse_function, FunctionCallingParser)
+
     # todo: move to ToolHandler?
     @cached_property
     def commands(self) -> list[Command]:
@@ -108,16 +114,30 @@ class ToolConfig(BaseModel):
                     raise ValueError(msg)
                 commands.append(Command(name=tool, **tool_config))
                 tool_sources[tool] = path
+        if self.include_bash_tool:
+            commands.append(BASH_COMMAND)
         return commands
+
+    @cached_property
+    def tools(self) -> list[dict]:
+        return [command.get_function_calling_tool() for command in self.commands]
 
     # todo: can some of these be moved to ToolHandler?
     def model_post_init(self, __context):
         # for caching:
         commands = self.commands
-
         multi_line_command_endings = {
             command.name: command.end_name for command in commands if command.end_name is not None
         }
+        self.tools
+
+        # assert not self.include_bash_tool and parse_function is not FunctionCallingParser
+        if self.include_bash_tool and not (
+            isinstance(self.parse_function, FunctionCallingParser) or isinstance(self.parse_function, JsonParser)
+        ):
+            msg = "Bash tool can only be used with function calling parser or JSON parser."
+            raise ValueError(msg)
+
         self.multi_line_command_endings = multi_line_command_endings
         self.command_docs = self.parse_command.generate_command_docs(
             self.commands,
@@ -274,7 +294,7 @@ class ToolHandler:
             return None
         return match.group(1)
 
-    def parse_actions(self, output: str) -> tuple[str, str]:
+    def parse_actions(self, output: dict) -> tuple[str, str]:
         """Parse the model output into a thought and action."""
         return self.config.parse_function(output, self.config.commands)
 
