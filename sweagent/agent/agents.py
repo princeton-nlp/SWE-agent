@@ -21,13 +21,17 @@ from sweagent.agent.models import (
     ContextWindowExceededError,
     CostLimitExceededError,
     HumanModel,
+    HumanThoughtModel,
     InstanceStats,
     ModelConfig,
     get_model,
 )
 from sweagent.environment.config.problem_statement import ProblemStatement, ProblemStatementConfig
 from sweagent.environment.swe_env import SWEEnv
-from sweagent.tools.parsing import FormatError
+from sweagent.tools.parsing import (
+    FormatError,
+    ThoughtActionParser,
+)
 from sweagent.tools.tools import ToolConfig, ToolHandler
 from sweagent.types import AgentInfo, AgentRunResult, History, HistoryItem, StepOutput, Trajectory, TrajectoryStep
 from sweagent.utils.config import _convert_paths_to_abspath
@@ -543,7 +547,11 @@ class Agent:
             self._chook.on_model_query(messages=history, agent=self.name)
             output = self.model.query(history)  # type: ignore
             step.output = output
-            if isinstance(self.model, HumanModel):
+            if isinstance(self.model, HumanThoughtModel):
+                # TODO: This might be a bit hacky
+                # consider changing sweagent/tools/tools.py:ToolConfig to enforce this.
+                step.thought, step.action = ThoughtActionParser()(output, self.tools.config.commands)
+            elif isinstance(self.model, HumanModel):
                 step.thought, step.action = "", output
             else:
                 step.thought, step.action = self.tools.parse_actions(output)
