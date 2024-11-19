@@ -309,9 +309,9 @@ class LiteLLMModel(AbstractModel):
         self.stats = InstanceStats()
         self.tools = tools
         if tools.use_function_calling:
-            assert litellm.supports_function_calling(
-                model=self.args.name
-            ), f"Model {self.args.name} does not support function calling"
+            if not litellm.utils.supports_function_calling(model=self.args.name):
+                msg = f"Model {self.args.name} does not support function calling"
+                raise ValueError(msg)
         self.model_max_input_tokens = litellm.model_cost.get(self.args.name, {}).get("max_input_tokens")
         self.model_max_output_tokens = litellm.model_cost.get(self.args.name, {}).get("max_output_tokens")
         self.lm_provider = litellm.model_cost[self.args.name]["litellm_provider"]
@@ -383,8 +383,8 @@ class LiteLLMModel(AbstractModel):
         output_tokens = litellm.utils.token_counter(text=output, model=self.args.name)
         self._update_stats(input_tokens=input_tokens, output_tokens=output_tokens, cost=cost)
         if self.tools.use_function_calling:
-            if response.choices[0].message.tool_calls:
-                tool_calls = [call.to_dict() for call in response.choices[0].message.tool_calls]
+            if response.choices[0].message.tool_calls:  # type: ignore
+                tool_calls = [call.to_dict() for call in response.choices[0].message.tool_calls]  # type: ignore
             else:
                 tool_calls = []
             output_dict["tool_calls"] = tool_calls
@@ -430,7 +430,8 @@ class LiteLLMModel(AbstractModel):
                     {
                         "role": role,
                         "content": history_item["content"],
-                        "tool_call_id": history_item["tool_call_ids"][0],  # Only one tool call per observations
+                        # Only one tool call per observations
+                        "tool_call_id": history_item["tool_call_ids"][0],  # type: ignore
                     }
                 )
             elif "tool_calls" in history_item:
