@@ -19,8 +19,11 @@ from rich.table import Table
 from sweagent.agent.models import GLOBAL_STATS
 
 
-def _shorten_str(s: str, max_len: int) -> str:
-    s = s[: max_len - 3] + "..." if len(s) > max_len else s
+def _shorten_str(s: str, max_len: int, shorten_left=False) -> str:
+    if not shorten_left:
+        s = s[: max_len - 3] + "..." if len(s) > max_len else s
+    else:
+        s = "..." + s[-max_len + 3 :] if len(s) > max_len else s
     return f"{s:<{max_len}}"
 
 
@@ -93,7 +96,7 @@ class RunBatchProgressManager:
             self._task_progress_bar.update(
                 self._spinner_tasks[instance_id],
                 status=_shorten_str(message, 30),
-                instance_id=_shorten_str(instance_id, 25),
+                instance_id=_shorten_str(instance_id, 25, shorten_left=True),
             )
         self._update_total_costs()
 

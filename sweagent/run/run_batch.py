@@ -5,7 +5,9 @@ Run on a batch of instances/issues. For example run on all of SWE-bench.
 import getpass
 import json
 import logging
+import random
 import sys
+import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -39,6 +41,11 @@ class RunBatchConfig(BaseSettings, cli_implicit_flags=True):
     """Path to a .env file to load environment variables from."""
     num_workers: int = 1
     """Number of parallel workers to use. Default is 1 (sequential execution)."""
+    random_delay_multiplier: float = 0.3
+    """We will wait for a random amount of time between 0 and `random_delay_multiplier`
+    times the number of instances at the start of each instance. This is to avoid any
+    potential race conditions.
+    """
 
     def set_default_output_dir(self) -> None:
         # Needs to be called explicitly, because self._config_files will be setup
@@ -164,6 +171,9 @@ class RunBatch:
                     self._progress_manager.print_report()
 
     def run_instance(self, instance: BatchInstance) -> None:
+        # Let's add some randomness to avoid any potential race conditions
+        time.sleep(random.random() * 0.3 * (len(self.instances) - 1))
+
         self._progress_manager.on_instance_start(instance.problem_statement.id)
 
         if self.should_skip(instance):
