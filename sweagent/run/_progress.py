@@ -6,6 +6,7 @@ from threading import Lock
 from rich.console import Group
 from rich.progress import (
     BarColumn,
+    MofNCompleteColumn,
     Progress,
     SpinnerColumn,
     TaskID,
@@ -48,6 +49,7 @@ class RunBatchProgressManager:
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description} (${task.fields[total_cost]})"),
             BarColumn(),
+            MofNCompleteColumn(),
             TaskProgressColumn(),
             TimeElapsedColumn(),
             TimeRemainingColumn(),
@@ -73,7 +75,7 @@ class RunBatchProgressManager:
         # assign it back to the render group.
         t = Table()
         t.add_column("Exit Status")
-        t.add_column("Count")
+        t.add_column("Count", justify="right", style="bold cyan")
         t.add_column("Most recent instances")
         t.show_header = False
         with self._lock:
