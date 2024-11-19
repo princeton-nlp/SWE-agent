@@ -21,7 +21,7 @@ from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
 from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
 from sweagent.run.hooks.open_pr import OpenPRConfig, OpenPRHook
 from sweagent.utils.config import load_environment_variables
-from sweagent.utils.log import get_logger
+from sweagent.utils.log import add_file_handler, get_logger
 
 
 class RunSingleActionConfig(BaseModel, cli_implicit_flags=True):
@@ -82,6 +82,14 @@ class RunSingle:
         See `from_config` for an example.
         """
         self.logger = get_logger("swea-run", emoji="🏃")
+        instance_id = problem_statement.id
+        _log_filename_template = f"{instance_id}.{{level}}.log"
+        for level in ["trace", "debug", "info"]:
+            add_file_handler(
+                output_dir / _log_filename_template.format(level=level),
+                level=level,
+                id_=f"{instance_id}-{level}",
+            )
         self.env = env
         self.agent = agent
         self.output_dir = output_dir

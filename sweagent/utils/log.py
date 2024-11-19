@@ -4,6 +4,7 @@ import logging
 import os
 import threading
 import uuid
+from collections.abc import Callable
 from pathlib import PurePath
 
 from rich.logging import RichHandler
@@ -75,19 +76,33 @@ def get_logger(name: str, *, emoji: str = "") -> logging.Logger:
     logger.propagate = False
     _SET_UP_LOGGERS.add(name)
     for handler in _ADDITIONAL_HANDLERS.values():
-        if getattr(handler, "my_filter", "") in name:
+        my_filter = getattr(handler, "my_filter", None)
+        if my_filter is None:
+            logger.addHandler(handler)
+        elif isinstance(my_filter, str) and my_filter in name:
+            logger.addHandler(handler)
+        elif callable(my_filter) and my_filter(name):
             logger.addHandler(handler)
     if _INCLUDE_LOGGER_NAME_IN_STREAM_HANDLER:
         _add_logger_name_to_stream_handler(logger)
     return logger
 
 
-def add_file_handler(path: PurePath | str, *, filter: str = "", level: int | str = _FILE_LEVEL, id_: str = "") -> str:
+def add_file_handler(
+    path: PurePath | str,
+    *,
+    filter: str | Callable[[str], bool] | None = None,
+    level: int | str = _FILE_LEVEL,
+    id_: str = "",
+) -> str:
     """Adds a file handler to all loggers that we have set up
     and all future loggers that will be set up with `get_logger`.
 
     Args:
-        filter: If provided, only add the handler to loggers that contain the filter string.
+        filter: If str: Check that the logger name contains the filter string.
+            If callable: Check that the logger name satisfies the condition returned by the callable.
+        level: The level of the handler.
+        id_: The id of the handler. If not provided, a random id will be generated.
 
     Returns:
         The id of the handler. This can be used to remove the handler later.
@@ -97,8 +112,11 @@ def add_file_handler(path: PurePath | str, *, filter: str = "", level: int | str
     handler.setFormatter(formatter)
     handler.setLevel(_interpret_level(level))
     for name in _SET_UP_LOGGERS:
-        if filter and filter not in name:
-            continue
+        if filter is not None:
+            if isinstance(filter, str) and filter not in name:
+                continue
+            if callable(filter) and not filter(name):
+                continue
         logger = logging.getLogger(name)
         logger.addHandler(handler)
     handler.my_filter = filter  # type: ignore

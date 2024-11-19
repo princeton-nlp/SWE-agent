@@ -91,6 +91,11 @@ class RunBatch:
             num_workers: Number of parallel workers to use. Default is 1 (sequential execution).
         """
         self.logger = get_logger("swea-run", emoji="🏃")
+        add_file_handler(
+            output_dir / "run_batch.log",
+            id_="progress",
+            filter=lambda name: "swea-run" in name or "config" in name,
+        )
         self.instances = instances
         self.agent_config = agent_config
         self.output_dir = output_dir
@@ -101,7 +106,6 @@ class RunBatch:
         self._num_workers = min(num_workers, len(instances))
         for hook in hooks or [SaveApplyPatchHook()]:
             self.add_hook(hook)
-
         self._progress_manager = RunBatchProgressManager(num_instances=len(instances))
 
     @classmethod
