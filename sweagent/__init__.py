@@ -7,6 +7,13 @@ __version__ = "0.7.0"
 from logging import WARNING, getLogger
 from pathlib import Path
 
+import swerex.utils.log as log_swerex
+
+from sweagent.utils.log import get_logger
+
+# Monkey patch the logger to use our implementation
+log_swerex.get_logger = get_logger
+
 # See https://github.com/princeton-nlp/SWE-agent/issues/585
 getLogger("datasets").setLevel(WARNING)
 getLogger("numexpr.utils").setLevel(WARNING)

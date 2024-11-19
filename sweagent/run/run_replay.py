@@ -62,7 +62,7 @@ class RunReplay:
         self.repo = repo
         self.output_dir = output_dir
         self._replay_action_trajs_path = Path(tempfile.NamedTemporaryFile(suffix=".json").name)
-        self.logger = get_logger("RunReplay", emoji="🏃")
+        self.logger = get_logger("swea-run", emoji="🏃")
         self._catch_errors = _catch_errors
         self._require_zero_exit_code = _require_zero_exit_code
 

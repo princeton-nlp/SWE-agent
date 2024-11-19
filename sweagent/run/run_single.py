@@ -81,7 +81,7 @@ class RunSingle:
         """Note: When initializing this class, make sure to add the hooks that are required by your actions.
         See `from_config` for an example.
         """
-        self.logger = get_logger("Run", emoji="🏃")
+        self.logger = get_logger("swea-run", emoji="🏃")
         self.env = env
         self.agent = agent
         self.output_dir = output_dir
@@ -100,7 +100,7 @@ class RunSingle:
 
     @classmethod
     def from_config(cls, config: RunSingleConfig) -> Self:
-        logger = get_logger("Run", emoji="🏃")
+        logger = get_logger("swea-run", emoji="🏃")
         if config.print_config:
             config_str = yaml.dump(config.model_dump())
             logger.info(f"Config:\n {config_str}")

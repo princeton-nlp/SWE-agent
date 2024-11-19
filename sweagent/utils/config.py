@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from sweagent import REPO_ROOT
 from sweagent.utils.log import get_logger
 
-logger = get_logger("config", emoji="🔧")
+logger = get_logger("swea-config", emoji="🔧")
 
 
 def _convert_path_to_abspath(path: Path | str) -> Path:

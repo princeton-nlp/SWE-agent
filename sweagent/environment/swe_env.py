@@ -47,7 +47,7 @@ class SWEEnv:
         self.deployment = deployment
         self.repo = repo
         self._startup_commands = startup_commands
-        self.logger = get_logger(f"env-{name}", emoji="🌱")
+        self.logger = get_logger("swea-env", emoji="🌱")
         self.name = name
         self.clean_multi_line_functions = lambda x: x
         self._chook = CombinedEnvHooks()

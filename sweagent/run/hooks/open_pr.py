@@ -119,7 +119,7 @@ class OpenPRHook(RunHook):
     """This hook opens a PR if the issue is solved and the user has enabled the option."""
 
     def __init__(self, config: OpenPRConfig):
-        self.logger = get_logger("⚡️ OpenPRHook")
+        self.logger = get_logger("swea-open_pr", emoji="⚡️")
         self._config = config
 
     def on_init(self, *, run):

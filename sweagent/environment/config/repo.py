@@ -13,7 +13,7 @@ from typing_extensions import Self
 
 from sweagent.utils.log import get_logger
 
-logger = get_logger("Config", emoji="🔧")
+logger = get_logger("swea-config", emoji="🔧")
 
 
 class Repo(Protocol):

@@ -18,7 +18,7 @@ class BasicCLI:
     def __init__(self, arg_type: type[BaseSettings], default_settings: bool = True):
         self.arg_type = arg_type
         self.default_settings = default_settings
-        self.logger = get_logger("CLI", emoji="🔧")
+        self.logger = get_logger("swea-cli", emoji="🔧")
 
     def get_args(self, args=None) -> BaseSettings:
         # The defaults if no config file is provided

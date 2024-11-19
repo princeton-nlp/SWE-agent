@@ -24,7 +24,7 @@ from sweagent.tools.commands import Command
 from sweagent.types import History, HistoryItem
 from sweagent.utils.log import get_logger
 
-logger = get_logger("lm", emoji="🤖")
+logger = get_logger("swea-lm", emoji="🤖")
 
 
 class RetryConfig(PydanticBaseModel):

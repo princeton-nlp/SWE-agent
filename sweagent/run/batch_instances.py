@@ -20,7 +20,7 @@ from sweagent.environment.config.repo import PreExistingRepo
 from sweagent.environment.swe_env import EnvironmentConfig
 from sweagent.utils.log import get_logger
 
-logger = get_logger("config", emoji="🔧")
+logger = get_logger("swea-config", emoji="🔧")
 
 
 class AbstractInstanceSource(ABC):

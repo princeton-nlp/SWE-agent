@@ -28,7 +28,13 @@ from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
 from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
 from sweagent.types import AgentRunResult
 from sweagent.utils.config import load_environment_variables
-from sweagent.utils.log import add_logger_names_to_stream_handlers, get_logger
+from sweagent.utils.log import (
+    add_file_handler,
+    add_logger_names_to_stream_handlers,
+    get_logger,
+    register_thread_name,
+    set_default_stream_level,
+)
 
 
 class RunBatchConfig(BaseSettings, cli_implicit_flags=True):
@@ -43,7 +49,7 @@ class RunBatchConfig(BaseSettings, cli_implicit_flags=True):
     """Number of parallel workers to use. Default is 1 (sequential execution)."""
     random_delay_multiplier: float = 0.3
     """We will wait for a random amount of time between 0 and `random_delay_multiplier`
-    times the number of instances at the start of each instance. This is to avoid any
+    times the number of workers at the start of each instance. This is to avoid any
     potential race conditions.
     """
 
@@ -83,7 +89,7 @@ class RunBatch:
             hooks: If not specified, the default hooks will be used.
             num_workers: Number of parallel workers to use. Default is 1 (sequential execution).
         """
-        self.logger = get_logger("Run", emoji="🏃")
+        self.logger = get_logger("swea-run", emoji="🏃")
         self.instances = instances
         self.agent_config = agent_config
         self.output_dir = output_dir
@@ -91,7 +97,7 @@ class RunBatch:
         self._raise_exceptions = raise_exceptions
         self._chooks = CombinedRunHooks()
         self._redo_existing = redo_existing
-        self._num_workers = num_workers
+        self._num_workers = min(num_workers, len(instances))
         for hook in hooks or [SaveApplyPatchHook()]:
             self.add_hook(hook)
 
@@ -102,7 +108,7 @@ class RunBatch:
         load_environment_variables(config.env_var_path)
         config.set_default_output_dir()
         config.output_dir.mkdir(parents=True, exist_ok=True)
-        logger = get_logger("RunBatch", emoji="🏃")
+        logger = get_logger("run", emoji="🏃")
         logger.debug("Loading instances from %s", f"{config.instances!r}")
         instances = config.instances.get_instance_configs()
         logger.info("Loaded %d instances", len(instances))
@@ -128,6 +134,7 @@ class RunBatch:
         self._hooks.append(hook)
 
     def main(self) -> None:
+        self.logger.info("Starting run. Find output files at %s", self.output_dir)
         self._chooks.on_start()
 
         if self._num_workers <= 1:
@@ -153,6 +160,7 @@ class RunBatch:
 
     def main_multi_worker(self) -> None:
         add_logger_names_to_stream_handlers()
+        set_default_stream_level(logging.WARNING)
 
         with Live(self._progress_manager.render_group):
             with ThreadPoolExecutor(max_workers=self._num_workers) as executor:
@@ -171,8 +179,10 @@ class RunBatch:
                     self._progress_manager.print_report()
 
     def run_instance(self, instance: BatchInstance) -> None:
+        register_thread_name(instance.problem_statement.id)
+        self._add_instance_log_file_handlers(instance.problem_statement.id, multi_worker=self._num_workers > 1)
         # Let's add some randomness to avoid any potential race conditions
-        time.sleep(random.random() * 0.3 * (len(self.instances) - 1))
+        time.sleep(random.random() * 0.3 * (self._num_workers - 1))
 
         self._progress_manager.on_instance_start(instance.problem_statement.id)
 
@@ -207,18 +217,14 @@ class RunBatch:
     def _run_instance(self, instance: BatchInstance) -> AgentRunResult:
         self.agent_config.name = f"{instance.problem_statement.id}"
         agent = Agent.from_config(self.agent_config)
-        agent.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)
         agent.add_hook(SetStatusAgentHook(instance.problem_statement.id, self._progress_manager.update_instance_status))
         self._progress_manager.update_instance_status(instance.problem_statement.id, "Starting environment")
         instance.env.name = f"{instance.problem_statement.id}"
         env = SWEEnv.from_config(instance.env)
-        env.deployment.logger = get_logger(f"rex-{instance.problem_statement.id}", emoji="🦖")
-        env.deployment.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)
         env.add_hook(
             SetStatusEnvironmentHook(instance.problem_statement.id, self._progress_manager.update_instance_status)
         )
         env.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.INFO)
-        env.deployment.logger.setLevel(logging.DEBUG if self._num_workers == 1 else logging.WARNING)  # type: ignore
         env.deployment.add_hook(
             SetStatusDeploymentHook(instance.problem_statement.id, self._progress_manager.update_instance_status)
         )
@@ -262,6 +268,12 @@ class RunBatch:
 
         self.logger.info(f"⏭️ Skipping existing trajectory: {log_path}")
         return True
+
+    def _add_instance_log_file_handlers(self, instance_id: str, multi_worker: bool = False) -> None:
+        filename_template = f"{instance_id}.{{level}}.log"
+        for level in ["trace", "debug", "info"]:
+            filter = instance_id if multi_worker else ""
+            add_file_handler(self.output_dir / filename_template.format(level=level), filter=filter, level=level)
 
 
 def run_from_config(args: RunBatchConfig):

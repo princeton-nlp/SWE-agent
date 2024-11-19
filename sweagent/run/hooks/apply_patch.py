@@ -18,7 +18,7 @@ class SaveApplyPatchHook(RunHook):
     """This hook saves patches to a separate directory and optionally applies them to a local repository."""
 
     def __init__(self, apply_patch_locally: bool = False):
-        self.logger = get_logger("SaveApplyPatchHook", emoji="⚡️")
+        self.logger = get_logger("swea-save_apply_patch", emoji="⚡️")
         self._apply_patch_locally = apply_patch_locally
 
     def on_init(self, *, run):

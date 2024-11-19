@@ -148,7 +148,7 @@ class ToolHandler:
         # partially initialized in `install_commands`.
         self._reset_commands = []
         self._command_patterns = self._get_command_patterns()
-        self.logger = get_logger("Tools", emoji="🧰")
+        self.logger = get_logger("swea-tools", emoji="🧰")
         # For testing: Return this state instead of querying the environment
         self.mock_state: dict[str, str] | None = {"open_file": "", "working_dir": ""}
 
