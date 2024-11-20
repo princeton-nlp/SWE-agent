@@ -6,7 +6,7 @@ from pathlib import Path
 
 import yaml
 from pydantic import ValidationError
-from pydantic_settings import BaseSettings, CliApp
+from pydantic_settings import BaseSettings, CliApp, SettingsError
 from rich import print as rich_print
 from rich.panel import Panel
 
@@ -51,6 +51,14 @@ The first line of each block is the attribute that failed validation, the follow
 If you see many lines of errors, there are probably different ways to instantiate the same object (a union type).
 For example, there are different deployments with different options each. Pydantic is then trying
 one after the other and reporting the failures for each of them.
+"""
+
+_SETTING_ERROR_HINTS = """
+[red][bold]Hint: Run sweagent <subcommand> --print-options for a complete overview of all available options.[/bold][/red]
+
+[red][bold]Common mistakes:[/bold][/red]
+- You used dahses instead of underscores (`--num-workers` instead of `--num_workers`).
+- You forgot about part of the hierarchy (`--model.name` instead of `--aggent.model.name`).
 """
 
 
@@ -122,7 +130,7 @@ class BasicCLI:
             config_merged = {}
 
         try:
-            args = CliApp.run(self.arg_type, remaining_args, **config_merged)  # type: ignore
+            args = CliApp.run(self.arg_type, remaining_args, **config_merged, cli_exit_on_error=False)  # type: ignore
         except ValidationError as e:
             rich_print(
                 Panel.fit(
@@ -137,6 +145,10 @@ class BasicCLI:
                 )
             )
             msg = "Invalid configuration. Please check the above output."
+            raise RuntimeError(msg) from None
+        except SettingsError as e:
+            rich_print(Panel.fit("[red][bold]SettingsError[/bold][/red]\n\n" + str(e) + "\n\n" + _SETTING_ERROR_HINTS))
+            msg = "Invalid command line arguments. Please check the above output in the box."
             raise RuntimeError(msg) from None
         if cli_args.print_config:  # type: ignore
             print(yaml.dump(args.model_dump()))
