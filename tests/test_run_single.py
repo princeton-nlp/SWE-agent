@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from sweagent import TOOLS_DIR
 from sweagent.agent.agents import AgentConfig
 from sweagent.agent.models import InstantEmptySubmitModelConfig
 from sweagent.environment.swe_env import EnvironmentConfig
@@ -30,7 +31,8 @@ def test_run_single_raises_exception():
 @pytest.fixture
 def agent_config_with_commands():
     ac = AgentConfig(model=InstantEmptySubmitModelConfig())
-    ac.tools.command_files = [Path(f"config/commands/{name}") for name in ["submit.sh"]]
+    ac.tools.bundles = [TOOLS_DIR / "defaults", TOOLS_DIR / "submit"]
+    assert (TOOLS_DIR / "submit").exists()
     # Make sure dependent properties are set
     ac.tools.model_post_init(None)
     return ac
