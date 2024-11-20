@@ -43,6 +43,7 @@ def test_run_ies(tmpdir, agent_config_with_commands):
     # ies = instant empty submit
     ac = agent_config_with_commands
     ac.model.name = "instant_empty_submit"
+    ac.tools.state_command = None
     rsc = RunSingleConfig(
         env=EnvironmentConfig(),
         agent=ac,
