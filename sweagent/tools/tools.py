@@ -190,20 +190,22 @@ class ToolHandler:
         self._set_env_variables(env)
         env.communicate(" && ".join(self._reset_commands), check=True, timeout=self.config.install_timeout)
 
+    async def _upload_bundles(self, env: SWEEnv) -> None:
+        await asyncio.gather(
+            *(
+                env.deployment.runtime.upload(
+                    UploadRequest(source_path=bundle.as_posix(), target_path=f"/root/tools/{bundle.name}")
+                )
+                for bundle in self.config.bundles
+            )
+        )
+
     def _install_commands(self, env: SWEEnv) -> None:
         """Make sure all commands are available in the container"""
         self._set_env_variables(env)
         cwd = env.communicate("pwd", check=True).strip()
+        asyncio.run(self._upload_bundles(env))
         for bundle in self.config.bundles:
-            # write all files in bundle to /root/tools/
-            asyncio.run(
-                env.deployment.runtime.upload(
-                    UploadRequest(
-                        source_path=bundle.as_posix(),
-                        target_path=f"/root/tools/{bundle.name}",
-                    )
-                )
-            )
             env.communicate(f"export PATH=$PATH:/root/tools/{bundle.name}/bin", check=True)
             asyncio.run(
                 env.deployment.runtime.execute(
