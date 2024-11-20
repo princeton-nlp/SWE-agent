@@ -1,6 +1,6 @@
 """[cyan][bold]Run SWE-agent on a single instance taken from github or similar.[/bold][/cyan]
 
-[cyan][bold]=== OPTIONS ===[/bold][/cyan]
+[cyan][bold]=== BASICOPTIONS ===[/bold][/cyan]
 
   -h --help           Show help text and exit
   --config CONFIG     Load additional config files. Use this option multiple times to load
@@ -32,7 +32,7 @@ Here's an example that uses [bold][cyan]modal[/bold][/cyan] instead of docker an
 
 To find out all command line options, run [green]sweagent run --print_options[/green]!
 
-Want to run over more than one issue? Check out the [bold][cyan]batch mode[/bold][/cyan]: [green]sweagnet run-batch --help[/green]!
+Want to run over more than one issue? Check out the [bold][cyan]batch mode[/bold][/cyan]: [green]sweagent run-batch --help[/green]!
 """
 
 import getpass

@@ -571,7 +571,7 @@ class Agent:
                 step.thought, step.action = "", output["message"]
             else:
                 step.thought, step.action = self.tools.parse_actions(output)
-            if output.get("tool_calls", None) is not None:
+            if output.get("tool_calls") is not None:
                 step.tool_call_ids = [call["id"] for call in output["tool_calls"]]
                 step.tool_calls = output["tool_calls"]
             self.logger.info(f"💭 THOUGHT\n{step.thought}\n🎬 ACTION\n{step.action.strip()}")

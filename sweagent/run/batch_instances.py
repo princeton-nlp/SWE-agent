@@ -16,7 +16,7 @@ from swerex.deployment.config import (
 from typing_extensions import Self
 
 from sweagent.environment.config.problem_statement import ProblemStatementConfig, TextProblemStatement
-from sweagent.environment.config.repo import PreExistingRepo
+from sweagent.environment.config.repo import GithubRepoConfig, LocalRepoConfig, PreExistingRepo
 from sweagent.environment.swe_env import EnvironmentConfig
 from sweagent.utils.log import get_logger
 
@@ -107,7 +107,11 @@ class SimpleBatchInstance(BaseModel):
     problem_statement: str
     id: str
     repo_name: str = ""
-    """The repo name or path within the docker container/environment."""
+    """Specifies the repository to use. If empty, no repository is used.
+    If the string does not contain a slash, it is interpreted as an already existing repository at the root
+    of the docker container. If it contains the word "github", it is interpreted as a github repository.
+    Else, it is interpreted as a local repository.
+    """
     base_commit: str = "HEAD"
     """Used to reset repo."""
 
@@ -118,10 +122,14 @@ class SimpleBatchInstance(BaseModel):
         # Very important: Make a copy of the deployment config because it will be shared among instances!!!
         deployment = deployment.model_copy()
         problem_statement = TextProblemStatement(text=self.problem_statement, id=self.id)
-        if self.repo_name:
+        if not self.repo_name:
+            repo = None
+        elif "github" in self.repo_name:
+            repo = GithubRepoConfig(url=self.repo_name, base_commit=self.base_commit)
+        elif "/" not in self.repo_name:
             repo = PreExistingRepo(repo_name=self.repo_name, base_commit=self.base_commit)
         else:
-            repo = None
+            repo = LocalRepoConfig(path=Path(self.repo_name), base_commit=self.base_commit)
         if isinstance(deployment, LocalDeploymentConfig):
             if self.image_name:
                 msg = "Local deployment does not support image_name"

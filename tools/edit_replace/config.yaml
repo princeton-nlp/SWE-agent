@@ -1,0 +1,15 @@
+tools:
+  edit:
+    signature: |
+      edit <search> <replace>
+    docstring: >
+      asdf asdf
+    arguments:
+      - name: search
+        type: string
+        description: "the text to search for"
+        required: true
+      - name: replace
+        type: string
+        description: "the text to replace the search with"
+        required: true

@@ -47,10 +47,10 @@ def _extract_keys(format_string: str) -> set[str]:
 
 
 class Argument(BaseModel):
-    """Defines an argument that can be passed to a command.
+    f"""Defines an argument that can be passed to a command.
 
     Attributes:
-        name: The argument name, must match ARGUMENT_NAME_PATTERN
+        name: The argument name, must match {ARGUMENT_NAME_PATTERN!r}
         type: The argument type (e.g. "string", "integer")
         description: Human readable description of the argument
         required: Whether this argument must be provided
@@ -63,7 +63,8 @@ class Argument(BaseModel):
     description: str
     required: bool
     enum: list[str] | None = None
-    argument_format: str = "{value}"  # how to invoke the argument in the command
+    argument_format: str = "{value}"
+    """How to invoke the argument in the command"""
 
 
 class Command(BaseModel):
