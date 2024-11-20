@@ -208,7 +208,6 @@ class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
 
     deployment: DeploymentConfig = Field(
         default_factory=lambda: DockerDeploymentConfig(image="python:3.11"),
-        description="Deployment options.",
     )
     """Deployment configuration. Note that the image_name option is overwritten by the images specified in the task instances.
     """
@@ -237,7 +236,6 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
 
     deployment: DeploymentConfig = Field(
         default_factory=lambda: DockerDeploymentConfig(image="python:3.11"),
-        description="Deployment options.",
     )
     """Deployment configuration. Note that the image_name option is overwritten by the images specified in the task instances.
     """

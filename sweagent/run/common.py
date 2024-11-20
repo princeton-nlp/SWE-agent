@@ -66,19 +66,19 @@ _SETTING_ERROR_HINTS = """
 
 # todo: Parameterize type hints
 class BasicCLI:
-    def __init__(self, arg_type: type[BaseSettings], *, default_settings: bool = True, help_text: str | None = None):
+    def __init__(self, config_type: type[BaseSettings], *, default_settings: bool = True, help_text: str | None = None):
         """This class implements a basic CLI for SWE-agent. It is based on pydantic-settings, i.e., takes
         a `BaseSettings` object. In principle you could just initialize these via `pydantic-settings`'s `CliApp.run`,
         however, we also want to add a `--config` option to load additional config files and some other things.
         We also try to improve a bit on the pydantic error messages in here.
 
         Args:
-            arg_type: The type of the configuration object to instantiate.
+            config_type: The type of the configuration object to instantiate.
             default_settings: Whether to load the default settings.
             help_text: If given, this will override the default help text that would usually be shown
                 by argparse.
         """
-        self.arg_type = arg_type
+        self.arg_type = config_type
         self.default_settings = default_settings
         self.logger = get_logger("swea-cli", emoji="🔧")
         self.help_text = help_text
