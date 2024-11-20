@@ -41,3 +41,68 @@ def _should_quote(value: Any, command: Command) -> bool:
     if command.name == "bash":
         return False
     return isinstance(value, str) and command.end_name is None
+
+
+def get_signature(cmd):
+    """Generate a command signature from its arguments.
+
+    Args:
+        cmd: Command object to generate signature for
+
+    Returns:
+        Formatted signature string
+    """
+    signature = cmd.name
+    if "arguments" in cmd.__dict__ and cmd.arguments is not None:
+        if cmd.end_name is None:
+            for argument in cmd.arguments:
+                param = argument.name
+                if argument.required:
+                    signature += f" <{param}>"
+                else:
+                    signature += f" [<{param}>]"
+        else:
+            for argument in cmd.arguments[:-1]:
+                param = argument.name
+                if argument.required:
+                    signature += f" <{param}>"
+                else:
+                    signature += f" [<{param}>]"
+            signature += f"\n{list(cmd.arguments[-1].keys())[0]}\n{cmd.end_name}"
+    return signature
+
+
+def generate_command_docs(
+    commands: list[Command],
+    subroutine_types,
+    **kwargs,
+) -> str:
+    """Generate detailed command documentation.
+
+    Format includes docstring, signature and argument details.
+
+    Args:
+        commands: List of commands to document
+        subroutine_types: List of subroutines to document
+        **kwargs: Additional format variables for docstrings
+
+    Returns:
+        Formatted documentation string
+    """
+    docs = ""
+    for cmd in commands + subroutine_types:
+        docs += f"{cmd.name}:\n"
+        if cmd.docstring is not None:
+            docs += f"  docstring: {cmd.docstring.format(**kwargs)}\n"
+        if cmd.signature is not None:
+            docs += f"  signature: {cmd.signature}\n"
+        else:
+            docs += f"  signature: {get_signature(cmd)}\n"
+        if cmd.arguments:
+            docs += "  arguments:\n"
+            for argument in cmd.arguments:
+                param = argument.name
+                req_string = "required" if argument.required else "optional"
+                docs += f"    - {param} ({argument.type}) [{req_string}]: {argument.description}\n"
+        docs += "\n"
+    return docs

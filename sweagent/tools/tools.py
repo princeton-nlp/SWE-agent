@@ -12,9 +12,9 @@ from swerex.runtime.abstract import UploadRequest
 from typing_extensions import Self
 
 from sweagent.environment.swe_env import SWEEnv
-from sweagent.tools.commands import BASH_COMMAND, Command, ParseCommand, ParseCommandBash
+from sweagent.tools.commands import BASH_COMMAND, Command
 from sweagent.tools.parsing import FunctionCallingParser, JsonParser, ParseFunction
-from sweagent.tools.utils import _guard_multiline_input
+from sweagent.tools.utils import _guard_multiline_input, generate_command_docs
 from sweagent.utils.config import _convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 
@@ -65,7 +65,6 @@ class ToolConfig(BaseModel):
     submit_command: str = "submit"
 
     parse_function: ParseFunction = Field(default_factory=FunctionCallingParser)
-    parse_command: ParseCommand = Field(default_factory=ParseCommandBash)
 
     enable_bash_tool: bool = True
 
@@ -144,7 +143,7 @@ class ToolConfig(BaseModel):
             raise ValueError(msg)
 
         self.multi_line_command_endings = multi_line_command_endings
-        self.command_docs = self.parse_command.generate_command_docs(
+        self.command_docs = generate_command_docs(
             self.commands,
             [],
             **self.env_variables,

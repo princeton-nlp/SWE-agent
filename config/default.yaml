@@ -93,8 +93,6 @@ agent:
       - tools/edit_linting
       - tools/submit
       - tools/state
-    parse_command:
-      type: detailed
     state_command: _state
     parse_function:
       type: thought_action

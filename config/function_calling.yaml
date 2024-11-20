@@ -87,8 +87,6 @@ agent:
       - tools/submit
       - tools/state
     enable_bash_tool: true
-    parse_command:
-      type: detailed
     state_command: _state
     parse_function:
       type: function_calling

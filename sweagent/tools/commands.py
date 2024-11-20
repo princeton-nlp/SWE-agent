@@ -1,20 +1,43 @@
+"""
+Core module for defining and parsing commands in the SWE Agent system.
+
+This module provides the foundational classes and utilities for defining commands that can be executed by the agent.
+It is used extensively by:
+
+- tools.py: For command installation, execution and environment management
+- parsing.py: For parsing model outputs into executable commands
+- utils.py: For handling multi-line commands and argument quoting
+
+Key Classes:
+- Command: Represents an executable command with arguments and documentation
+- Argument: Defines an argument that can be passed to a command
+
+The module supports both simple bash commands and complex multi-line commands with typed arguments.
+Commands can be defined either in bash scripts with YAML docstrings or as bash functions.
+"""
+
 from __future__ import annotations
 
 import re
 import string
-from abc import ABC, abstractmethod
 from functools import cached_property
-from pathlib import Path
-from typing import Literal
 
-import yaml
 from pydantic import BaseModel, model_validator
 
 ARGUMENT_NAME_PATTERN = r"[a-zA-Z_][a-zA-Z0-9_-]+"
 
 
 def _extract_keys(format_string: str) -> set[str]:
-    """Given a format string, returns a set of all the keys in the format string."""
+    """Given a format string, returns a set of all the keys in the format string.
+
+    Used for validating that command signatures match their argument definitions.
+
+    Args:
+        format_string: A Python format string containing named fields
+
+    Returns:
+        Set of field names found in the format string
+    """
     formatter = string.Formatter()
     keys = set()
     for _, field_name, _, _ in formatter.parse(format_string):
@@ -24,6 +47,17 @@ def _extract_keys(format_string: str) -> set[str]:
 
 
 class Argument(BaseModel):
+    """Defines an argument that can be passed to a command.
+
+    Attributes:
+        name: The argument name, must match ARGUMENT_NAME_PATTERN
+        type: The argument type (e.g. "string", "integer")
+        description: Human readable description of the argument
+        required: Whether this argument must be provided
+        enum: Optional list of allowed values
+        argument_format: Format string for how to render the argument value in the command
+    """
+
     name: str
     type: str
     description: str
@@ -33,6 +67,21 @@ class Argument(BaseModel):
 
 
 class Command(BaseModel):
+    """Represents an executable command with arguments and documentation.
+
+    A command can be either a simple bash command or a multi-line command terminated by an end marker.
+
+    Attributes:
+        name: The command name
+        docstring: Human readable description of what the command does
+        signature: Optional custom signature override
+        end_name: For multi-line commands, the terminating marker
+        arguments: List of arguments accepted by the command
+
+    Properties:
+        invoke_format: Format string for constructing the full command invocation
+    """
+
     name: str
     docstring: str | None
     signature: str | None = None
@@ -42,6 +91,11 @@ class Command(BaseModel):
 
     @cached_property
     def invoke_format(self) -> str:
+        """Gets the format string for invoking this command with arguments.
+
+        Returns either the custom signature with argument placeholders replaced,
+        or a default format of "command arg1 arg2 ...".
+        """
         if self.signature:
             return re.sub(rf"\[?<({ARGUMENT_NAME_PATTERN})>\]?", r"{\1}", self.signature)
         else:
@@ -52,6 +106,11 @@ class Command(BaseModel):
             return _invoke_format
 
     def get_function_calling_tool(self) -> dict:
+        """Converts this command into an OpenAI function calling tool definition.
+
+        Returns:
+            Dict containing the OpenAI function schema for this command
+        """
         tool = {
             "type": "function",
             "function": {
@@ -76,7 +135,20 @@ class Command(BaseModel):
 
     @model_validator(mode="after")
     def validate_arguments(self) -> Command:
-        """Validates that optional arguments come after required arguments and argument names are unique."""
+        """Validates command argument configuration.
+
+        Checks:
+        - Required arguments come before optional ones
+        - Argument names are unique
+        - Argument names match the pattern
+        - Arguments match the signature
+
+        Returns:
+            The validated Command instance
+
+        Raises:
+            ValueError: If validation fails
+        """
         if not self.arguments:
             return self
         found_optional = False
@@ -99,218 +171,6 @@ class Command(BaseModel):
             raise ValueError(msg)
         return self
 
-
-class AbstractParseCommand(ABC):
-    @abstractmethod
-    def parse_command_file(self, path: str) -> list[Command]:
-        """
-        Define how to parse a file into a list of commands.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def generate_command_docs(self, commands: list[Command], subroutine_types, **kwargs) -> str:
-        """
-        Generate a string of documentation for the given commands and subroutine types.
-        """
-        raise NotImplementedError
-
-
-# DEFINE NEW COMMAND PARSER FUNCTIONS BELOW THIS LINE
-
-
-class ParseCommandBash(AbstractParseCommand, BaseModel):
-    type: Literal["bash"] = "bash"
-    """Discriminator for (de)serialization/CLI. Do not change."""
-
-    def parse_command_file(self, path: Path) -> list[Command]:
-        with open(path) as file:
-            contents = file.read()
-        if contents.strip().startswith("#!"):
-            commands = self.parse_script(path, contents)
-        else:
-            if Path(path).suffix != ".sh" and not Path(path).name.startswith("_"):
-                msg = (
-                    f"Source file {path} does not have a .sh extension.\n"
-                    "Only .sh files are supported for bash function parsing.\n"
-                    "If you want to use a non-shell file as a command (script), "
-                    "it should use a shebang (e.g. #!/usr/bin/env python)."
-                )
-                raise ValueError(msg)
-            return self.parse_bash_functions(path, contents)
-        if len(commands) == 0 and not Path(path).name.startswith("_"):
-            msg = (
-                f"Non-shell file {path} does not contain any commands.\n"
-                "If you want to use a non-shell file as a command (script), "
-                "it should contain exactly one @yaml docstring. "
-                "If you want to use a file as a utility script, "
-                "it should start with an underscore (e.g. _utils.py)."
-            )
-            raise ValueError(msg)
-        else:
-            return commands
-
-    def parse_bash_functions(self, path, contents: str) -> list[Command]:
-        """Simple logic for parsing a bash file and segmenting it into functions.
-
-        Assumes that all functions have their name and opening curly bracket in one line,
-        and closing curly bracket in a line by itself.
-        """
-        lines = contents.split("\n")
-        commands = []
-        idx = 0
-        docs = []
-        while idx < len(lines):
-            line = lines[idx]
-            idx += 1
-            if line.startswith("# "):
-                docs.append(line[2:])
-            elif line.strip().endswith("() {"):
-                name = line.split()[0][:-2]
-                code = line
-                while lines[idx].strip() != "}":
-                    code += lines[idx]
-                    idx += 1
-                code += lines[idx]
-                docstring, end_name, arguments, signature = None, None, None, name
-                docs_dict = yaml.safe_load("\n".join(docs).replace("@yaml", ""))
-                if docs_dict is not None:
-                    docstring = docs_dict["docstring"]
-                    end_name = docs_dict.get("end_name", None)
-                    arguments = docs_dict.get("arguments", None)
-                    if "signature" in docs_dict:
-                        signature = docs_dict["signature"]
-                    elif arguments is not None:
-                        for argument in arguments:
-                            param = argument["name"]
-                            if argument["required"]:
-                                signature += f" <{param}>"
-                            else:
-                                signature += f" [<{param}>]"
-                command = Command.model_validate(
-                    {
-                        "docstring": docstring,
-                        "end_name": end_name,
-                        "name": name,
-                        "arguments": arguments,
-                        "signature": signature,
-                    },
-                )
-                commands.append(command)
-                docs = []
-        return commands
-
-    def parse_script(self, path, contents) -> list[Command]:
-        pattern = re.compile(r"^#\s*@yaml\s*\n^#.*(?:\n#.*)*", re.MULTILINE)
-        matches = pattern.findall(contents)
-        if len(matches) == 0:
-            return []
-        elif len(matches) > 1:
-            msg = "Non-shell file contains multiple @yaml tags.\nOnly one @yaml tag is allowed per script."
-            raise ValueError(msg)
-        else:
-            yaml_content = matches[0]
-            yaml_content = re.sub(r"^#", "", yaml_content, flags=re.MULTILINE)
-            docs_dict = yaml.safe_load(yaml_content.replace("@yaml", ""))
-            assert docs_dict is not None
-            docstring = docs_dict["docstring"]
-            end_name = docs_dict.get("end_name", None)
-            arguments = docs_dict.get("arguments", None)
-            signature = docs_dict.get("signature", None)
-            name = Path(path).name.rsplit(".", 1)[0]
-            if signature is None and arguments is not None:
-                signature = name
-                for argument in arguments:
-                    param = argument["name"]
-                    if argument["required"]:
-                        signature += f" <{param}>"
-                    else:
-                        signature += f" [<{param}>]"
-            code = contents
-            return [
-                Command.model_validate(
-                    {
-                        "code": code,
-                        "docstring": docstring,
-                        "end_name": end_name,
-                        "name": name,
-                        "arguments": arguments,
-                        "signature": signature,
-                    },
-                ),
-            ]
-
-    def generate_command_docs(self, commands: list[Command], subroutine_types, **kwargs) -> str:
-        docs = ""
-        for cmd in commands:
-            if cmd.docstring is not None:
-                docs += f"{cmd.signature or cmd.name} - {cmd.docstring.format(**kwargs)}\n"
-        for subroutine in subroutine_types:
-            if subroutine.docstring is not None:
-                docs += f"{subroutine.signature or subroutine.name} - {subroutine.docstring.format(**kwargs)}\n"
-        return docs
-
-
-class ParseCommandDetailed(ParseCommandBash):
-    """
-    # command_name:
-    #   "docstring"
-    #   signature: "signature"
-    #   arguments:
-    #     arg1 (type) [required]: "description"
-    #     arg2 (type) [optional]: "description"
-    """
-
-    type: Literal["detailed"] = "detailed"
-    """Discriminator for (de)serialization/CLI. Do not change."""
-
-    @staticmethod
-    def get_signature(cmd):
-        signature = cmd.name
-        if "arguments" in cmd.__dict__ and cmd.arguments is not None:
-            if cmd.end_name is None:
-                for argument in cmd.arguments:
-                    param = argument["name"]
-                    if argument["required"]:
-                        signature += f" <{param}>"
-                    else:
-                        signature += f" [<{param}>]"
-            else:
-                for argument in cmd.arguments[:-1]:
-                    param = argument["name"]
-                    if argument["required"]:
-                        signature += f" <{param}>"
-                    else:
-                        signature += f" [<{param}>]"
-                signature += f"\n{list(cmd.arguments[-1].keys())[0]}\n{cmd.end_name}"
-        return signature
-
-    def generate_command_docs(
-        self,
-        commands: list[Command],
-        subroutine_types,
-        **kwargs,
-    ) -> str:
-        docs = ""
-        for cmd in commands + subroutine_types:
-            docs += f"{cmd.name}:\n"
-            if cmd.docstring is not None:
-                docs += f"  docstring: {cmd.docstring.format(**kwargs)}\n"
-            if cmd.signature is not None:
-                docs += f"  signature: {cmd.signature}\n"
-            else:
-                docs += f"  signature: {self.get_signature(cmd)}\n"
-            if "arguments" in cmd.__dict__ and cmd.arguments is not None:
-                docs += "  arguments:\n"
-                for argument in cmd.arguments:
-                    param = argument.name
-                    req_string = "required" if argument.required else "optional"
-                    docs += f"    - {param} ({argument.type}) [{req_string}]: {argument.description}\n"
-            docs += "\n"
-        return docs
-
-
-ParseCommand = ParseCommandBash | ParseCommandDetailed
 
 # Default Bash tool
 BASH_COMMAND = Command(

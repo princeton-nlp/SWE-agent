@@ -104,7 +104,6 @@ command_files:
   - config/commands/search.sh
   - config/commands/edit_linting.sh
   - config/commands/_split_string.py
-parse_command: ParseCommandDetailed
 history_processor: Last5Observations
 demonstrations:
   - trajectories/demonstrations/human_thought__swe-bench-HumanEvalFix-python__lcb__t-0.00__p-0.95__c-4.00__install-0/humanevalfix-python-0.traj

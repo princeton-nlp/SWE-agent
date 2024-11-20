@@ -116,7 +116,6 @@ command_files:
 - config/commands/_connect.py
 - config/commands/server_connection.sh
 - config/commands/forfeit.sh
-parse_command: ParseCommandDetailed
 history_processor: Last5Observations
 blocklist:
 - vim
