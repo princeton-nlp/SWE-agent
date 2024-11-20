@@ -7,10 +7,38 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 from pydantic_settings import BaseSettings, CliApp
+from rich import print as rich_print
+from rich.panel import Panel
 
 from sweagent import CONFIG_DIR
 from sweagent.types import AgentInfo, AgentRunResult
 from sweagent.utils.log import get_logger
+
+
+def _shorten_strings(data, *, max_length=30):
+    """
+    Recursively shortens all strings in a nested data structure to a maximum length.
+
+    Args:
+        data: The nested data structure (dicts, lists, and strings).
+        max_length: The maximum length for strings.
+
+    Returns:
+        The modified data structure with shortened strings.
+    """
+    if isinstance(data, str):
+        # Shorten the string if it exceeds the max length
+        data = data.replace("\n", "\\n")
+        return data[: max_length - 3] + "..."
+    elif isinstance(data, list):
+        # Recursively process each item in the list
+        return [_shorten_strings(item, max_length=max_length) for item in data]
+    elif isinstance(data, dict):
+        # Recursively process each value in the dictionary
+        return {key: _shorten_strings(value, max_length=max_length) for key, value in data.items()}
+    else:
+        # Return the data as is if it's neither a string, list, nor dict
+        return data
 
 
 # todo: Parameterize type hints
@@ -63,7 +91,11 @@ class BasicCLI:
         elif self.default_settings and not cli_args.no_config_file:
             config_file = CONFIG_DIR / "default.yaml"
             config_files.append(config_file)
-            self.logger.info(f"Loading default config from {config_file}")
+            msg = (
+                f"Loading default config from {config_file}, because no other "
+                "config file is specified. Specify --no-config-file to disable this."
+            )
+            self.logger.info(msg)
             txt = config_file.read_text()
             if not txt.strip():
                 self.logger.warning(f"Default config file {config_file} is empty")
@@ -75,12 +107,29 @@ class BasicCLI:
 
         try:
             args = CliApp.run(self.arg_type, remaining_args, **config_merged)  # type: ignore
-        except (ValidationError, AttributeError, TypeError):
-            print("Merged configuration dictionary:")
-            print("-" * 40)
-            print(yaml.dump(config_merged))
-            print("-" * 40)
-            raise
+        except ValidationError as e:
+            rich_print(
+                Panel.fit(
+                    "[red][bold]Merged configuration dictionary\n[/bold]"
+                    "This is all the configuration that was provided from defaults, --config, and CLI arguments[/red]\n\n"
+                    + yaml.dump(_shorten_strings(config_merged))
+                )
+            )
+            rich_print(
+                Panel.fit(
+                    "[red][bold]Validation error[/bold]\n"
+                    + "The following errors are raised by Pydantic, trying to instantiate the configuration based on \n"
+                    + "the merged configuration dictionary (see above).\n\n"
+                    + "Every new indented block corresponds to a different error from Pydantic.\n"
+                    + "The first line of each block is the attribute that failed validation, the following lines are the error messages.\n\n"
+                    + "If you see many lines of errors, there are probably different ways to instantiate the same object (a union type).\n"
+                    + "For example, there are different deployments with different options each. Pydantic is then trying \n"
+                    + "one after the other and reporting the failures for each of them.\n\n[/red]"
+                    + str(e),
+                )
+            )
+            msg = "Invalid configuration. Please check the above output."
+            raise RuntimeError(msg) from None
         if cli_args.print_config:  # type: ignore
             print(yaml.dump(args.model_dump()))
             exit(0)
