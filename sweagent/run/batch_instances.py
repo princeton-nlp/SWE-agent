@@ -238,7 +238,7 @@ class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
 class SWEBenchInstances(BaseModel, AbstractInstanceSource):
     """Load instances from SWE-bench."""
 
-    flavor: Literal["lite", "verified", "full"] = "lite"
+    subset: Literal["lite", "verified", "full"] = "lite"
 
     split: Literal["dev", "test"] = "dev"
 
@@ -262,13 +262,13 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
     """Shuffle the instances (before filtering and slicing)."""
 
     def _get_huggingface_name(self) -> str:
-        if self.flavor == "full":
+        if self.subset == "full":
             return "princeton-nlp/SWE-Bench"
-        elif self.flavor == "verified":
+        elif self.subset == "verified":
             return "princeton-nlp/SWE-Bench_Verified"
-        elif self.flavor == "lite":
+        elif self.subset == "lite":
             return "princeton-nlp/SWE-Bench_Lite"
-        msg = f"Unsupported flavor: {self.flavor}"
+        msg = f"Unsupported subset: {self.subset}"
         raise ValueError(msg)
 
     def get_instance_configs(self) -> list[BatchInstance]:
@@ -282,7 +282,7 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
 
     @property
     def id(self) -> str:
-        return f"swe_bench_{self.flavor}"
+        return f"swe_bench_{self.subset}"
 
 
 class ExpertInstancesFromFile(BaseModel, AbstractInstanceSource):

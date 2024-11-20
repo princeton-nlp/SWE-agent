@@ -91,7 +91,7 @@ def test_empty_instances_expert(test_data_sources_path: Path, tmp_path: Path):
 #         "run-batch",
 #         "--agent.model.name",
 #         "instant_empty_submit",
-#         "--instances.flavor",
+#         "--instances.subset",
 #         "lite",
 #         "--instances.split",
 #         "test",
