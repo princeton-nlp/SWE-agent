@@ -1,4 +1,39 @@
-"""Run on a single instance taken from github or similar."""
+"""[cyan][bold]Run SWE-agent on a single instance taken from github or similar.[/bold][/cyan]
+
+[cyan][bold]=== OPTIONS ===[/bold][/cyan]
+
+  -h --help           Show help text and exit
+  --config CONFIG     Load additional config files. Use this option multiple times to load
+                      multiple files, e.g., --config config1.yaml --config config2.yaml
+  --no-config-file    Do not load default config file when no config file is provided
+  --print-options     Print all additional configuration options that can be set via CLI and exit
+  [cyan][bold]--... Many more options[/cyan][/bold] (run `sweagent run --print-options` for a complete overview)
+
+[cyan][bold]=== EXAMPLES ===[/bold][/cyan]
+
+Basic usage: Run over a [bold][cyan]github issue[/bold][/cyan][green]:
+
+sweagent run --config config/config.yaml --agent.model.name "gpt-4o" \\
+    --env.repo.url=https://github.com/SWE-agent/test-repo/ \\
+    --problem_statement.url=https://github.com/SWE-agent/test-repo/issues/1
+[/green]
+
+By default this will start a docker container and run the agent in there.
+You can set the image with [green]--env.docker.image[/green].
+
+Here's an example that uses [bold][cyan]modal[/bold][/cyan] instead of docker and also a [bold][cyan]local repository[/bold][/cyan]:
+
+[green]sweagent run --config config/config.yaml --agent.model.name "gpt-4o" \\
+    --env.deployment.type=modal --env.repo.path /path/to/repo \\
+    --problem_statement.path=path/to/problem_statement.md
+[/green]
+
+[cyan][bold]=== MORE ===[/bold][/cyan]
+
+To find out all command line options, run [green]sweagent run --print-options[/green]!
+
+Want to run over more than one issue? Check out the [bold][cyan]batch mode[/bold][/cyan]: [green]sweagnet run-batch --help[/green]!
+"""
 
 import getpass
 import sys
@@ -156,7 +191,7 @@ def run_from_config(args: RunSingleConfig):
 def run_from_cli(args: list[str] | None = None):
     if args is None:
         args = sys.argv[1:]
-    run_from_config(BasicCLI(RunSingleConfig).get_args(args))  # type: ignore
+    run_from_config(BasicCLI(RunSingleConfig, help_text=__doc__).get_args(args))  # type: ignore
 
 
 if __name__ == "__main__":
