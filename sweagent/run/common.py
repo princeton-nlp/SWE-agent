@@ -59,8 +59,8 @@ _SETTING_ERROR_HINTS = """
 - Run `sweagent <subcommand> --help` for examples
 
 [red][bold]Common mistakes:[/bold][/red]
-- You used dahses instead of underscores (`--num-workers` instead of `--num_workers`).
-- You forgot about part of the hierarchy (`--model.name` instead of `--aggent.model.name`).
+- You used dashes instead of underscores (wrong: `--num-workers`, correct: `--num_workers`).
+- You forgot about part of the hierarchy (wrong: `--model.name`, correct: `--agent.model.name`).
 """
 
 
@@ -157,7 +157,7 @@ class BasicCLI:
             )
             rich_print(
                 Panel.fit(
-                    "[red][bold]Validation error[/bold]\n" + _VALIDATION_ERROR_HELP_TEXT + "[/red]" + str(e),
+                    "[red][bold]Validation error[/bold]\n" + _VALIDATION_ERROR_HELP_TEXT + "[/red]\n" + str(e),
                 )
             )
             msg = "Invalid configuration. Please check the above output."
