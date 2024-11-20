@@ -75,7 +75,7 @@ class BasicCLI:
     def get_args(self, args=None) -> BaseSettings:
         # The defaults if no config file is provided
         # Otherwise, the configs from the respective classes will be used
-        parser = ArgumentParser(description=__doc__, add_help=not self.help_text)
+        parser = ArgumentParser(description=__doc__, add_help=False)
         parser.add_argument(
             "--config",
             type=str,
@@ -86,13 +86,12 @@ class BasicCLI:
                 "multiple files, e.g., --config config1.yaml --config config2.yaml"
             ),
         )
-        if self.help_text:
-            parser.add_argument(
-                "-h",
-                "--help",
-                action="store_true",
-                help="Show help text and exit",
-            )
+        parser.add_argument(
+            "-h",
+            "--help",
+            action="store_true",
+            help="Show help text and exit",
+        )
         if self.default_settings:
             parser.add_argument(
                 "--no-config-file",
@@ -108,7 +107,10 @@ class BasicCLI:
         cli_args, remaining_args = parser.parse_known_args(args)
 
         if cli_args.help:
-            rich_print(self.help_text)
+            if self.help_text:
+                rich_print(self.help_text)
+            else:
+                parser.print_help()
             exit(0)
 
         if cli_args.print_options:
