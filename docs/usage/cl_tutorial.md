@@ -115,9 +115,7 @@ This time, `pip install -e .` is called before SWE-agent gets to work, installin
 
 Let's take a look at the `py310_default.yaml` config file
 
-```yaml
---8<-- "config/environment_setup/py310_default.yaml"
-```
+REMOVED OUTDATED
 
 Here, `install` is an arbitrary command that is run, while `python` will be the required python version.
 The default install command will create an [editable install][] of the python package.
