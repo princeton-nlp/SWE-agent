@@ -51,6 +51,9 @@ class GenericAPIModelConfig(PydanticBaseModel):
     api_base: str | None = None
     api_version: str | None = None
     api_key: SecretStr | None = None
+    """API key to the model. We recommend using environment variables to set this instead
+    or putting your environment variables in a `.env` file.
+    """
     stop: list[str] = []
 
     completion_kwargs: dict[str, Any] = {}
