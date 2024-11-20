@@ -30,4 +30,5 @@ _constrain_line() {
     local half_window=$(jq -n "$WINDOW/2" | jq 'floor')
     export CURRENT_LINE=$(jq -n "[$CURRENT_LINE, $max_line - $half_window] | min")
     export CURRENT_LINE=$(jq -n "[$CURRENT_LINE, $half_window] | max")
+    _write_env "CURRENT_LINE" "$CURRENT_LINE"
 }
