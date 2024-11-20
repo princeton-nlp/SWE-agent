@@ -198,6 +198,9 @@ class HumanModel(AbstractModel):
                     break
                 buffer.append(action)
             action = "\n".join(buffer)
+        else:
+            # Input has escaped things like \n, so we need to unescape it
+            action = action.encode("utf8").decode("unicode_escape")
         return action
 
     def query(self, history: History, action_prompt: str = "> ") -> dict:

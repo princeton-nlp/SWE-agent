@@ -214,7 +214,7 @@ class ToolHandler:
             )  # check false because bin might not exist
             if (bundle / "install.sh").exists():
                 env.communicate(
-                    f"cd /root/tools/{bundle.name}; bash install.sh", check=True, timeout=self.config.install_timeout
+                    f"cd /root/tools/{bundle.name}; source install.sh", check=True, timeout=self.config.install_timeout
                 )
             # always make all files in bin executable
             asyncio.run(

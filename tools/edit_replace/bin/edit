@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+
+import argparse
+from pathlib import Path
+
+from default_utils import get_current_file, get_current_file_with_line_range, print_window  # type: ignore
+
+current_file = get_current_file()
+
+parser = argparse.ArgumentParser()
+parser.add_argument("search", type=str)
+parser.add_argument("replace", type=str)
+parser.add_argument("-f", "--file", type=Path, default=Path(current_file))
+parser.add_argument("--replace-all", action="store_true")
+args = parser.parse_args()
+
+# Turn \\n into \n etc., i.e., undo the escaping
+args.replace = args.replace.encode("utf8").decode("unicode_escape")
+
+if not args.file:
+    print("No file specified. Either `open` a file first or specify a file with `-f`.")
+    exit(1)
+
+
+text = args.file.read_text()
+lines = text.splitlines()
+_, first_window_line, last_window_line = get_current_file_with_line_range(args.file)
+print(f"first_window_line: {first_window_line}, last_window_line: {last_window_line}")
+
+if not args.replace_all:
+    text_in_window = "\n".join(lines[first_window_line : last_window_line + 1])
+    new_text_in_window = text_in_window.replace(args.search, args.replace, 1)
+    if text_in_window == new_text_in_window:
+        print(
+            "No changes made. Please make sure that your search and replace strings are correct. "
+            "Note: By default, we only replace the first occurrence in the lines that are currently visible in the editor. "
+            "If you want to replace all occurrences, use the `--replace-all` flag."
+        )
+        exit(0)
+    new_text = "\n".join(lines[:first_window_line] + [new_text_in_window] + lines[last_window_line + 1 :])
+else:
+    new_text = text.replace(args.search, args.replace)
+
+args.file.write_text(new_text)
+
+# Recompute the current window, since we might have more/less lines now
+_, first_window_line, last_window_line = get_current_file_with_line_range(args.file)
+print(f"first_window_line: {first_window_line}, last_window_line: {last_window_line}")
+print_window(args.file, first_window_line, last_window_line)
