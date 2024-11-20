@@ -301,10 +301,18 @@ class InstantEmptySubmitTestModel(AbstractModel):
         # Need to at least do _something_ to submit
         if self._action_idx == 0:
             self._action_idx = 1
-            action = "DISCUSSION\nLet's reproduce the bug by creating a `reproduce.py` file.\n\n```\ncreate reproduce.py\n```\n"
+            action = (
+                "DISCUSSION\n"
+                "Let's reproduce the bug by creating a `reproduce.py` file.\n\n"
+                "```\n"
+                "create reproduce.py\n"
+                "```\n"
+            )
         elif self._action_idx == 1:
             self._action_idx = 0
-            action = "DISCUSSION\nThe task should be resolved, so let's submit the patch.\n\n```\nsubmit\n```\n"
+            action = (
+                "DISCUSSION\n" "The task should be resolved, so let's submit the patch.\n\n" "```\n" "submit\n" "```\n"
+            )
         self.stats.api_calls += 1
         return {"message": action}
 
