@@ -15,6 +15,7 @@ from sweagent.environment.swe_env import SWEEnv
 from sweagent.tools.commands import BASH_COMMAND, Command, ParseCommand, ParseCommandBash
 from sweagent.tools.parsing import FunctionCallingParser, JsonParser, ParseFunction
 from sweagent.tools.utils import _guard_multiline_input
+from sweagent.utils.config import _convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 
 
@@ -126,6 +127,8 @@ class ToolConfig(BaseModel):
 
     # todo: can some of these be moved to ToolHandler?
     def model_post_init(self, __context):
+        self.bundles = _convert_paths_to_abspath(self.bundles)
+
         # for caching:
         commands = self.commands
         multi_line_command_endings = {
