@@ -41,6 +41,19 @@ def _shorten_strings(data, *, max_length=30):
         return data
 
 
+_VALIDATION_ERROR_HELP_TEXT = """
+The following errors are raised by Pydantic, trying to instantiate the configuration based on
+the merged configuration dictionary [bold](see above)[/bold].
+
+Every new indented block corresponds to a different error from Pydantic.
+The first line of each block is the attribute that failed validation, the following lines are the error messages.
+
+If you see many lines of errors, there are probably different ways to instantiate the same object (a union type).
+For example, there are different deployments with different options each. Pydantic is then trying
+one after the other and reporting the failures for each of them.
+"""
+
+
 # todo: Parameterize type hints
 class BasicCLI:
     def __init__(self, arg_type: type[BaseSettings], default_settings: bool = True):
@@ -57,7 +70,10 @@ class BasicCLI:
             type=str,
             action="append",
             default=[],
-            help="Load additional config files. Use this option multiple times to load multiple files, e.g., --config config1.yaml --config config2.yaml",
+            help=(
+                "Load additional config files. Use this option multiple times to load "
+                "multiple files, e.g., --config config1.yaml --config config2.yaml"
+            ),
         )
         if self.default_settings:
             parser.add_argument(
@@ -117,15 +133,7 @@ class BasicCLI:
             )
             rich_print(
                 Panel.fit(
-                    "[red][bold]Validation error[/bold]\n"
-                    + "The following errors are raised by Pydantic, trying to instantiate the configuration based on \n"
-                    + "the merged configuration dictionary (see above).\n\n"
-                    + "Every new indented block corresponds to a different error from Pydantic.\n"
-                    + "The first line of each block is the attribute that failed validation, the following lines are the error messages.\n\n"
-                    + "If you see many lines of errors, there are probably different ways to instantiate the same object (a union type).\n"
-                    + "For example, there are different deployments with different options each. Pydantic is then trying \n"
-                    + "one after the other and reporting the failures for each of them.\n\n[/red]"
-                    + str(e),
+                    "[red][bold]Validation error[/bold]\n" + _VALIDATION_ERROR_HELP_TEXT + "[/red]" + str(e),
                 )
             )
             msg = "Invalid configuration. Please check the above output."
