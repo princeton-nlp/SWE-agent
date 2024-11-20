@@ -55,7 +55,7 @@ one after the other and reporting the failures for each of them.
 
 _SETTING_ERROR_HINTS = """
 [red][bold]Hints:[/bold][/red]
-- Run `sweagent <subcommand> --print-options` for a complete overview of all available options.
+- Run `sweagent <subcommand> --print_options` for a complete overview of all available options.
 - Run `sweagent <subcommand> --help` for examples
 
 [red][bold]Common mistakes:[/bold][/red]
@@ -94,16 +94,20 @@ class BasicCLI:
         )
         if self.default_settings:
             parser.add_argument(
-                "--no-config-file",
+                "--no_config_file",
                 action="store_true",
                 help="Do not load default config file when no config file is provided",
             )
         parser.add_argument(
-            "--print-options",
+            "--print_options",
             action="store_true",
             help="Print all additional configuration options that can be set via CLI and exit",
         )
-        parser.add_argument("--print-config", action="store_true", help="Print the final config and exit")
+        parser.add_argument(
+            "--print_config",
+            action="store_true",
+            help="Print the final config and exit",
+        )
         cli_args, remaining_args = parser.parse_known_args(args)
 
         if cli_args.help:
@@ -136,7 +140,7 @@ class BasicCLI:
             config_files.append(config_file)
             msg = (
                 f"Loading default config from {config_file}, because no other "
-                "config file is specified. Specify --no-config-file to disable this."
+                "config file is specified. Specify --no_config_file to disable this."
             )
             self.logger.info(msg)
             txt = config_file.read_text()

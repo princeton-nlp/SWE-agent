@@ -5,9 +5,9 @@
   -h --help           Show help text and exit
   --config CONFIG     Load additional config files. Use this option multiple times to load
                       multiple files, e.g., --config config1.yaml --config config2.yaml
-  --no-config-file    Do not load default config file when no config file is provided
-  --print-options     Print all additional configuration options that can be set via CLI and exit
-  [cyan][bold]--... Many more options[/cyan][/bold] (run `sweagent run --print-options` for a complete overview)
+  --no_config_file    Do not load default config file when no config file is provided
+  --print_options     Print all additional configuration options that can be set via CLI and exit
+  [cyan][bold]--... Many more options[/cyan][/bold] (run `sweagent run --print_options` for a complete overview)
 
 [cyan][bold]=== EXAMPLES ===[/bold][/cyan]
 
@@ -30,7 +30,7 @@ Here's an example that uses [bold][cyan]modal[/bold][/cyan] instead of docker an
 
 [cyan][bold]=== MORE ===[/bold][/cyan]
 
-To find out all command line options, run [green]sweagent run --print-options[/green]!
+To find out all command line options, run [green]sweagent run --print_options[/green]!
 
 Want to run over more than one issue? Check out the [bold][cyan]batch mode[/bold][/cyan]: [green]sweagnet run-batch --help[/green]!
 """
