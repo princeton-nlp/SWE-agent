@@ -313,12 +313,14 @@ class Agent:
     def _get_format_dict(self, **kwargs) -> dict[str, Any]:
         """Get the dictionary of key value pairs used to format the templates"""
         assert self._problem_statement is not None
+        assert self._env is not None
         return dict(
             command_docs=self.tools.config.command_docs,
             **self.tools.config.env_variables,
             **kwargs,
             **self._forwarded_vars,
             problem_statement=self._problem_statement.get_problem_statement(),
+            repo=self._env.repo.repo_name if self._env.repo is not None else "",
         )
 
     def _add_templated_messages_to_history(
