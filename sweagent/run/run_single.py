@@ -40,7 +40,6 @@ import sys
 from pathlib import Path
 from typing import Self
 
-import yaml
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings
 
@@ -78,9 +77,6 @@ class RunSingleConfig(BaseSettings, cli_implicit_flags=True):
     output_dir: Path = Field(default=Path("DEFAULT"), description="Output directory.")
 
     actions: RunSingleActionConfig = Field(default_factory=RunSingleActionConfig)
-
-    print_config: bool = False
-    """Print config at the beginning of the run."""
 
     env_var_path: Path | None = None
     """Path to a .env file to load environment variables from."""
@@ -142,10 +138,6 @@ class RunSingle:
 
     @classmethod
     def from_config(cls, config: RunSingleConfig) -> Self:
-        logger = get_logger("swea-run", emoji="🏃")
-        if config.print_config:
-            config_str = yaml.dump(config.model_dump())
-            logger.info(f"Config:\n {config_str}")
         load_environment_variables(config.env_var_path)
         config.set_default_output_dir()
         config.output_dir.mkdir(parents=True, exist_ok=True)
