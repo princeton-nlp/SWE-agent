@@ -98,6 +98,7 @@ testpaths = [
     "tests"
 ]
 xfail_strict = true
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
