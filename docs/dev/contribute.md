@@ -55,6 +55,30 @@ Some of the tests might be slower than others. You can exclude them with
 pytest -m "not slow"
 ```
 
+You can run all tests in parallel with `pytest-xdist`:
+
+```bash
+pytest -n auto
+```
+
+If you are using VSCode, you might want to add the following two files:
+
+<details>
+<summary>`.vscode/launch.json`</summary>
+
+```json
+--8<-- "docs/dev/vscode_launch.json"
+```
+</details>
+
+<details>
+<summary>`.vscode/settings.json`</summary>
+
+```json
+--8<-- "docs/dev/vscode_settings.json"
+```
+</details>
+
 ## Tips for pull requests
 
 * If you see a lot of formatting-related merge conflicts, please see [here](formatting_conflicts.md).

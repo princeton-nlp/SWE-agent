@@ -3,6 +3,7 @@
         "sweagent",
         "--cov=sweagent/",
         "--cov-report=xml:cov.xml",
+        "-n", "auto",
         "tests"
     ],
     "python.testing.unittestEnabled": false,

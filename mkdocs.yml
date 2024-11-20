@@ -85,7 +85,6 @@ nav:
     - "Agent": "reference/agent.md"
     - "Models": "reference/models.md"
     - "Environment": "reference/env.md"
-    - "Environment utils": "reference/env_utils.md"
   - "FAQ": "faq.md"
 plugins:
    - glightbox

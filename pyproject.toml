@@ -70,6 +70,7 @@ dev = [
     "pytest-cov",
     "pipx",
     "pre-commit",
+    "pytest-xdist",
 ]
 
 [tool.setuptools]
