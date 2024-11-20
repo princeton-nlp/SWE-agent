@@ -3,6 +3,7 @@ trajectories/**
 !trajectories/demonstrations/**
 data/**
 *.env
+!tools/*
 
 # -------- automatically generated files --------
 
