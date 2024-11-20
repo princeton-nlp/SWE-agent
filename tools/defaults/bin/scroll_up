@@ -13,7 +13,7 @@ main() {
         echo "No file open. Use the open command first."
         exit 1
     fi
-    _write_env CURRENT_LINE $(jq -n "$CURRENT_LINE - $WINDOW + $OVERLAP") || exit 1
+    _write_env CURRENT_LINE $((CURRENT_LINE - WINDOW + OVERLAP)) || exit 1
     _constrain_line || exit 1
     _print || exit 1
     _scroll_warning_message || exit 1

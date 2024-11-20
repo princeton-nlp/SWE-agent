@@ -29,17 +29,18 @@ main() {
         if [ $2 -gt $max_line ]; then
             echo "Warning: <line_number> ($2) is greater than the number of lines in the file ($max_line)"
             echo "Warning: Setting <line_number> to $max_line"
-            local line_number=$(jq -n "$max_line")  # Set line number to max if greater than max
+            local line_number=$max_line  # Set line number to max if greater than max
         elif [ $2 -lt 1 ]; then
             echo "Warning: <line_number> ($2) is less than 1"
             echo "Warning: Setting <line_number> to 1"
-            local line_number=$(jq -n "1")  # Set line number to 1 if less than 1
+            local line_number=1  # Set line number to 1 if less than 1
         else
-            local OFFSET=$(jq -n "$WINDOW/6" | jq 'floor')
-            local line_number=$(jq -n "[$2 + $WINDOW/2 - $OFFSET, 1] | max | floor")
+            local OFFSET=$((WINDOW / 6))
+            local line_number=$(( $2 + WINDOW / 2 - OFFSET ))
+            line_number=$(( line_number > 1 ? line_number : 1 ))  # Ensure line_number is at least 1
         fi
     else
-        local line_number=$(jq -n "$WINDOW/2")  # Set default line number if not provided
+        local line_number=$((WINDOW / 2))  # Set default line number if not provided
     fi
 
     _write_env CURRENT_FILE $(realpath "$1") || exit 1
