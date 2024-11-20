@@ -83,7 +83,7 @@ def test_env_args(
     subprocess.run(clone_cmd, check=True)
     test_env_args = EnvironmentConfig(
         deployment=DockerDeploymentConfig(image="python:3.11"),
-        repo=LocalRepoConfig(path=local_repo_path),
+        repo=LocalRepoConfig(path=Path(local_repo_path)),
     )
     yield test_env_args
     shutil.rmtree(local_repo_path)
