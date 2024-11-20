@@ -173,7 +173,7 @@ class ToolHandler:
         self._command_patterns = self._get_command_patterns()
         self.logger = get_logger("swea-tools", emoji="🧰")
         # For testing: Return this state instead of querying the environment
-        self.mock_state: dict[str, str] | None = {"open_file": "", "working_dir": ""}
+        self.mock_state: dict[str, str] | None = None
 
     @classmethod
     def from_config(cls, config: ToolConfig) -> Self:
