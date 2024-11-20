@@ -1,3 +1,4 @@
+.vscode/**
 cov.xml
 trajectories/**
 !trajectories/demonstrations/**
