@@ -66,13 +66,28 @@ _SETTING_ERROR_HINTS = """
 
 # todo: Parameterize type hints
 class BasicCLI:
-    def __init__(self, arg_type: type[BaseSettings], default_settings: bool = True, help_text: str | None = None):
+    def __init__(self, arg_type: type[BaseSettings], *, default_settings: bool = True, help_text: str | None = None):
+        """This class implements a basic CLI for SWE-agent. It is based on pydantic-settings, i.e., takes
+        a `BaseSettings` object. In principle you could just initialize these via `pydantic-settings`'s `CliApp.run`,
+        however, we also want to add a `--config` option to load additional config files and some other things.
+        We also try to improve a bit on the pydantic error messages in here.
+
+        Args:
+            arg_type: The type of the configuration object to instantiate.
+            default_settings: Whether to load the default settings.
+            help_text: If given, this will override the default help text that would usually be shown
+                by argparse.
+        """
         self.arg_type = arg_type
         self.default_settings = default_settings
         self.logger = get_logger("swea-cli", emoji="🔧")
         self.help_text = help_text
 
-    def get_config(self, args=None) -> BaseSettings:
+    def get_config(self, args: list[str] | None = None) -> BaseSettings:
+        """Get the configuration object from defaults and command arguments."""
+
+        # >>> Step 1: Use argparse to add a --config option to load whole config files
+
         # The defaults if no config file is provided
         # Otherwise, the configs from the respective classes will be used
         parser = ArgumentParser(description=__doc__, add_help=False)
@@ -104,6 +119,10 @@ class BasicCLI:
             help="Print all additional configuration options that can be set via CLI and exit",
         )
         parser.add_argument("--print-config", action="store_true", help="Print the final config and exit")
+
+        # >>> Step 2: Parse argparse arguments but keep all the remaining arguments.
+        # Explicitly handle --help and --print-options
+
         cli_args, remaining_args = parser.parse_known_args(args)
 
         if cli_args.help:
@@ -119,6 +138,8 @@ class BasicCLI:
                 ["--help"],
             )
             exit(0)
+
+        # >>> Step 3: Load config files and merge them in a big nested data structure
 
         config_merged = {}
         config_files = []
@@ -148,8 +169,11 @@ class BasicCLI:
         else:
             config_merged = {}
 
+        # >>> Step 4: Bring together remaining arguments and the merged config to initialize the config object
+        # This is done by CliApp.run from pydantic-settings
+
         try:
-            args = CliApp.run(self.arg_type, remaining_args, **config_merged, cli_exit_on_error=False)  # type: ignore
+            config: BaseSettings = CliApp.run(self.arg_type, remaining_args, **config_merged, cli_exit_on_error=False)  # type: ignore
         except ValidationError as e:
             rich_print(
                 Panel.fit(
@@ -169,12 +193,15 @@ class BasicCLI:
             rich_print(Panel.fit("[red][bold]SettingsError[/bold][/red]\n\n" + str(e) + "\n\n" + _SETTING_ERROR_HINTS))
             msg = "Invalid command line arguments. Please check the above output in the box."
             raise RuntimeError(msg) from None
+
         if cli_args.print_config:  # type: ignore
-            print(yaml.dump(args.model_dump()))
+            print(yaml.dump(config.model_dump()))
             exit(0)
 
-        args._config_files = config_files  # type: ignore
-        return args
+        # Attach config files to the arg object, because we need them for file naming purposes
+        # (the output traj directory is named after the last config file)
+        config._config_files = config_files  # type: ignore
+        return config
 
 
 def save_predictions(traj_dir: Path, instance_id: str, result: AgentRunResult):
