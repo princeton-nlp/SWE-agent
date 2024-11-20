@@ -87,7 +87,7 @@ def test_run_ies_repo_ps_matrix(
         *repo_args,
     ]
     print(args)
-    rs_config = BasicCLI(RunSingleConfig).get_args(args)
+    rs_config = BasicCLI(RunSingleConfig).get_config(args)
     print(rs_config)
     rs = RunSingle.from_config(rs_config)  # type: ignore
     with tmpdir.as_cwd():

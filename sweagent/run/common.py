@@ -72,7 +72,7 @@ class BasicCLI:
         self.logger = get_logger("swea-cli", emoji="🔧")
         self.help_text = help_text
 
-    def get_args(self, args=None) -> BaseSettings:
+    def get_config(self, args=None) -> BaseSettings:
         # The defaults if no config file is provided
         # Otherwise, the configs from the respective classes will be used
         parser = ArgumentParser(description=__doc__, add_help=False)
@@ -114,7 +114,10 @@ class BasicCLI:
             exit(0)
 
         if cli_args.print_options:
-            CliApp.run(self.arg_type, ["--help"])
+            CliApp.run(
+                self.arg_type,
+                ["--help"],
+            )
             exit(0)
 
         config_merged = {}

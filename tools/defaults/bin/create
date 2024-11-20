@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-source /root/tools/defaults/lib/utils.sh
 
 main() {
     local filename="${1:-}"

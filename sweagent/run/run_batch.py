@@ -287,14 +287,14 @@ class RunBatch:
             remove_file_handler(f"{instance_id}-{level}")
 
 
-def run_from_config(args: RunBatchConfig):
-    RunBatch.from_config(args).main()
+def run_from_config(config: RunBatchConfig):
+    RunBatch.from_config(config).main()
 
 
 def run_from_cli(args: list[str] | None = None):
     if args is None:
         args = sys.argv[1:]
-    run_from_config(BasicCLI(RunBatchConfig).get_args(args))  # type: ignore
+    run_from_config(BasicCLI(RunBatchConfig).get_config(args))  # type: ignore
 
 
 if __name__ == "__main__":

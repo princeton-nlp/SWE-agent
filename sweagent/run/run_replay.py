@@ -118,14 +118,14 @@ class RunReplay:
         run_single.run()
 
 
-def run_from_config(args: RunReplayConfig):
-    RunReplay.from_config(args).main()
+def run_from_config(config: RunReplayConfig):
+    RunReplay.from_config(config).main()
 
 
 def run_from_cli(args: list[str] | None = None):
     if args is None:
         args = sys.argv[1:]
-    run_from_config(BasicCLI(RunReplayConfig, default_settings=False).get_args(args))  # type: ignore
+    run_from_config(BasicCLI(RunReplayConfig, default_settings=False).get_config(args))  # type: ignore
 
 
 if __name__ == "__main__":

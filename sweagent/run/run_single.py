@@ -184,14 +184,14 @@ class RunSingle:
         self.env.close()
 
 
-def run_from_config(args: RunSingleConfig):
-    RunSingle.from_config(args).run()
+def run_from_config(config: RunSingleConfig):
+    RunSingle.from_config(config).run()
 
 
 def run_from_cli(args: list[str] | None = None):
     if args is None:
         args = sys.argv[1:]
-    run_from_config(BasicCLI(RunSingleConfig, help_text=__doc__).get_args(args))  # type: ignore
+    run_from_config(BasicCLI(RunSingleConfig, help_text=__doc__).get_config(args))  # type: ignore
 
 
 if __name__ == "__main__":
