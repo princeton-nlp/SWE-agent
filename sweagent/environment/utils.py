@@ -12,19 +12,19 @@ import tempfile
 import time
 import traceback
 from io import BytesIO
-from pathlib import Path, PurePath
+from pathlib import Path
 from subprocess import PIPE, STDOUT
 from typing import Any, Callable, Optional, Tuple
 
 from datasets import load_dataset, load_from_disk
 from ghapi.all import GhApi
 from git import InvalidGitRepositoryError, Repo
+from gitlab import Gitlab, GitlabGetError  # Added for GitLab support
 from unidiff import PatchSet
 
 import docker
 import docker.types
 from docker.models.containers import Container
-from gitlab import Gitlab, GitlabGetError  # Added for GitLab support
 from sweagent.utils.config import keys_config
 from sweagent.utils.log import get_logger
 
@@ -33,9 +33,7 @@ DOCKER_COMPOSE_TERMINATION_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START
 DOCKER_COMPOSE_STARTUP_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 600))
 GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
 GITHUB_REPO_URL_PATTERN = re.compile(r".*[/@]?github\.com\/([^/]+)\/([^/]+)")
-GITLAB_ISSUE_URL_PATTERN = re.compile(
-    r"gitlab\.[\w.-]+/([^/]+)/([^/]+)(?:/-)?/issues/(\d+)"
-)
+GITLAB_ISSUE_URL_PATTERN = re.compile(r"gitlab\.[\w.-]+/([^/]+)/([^/]+)(?:/-)?/issues/(\d+)")
 
 GITLAB_REPO_URL_PATTERN = re.compile(r".*[/@]?gitlab(?:\.[a-zA-Z0-9-]+)+\/([^/]+)\/([^/]+)")
 
@@ -50,17 +48,24 @@ CTF_CHALLENGES_CATEGORIES = {
 
 logger = get_logger("env_utils")
 
+
 class NoOutputTimeoutError(TimeoutError):
     """Raised when no output is produced within the specified timeout duration."""
+
     pass
+
 
 class InvalidGithubURL(ValueError):
     """Raised when a GitHub URL is invalid."""
+
     pass
+
 
 class InvalidGitlabURL(ValueError):
     """Raised when a GitLab URL is invalid."""
+
     pass
+
 
 def get_data_path_name(data_path: str) -> str:
     """If data_path is a file, return the file stem.
@@ -78,13 +83,16 @@ def get_data_path_name(data_path: str) -> str:
         return f"{owner}__{repo}"
     return Path(data_path).stem
 
+
 def is_github_issue_url(data_path: str) -> bool:
     """Check if data_path is a URL pointing to a GitHub issue."""
     return GITHUB_ISSUE_URL_PATTERN.search(data_path) is not None
 
+
 def is_gitlab_issue_url(data_path: str) -> bool:
     """Check if data_path is a URL pointing to a GitLab issue."""
     return GITLAB_ISSUE_URL_PATTERN.search(data_path) is not None
+
 
 def is_github_repo_url(data_path: str) -> bool:
     """Check if data_path is a URL pointing to a GitHub repository.
@@ -92,11 +100,13 @@ def is_github_repo_url(data_path: str) -> bool:
     """
     return GITHUB_REPO_URL_PATTERN.search(data_path) is not None
 
+
 def is_gitlab_repo_url(data_path: str) -> bool:
     """Check if data_path is a URL pointing to a GitLab repository.
     Paths to issues or merge requests will also match this pattern.
     """
     return GITLAB_REPO_URL_PATTERN.search(data_path) is not None
+
 
 def copy_file_to_container(container: Container, contents: str, container_path: str) -> None:
     """
@@ -142,6 +152,7 @@ def copy_file_to_container(container: Container, contents: str, container_path: 
         if temp_file_name and Path(temp_file_name).exists():
             os.remove(temp_file_name)
 
+
 def copy_anything_to_container(container: Container, host_path: str, container_path: str) -> None:
     """Copy files or directories from host to container.
 
@@ -157,6 +168,7 @@ def copy_anything_to_container(container: Container, host_path: str, container_p
     except subprocess.CalledProcessError as e:
         msg = f"Error copying {host_path} to container at {container_path}: {e}"
         raise RuntimeError(msg) from e
+
 
 def read_with_timeout(container: subprocess.Popen, pid_func: Callable, timeout_duration: int | float) -> str:
     """
@@ -216,10 +228,12 @@ def read_with_timeout(container: subprocess.Popen, pid_func: Callable, timeout_d
     decoded = buffer.decode("utf-8", errors="backslashreplace").replace("\r\n", "\n")
     return "\n".join(line for line in decoded.splitlines())
 
+
 PROCESS_DONE_MARKER_START = "///PROCESS-DONE:"
 PROCESS_DONE_MARKER_END = ":PROCESS-DONE///"
 PROCESS_DONE_REGEX = re.compile(rf"{PROCESS_DONE_MARKER_START}(.+?){PROCESS_DONE_MARKER_END}")
 DECODED_BUFFER_FAILURE_THRESHOLD = 0.1
+
 
 def _check_for_too_many_non_unicode_bytes(buffer: bytes):
     number_of_failures = int(DECODED_BUFFER_FAILURE_THRESHOLD * len(buffer))
@@ -232,6 +246,7 @@ def _check_for_too_many_non_unicode_bytes(buffer: bytes):
             start_byte = e.start + 1
     msg = "Too many non-unicode characters in output of command."
     raise UnicodeError(msg)
+
 
 def read_with_timeout_experimental(
     container: subprocess.Popen, timeout_duration: int | float, no_output_timeout_duration: int | float
@@ -316,6 +331,7 @@ def read_with_timeout_experimental(
     exit_code = _results.group(1)
     return body.replace(f"{PROCESS_DONE_MARKER_START}{exit_code}{PROCESS_DONE_MARKER_END}", ""), exit_code
 
+
 def read_session_with_timeout(
     session: subprocess.Popen,
     terminal_pattern: str,
@@ -382,6 +398,7 @@ def read_session_with_timeout(
 
     return body
 
+
 def get_background_pids(container_obj: Container):
     pids = container_obj.exec_run("ps -eo pid,comm --no-headers").output.decode().split("\n")
     pids = [x.split() for x in pids if x]
@@ -389,6 +406,7 @@ def get_background_pids(container_obj: Container):
     bash_pids = [x for x in pids if x[1] == "bash"]
     other_pids = [x for x in pids if x[1] not in {"bash"}]
     return bash_pids, other_pids
+
 
 def terminate_docker_compose(docker_compose_path: Path) -> None:
     terminate_cmd = [
@@ -415,6 +433,7 @@ def terminate_docker_compose(docker_compose_path: Path) -> None:
         logger.error("Docker-compose termination timed out.", exc_info=True)
         compose.kill()
 
+
 def attach_network_interface_to_container(container_name: str) -> None:
     cmd = [
         "docker",
@@ -440,6 +459,7 @@ def attach_network_interface_to_container(container_name: str) -> None:
     except subprocess.TimeoutExpired:
         logger.error("Docker network attach timed out.", exc_info=True)
         compose.kill()
+
 
 def get_docker_compose(docker_compose_path: Path) -> Path:
     startup_cmd = [
@@ -469,6 +489,7 @@ def get_docker_compose(docker_compose_path: Path) -> Path:
         compose.kill()
     return docker_compose_path
 
+
 def _get_container_mounts_list(container_mounts: list[str]) -> list[docker.types.Mount]:
     try:
         mounts = []
@@ -477,13 +498,14 @@ def _get_container_mounts_list(container_mounts: list[str]) -> list[docker.types
             if path.is_dir():
                 mounts.append(docker.types.Mount(source=str(path), target=f"/{path.name}"))
             elif path.is_file():
-                mounts.append(docker.types.Mount(source=str(path), target=f"/{path.name}", type='bind'))
+                mounts.append(docker.types.Mount(source=str(path), target=f"/{path.name}", type="bind"))
             else:
                 logger.warning(f"Mount path {mount} is neither a file nor a directory. Skipping.")
         return mounts
     except Exception:
         logger.warning("Failed to process container mounts, skipping mount.")
         return []
+
 
 def _get_non_persistent_container(
     ctr_name: str, image_name: str, container_mounts: list[str]
@@ -520,6 +542,7 @@ def _get_non_persistent_container(
         pass
     # bash PID is always 1 for non-persistent containers
     return container, {"1"}
+
 
 def _get_persistent_container(
     ctr_name: str, image_name: str, container_mounts: list[str], persistent: bool = False
@@ -601,6 +624,7 @@ def _get_persistent_container(
         raise RuntimeError(msg)
     return container, {bash_pid, "1"}
 
+
 def get_container(
     ctr_name: str, image_name: str, container_mounts: list[str], persistent: bool = False
 ) -> Tuple[subprocess.Popen, set]:
@@ -627,6 +651,7 @@ def get_container(
         return _get_persistent_container(ctr_name, image_name, container_mounts=container_mounts, persistent=persistent)
     else:
         return _get_non_persistent_container(ctr_name, image_name, container_mounts=container_mounts)
+
 
 def image_exists(image_name: str) -> bool:
     """
@@ -668,6 +693,7 @@ def image_exists(image_name: str) -> bool:
         )
     return True
 
+
 def get_commit(api: GhApi, owner: str, repo: str, ref: str | None = None):
     """Get commit object from GitHub API.
 
@@ -683,6 +709,7 @@ def get_commit(api: GhApi, owner: str, repo: str, ref: str | None = None):
     if ref:
         return api.repos.get_commit(owner, repo, ref)
     return api.repos.list_commits(owner, repo)[0]
+
 
 def parse_gh_issue_url(issue_url: str) -> Tuple[str, str, str]:
     """
@@ -704,6 +731,7 @@ def parse_gh_issue_url(issue_url: str) -> Tuple[str, str, str]:
     assert len(res) == 3
     return tuple(res)  # type: ignore
 
+
 def parse_gitlab_issue_url(issue_url: str) -> Tuple[str, str, str]:
     """
     Parse a GitLab issue URL and extract the owner, repo, and issue number.
@@ -724,6 +752,7 @@ def parse_gitlab_issue_url(issue_url: str) -> Tuple[str, str, str]:
     assert len(res) == 3
     return tuple(res)  # type: ignore
 
+
 def parse_gh_repo_url(repo_url: str) -> Tuple[str, str]:
     """
     Parse a GitHub repository URL and extract the owner and repo name.
@@ -742,6 +771,7 @@ def parse_gh_repo_url(repo_url: str) -> Tuple[str, str]:
     res = match.groups()
     assert len(res) == 2
     return tuple(res)  # type: ignore
+
 
 def parse_gitlab_repo_url(repo_url: str) -> Tuple[str, str]:
     """
@@ -762,6 +792,7 @@ def parse_gitlab_repo_url(repo_url: str) -> Tuple[str, str]:
     assert len(res) == 2
     return tuple(res)  # type: ignore
 
+
 def get_gh_issue_data(issue_url: str, *, token: str = ""):
     """Returns GitHub issue data in the form of a dictionary.
     See https://docs.github.com/en/rest/issues/issues?apiVersion=2022-11-28#get-an-issue
@@ -778,6 +809,7 @@ def get_gh_issue_data(issue_url: str, *, token: str = ""):
     api = GhApi(token=token)
     return api.issues.get(owner, repo, issue_number)
 
+
 def get_gitlab_issue_data(issue_url: str, *, token: str = ""):
     """Returns GitLab issue data in the form of a dictionary.
     See https://docs.gitlab.com/ee/api/issues.html#get-single-issue
@@ -791,10 +823,11 @@ def get_gitlab_issue_data(issue_url: str, *, token: str = ""):
         Issue data as a dictionary.
     """
     owner, repo, issue_number = parse_gitlab_issue_url(issue_url)
-    gl = Gitlab('https://gitlab.ird.mu-sigma.com/', private_token=token)
+    gl = Gitlab("https://gitlab.ird.mu-sigma.com/", private_token=token)
     project = gl.projects.get(f"{owner}/{repo}")
     issue = project.issues.get(int(issue_number))
     return issue.attributes  # Return as a dictionary
+
 
 def get_problem_statement_from_github_issue(owner: str, repo: str, issue_number: str, *, token: str | None = "") -> str:
     """Return problem statement from GitHub issue.
@@ -814,6 +847,7 @@ def get_problem_statement_from_github_issue(owner: str, repo: str, issue_number:
     body = issue.body if issue.body else ""
     return f"{title}\n{body}\n"
 
+
 def get_problem_statement_from_gitlab_issue(owner: str, repo: str, issue_number: str, *, token: str | None = "") -> str:
     """Return problem statement from GitLab issue.
 
@@ -826,10 +860,13 @@ def get_problem_statement_from_gitlab_issue(owner: str, repo: str, issue_number:
     Returns:
         Problem statement as a string.
     """
-    issue = get_gitlab_issue_data(f"https://gitlab.ird.mu-sigma.com/{owner}/{repo}/-/issues/{issue_number}", token=token)
-    title = issue.get('title', "")
-    description = issue.get('description', "")
+    issue = get_gitlab_issue_data(
+        f"https://gitlab.ird.mu-sigma.com/{owner}/{repo}/-/issues/{issue_number}", token=token
+    )
+    title = issue.get("title", "")
+    description = issue.get("description", "")
     return f"{title}\n{description}\nDo not try to run the server just give the updated code as git diff"
+
 
 class InstanceBuilder:
     def __init__(self, token: str | None = None):
@@ -942,7 +979,7 @@ class InstanceBuilder:
         self.args["repo"] = f"{owner}/{repo}"
         self.args["repo_type"] = "gitlab"
         # Initialize GitLab client
-        gl = Gitlab('https://gitlab.ird.mu-sigma.com/', private_token=self.token)
+        gl = Gitlab("https://gitlab.ird.mu-sigma.com/", private_token=self.token)
         try:
             project = gl.projects.get(f"{owner}/{repo}")
         except GitlabGetError as e:
@@ -1033,6 +1070,7 @@ class InstanceBuilder:
         self.set_missing_fields()
         self.validate()
         return self.args
+
 
 def get_instances(
     file_path: str,
@@ -1133,6 +1171,7 @@ def get_instances(
         )
         raise ValueError(msg) from e
 
+
 def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token: str = "") -> list[str]:
     """Return the URLs of commits that would close an issue.
 
@@ -1163,7 +1202,7 @@ def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token:
                 for event in commits:
                     if event.event != "referenced":
                         continue
-                    if not hasattr(event, 'commit_id') or not event.commit_id:
+                    if not hasattr(event, "commit_id") or not event.commit_id:
                         continue
                     commit = api.repos.get_commit(org, repo, event.commit_id)
                     message = commit.commit.message.lower()
@@ -1176,7 +1215,7 @@ def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token:
             issue_url = f"https://gitlab.ird.mu-sigma.com//{org}/{repo}/-/issues/{issue_number}"
             if is_gitlab_issue_url(issue_url):
                 issue = get_gitlab_issue_data(issue_url, token=token)
-                gl = Gitlab('https://gitlab.ird.mu-sigma.com/', private_token=token)
+                gl = Gitlab("https://gitlab.ird.mu-sigma.com/", private_token=token)
                 project = gl.projects.get(f"{org}/{repo}")
                 notes = project.issues.list_notes(issue=int(issue_number))
                 for note in notes:
@@ -1191,7 +1230,10 @@ def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token:
                             # For example, fetch all commits and check their messages
                             commits = project.commits.list()
                             for commit in commits:
-                                if f"closes #{issue_number}" in commit.message.lower() or f"fixes #{issue_number}" in commit.message.lower():
+                                if (
+                                    f"closes #{issue_number}" in commit.message.lower()
+                                    or f"fixes #{issue_number}" in commit.message.lower()
+                                ):
                                     commit_urls.append(commit.web_url)
         except Exception as e:
             logger.error(f"Error fetching associated GitLab commit URLs: {e}", exc_info=True)
@@ -1199,8 +1241,10 @@ def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token:
         logger.warning(f"Repository {org}/{repo} is neither GitHub nor GitLab based on the provided information.")
     return commit_urls
 
+
 def remove_triple_backticks(text: str) -> str:
     return "\n".join(line.removeprefix("```") for line in text.splitlines())
+
 
 def format_trajectory_markdown(trajectory: list[dict[str, str]]):
     """Format a trajectory as a markdown string for use in GitHub/GitLab PR/MR descriptions."""
@@ -1226,6 +1270,7 @@ def format_trajectory_markdown(trajectory: list[dict[str, str]]):
         "</details>",
     ]
     return "\n".join(prefix) + "\n\n---\n\n".join(steps) + "\n".join(suffix)
+
 
 class PatchFormatter:
     def __init__(
@@ -1370,6 +1415,7 @@ class PatchFormatter:
         return self.concat_files_strings(
             {path: self.format_file(text, *hunk_lines[path], linenos=linenos) for path, text in sources.items()}
         )
+
 
 def extract_flag_format(flag: str) -> str:
     flag_format = re.sub(r"{.*}$", "{...}", flag)

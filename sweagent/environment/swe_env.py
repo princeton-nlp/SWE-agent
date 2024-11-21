@@ -64,9 +64,7 @@ from sweagent.utils.log import default_logger, get_logger
 
 LONG_TIMEOUT = float(keys_config.get("SWE_AGENT_ENV_LONG_TIMEOUT", 500))
 AGENT_ACTION_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_TIMEOUT", 25))
-AGENT_ACTION_NO_OUTPUT_TIMEOUT = float(
-    keys_config.get("SWE_AGENT_ACTION_NO_OUTPUT_TIMEOUT", AGENT_ACTION_TIMEOUT)
-)
+AGENT_ACTION_NO_OUTPUT_TIMEOUT = float(keys_config.get("SWE_AGENT_ACTION_NO_OUTPUT_TIMEOUT", AGENT_ACTION_TIMEOUT))
 PATH_TO_REQS = "/root/requirements.txt"
 PATH_TO_ENV_YML = "/root/environment.yml"
 
@@ -1588,16 +1586,18 @@ class SWEEnv(gym.Env):
                 )
         elif self.record["repo_type"] == "gitlab":
             try:
-                gl = Gitlab('https://gitlab.ird.mu-sigma.com/', private_token=self._gitlab_token)
+                gl = Gitlab("https://gitlab.ird.mu-sigma.com/", private_token=self._gitlab_token)
                 project = gl.projects.get(f"{owner}/{repo}")
                 if not _dry_run:
-                    pr_info = project.mergerequests.create({
-                        'source_branch': branch_name,
-                        'target_branch': 'main',
-                        'title': f"SWE-agent[bot] PR to fix: {issue.title}",
-                        'description': body,
-                        'state_event': 'close'  # To create as a draft, GitLab uses 'draft!' in the title
-                    })
+                    pr_info = project.mergerequests.create(
+                        {
+                            "source_branch": branch_name,
+                            "target_branch": "main",
+                            "title": f"SWE-agent[bot] PR to fix: {issue.title}",
+                            "description": body,
+                            "state_event": "close",  # To create as a draft, GitLab uses 'draft!' in the title
+                        }
+                    )
                     self.logger.info(
                         f"🎉 Merge Request created as a draft at {pr_info.web_url}. Please review it carefully, push "
                         "any required changes onto the branch and then mark it as ready to merge to bring it to the attention of the maintainers.",
@@ -1618,4 +1618,3 @@ class SWEEnv(gym.Env):
         """
         path_in_container = f"/{self._repo_name}/{path}"
         return self.communicate(f"cat {str(path_in_container)}")
-
