@@ -14,7 +14,7 @@ import traceback
 from io import BytesIO
 from pathlib import Path
 from subprocess import PIPE, STDOUT
-from typing import Any, Callable, Optional, tuple
+from typing import Any, Callable, tuple
 
 from datasets import load_dataset, load_from_disk
 from ghapi.all import GhApi

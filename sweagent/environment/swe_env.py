@@ -13,7 +13,7 @@ import time
 import traceback
 from dataclasses import dataclass, field
 from pathlib import Path, PurePath
-from typing import Any, Optional, tuple
+from typing import Any, tuple
 
 import gymnasium as gym
 import yaml
