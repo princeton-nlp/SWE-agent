@@ -14,7 +14,7 @@ import traceback
 from io import BytesIO
 from pathlib import Path
 from subprocess import PIPE, STDOUT
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional, tuple
 
 from datasets import load_dataset, load_from_disk
 from ghapi.all import GhApi
@@ -250,7 +250,7 @@ def _check_for_too_many_non_unicode_bytes(buffer: bytes):
 
 def read_with_timeout_experimental(
     container: subprocess.Popen, timeout_duration: int | float, no_output_timeout_duration: int | float
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     """
     Read data from a subprocess with a timeout.
     This function uses a file descriptor to read data from the subprocess in a non-blocking way.
@@ -264,7 +264,7 @@ def read_with_timeout_experimental(
         no_output_timeout_duration: The timeout duration to wait if no output is produced, in seconds.
 
     Returns:
-        Tuple containing output and exit code, both as strings.
+        tuple containing output and exit code, both as strings.
 
     Raises:
         TimeoutError: If the timeout duration is reached while reading from the subprocess.
@@ -509,7 +509,7 @@ def _get_container_mounts_list(container_mounts: list[str]) -> list[docker.types
 
 def _get_non_persistent_container(
     ctr_name: str, image_name: str, container_mounts: list[str]
-) -> Tuple[subprocess.Popen, set[str]]:
+) -> tuple[subprocess.Popen, set[str]]:
     startup_cmd = [
         "docker",
         "run",
@@ -546,7 +546,7 @@ def _get_non_persistent_container(
 
 def _get_persistent_container(
     ctr_name: str, image_name: str, container_mounts: list[str], persistent: bool = False
-) -> Tuple[subprocess.Popen, set[str]]:
+) -> tuple[subprocess.Popen, set[str]]:
     client = docker.from_env()
     containers = client.containers.list(all=True, filters={"name": ctr_name})
     if ctr_name in [c.name for c in containers]:
@@ -627,7 +627,7 @@ def _get_persistent_container(
 
 def get_container(
     ctr_name: str, image_name: str, container_mounts: list[str], persistent: bool = False
-) -> Tuple[subprocess.Popen, set]:
+) -> tuple[subprocess.Popen, set]:
     """
     Get a container object for a given container name and image name.
 
@@ -637,7 +637,7 @@ def get_container(
         persistent (bool): Whether to use a persistent container or not.
 
     Returns:
-        Tuple containing the subprocess.Popen object and a set of PIDs.
+        tuple containing the subprocess.Popen object and a set of PIDs.
     """
     if not image_exists(image_name):
         msg = (
@@ -684,7 +684,8 @@ def image_exists(image_name: str) -> bool:
     if len(filtered_images) == 0:
         return False
     elif len(filtered_images) > 1:
-        raise RuntimeError(f"Multiple images found for {image_name}, that's weird.")
+        msg = f"Multiple images found for {image_name}, that's weird."
+        raise RuntimeError(msg)
     attrs = filtered_images[0].attrs
     if attrs is not None:
         logger.info(
@@ -710,8 +711,7 @@ def get_commit(api: GhApi, owner: str, repo: str, ref: str | None = None):
         return api.repos.get_commit(owner, repo, ref)
     return api.repos.list_commits(owner, repo)[0]
 
-
-def parse_gh_issue_url(issue_url: str) -> Tuple[str, str, str]:
+def parse_gh_issue_url(issue_url: str) -> tuple[str, str, str]:
     """
     Parse a GitHub issue URL and extract the owner, repo, and issue number.
 
@@ -731,8 +731,7 @@ def parse_gh_issue_url(issue_url: str) -> Tuple[str, str, str]:
     assert len(res) == 3
     return tuple(res)  # type: ignore
 
-
-def parse_gitlab_issue_url(issue_url: str) -> Tuple[str, str, str]:
+def parse_gitlab_issue_url(issue_url: str) -> tuple[str, str, str]:
     """
     Parse a GitLab issue URL and extract the owner, repo, and issue number.
 
@@ -752,8 +751,7 @@ def parse_gitlab_issue_url(issue_url: str) -> Tuple[str, str, str]:
     assert len(res) == 3
     return tuple(res)  # type: ignore
 
-
-def parse_gh_repo_url(repo_url: str) -> Tuple[str, str]:
+def parse_gh_repo_url(repo_url: str) -> tuple[str, str]:
     """
     Parse a GitHub repository URL and extract the owner and repo name.
 
@@ -772,8 +770,7 @@ def parse_gh_repo_url(repo_url: str) -> Tuple[str, str]:
     assert len(res) == 2
     return tuple(res)  # type: ignore
 
-
-def parse_gitlab_repo_url(repo_url: str) -> Tuple[str, str]:
+def parse_gitlab_repo_url(repo_url: str) -> tuple[str, str]:
     """
     Parse a GitLab repository URL and extract the owner and repo name.
 
@@ -1214,15 +1211,13 @@ def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token:
         try:
             issue_url = f"https://gitlab.ird.mu-sigma.com//{org}/{repo}/-/issues/{issue_number}"
             if is_gitlab_issue_url(issue_url):
-                issue = get_gitlab_issue_data(issue_url, token=token)
-                gl = Gitlab("https://gitlab.ird.mu-sigma.com/", private_token=token)
+                gl = Gitlab('https://gitlab.ird.mu-sigma.com/', private_token=token)
                 project = gl.projects.get(f"{org}/{repo}")
                 notes = project.issues.list_notes(issue=int(issue_number))
                 for note in notes:
                     if note.note.startswith("Closes"):
                         match = re.search(r"closes\s+#(\d+)", note.note, re.IGNORECASE)
                         if match:
-                            commit_message = note.note
                             # Assuming the commit is linked via reference in the note
                             # GitLab might not provide direct commit references in issue notes
                             # You might need to parse commit messages or references differently
@@ -1294,7 +1289,7 @@ class PatchFormatter:
         self._read_files(original=False)
 
     @staticmethod
-    def _merge_intervals(starts: list[int], stops: list[int]) -> Tuple[list[int], list[int]]:
+    def _merge_intervals(starts: list[int], stops: list[int]) -> tuple[list[int], list[int]]:
         """Given two lists of integers, starts and stops, merges all overlapping intervals.
 
         For example `starts=[1, 5, 18]`, `stops=[10, 13, 20]`
@@ -1360,7 +1355,7 @@ class PatchFormatter:
             out.append(f"[{omitted} lines below omitted]")
         return "\n".join(out)
 
-    def _get_hunk_lines(self, original: bool, *, context_length: int) -> dict[str, Tuple[list[int], list[int]]]:
+    def _get_hunk_lines(self, original: bool, *, context_length: int) -> dict[str, tuple[list[int], list[int]]]:
         """Get the starts and stops for all files in the patch.
 
         Args:
@@ -1370,7 +1365,7 @@ class PatchFormatter:
         Returns:
             A dictionary with the file path as key and a tuple of lists of starts and stops as value.
         """
-        out: dict[str, Tuple[list[int], list[int]]] = {}
+        out: dict[str, tuple[list[int], list[int]]] = {}
         for patch in self._patch:
             if not patch.is_modified_file:
                 continue

@@ -13,7 +13,7 @@ import time
 import traceback
 from dataclasses import dataclass, field
 from pathlib import Path, PurePath
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, tuple
 
 import gymnasium as gym
 import yaml
@@ -364,7 +364,7 @@ class SWEEnv(gym.Env):
             msg = f"Unsupported repository type: {self.record['repo_type']}"
             raise ValueError(msg)
 
-    def reset(self, index: int | None = None, apply_test_patch: bool = False) -> Tuple[str | None, dict]:
+    def reset(self, index: int | None = None, apply_test_patch: bool = False) -> tuple[str | None, dict]:
         """
         Function to reset container between each task instance.
 
@@ -1180,7 +1180,7 @@ class SWEEnv(gym.Env):
 
         return True
 
-    def get_submission(self, output: str) -> Optional[str]:
+    def get_submission(self, output: str) ->  str | None:
         """
         Function for extracting diff patch submission at the end of an episode.
 
