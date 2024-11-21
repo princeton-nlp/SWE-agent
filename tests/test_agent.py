@@ -72,6 +72,11 @@ def thought_action_agent(thought_action_agent_config: AgentConfig) -> Agent:
     return Agent.from_config(thought_action_agent_config)
 
 
+@pytest.fixture
+def function_calling_agent(function_calling_agent_config: AgentConfig) -> Agent:
+    return Agent.from_config(function_calling_agent_config)
+
+
 def test_exit_cost(dummy_env: SWEEnv, test_agent: Agent, tmp_path):
     test_agent.model = PredeterminedTestModel(["raise_cost"])  # type: ignore
     r = test_agent.run(
@@ -226,3 +231,22 @@ def test_human_exit(dummy_env: SWEEnv, default_agent: Agent, tmp_path):
     assert r.done
     assert r.exit_status == "exit_command"
     assert r.action.strip() == "exit"
+
+
+def test_function_calling(dummy_env: SWEEnv, function_calling_agent: Agent, tmp_path):
+    a = function_calling_agent
+    # Simulate a valid function call response from the model
+    valid_response = {
+        "message": "I'll list the contents of the directory",
+        "tool_calls": [{"function": {"name": "bash", "arguments": '{"command": "ls"}'}, "id": "abc123"}],
+    }
+    a.model = PredeterminedTestModel([valid_response])  # type: ignore
+    a.setup(dummy_env, EmptyProblemStatement())
+    dummy_env.deployment.runtime.run_in_session_outputs = [
+        BashObservation(output="file1 file2"),
+        BashObservation(output="file1 file2"),  # TODO, there's actually a bug in swe-rex, requiring two observations
+    ]  # type: ignore
+    r = a.step()
+    assert not r.done, "Expected not done, because we haven't submitted yet"
+    assert r.action.strip() == "ls", "Expected the tool call to be executed"
+    assert "file1 file2" in r.observation, "Expected the tool call to return the output of the command"

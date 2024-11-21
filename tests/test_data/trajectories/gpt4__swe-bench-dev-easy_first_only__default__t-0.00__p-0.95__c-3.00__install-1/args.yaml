@@ -443,7 +443,6 @@ agent:
     parse_command: {}
     parse_function: {}
     put_demos_in_history: false
-    state_command: _state
     strategy_template: null
     submit_command: submit
     subroutine_types: []

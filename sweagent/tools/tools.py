@@ -5,17 +5,16 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any
 
-import yaml
 from pydantic import BaseModel, Field
 from swerex.runtime.abstract import Command as RexCommand
 from swerex.runtime.abstract import UploadRequest
 from typing_extensions import Self
 
 from sweagent.environment.swe_env import SWEEnv
+from sweagent.tools.bundle import Bundle
 from sweagent.tools.commands import BASH_COMMAND, Command
 from sweagent.tools.parsing import FunctionCallingParser, JsonParser, ParseFunction
 from sweagent.tools.utils import _guard_multiline_input, generate_command_docs
-from sweagent.utils.config import _convert_paths_to_abspath
 from sweagent.utils.log import get_logger
 
 
@@ -55,7 +54,7 @@ class ToolFilterConfig(BaseModel):
 
 class ToolConfig(BaseModel):
     filter: ToolFilterConfig = ToolFilterConfig()
-    bundles: list[Path] = []
+    bundles: list[Bundle] = Field(default_factory=list)
 
     env_variables: dict[str, Any] = {}
     """Shorthand to set environment variables for the tools, effectively
@@ -84,40 +83,45 @@ class ToolConfig(BaseModel):
     Unlike `install_commands`, these commands are part of the environment state.
     """
 
-    state_command: str = "_state"
-    """Should extract environment state in a json readable form"""
-
     execution_timeout: int = 30
     """Timeout for executing commands in the environment"""
 
     install_timeout: int = 300
     """Timeout used for each of the installation commands"""
 
-    @property
+    @cached_property
     def use_function_calling(self) -> bool:
         return isinstance(self.parse_function, FunctionCallingParser)
+
+    @cached_property
+    def state_commands(self) -> list[str]:
+        return [bundle.state_command for bundle in self.bundles if bundle.state_command]
 
     # todo: move to ToolHandler?
     @cached_property
     def commands(self) -> list[Command]:
-        """Read command files and returned parsed command objects"""
+        """Read command files and return parsed command objects"""
         commands = []
-        tool_sources = {}  # Track which file each tool comes from
-        for path in self.bundles:
-            config = yaml.safe_load((path / "config.yaml").read_text())
-            for tool, tool_config in config.get("tools", {}).items():
-                if tool in [x.name for x in commands]:
-                    existing_source = tool_sources[tool]
-                    msg = (
-                        f"Tool '{tool}' is defined multiple times:\n"
-                        f"  - First definition in: {existing_source}\n"
-                        f"  - Duplicate definition in: {path}"
-                    )
-                    raise ValueError(msg)
-                commands.append(Command(name=tool, **tool_config))
-                tool_sources[tool] = path
+        tool_sources: dict[str, Path] = {}  # Track which file each tool comes from
+        # Add bash command if enabled
         if self.enable_bash_tool:
             commands.append(BASH_COMMAND)
+            tool_sources[BASH_COMMAND.name] = Path("<builtin>")
+
+        # Collect commands from all bundles
+        for bundle in self.bundles:
+            for command in bundle.commands:
+                if command.name in tool_sources:
+                    existing_source = tool_sources[command.name]
+                    msg = (
+                        f"Tool '{command.name}' is defined multiple times:\n"
+                        f"  - First definition in: {existing_source}\n"
+                        f"  - Duplicate definition in: {bundle.path}"
+                    )
+                    raise ValueError(msg)
+                commands.append(command)
+                tool_sources[command.name] = bundle.path
+
         return commands
 
     @cached_property
@@ -126,8 +130,6 @@ class ToolConfig(BaseModel):
 
     # todo: can some of these be moved to ToolHandler?
     def model_post_init(self, __context):
-        self.bundles = _convert_paths_to_abspath(self.bundles)
-
         # for caching:
         commands = self.commands
         multi_line_command_endings = {
@@ -194,7 +196,7 @@ class ToolHandler:
         await asyncio.gather(
             *(
                 env.deployment.runtime.upload(
-                    UploadRequest(source_path=bundle.as_posix(), target_path=f"/root/tools/{bundle.name}")
+                    UploadRequest(source_path=bundle.path.as_posix(), target_path=f"/root/tools/{bundle.path.name}")
                 )
                 for bundle in self.config.bundles
             )
@@ -206,20 +208,22 @@ class ToolHandler:
         cwd = env.communicate("pwd", check=True).strip()
         asyncio.run(self._upload_bundles(env))
         for bundle in self.config.bundles:
-            env.communicate(f"export PATH=$PATH:/root/tools/{bundle.name}/bin", check=True)
+            env.communicate(f"export PATH=$PATH:/root/tools/{bundle.path.name}/bin", check=True)
             asyncio.run(
                 env.deployment.runtime.execute(
-                    RexCommand(command=f"chmod +x /root/tools/{bundle.name}/bin/*", shell=True, check=False)
+                    RexCommand(command=f"chmod +x /root/tools/{bundle.path.name}/bin/*", shell=True, check=False)
                 )
             )  # check false because bin might not exist
-            if (bundle / "install.sh").exists():
+            if (bundle.path / "install.sh").exists():
                 env.communicate(
-                    f"cd /root/tools/{bundle.name}; source install.sh", check=True, timeout=self.config.install_timeout
+                    f"cd /root/tools/{bundle.path.name}; source install.sh",
+                    check=True,
+                    timeout=self.config.install_timeout,
                 )
             # always make all files in bin executable
             asyncio.run(
                 env.deployment.runtime.execute(
-                    RexCommand(command=f"chmod +x /root/tools/{bundle.name}/bin/*", shell=True, check=True)
+                    RexCommand(command=f"chmod +x /root/tools/{bundle.path.name}/bin/*", shell=True, check=True)
                 )
             )
         env.communicate(f"cd {cwd}", check=True)
@@ -245,25 +249,27 @@ class ToolHandler:
     # Getting state
     # -------------
 
+    def _get_state(self, state_command: str, env: SWEEnv) -> dict[str, str]:
+        output = env.communicate(state_command, check=True).strip()
+        try:
+            return json.loads(output)
+        except json.JSONDecodeError as e:
+            msg = f"State {output!r} is not valid json. This is an internal error, please report it."
+            raise ValueError(msg) from e
+
     def get_state(self, env: SWEEnv) -> dict[str, str]:
-        """If a state command is defined, execute it in the environment parse it as json and return the result.
+        """Execute state commands from all bundles and combine their results.
         This can be used to extract environment variables etc. from the environment.
         """
         if self.mock_state is not None:
             return self.mock_state
-        if not self.config.state_command:
-            return {}
-        output = env.communicate(self.config.state_command, check=True).strip()
-        if not output:
-            self.logger.warning("State command %s returned empty output", self.config.state_command)
-            return {}
-        try:
-            state = json.loads(output)
-        except json.JSONDecodeError as e:
-            msg = f"State {output!r} is not valid json. This is an internal error, please report it."
-            raise ValueError(msg) from e
-        self.logger.debug(f"Retrieved state from environment: {state}")
-        return state
+
+        combined_state = {}
+        for state_command in self.config.state_commands:
+            state = self._get_state(state_command, env)
+            combined_state.update(state)
+        self.logger.debug(f"Retrieved state from environment: {combined_state}")
+        return combined_state
 
     # Blocking
     # --------

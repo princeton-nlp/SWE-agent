@@ -26,12 +26,10 @@ agent:
       WINDOW: 100
       OVERLAP: 2
     bundles:
-      - tools/defaults
-      - tools/search
-      - tools/edit_linting
-      - tools/submit
-      - tools/state
-    state_command: _state
+      - path: tools/defaults
+      - path: tools/search
+      - path: tools/edit_linting
+      - path: tools/submit
     parse_function:
       type: thought_action
   history_processor:

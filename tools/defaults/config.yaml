@@ -35,3 +35,4 @@ tools:
     signature: "scroll_down"
     docstring: "moves the window down {WINDOW} lines"
     arguments: []
+state_command: "_state"

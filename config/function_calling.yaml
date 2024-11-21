@@ -81,13 +81,11 @@ agent:
       WINDOW: 100
       OVERLAP: 2
     bundles:
-      - tools/defaults
-      - tools/search
-      - tools/edit_linting
-      - tools/submit
-      - tools/state
+      - path: tools/defaults
+      - path: tools/search
+      - path: tools/edit_linting
+      - path: tools/submit
     enable_bash_tool: true
-    state_command: _state
     parse_function:
       type: function_calling
   history_processor:

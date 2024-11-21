@@ -271,7 +271,7 @@ class ReplayModel(AbstractModel):
 
 
 class PredeterminedTestModel(AbstractModel):
-    def __init__(self, outputs: list[str]):
+    def __init__(self, outputs: list[dict | str]):
         self._outputs = outputs
         self._idx = -1
         self.stats = InstanceStats()
@@ -279,13 +279,21 @@ class PredeterminedTestModel(AbstractModel):
     def query(self, *args, **kwargs) -> dict:
         self._idx += 1
         output = self._outputs[self._idx]
-        if output == "raise_runtime":
-            raise SweRexception()
-        elif output == "raise_cost":
-            raise CostLimitExceededError()
-        elif output == "raise_context":
-            raise ContextWindowExceededError()
-        return {"message": output}
+        if isinstance(output, str):
+            if output == "raise_runtime":
+                raise SweRexception()
+            elif output == "raise_cost":
+                raise CostLimitExceededError()
+            elif output == "raise_context":
+                raise ContextWindowExceededError()
+            return {"message": output}
+        if not isinstance(output, dict):
+            msg = f"Output must be string or dict, got {type(output)}"
+            raise ValueError(msg)
+        result = {"message": output["message"]}
+        if "tool_calls" in output:
+            result["tool_calls"] = output["tool_calls"]
+        return result
 
 
 class InstantEmptySubmitTestModel(AbstractModel):

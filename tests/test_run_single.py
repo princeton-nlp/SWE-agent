@@ -11,6 +11,7 @@ from sweagent.environment.swe_env import EnvironmentConfig
 from sweagent.run.common import BasicCLI
 from sweagent.run.hooks.abstract import RunHook
 from sweagent.run.run_single import RunSingle, RunSingleConfig
+from sweagent.tools.bundle import Bundle
 
 
 class RaisesExceptionHook(RunHook):
@@ -31,7 +32,10 @@ def test_run_single_raises_exception():
 @pytest.fixture
 def agent_config_with_commands():
     ac = AgentConfig(model=InstantEmptySubmitModelConfig())
-    ac.tools.bundles = [TOOLS_DIR / "defaults", TOOLS_DIR / "submit"]
+    ac.tools.bundles = [
+        Bundle(path=TOOLS_DIR / "defaults"),
+        Bundle(path=TOOLS_DIR / "submit"),
+    ]
     assert (TOOLS_DIR / "submit").exists()
     # Make sure dependent properties are set
     ac.tools.model_post_init(None)
@@ -39,17 +43,34 @@ def agent_config_with_commands():
 
 
 @pytest.mark.slow
-def test_run_ies(tmpdir, agent_config_with_commands):
-    # ies = instant empty submit
-    ac = agent_config_with_commands
+def test_hidden_tools(tmpdir):
+    ac = AgentConfig(model=InstantEmptySubmitModelConfig())
+    ac.tools.bundles = [
+        Bundle(path=TOOLS_DIR / "defaults", hidden_tools=["scroll_up"]),
+        Bundle(path=TOOLS_DIR / "submit"),
+    ]
     ac.model.name = "instant_empty_submit"
-    ac.tools.state_command = None
     rsc = RunSingleConfig(
         env=EnvironmentConfig(),
         agent=ac,
         output_dir=Path(tmpdir),
     )
     rs = RunSingle.from_config(rsc)
+    rs.run()
+
+
+@pytest.mark.slow
+def test_run_ies(tmpdir, agent_config_with_commands):
+    # ies = instant empty submit
+    ac = agent_config_with_commands
+    ac.model.name = "instant_empty_submit"
+    rsc = RunSingleConfig(
+        env=EnvironmentConfig(),
+        agent=ac,
+        output_dir=Path(tmpdir),
+    )
+    rs = RunSingle.from_config(rsc)
+    rs.agent.tools.mock_state = {"open_file": "asdf123", "working_dir": "/root"}
     rs.run()
 
 
