@@ -1180,7 +1180,7 @@ class SWEEnv(gym.Env):
 
         return True
 
-    def get_submission(self, output: str) ->  str | None:
+    def get_submission(self, output: str) -> str | None:
         """
         Function for extracting diff patch submission at the end of an episode.
 

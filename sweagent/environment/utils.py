@@ -711,6 +711,7 @@ def get_commit(api: GhApi, owner: str, repo: str, ref: str | None = None):
         return api.repos.get_commit(owner, repo, ref)
     return api.repos.list_commits(owner, repo)[0]
 
+
 def parse_gh_issue_url(issue_url: str) -> tuple[str, str, str]:
     """
     Parse a GitHub issue URL and extract the owner, repo, and issue number.
@@ -730,6 +731,7 @@ def parse_gh_issue_url(issue_url: str) -> tuple[str, str, str]:
     res = match.groups()
     assert len(res) == 3
     return tuple(res)  # type: ignore
+
 
 def parse_gitlab_issue_url(issue_url: str) -> tuple[str, str, str]:
     """
@@ -751,6 +753,7 @@ def parse_gitlab_issue_url(issue_url: str) -> tuple[str, str, str]:
     assert len(res) == 3
     return tuple(res)  # type: ignore
 
+
 def parse_gh_repo_url(repo_url: str) -> tuple[str, str]:
     """
     Parse a GitHub repository URL and extract the owner and repo name.
@@ -769,6 +772,7 @@ def parse_gh_repo_url(repo_url: str) -> tuple[str, str]:
     res = match.groups()
     assert len(res) == 2
     return tuple(res)  # type: ignore
+
 
 def parse_gitlab_repo_url(repo_url: str) -> tuple[str, str]:
     """
@@ -1211,7 +1215,7 @@ def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token:
         try:
             issue_url = f"https://gitlab.ird.mu-sigma.com//{org}/{repo}/-/issues/{issue_number}"
             if is_gitlab_issue_url(issue_url):
-                gl = Gitlab('https://gitlab.ird.mu-sigma.com/', private_token=token)
+                gl = Gitlab("https://gitlab.ird.mu-sigma.com/", private_token=token)
                 project = gl.projects.get(f"{org}/{repo}")
                 notes = project.issues.list_notes(issue=int(issue_number))
                 for note in notes:
