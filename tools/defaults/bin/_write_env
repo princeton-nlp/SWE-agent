@@ -2,9 +2,9 @@
 
 import sys
 
-from default_utils import write_env  # type: ignore
+from default_utils import registry  # type: ignore
 
 if __name__ == "__main__":
     var_name = sys.argv[1]
     var_value = sys.argv[2] if len(sys.argv) > 2 else ""
-    write_env(var_name, var_value)
+    registry[var_name] = var_value

@@ -2,9 +2,9 @@
 
 import sys
 
-from default_utils import read_env  # type: ignore
+from default_utils import registry  # type: ignore
 
 if __name__ == "__main__":
     var_name = sys.argv[1]
     default_value = sys.argv[2] if len(sys.argv) > 2 else ""
-    print(read_env(var_name, default_value))
+    print(registry.get(var_name, default_value))

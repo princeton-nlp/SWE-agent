@@ -1,44 +1,56 @@
 import json
 import os
 from pathlib import Path, PurePath
-
-SWE_AGENT_ENV_FILE = Path(os.environ.get("SWE_AGENT_ENV_FILE", "/root/.swe-agent-env"))
-
-
-def read_env(var_name, default_value=None):
-    if not SWE_AGENT_ENV_FILE.exists():
-        SWE_AGENT_ENV_FILE.write_text("{}")
-        return default_value
-    env = json.loads(SWE_AGENT_ENV_FILE.read_text())
-    return env.get(var_name, default_value)
+from typing import Any
 
 
-def write_env(var_name, var_value):
-    if not SWE_AGENT_ENV_FILE.exists():
-        SWE_AGENT_ENV_FILE.write_text("{}")
-    env = json.loads(SWE_AGENT_ENV_FILE.read_text())
-    env[var_name] = var_value
-    SWE_AGENT_ENV_FILE.write_text(json.dumps(env))
+class EnvRegistry:
+    def __init__(self, env_file: Path | None = None):
+        self._env_file = env_file
+
+    @property
+    def env_file(self) -> Path:
+        if self._env_file is None:
+            env_file = Path(os.environ.get("SWE_AGENT_ENV_FILE", "/root/.swe-agent-env"))
+        else:
+            env_file = self._env_file
+        if not env_file.exists():
+            env_file.write_text("{}")
+        return env_file
+
+    def __getitem__(self, key: str) -> str:
+        return json.loads(self.env_file.read_text())[key]
+
+    def get(self, key: str, default_value: Any = None) -> Any:
+        return json.loads(self.env_file.read_text()).get(key, default_value)
+
+    def __setitem__(self, key: str, value: Any):
+        env = json.loads(self.env_file.read_text())
+        env[key] = value
+        self.env_file.write_text(json.dumps(env))
+
+
+registry = EnvRegistry()
 
 
 def get_current_file():
-    return Path(read_env("CURRENT_FILE"))  # type: ignore
+    return Path(registry["CURRENT_FILE"])  # type: ignore
 
 
 def get_current_line():
-    return int(read_env("CURRENT_LINE"))  # type: ignore
+    return int(registry["CURRENT_LINE"])  # type: ignore
 
 
 def get_current_file_with_line_range(file_path: str | PurePath | None = None) -> tuple[Path, int, int]:
     """Returns 0-based index of the first and last line to print."""
     if file_path is None:
-        _spec = read_env("CURRENT_FILE")
+        _spec = registry["CURRENT_FILE"]
         assert _spec, "CURRENT_FILE is not set"
         file_path = Path(_spec)
     else:
         file_path = Path(file_path)
-    current_line = int(read_env("CURRENT_LINE"))  # type: ignore
-    window = int(read_env("WINDOW"))  # type: ignore
+    current_line = int(registry["CURRENT_LINE"])  # type: ignore
+    window = int(registry["WINDOW"])  # type: ignore
     n_lines = file_path.read_text().count("\n") + 1
     return (
         file_path,

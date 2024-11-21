@@ -25,7 +25,6 @@ if not args.file:
 text = args.file.read_text()
 lines = text.splitlines()
 _, first_window_line, last_window_line = get_current_file_with_line_range(args.file)
-print(f"first_window_line: {first_window_line}, last_window_line: {last_window_line}")
 
 if not args.replace_all:
     text_in_window = "\n".join(lines[first_window_line : last_window_line + 1])
@@ -45,5 +44,4 @@ args.file.write_text(new_text)
 
 # Recompute the current window, since we might have more/less lines now
 _, first_window_line, last_window_line = get_current_file_with_line_range(args.file)
-print(f"first_window_line: {first_window_line}, last_window_line: {last_window_line}")
 print_window(args.file, first_window_line, last_window_line)
