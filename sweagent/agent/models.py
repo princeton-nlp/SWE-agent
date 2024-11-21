@@ -334,6 +334,23 @@ class OpenAIModel(BaseModel):
         return response.choices[0].message.content
 
 
+class LlamaBerkeleyModel(OpenAIModel):
+    MODELS = {
+        "llama3.1-70b-instruct-berkeley": {
+            "max_context": 128_000,
+            "cost_per_input_token": 1.0e-6,
+            "cost_per_output_token": 1.0e-6,
+        },
+    }
+    SHORTCUTS = {
+        "berkeley/llama": "llama3.1-70b-instruct-berkeley",
+    }
+
+    def _setup_client(self) -> None:
+        api_base_url: str = keys_config["BERKELEY_API_BASE_URL"]
+        self.client = OpenAI(api_key=keys_config["BERKELEY_API_KEY"], base_url=api_base_url)
+
+
 class DeepSeekModel(OpenAIModel):
     MODELS = {
         "deepseek-coder": {
@@ -1008,6 +1025,8 @@ def get_model(args: ModelArguments, commands: list[Command] | None = None):
         or args.model_name in OpenAIModel.SHORTCUTS
     ):
         return OpenAIModel(args, commands)
+    elif args.model_name.startswith("berkeley"):
+        return LlamaBerkeleyModel(args, commands)
     elif args.model_name.startswith("claude"):
         return AnthropicModel(args, commands)
     elif args.model_name.startswith("bedrock"):
