@@ -1223,7 +1223,7 @@ class SWEEnv(gym.Env):
                 timeout_duration=LONG_TIMEOUT,
             )
 
-    def _get_install_configs(self) -> Optional[dict]:
+    def _get_install_configs(self) -> dict | None:
         """Return config for environment setup"""
         assert self.record is not None  # mypy
         if (

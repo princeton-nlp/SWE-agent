@@ -1197,7 +1197,7 @@ def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token:
         try:
             issue_url = f"https://github.com/{org}/{repo}/issues/{issue_number}"
             if is_github_issue_url(issue_url):
-                issue = get_gh_issue_data(issue_url, token=token)
+                get_gh_issue_data(issue_url, token=token)
                 api = GhApi(token=token)
                 commits = api.issues.list_events(org, repo, int(issue_number))
                 for event in commits:
@@ -1335,7 +1335,7 @@ class PatchFormatter:
         if starts[0] > 1:
             # Count from 1
             out.append(f"[{starts[0]-1} lines above omitted]")
-        last_stop: Optional[int] = None
+        last_stop: int | None = None
         lines = text.splitlines()
         for start, stop in zip(starts, stops):
             assert start >= 1
