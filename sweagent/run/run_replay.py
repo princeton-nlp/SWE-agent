@@ -92,7 +92,7 @@ class RunReplay:
         return SWEEnv(
             deployment=self.deployment,
             repo=self.repo,
-            startup_commands=[],
+            post_startup_commands=[],
         )
 
     def _get_agent(self) -> Agent:

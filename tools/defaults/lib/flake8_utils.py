@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""This helper command is used to print flake8 output"""
+"""This helper command is used to parse and print flake8 output."""
 
 # ruff: noqa: UP007 UP006 UP035
 

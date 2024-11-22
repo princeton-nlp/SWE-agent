@@ -25,10 +25,9 @@ class EnvironmentConfig(BaseModel):
         default=None,
         description="Repository options.",
     )
-    # fixme: Actually run these
-    startup_commands: list[str] = []
-    """Execute these commands before starting to run the agent. They will be executed in the same
-    shell as the agent."""
+    post_startup_commands: list[str] = []
+    """Execute these commands before starting to run the agent but after all other setup steps.
+    They will be executed in the same shell as the agent."""
 
     # pydantic config
     model_config = ConfigDict(extra="forbid")
@@ -42,15 +41,24 @@ class SWEEnv:
         *,
         deployment: AbstractDeployment,
         repo: Repo | RepoConfig | None,
-        startup_commands: list[str],
+        post_startup_commands: list[str],
         hooks: list[EnvHook] | None = None,
         name: str = "main",
     ):
-        """This class represents the environment in which we solve the tasks."""
+        """This class represents the environment in which we solve the tasks.
+
+        Args:
+            deployment: SWE-ReX deployment instance
+            repo: Repository configuration object, or anything following the `Repo` protocol
+            post_startup_commands: Commands to execute before starting the agent
+            hooks: Environment hooks (used to inject custom functionality)
+                Equivalent to calling `add_hook` for each hook after initialization.
+            name: Name of the environment
+        """
         super().__init__()
         self.deployment = deployment
         self.repo = repo
-        self._startup_commands = startup_commands
+        self._post_startup_commands = post_startup_commands
         self.logger = get_logger("swea-env", emoji="🌱")
         self.name = name
         self.clean_multi_line_functions = lambda x: x
@@ -60,10 +68,14 @@ class SWEEnv:
 
     @classmethod
     def from_config(cls, config: EnvironmentConfig) -> Self:
+        """Create an environment instance from a configuration object.
+        This is the recommended way to create an environment instance, unless you need
+        more flexibility.
+        """
         return cls(
             deployment=get_deployment(config.deployment),
             repo=config.repo,
-            startup_commands=config.startup_commands,
+            post_startup_commands=config.post_startup_commands,
             name=config.name,
         )
 
@@ -80,6 +92,8 @@ class SWEEnv:
         """Start the environment and reset it to a clean state."""
         self._init_deployment()
         self.reset()
+        for command in self._post_startup_commands:
+            self.communicate(command, check=True)
 
     def _copy_repo(self) -> None:
         """Clone/copy repository/codebase in container"""
@@ -205,3 +219,16 @@ class SWEEnv:
 
         path_in_container = f"/{self.repo.repo_name}/{path}"
         return self.communicate(f"cat {str(path_in_container)}")
+
+    def get_env_vars(self) -> dict[str, str]:
+        """Get all environment variables set in the environment."""
+        env_output = self.communicate("env", check=True).strip()
+        if not env_output:
+            return {}
+        return dict(line.split("=", 1) for line in env_output.split("\n"))
+
+    def set_env_variables(self, env_variables: dict[str, str]) -> None:
+        """Set environment variables in the environment."""
+        _env_setters = [f"export {k}={v}" for k, v in env_variables.items()]
+        command = " && ".join(_env_setters)
+        self.communicate(command, check=True)

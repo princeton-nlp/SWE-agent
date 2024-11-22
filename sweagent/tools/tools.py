@@ -189,7 +189,7 @@ class ToolHandler:
 
     def reset(self, env: SWEEnv) -> None:
         self.logger.info("Resetting tools")
-        self._set_env_variables(env)
+        env.set_env_variables(self.config.env_variables)
         env.communicate(" && ".join(self._reset_commands), check=True, timeout=self.config.install_timeout)
 
     async def _upload_bundles(self, env: SWEEnv) -> None:
@@ -216,7 +216,7 @@ class ToolHandler:
 
     def _install_commands(self, env: SWEEnv) -> None:
         """Make sure all commands are available in the container"""
-        self._set_env_variables(env)
+        env.set_env_variables(self.config.env_variables)
         cwd = env.communicate("pwd", check=True).strip()
         asyncio.run(self._upload_bundles(env))
         for bundle in self.config.bundles:
@@ -233,19 +233,8 @@ class ToolHandler:
                 timeout=self.config.install_timeout,
             )
         env.communicate(f"cd {cwd}", check=True)
-        env_vars = self._get_env_vars(env)
+        env_vars = env.get_env_vars()
         asyncio.run(self._check_available_commands(env, env_vars))
-
-    def _get_env_vars(self, env: SWEEnv) -> dict[str, str]:
-        env_output = env.communicate("env", check=True).strip()
-        if not env_output:
-            return {}
-        return dict(line.split("=", 1) for line in env_output.split("\n"))
-
-    def _set_env_variables(self, env: SWEEnv) -> None:
-        _env_setters = [f"export {k}={v}" for k, v in self.config.env_variables.items()]
-        command = " && ".join(_env_setters)
-        env.communicate(command, check=True)
 
     # Getting state
     # -------------
