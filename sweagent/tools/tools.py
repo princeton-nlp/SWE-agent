@@ -237,7 +237,10 @@ class ToolHandler:
         asyncio.run(self._check_available_commands(env, env_vars))
 
     def _get_env_vars(self, env: SWEEnv) -> dict[str, str]:
-        return dict(line.split("=", 1) for line in env.communicate("env", check=True).strip().split("\n"))
+        env_output = env.communicate("env", check=True).strip()
+        if not env_output:
+            return {}
+        return dict(line.split("=", 1) for line in env_output.split("\n"))
 
     def _set_env_variables(self, env: SWEEnv) -> None:
         _env_setters = [f"export {k}={v}" for k, v in self.config.env_variables.items()]

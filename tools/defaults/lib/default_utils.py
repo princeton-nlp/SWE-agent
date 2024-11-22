@@ -85,12 +85,20 @@ class WindowedFile:
         """
 
         Args:
+            path: Path to the file to open.
+            first_line: First line of the display window.
+            window: Number of lines to display.
             exit_on_exception: If False, will raise exception.
                 If true, will print an error message and exit.
 
         Will create file if not found.
 
-        Internal convention: All line numbers are 0-indexed.
+        Internal convention/notes:
+
+        * All line numbers are 0-indexed.
+        * Previously, we used "current_line" for the internal state
+          of the window position, pointing to the middle of the window.
+          Now, we use `first_line` for this purpose (it's simpler this way).
         """
         _path = registry.get_if_none(path, "CURRENT_FILE")
         self._exit_on_exception = exit_on_exception
@@ -180,7 +188,7 @@ class WindowedFile:
         return "\n".join(out_lines)
 
     def set_window_text(self, new_text: str) -> None:
-        """Set window text."""
+        """Replace the text in the current display window."""
         text = self.text.splitlines()
         start, stop = self.line_range
         text[start : stop + 1] = new_text.splitlines()
