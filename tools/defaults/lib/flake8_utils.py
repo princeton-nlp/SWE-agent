@@ -108,4 +108,5 @@ def flake8(file_path: str) -> str:
     if Path(file_path).suffix != ".py":
         return ""
     cmd = registry.get("LINT_COMMAND", "flake8 --isolated --select=F821,F822,F831,E111,E112,E113,E999,E902 {file_path}")
-    return subprocess.check_output(cmd.format(file_path=file_path), shell=True).decode("utf-8")
+    out = subprocess.run(cmd.format(file_path=file_path), shell=True, capture_output=True)
+    return out.stdout.decode()

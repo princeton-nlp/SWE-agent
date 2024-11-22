@@ -43,7 +43,6 @@ This is the original code before your edit
 ------------------------------------------------
 
 Your changes have NOT been applied. Please fix your edit command and try again.
-You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.
 DO NOT re-run the same failed edit command. Running it again will lead to the same error.
 """
 
