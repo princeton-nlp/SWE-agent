@@ -31,12 +31,15 @@ _MULTIPLE_EDITS_SUCCESS_MSG = """Replaced {n_replacements} occurrences. Please r
 
 _LINT_ERROR_TEMPLATE = """
 Your proposed edit has introduced new syntax error(s). Please read this error message carefully and then retry editing the file.
+
 ERRORS:
+
 {errors}
 This is how your edit would have looked if applied
 ------------------------------------------------
 {window_applied}
 ------------------------------------------------
+
 This is the original code before your edit
 ------------------------------------------------
 {window_original}

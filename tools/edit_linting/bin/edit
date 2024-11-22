@@ -1,130 +1,122 @@
-source /root/tools/defaults/lib/utils.sh
+#!/usr/bin/env python3
 
-main() {
-    local CURRENT_FILE=$(_read_env CURRENT_FILE)
-    local CURRENT_LINE=$(_read_env CURRENT_LINE)
-    local WINDOW=$(_read_env WINDOW)
-    local OVERLAP=$(_read_env OVERLAP)
+import argparse
+import sys
 
-    if [ -z "$CURRENT_FILE" ]
-    then
-        echo 'No file open. Use the `open` command first.'
-        return
-    fi
+try:
+    from sweagent import TOOLS_DIR
+except ImportError:
+    pass
+else:
+    default_lib = TOOLS_DIR / "defaults" / "lib"
+    assert default_lib.is_dir()
+    sys.path.append(str(default_lib))
 
-    if [ $# -eq 0 ]; then
-        echo "Usage: edit <start_line>:<end_line>"
-        echo "<replacement_text>"
-        echo "end_of_edit"
-        return
-    fi
+from default_utils import FileNotOpened, WindowedFile  # type: ignore
+from flake8_utils import flake8, format_flake8_output  # type: ignore
 
-    local start_line="$(echo $1: | cut -d: -f1)"
-    local end_line="$(echo $1: | cut -d: -f2)"
+_USAGE_MSG = """Usage: edit <start_line>:<end_line>
+<replacement_text>
+end_of_edit"""
 
-    if [ -z "$start_line" ] || [ -z "$end_line" ]
-    then
-        echo "Usage: edit <start_line>:<end_line>"
-        return
-    fi
+_EDIT_SUCCESS_MSG = """File updated. Please review the changes and make sure they are correct
+(correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
 
-    local re='^[0-9]+$'
-    if ! [[ $start_line =~ $re ]]; then
-        echo "Usage: edit <start_line>:<end_line>"
-        echo "Error: start_line must be a number"
-        return
-    fi
-    if ! [[ $end_line =~ $re ]]; then
-        echo "Usage: edit <start_line>:<end_line>"
-        echo "Error: end_line must be a number"
-        return
-    fi
+_LINT_ERROR_TEMPLATE = """Your proposed edit has introduced new syntax error(s). Please read this error message carefully and then retry editing the file.
 
-    local linter_cmd="flake8 --isolated --select=F821,F822,F831,E111,E112,E113,E999,E902"
-    local linter_before_edit=$($linter_cmd "$CURRENT_FILE" 2>&1)
+ERRORS:
+{errors}
 
-    # Bash array starts at 0, so let's adjust
-    local start_line=$((start_line - 1))
-    local end_line=$((end_line))
+This is how your edit would have looked if applied
+------------------------------------------------
+{window_applied}
+------------------------------------------------
 
-    local line_count=0
-    local replacement=()
-    while IFS= read -r line
-    do
-        replacement+=("$line")
-        ((line_count++))
-    done
+This is the original code before your edit
+------------------------------------------------
+{window_original}
+------------------------------------------------
 
-    # Create a backup of the current file
-    cp "$CURRENT_FILE" "/root/$(basename "$CURRENT_FILE")_backup"
+Your changes have NOT been applied. Please fix your edit command and try again.
+DO NOT re-run the same failed edit command. Running it again will lead to the same error."""
 
-    # Read the file line by line into an array
-    mapfile -t lines < "$CURRENT_FILE"
-    local new_lines=("${lines[@]:0:$start_line}" "${replacement[@]}" "${lines[@]:$((end_line))}")
-    # Write the new stuff directly back into the original file
-    printf "%s\n" "${new_lines[@]}" >| "$CURRENT_FILE"
 
-    # Run linter
-    if [[ $CURRENT_FILE == *.py ]]; then
-        _lint_output=$($linter_cmd "$CURRENT_FILE" 2>&1)
-        lint_output=$(_split_string "$_lint_output" "$linter_before_edit" "$((start_line+1))" "$end_line" "$line_count")
-    else
-        # do nothing
-        lint_output=""
-    fi
+def get_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("line_range", help="Line range in format start:end")
+    parser.add_argument("replacement_text", help="Text to insert", nargs="?")
+    return parser
 
-    # if there is no output, then the file is good
-    if [ -z "$lint_output" ]; then
-        _write_env CURRENT_LINE $start_line
-        _constrain_line
-        _print
 
-        echo "File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary."
-    else
-        echo "Your proposed edit has introduced new syntax error(s). Please read this error message carefully and then retry editing the file."
-        echo ""
-        echo "ERRORS:"
-        echo "$lint_output"
-        echo ""
+def parse_line_range(line_range: str) -> tuple[int, int]:
+    try:
+        start, end = map(int, line_range.split(":"))
+        return start - 1, end  # Convert to 0-based indexing for start line
+    except ValueError:
+        print(_USAGE_MSG)
+        exit(1)
 
-        # Save original values
-        original_current_line=$CURRENT_LINE
-        original_window=$WINDOW
 
-        # Update values
-        _write_env CURRENT_LINE $(( (line_count / 2) + start_line )) # Set to "center" of edit
-        _write_env WINDOW $((line_count + 10)) # Show +/- 5 lines around edit
+def main(line_range: str, replacement_text: str | None = None):
+    # Handle file opening
+    try:
+        wf = WindowedFile(exit_on_exception=False)
+    except FileNotOpened:
+        print("No file opened. Use the `open` command first.")
+        exit(1)
 
-        echo "This is how your edit would have looked if applied"
-        echo "-------------------------------------------------"
-        _constrain_line
-        _print
-        echo "-------------------------------------------------"
-        echo ""
+    # Parse line range
+    start_line, end_line = parse_line_range(line_range)
 
-        # Restoring CURRENT_FILE to original contents.
-        cp "/root/$(basename "$CURRENT_FILE")_backup" "$CURRENT_FILE"
+    # Read replacement text from stdin if not provided as argument
+    if replacement_text is None:
+        replacement_lines = []
+        while True:
+            try:
+                line = input()
+                if line == "end_of_edit":
+                    break
+                replacement_lines.append(line)
+            except EOFError:
+                break
+        replacement_text = "\n".join(replacement_lines)
 
-        _write_env CURRENT_LINE $(( ((end_line - start_line + 1) / 2) + start_line ))
-        _write_env WINDOW $((end_line - start_line + 10))
+    if not replacement_text:
+        print(_USAGE_MSG)
+        exit(1)
 
-        echo "This is the original code before your edit"
-        echo "-------------------------------------------------"
-        _constrain_line
-        _print
-        echo "-------------------------------------------------"
+    # Get pre-edit linting errors
+    pre_edit_lint = flake8(wf.path)
 
-        # Restore original values
-        _write_env CURRENT_LINE $original_current_line
-        _write_env WINDOW $original_window
+    # Perform the edit
+    wf.set_window_text(replacement_text, line_range=(start_line, end_line))
 
-        echo "Your changes have NOT been applied. Please fix your edit command and try again."
-        echo "You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code."
-        echo "DO NOT re-run the same failed edit command. Running it again will lead to the same error."
-    fi
+    # Check for new linting errors
+    post_edit_lint = flake8(wf.path)
+    new_flake8_output = format_flake8_output(
+        post_edit_lint,
+        previous_errors_string=pre_edit_lint,
+        replacement_window=(start_line, end_line),
+        replacement_n_lines=len(replacement_text.splitlines()),
+    )
 
-    # Remove backup file
-    rm -f "/root/$(basename "$CURRENT_FILE")_backup"
-}
+    if new_flake8_output:
+        # Show error and revert changes
+        with_edits = wf.get_window_text(line_numbers=True, status_line=True, pre_post_line=True)
+        wf.undo_edit()
+        without_edits = wf.get_window_text(line_numbers=True, status_line=True, pre_post_line=True)
+        print(
+            _LINT_ERROR_TEMPLATE.format(
+                errors=new_flake8_output, window_applied=with_edits, window_original=without_edits
+            )
+        )
+        exit(1)
 
-main "$@"
+    # Success - update window position and show result
+    wf.goto(start_line, mode="top")
+    print(_EDIT_SUCCESS_MSG)
+    wf.print_window()
+
+
+if __name__ == "__main__":
+    main(**vars(get_parser().parse_args()))

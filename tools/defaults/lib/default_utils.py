@@ -187,10 +187,18 @@ class WindowedFile:
                 out_lines.append(f"({self.n_lines - end_line - 1} more lines below)")
         return "\n".join(out_lines)
 
-    def set_window_text(self, new_text: str) -> None:
-        """Replace the text in the current display window."""
+    def set_window_text(self, new_text: str, *, line_range: tuple[int, int] | None = None) -> None:
+        """Replace the text in the current display window with a new string.
+
+        Args:
+            line_range: Range of lines to replace.
+                If None, we use the current window.
+        """
         text = self.text.splitlines()
-        start, stop = self.line_range
+        if line_range is not None:
+            start, stop = line_range
+        else:
+            start, stop = self.line_range
         text[start : stop + 1] = new_text.splitlines()
         self.text = "\n".join(text)
 
