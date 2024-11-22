@@ -1,12 +1,18 @@
-source /root/tools/defaults/lib/utils.sh
+#!/usr/bin/env python3
 
-main() {
-    local CURRENT_FILE=$(_read_env CURRENT_FILE)
-    if [ -z "$CURRENT_FILE" ]; then
-        echo '{"open_file": "n/a", "working_dir": "'$PWD'"}';
-    else
-        echo '{"open_file": "'$(realpath "$CURRENT_FILE")'", "working_dir": "'$PWD'"}';
-    fi
-}
+import json
+import os
+from pathlib import Path
 
-main "$@"
+from default_utils import registry  # type: ignore
+
+
+def main():
+    current_file = registry.get("CURRENT_FILE")
+    open_file = "n/a" if not current_file else str(Path(current_file).resolve())
+    state = {"open_file": open_file, "working_dir": os.getcwd()}
+
+    print(json.dumps(state))
+
+if __name__ == "__main__":
+    main()
