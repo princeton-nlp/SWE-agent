@@ -1,33 +1,26 @@
 #!/usr/bin/env python3
 
 import argparse
-from pathlib import Path
 
-from default_utils import get_current_file, get_current_file_with_line_range, print_window  # type: ignore
-
-current_file = get_current_file()
+from default_utils import FileNotOpened, WindowedFile  # type: ignore
 
 parser = argparse.ArgumentParser()
 parser.add_argument("search", type=str)
 parser.add_argument("replace", type=str)
-parser.add_argument("-f", "--file", type=Path, default=Path(current_file))
 parser.add_argument("--replace-all", action="store_true")
 args = parser.parse_args()
 
-# Turn \\n into \n etc., i.e., undo the escaping
-args.replace = args.replace.encode("utf8").decode("unicode_escape")
 
-if not args.file:
-    print("No file specified. Either `open` a file first or specify a file with `-f`.")
+try:
+    current_file = WindowedFile()
+except FileNotOpened:
+    print("No file opened. Either `open` a file first.")
     exit(1)
 
-
-text = args.file.read_text()
-lines = text.splitlines()
-_, first_window_line, last_window_line = get_current_file_with_line_range(args.file)
-
+# Turn \\n into \n etc., i.e., undo the escaping
+args.replace = args.replace.encode("utf8").decode("unicode_escape")
 if not args.replace_all:
-    text_in_window = "\n".join(lines[first_window_line : last_window_line + 1])
+    text_in_window = current_file.get_window_text()
     new_text_in_window = text_in_window.replace(args.search, args.replace, 1)
     if text_in_window == new_text_in_window:
         print(
@@ -36,12 +29,9 @@ if not args.replace_all:
             "If you want to replace all occurrences, use the `--replace-all` flag."
         )
         exit(0)
-    new_text = "\n".join(lines[:first_window_line] + [new_text_in_window] + lines[last_window_line + 1 :])
+    current_file.set_window_text(new_text_in_window)
 else:
-    new_text = text.replace(args.search, args.replace)
+    new_text = current_file.text.replace(args.search, args.replace)
+    current_file.text = new_text
 
-args.file.write_text(new_text)
-
-# Recompute the current window, since we might have more/less lines now
-_, first_window_line, last_window_line = get_current_file_with_line_range(args.file)
-print_window(args.file, first_window_line, last_window_line)
+current_file.print_window()
