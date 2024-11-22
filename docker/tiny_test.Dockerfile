@@ -6,5 +6,10 @@ ENV TZ=Etc/UTC
 WORKDIR /
 
 RUN pip install pipx
-RUN pipx ensurepath
 RUN pipx install 0fdb5604
+RUN pip install flake8
+RUN pipx ensurepath
+
+SHELL ["/bin/bash", "-c"]
+# This is where pipx installs things
+ENV PATH="$PATH:/root/.local/bin/"
