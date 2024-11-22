@@ -47,18 +47,18 @@ def test_windowed_file(windowed_file):
     assert wfile.window == 10
     assert wfile.n_lines == 100
     a, b = wfile.line_range
-    assert b - a == wfile.window
-    assert wfile.line_range == (10, 20)
+    assert b - a == wfile.window - 1
+    assert wfile.line_range == (10, 19)
     wfile.print_window()
     wfile.replace_in_window("10", "Hello, world!")
     assert wfile.n_lines == 100
-    assert wfile.line_range == (7, 17)
+    assert wfile.line_range == (7, 16)
     wfile.first_line = 50
     wfile.print_window()
     wfile.replace_in_window("50", "Hello, world!")
     wfile.print_window()
     # Line 50 is now the 2nd line of the new window
-    assert wfile.line_range == (47, 57)
+    assert wfile.line_range == (47, 56)
     with pytest.raises(default_utils.TextNotFound):
         wfile.replace_in_window("asdf", "Hello, world!")
 
@@ -119,8 +119,7 @@ _DEFAULT_WINDOW_OUTPUT = """[File: {path} (100 lines total)]
 18:17
 19:18
 20:19
-21:20
-(79 more lines below)
+(80 more lines below)
 """
 
 

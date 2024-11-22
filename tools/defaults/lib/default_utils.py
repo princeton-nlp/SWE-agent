@@ -151,12 +151,13 @@ class WindowedFile:
 
     @property
     def line_range(self) -> tuple[int, int]:
-        """Return first and last line (inclusive) of the window.
-        `line_range[1] - line_range[0] == window` as long as there are
+        """Return first and last line (inclusive) of the display window, such
+        that exactly `window` many lines are displayed.
+        This means `line_range[1] - line_range[0] == window-1` as long as there are
         at least `window` lines in the file. `first_line` does the handling
         of making sure that we don't go out of bounds.
         """
-        return self.first_line, min(self.first_line + self.window, self.n_lines - 1)
+        return self.first_line, min(self.first_line + self.window - 1, self.n_lines - 1)
 
     def get_window_text(
         self, *, line_numbers: bool = False, status_line: bool = False, pre_post_line: bool = False
