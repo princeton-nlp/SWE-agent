@@ -1,24 +1,15 @@
 #!/usr/bin/env python3
 
-"""This helper command is used to print flake8 output
-
-Usage:
-    python _split_string.py <flake8_output>
-    python _split_string.py <flake8_output> <previous_errors> <edit_window_start> <edit_window_end> <n_lines>
-
-Where:
-    <flake8_output> is the output of flake8
-    <previous_errors> is the previous errors as a string
-    <edit_window_start> is the start of the edit window
-    <edit_window_end> is the end of the edit window
-    <n_lines> is the number of lines added in the edit
-"""
+"""This helper command is used to print flake8 output"""
 
 # ruff: noqa: UP007 UP006 UP035
 
-import sys
+import subprocess
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Optional, Tuple
+
+from default_utils import registry
 
 
 @dataclass
@@ -112,17 +103,9 @@ def format_flake8_output(
     return "\n".join(lines)
 
 
-if __name__ == "__main__":
-    if len(sys.argv) == 2:
-        print(format_flake8_output(sys.argv[1]))
-    elif len(sys.argv) == 6:
-        window = (int(sys.argv[3]), int(sys.argv[4]))
-        n_lines = int(sys.argv[5])
-        print(
-            format_flake8_output(
-                sys.argv[1], previous_errors_string=sys.argv[2], replacement_window=window, replacement_n_lines=n_lines
-            )
-        )
-    else:
-        msg = "Invalid number of arguments. Must be 1 or 5."
-        raise ValueError(msg)
+def flake8(file_path: str) -> str:
+    """Run flake8 on a given file and return the output as a string"""
+    if Path(file_path).suffix != ".py":
+        return ""
+    cmd = registry.get("LINT_COMMAND", "flake8 --isolated --select=F821,F822,F831,E111,E112,E113,E999,E902 {file_path}")
+    return subprocess.check_output(cmd.format(file_path=file_path), shell=True).decode("utf-8")

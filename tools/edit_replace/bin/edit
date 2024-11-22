@@ -2,43 +2,123 @@
 
 import argparse
 
+try:
+    from sweagent import TOOLS_DIR
+except ImportError:
+    pass
+else:
+    import sys
+
+    default_lib = TOOLS_DIR / "defaults" / "lib"
+    assert default_lib.is_dir()
+    sys.path.append(str(default_lib))
+
 from default_utils import FileNotOpened, TextNotFound, WindowedFile  # type: ignore
+from flake8_utils import flake8, format_flake8_output  # type: ignore
 
-parser = argparse.ArgumentParser()
-parser.add_argument("search", type=str)
-parser.add_argument("replace", type=str)
-parser.add_argument("--replace-all", action="store_true")
-args = parser.parse_args()
-
-
-_NOT_FOUND_IN_WINDOW_MSG = f"""Text {args.search!r} not found in displayed lines.
+_NOT_FOUND_IN_WINDOW_MSG = """Text {search!r} not found in displayed lines.
 Note: By default, we only replace the first occurrence in the lines that are currently visible in the editor.
 If you want to replace all occurrences in and outside of the visible lines, use the `--replace-all` flag.
 """
 
 _NO_CHANGES_MADE_MSG = """Your search and replace strings are the same. No changes were made."""
 
-try:
-    wf = WindowedFile(exit_on_exception=False)
-except FileNotOpened:
-    print("No file opened. Either `open` a file first.")
-    exit(1)
+_SINGLE_EDIT_SUCCESS_MSG = """Text replaced. Please review the changes and make sure they are correct
+(correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
 
-# Turn \\n into \n etc., i.e., undo the escaping
-# args.replace = args.replace.encode("utf8").decode("unicode_escape")
+_MULTIPLE_EDITS_SUCCESS_MSG = """Replaced {n_replacements} occurrences. Please review the changes and make sure they are correct
+(correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
 
-if args.search == args.replace:
-    print(_NO_CHANGES_MADE_MSG)
-    exit(2)
+_LINT_ERROR_TEMPLATE = """
+Your proposed edit has introduced new syntax error(s). Please read this error message carefully and then retry editing the file.
+ERRORS:
+{errors}
+This is how your edit would have looked if applied
+------------------------------------------------
+{window_applied}
+------------------------------------------------
+This is the original code before your edit
+------------------------------------------------
+{window_original}
+------------------------------------------------
 
-if not args.replace_all:
+Your changes have NOT been applied. Please fix your edit command and try again.
+You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.
+DO NOT re-run the same failed edit command. Running it again will lead to the same error.
+"""
+
+
+def get_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("search", type=str)
+    parser.add_argument("replace", type=str)
+    parser.add_argument("--replace-all", action="store_true")
+    return parser
+
+
+def main(search: str, replace: str, replace_all: bool):
     try:
-        wf.replace_in_window(args.search, args.replace, n_replacements=1)
-    except TextNotFound:
-        print(_NOT_FOUND_IN_WINDOW_MSG)
-        exit(3)
-else:
-    # todo: Give overview of all replaced occurrences
-    wf.replace(args.search, args.replace)
+        wf = WindowedFile(exit_on_exception=False)
+    except FileNotOpened:
+        print("No file opened. Either `open` a file first.")
+        exit(1)
 
-wf.print_window()
+    # Turn \\n into \n etc., i.e., undo the escaping
+    # args.replace = args.replace.encode("utf8").decode("unicode_escape")
+
+    if search == replace:
+        print(_NO_CHANGES_MADE_MSG)
+        exit(2)
+
+    pre_edit_lint = flake8(wf.path)
+
+    try:
+        if not replace_all:
+            replacement_info = wf.replace_in_window(search, replace)
+            # todo: Should warn if more than one occurrence was found?
+        else:
+            # todo: Give overview of all replaced occurrences/number of replacements
+            replacement_info = wf.replace(search, replace)
+    except TextNotFound:
+        print(_NOT_FOUND_IN_WINDOW_MSG.format(search=search))
+        exit(3)
+
+    post_edit_lint = flake8(wf.path)
+
+    if not replace_all:
+        # Try to filter out pre-existing errors
+        replacement_window = (
+            replacement_info.first_replaced_line,
+            replacement_info.first_replaced_line + replacement_info.n_search_lines,
+        )
+        new_flake8_output = format_flake8_output(
+            post_edit_lint,
+            previous_errors_string=pre_edit_lint,
+            replacement_window=replacement_window,
+            replacement_n_lines=replacement_info.n_replace_lines,
+        )
+    else:
+        # Cannot easily compare the error strings, because line number changes are hard to keep track of
+        # So we show all linter errors.
+        new_flake8_output = format_flake8_output(post_edit_lint)
+
+    if new_flake8_output:
+        with_edits = wf.get_window_text(line_numbers=True, status_line=True, pre_post_line=True)
+        wf.undo_edit()
+        without_edits = wf.get_window_text(line_numbers=True, status_line=True, pre_post_line=True)
+        print(
+            _LINT_ERROR_TEMPLATE.format(
+                errors=new_flake8_output, window_applied=with_edits, window_original=without_edits
+            )
+        )
+        exit(4)
+    if not replace_all:
+        print(_SINGLE_EDIT_SUCCESS_MSG)
+    else:
+        print(_MULTIPLE_EDITS_SUCCESS_MSG.format(n_replacements=replacement_info.n_replacements))
+
+    wf.print_window()
+
+
+if __name__ == "__main__":
+    main(**vars(get_parser().parse_args()))

@@ -139,6 +139,8 @@ def test_print_window_new_file(with_tmp_env_file, capsys):
     new_file = with_tmp_env_file.parent.joinpath(registry["CURRENT_FILE"])
     new_file.write_text("\n")
     wfile = default_utils.WindowedFile()
+    assert wfile.n_lines == 1
+    assert wfile.line_range == (0, 0)
     wfile.print_window()
     captured = capsys.readouterr()
     print(captured.out)
