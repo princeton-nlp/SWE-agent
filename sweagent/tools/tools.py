@@ -202,44 +202,42 @@ class ToolHandler:
             )
         )
 
+    async def _is_command_available(self, env, command: str, env_vars: dict[str, str]) -> None:
+        try:
+            env.deployment.runtime.execute(RexCommand(command=f"which {command}", shell=True, check=True, env=env_vars))
+        except Exception:
+            msg = f"Tool {command} is not available in the container."
+            raise RuntimeError(msg) from None
+
+    async def _check_available_commands(self, env: SWEEnv, env_vars: dict[str, str]) -> None:
+        await asyncio.gather(
+            *(self._is_command_available(env, command.name, env_vars) for command in self.config.commands)
+        )
+
     def _install_commands(self, env: SWEEnv) -> None:
         """Make sure all commands are available in the container"""
         self._set_env_variables(env)
         cwd = env.communicate("pwd", check=True).strip()
         asyncio.run(self._upload_bundles(env))
         for bundle in self.config.bundles:
-            env.communicate(f"export PATH=$PATH:/root/tools/{bundle.path.name}/bin", check=True)
-            asyncio.run(
-                env.deployment.runtime.execute(
-                    RexCommand(command=f"chmod +x /root/tools/{bundle.path.name}/bin/*", shell=True, check=False)
-                )
-            )  # check false because bin might not exist
+            cmds = [
+                f"export PATH=$PATH:/root/tools/{bundle.path.name}/bin",
+                f"chmod +x /root/tools/{bundle.path.name}/bin/*",
+            ]
             if (bundle.path / "install.sh").exists():
-                env.communicate(
-                    f"cd /root/tools/{bundle.path.name}; source install.sh",
-                    check=True,
-                    timeout=self.config.install_timeout,
-                )
-            # always make all files in bin executable
-            asyncio.run(
-                env.deployment.runtime.execute(
-                    RexCommand(command=f"chmod +x /root/tools/{bundle.path.name}/bin/*", shell=True, check=True)
-                )
+                cmds.append(f"cd /root/tools/{bundle.path.name} && source install.sh")
+            cmds.append(f"chmod +x /root/tools/{bundle.path.name}/bin/*")
+            env.communicate(
+                " && ".join(cmds),
+                check=True,
+                timeout=self.config.install_timeout,
             )
         env.communicate(f"cd {cwd}", check=True)
-        # check that all commands are available
-        missing_tools = []
-        for command in self.config.commands:
-            try:
-                env.communicate(f"which {command.name}", check=True)
-            except Exception:
-                missing_tools.append(command.name)
-        if missing_tools:
-            msg = (
-                f"The following tools were included in the tool config but are not available in the container: "
-                f"{missing_tools}. Please review the tool configs."
-            )
-            raise RuntimeError(msg)
+        env_vars = self._get_env_vars(env)
+        asyncio.run(self._check_available_commands(env, env_vars))
+
+    def _get_env_vars(self, env: SWEEnv) -> dict[str, str]:
+        return dict(line.split("=", 1) for line in env.communicate("env", check=True).strip().split("\n"))
 
     def _set_env_variables(self, env: SWEEnv) -> None:
         _env_setters = [f"export {k}={v}" for k, v in self.config.env_variables.items()]
