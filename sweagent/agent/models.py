@@ -20,9 +20,15 @@ from tenacity import (
     wait_random_exponential,
 )
 
+from sweagent import REPO_ROOT
 from sweagent.tools.tools import ToolConfig
 from sweagent.types import History, HistoryItem
 from sweagent.utils.log import get_logger
+
+try:
+    import readline  # noqa: F401
+except ImportError:
+    readline = None
 
 logger = get_logger("swea-lm", emoji="🤖")
 
@@ -173,10 +179,27 @@ class HumanModel(AbstractModel):
         self.multi_line_command_endings = {
             command.name: command.end_name for command in tools.commands if command.end_name is not None
         }
+        self._readline_histfile = REPO_ROOT / ".swe-agent-human-history"
+        self._load_readline_history()
+
+    def _load_readline_history(self) -> None:
+        """Load autocomplete history from file"""
+        if readline is None:
+            return
+        if self._readline_histfile.is_file():
+            logger.debug(f"Loading readline history from {self._readline_histfile}")
+            readline.read_history_file(self._readline_histfile)
+
+    def _save_readline_history(self) -> None:
+        """Save autocomplete history to file"""
+        if readline is None:
+            return
+        readline.write_history_file(self._readline_histfile)
 
     def _query(self, history: History, action_prompt: str = "> ") -> dict:
         """Logic for handling user input to pass to SWEEnv"""
         action = input(action_prompt)
+        self._save_readline_history()
         command_name = action.split()[0] if action.strip() else ""
 
         # Special handling for multi-line input actions (i.e. edit)
