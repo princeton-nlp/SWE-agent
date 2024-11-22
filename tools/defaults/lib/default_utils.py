@@ -133,6 +133,7 @@ class WindowedFile:
         )
         self.offset_multiplier = 1 / 6
         self._original_text = self.text
+        self._original_first_line = self.first_line
 
     @property
     def first_line(self) -> int:
@@ -140,6 +141,7 @@ class WindowedFile:
 
     @first_line.setter
     def first_line(self, value: int | float):
+        self._original_first_line = self.first_line
         value = int(value)
         self._first_line = max(0, min(value, self.n_lines - 1 - self.window))
         registry["FIRST_LINE"] = self.first_line
@@ -280,3 +282,4 @@ class WindowedFile:
 
     def undo_edit(self):
         self.text = self._original_text
+        self.first_line = self._original_first_line
