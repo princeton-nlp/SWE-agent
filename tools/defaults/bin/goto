@@ -1,43 +1,36 @@
-#!/usr/bin/env bash
-set -euo pipefail
-source /root/tools/defaults/lib/utils.sh
+#!/usr/bin/env python3
+import sys
 
-main() {
-    local CURRENT_FILE=$(_read_env CURRENT_FILE)
-    local WINDOW=$(_read_env WINDOW)
+from default_utils import WindowedFile  # type: ignore
 
-    if [ $# -gt 1 ]; then
-        echo "goto allows only one line number at a time."
-        exit 1
-    fi
-    if [ -z "$CURRENT_FILE" ]
-    then
-        echo "No file open. Use the open command first."
-        exit 1
-    fi
-    if [ -z "$1" ]
-    then
-        echo "Usage: goto <line>"
-        exit 1
-    fi
-    if ! [[ $1 =~ ^[0-9]+$ ]]
-    then
-        echo "Usage: goto <line>"
-        echo "Error: <line> must be a number"
-        exit 1
-    fi
-    local max_line=$(awk 'END {print NR}' "$CURRENT_FILE")
-    if [ $1 -gt $max_line ]
-    then
-        echo "Error: <line> must be less than or equal to $max_line"
-        exit 1
-    fi
-    local OFFSET=$((WINDOW / 6))
-    local line_number=$(( $1 + WINDOW / 2 - OFFSET ))
-    line_number=$(( line_number > 1 ? line_number : 1 ))  # Ensure line_number is at least 1
-    _write_env CURRENT_LINE $line_number || exit 1
-    _constrain_line || exit 1
-    _print || exit 1
-}
 
-main "$@"
+def main(args: list[str]) -> int:
+    if len(args) > 1:
+        print("goto allows only one line number at a time.")
+        return 1
+
+    if not args:
+        print("Usage: goto <line>")
+        return 1
+
+    try:
+        line_number = int(args[0])
+    except ValueError:
+        print("Usage: goto <line>")
+        print("Error: <line> must be a number")
+        return 1
+
+    wf = WindowedFile()
+
+    if line_number > wf.n_lines:
+        print(f"Error: <line> must be less than or equal to {wf.n_lines}")
+        return 1
+
+    # Convert from 1-based line numbers (user input) to 0-based (internal representation)
+    wf.goto(line_number - 1, mode="top")
+    wf.print_window()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

@@ -2,7 +2,7 @@
 
 import argparse
 
-from default_utils import FileNotOpened, WindowedFile  # type: ignore
+from default_utils import FileNotOpened, TextNotFound, WindowedFile  # type: ignore
 
 parser = argparse.ArgumentParser()
 parser.add_argument("search", type=str)
@@ -11,27 +11,34 @@ parser.add_argument("--replace-all", action="store_true")
 args = parser.parse_args()
 
 
+_NOT_FOUND_IN_WINDOW_MSG = f"""Text {args.search!r} not found in displayed lines.
+Note: By default, we only replace the first occurrence in the lines that are currently visible in the editor.
+If you want to replace all occurrences in and outside of the visible lines, use the `--replace-all` flag.
+"""
+
+_NO_CHANGES_MADE_MSG = """Your search and replace strings are the same. No changes were made."""
+
 try:
-    current_file = WindowedFile()
+    wf = WindowedFile(exit_on_exception=False)
 except FileNotOpened:
     print("No file opened. Either `open` a file first.")
     exit(1)
 
 # Turn \\n into \n etc., i.e., undo the escaping
-args.replace = args.replace.encode("utf8").decode("unicode_escape")
-if not args.replace_all:
-    text_in_window = current_file.get_window_text()
-    new_text_in_window = text_in_window.replace(args.search, args.replace, 1)
-    if text_in_window == new_text_in_window:
-        print(
-            "No changes made. Please make sure that your search and replace strings are correct. "
-            "Note: By default, we only replace the first occurrence in the lines that are currently visible in the editor. "
-            "If you want to replace all occurrences, use the `--replace-all` flag."
-        )
-        exit(0)
-    current_file.set_window_text(new_text_in_window)
-else:
-    new_text = current_file.text.replace(args.search, args.replace)
-    current_file.text = new_text
+# args.replace = args.replace.encode("utf8").decode("unicode_escape")
 
-current_file.print_window()
+if args.search == args.replace:
+    print(_NO_CHANGES_MADE_MSG)
+    exit(2)
+
+if not args.replace_all:
+    try:
+        wf.replace_in_window(args.search, args.replace, n_replacements=1)
+    except TextNotFound:
+        print(_NOT_FOUND_IN_WINDOW_MSG)
+        exit(3)
+else:
+    # todo: Give overview of all replaced occurrences
+    wf.replace(args.search, args.replace)
+
+wf.print_window()

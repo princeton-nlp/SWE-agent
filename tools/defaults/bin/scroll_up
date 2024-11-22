@@ -1,22 +1,13 @@
-#!/usr/bin/env bash
-set -euo pipefail
-source /root/tools/defaults/lib/utils.sh
+#!/usr/bin/env python3
 
-main() {
-    local CURRENT_FILE=$(_read_env CURRENT_FILE)
-    local CURRENT_LINE=$(_read_env CURRENT_LINE)
-    local WINDOW=$(_read_env WINDOW)
-    local OVERLAP=$(_read_env OVERLAP)
+from default_utils import WindowedFile  # type: ignore
 
-    if [ -z "$CURRENT_FILE" ]
-    then
-        echo "No file open. Use the open command first."
-        exit 1
-    fi
-    _write_env CURRENT_LINE $((CURRENT_LINE - WINDOW + OVERLAP)) || exit 1
-    _constrain_line || exit 1
-    _print || exit 1
-    _scroll_warning_message || exit 1
-}
 
-main "$@"
+def main():
+    wf = WindowedFile()
+    wf.scroll(-wf.window)
+    wf.print_window()
+
+
+if __name__ == "__main__":
+    main()

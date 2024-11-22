@@ -1,24 +1,27 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env python3
+import sys
+from pathlib import Path
 
-main() {
-    local filename="${1:-}"
-    if [ -z "${filename}" ]; then
-        echo "Usage: create <filename>"
-        exit 1
-    fi
+from default_utils import WindowedFile  # type: ignore
 
-    # Check if the file already exists
-    if [ -e "${filename}" ]; then
-        echo "Error: File '${filename}' already exists."
-        open "${filename}" || exit 1
-        exit 1
-    fi
 
-    # Create the file an empty new line
-    printf "\n" > "${filename}"
-    # Use the existing open command to open the created file
-    open "${filename}" || exit 1
-}
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: create <filename>")
+        sys.exit(1)
 
-main "$@"
+    path = Path(sys.argv[1])
+
+    if path.exists():
+        print(f"Warning: File '{path}' already exists.")
+        sys.exit(1)
+
+    path.write_text("\n")
+
+    wfile = WindowedFile(path=path)
+    wfile.current_line = 0
+    wfile.print_window()
+
+
+if __name__ == "__main__":
+    main()
