@@ -73,6 +73,15 @@ class ReplacementInfo:
     """Number of replacements made."""
 
 
+@dataclass
+class InsertInfo:
+    first_inserted_line: int
+    """Line number of the beginning of the first search hit."""
+
+    n_lines_added: int
+    """Number of lines added."""
+
+
 class WindowedFile:
     def __init__(
         self,
@@ -102,7 +111,7 @@ class WindowedFile:
         """
         _path = registry.get_if_none(path, "CURRENT_FILE")
         self._exit_on_exception = exit_on_exception
-        if _path is None:
+        if not _path:
             if self._exit_on_exception:
                 print("No file open. Use the open command first.")
                 exit(1)
@@ -124,6 +133,7 @@ class WindowedFile:
         self.window = int(registry.get_if_none(window, "WINDOW"))
         self.overlap = int(registry.get("OVERLAP", 0))
         # Ensure that we get a valid current line by using the setter
+        self._first_line = 0
         self.first_line = int(
             registry.get_if_none(
                 first_line,
@@ -283,3 +293,26 @@ class WindowedFile:
     def undo_edit(self):
         self.text = self._original_text
         self.first_line = self._original_first_line
+
+    def insert(
+        self, text: str, line: int | None = None, *, reset_first_line: Literal["top", "keep"] = "top"
+    ) -> InsertInfo:
+        if line is None:
+            if self.text.endswith("\n"):
+                line = self.n_lines
+                new_text = self.text + text
+            else:
+                line = self.n_lines + 1
+                new_text = self.text + "\n" + text
+        elif line < 0:
+            new_text = text + "\n" + self.text
+        else:
+            _lines = self.text.splitlines()
+            lines = _lines[: line + 1] + text.splitlines() + _lines[line + 1 :]
+            new_text = "\n".join(lines)
+        self.text = new_text
+        if reset_first_line == "keep":
+            pass
+        else:
+            self.goto(line, mode=reset_first_line)
+        return InsertInfo(first_inserted_line=line, n_lines_added=len(text.splitlines()))

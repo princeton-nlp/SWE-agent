@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+
+import argparse
+
+from default_utils import FileNotOpened, WindowedFile  # type: ignore
+from flake8_utils import flake8, format_flake8_output  # type: ignore
+
+_SINGLE_EDIT_SUCCESS_MSG = """Text appended. Please review the changes and make sure they are correct
+(correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
+
+_LINT_ERROR_TEMPLATE = """ Your proposed edit has introduced new syntax error(s). Please read this error message carefully and then retry editing the file.
+
+ERRORS:
+
+{errors}
+This is how your edit would have looked if applied
+------------------------------------------------
+{window_applied}
+------------------------------------------------
+
+This is the original code before your edit
+------------------------------------------------
+{window_original}
+------------------------------------------------
+
+Your changes have NOT been applied. Please fix your edit command and try again.
+DO NOT re-run the same failed edit command. Running it again will lead to the same error.
+"""
+
+
+def get_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("text", type=str)
+    parser.add_argument("line", type=int, nargs="?", default=None)
+    return parser
+
+
+def main(text: str, line: int | None = None):
+    try:
+        wf = WindowedFile(exit_on_exception=False)
+    except FileNotOpened:
+        print("No file opened. Use the `create` or `open` command first.")
+        exit(1)
+
+    pre_edit_lint = flake8(wf.path)
+    insert_info = wf.insert(text, line=line - 1 if line is not None else None)
+    post_edit_lint = flake8(wf.path)
+
+    # Try to filter out pre-existing errors
+    replacement_window = (insert_info.first_inserted_line, insert_info.first_inserted_line)
+    new_flake8_output = format_flake8_output(
+        post_edit_lint,
+        previous_errors_string=pre_edit_lint,
+        replacement_window=replacement_window,
+        replacement_n_lines=insert_info.n_lines_added,
+    )
+
+    if new_flake8_output:
+        with_edits = wf.get_window_text(line_numbers=True, status_line=True, pre_post_line=True)
+        wf.undo_edit()
+        without_edits = wf.get_window_text(line_numbers=True, status_line=True, pre_post_line=True)
+        print(
+            _LINT_ERROR_TEMPLATE.format(
+                errors=new_flake8_output, window_applied=with_edits, window_original=without_edits
+            )
+        )
+        exit(4)
+
+    wf.print_window()
+
+
+if __name__ == "__main__":
+    main(**vars(get_parser().parse_args()))

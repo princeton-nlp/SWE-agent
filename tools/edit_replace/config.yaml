@@ -1,9 +1,10 @@
 tools:
   edit:
     signature: |
-      edit <search> <replace>
+      edit <search> <replace> [<replace-all>]
     docstring: >
-      asdf asdf
+      Replace first occurrence of <search> with <replace> in the currently displayed lines.
+      If --replace-all is specified, replace all occurrences of <search> with <replace>.
     arguments:
       - name: search
         type: string
@@ -13,3 +14,21 @@ tools:
         type: string
         description: "the text to replace the search with"
         required: true
+      - name: replace-all
+        type: boolean
+        description: "replace all occurrences rather than the first occurrence within the displayed lines"
+        required: false
+  insert:
+    signature: |
+      insert <text> [--line <line>]
+    docstring: >
+      Insert <text> at the end of the currently opened file or after <line> if specified.
+    arguments:
+      - name: text
+        type: string
+        description: "the text to insert"
+        required: true
+      - name: line
+        type: integer
+        description: "the line number to insert the text as new lines after"
+        required: false
