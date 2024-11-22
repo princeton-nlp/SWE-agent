@@ -12,29 +12,37 @@ DEFAULT_TOOLS_BIN = DEFAULT_TOOLS_DIR / "bin"
 
 make_python_tool_importable(DEFAULT_TOOLS_DIR / "lib/default_utils.py", "default_utils")
 import default_utils  # type: ignore
+from default_utils import WindowedFile  # type: ignore
 
 
 def test_env_file_override(with_tmp_env_file):
     assert Path(os.getenv("SWE_AGENT_ENV_FILE")).name == ".swe-agent-env"  # type: ignore
 
 
-@pytest.fixture
-def windowed_file(with_tmp_env_file):
-    test_path = with_tmp_env_file.parent.joinpath("test.py")
+def create_test_file_with_content(tmp_env_file: Path, content: str) -> WindowedFile:
+    test_path = tmp_env_file.parent.joinpath("test.py")
     registry = {
         "CURRENT_FILE": str(test_path),
-        "FIRST_LINE": "10",
+        "FIRST_LINE": "0",
         "WINDOW": "10",
     }
-    with_tmp_env_file.write_text(json.dumps(registry))
-    test_path.write_text("\n".join(map(str, range(100))))
-    wf = default_utils.WindowedFile(exit_on_exception=False)
+    tmp_env_file.write_text(json.dumps(registry))
+    test_path.write_text(content)
+    wf = WindowedFile(exit_on_exception=False)
     wf.offset_multiplier = 1 / 4
     return wf
 
 
+@pytest.fixture
+def windowed_file(with_tmp_env_file) -> WindowedFile:
+    content = "\n".join(map(str, range(100)))
+    return create_test_file_with_content(with_tmp_env_file, content)
+
+
 def test_windowed_file(windowed_file):
     wfile = windowed_file
+    assert wfile.first_line == 0
+    wfile.first_line = 10
     assert wfile.first_line == 10
     assert wfile.window == 10
     assert wfile.n_lines == 100
@@ -57,7 +65,8 @@ def test_windowed_file(windowed_file):
 
 def test_windowed_file_goto(windowed_file):
     wfile = windowed_file
-    assert wfile.first_line == 10
+    assert wfile.first_line == 0
+    wfile.first_line = 10
     wfile.goto(0, mode="top")
     assert wfile.line_range[0] == 0
     wfile.goto(50, mode="top")
@@ -67,7 +76,8 @@ def test_windowed_file_goto(windowed_file):
 
 def test_windowed_file_scroll(windowed_file):
     wfile = windowed_file
-    assert wfile.first_line == 10
+    assert wfile.first_line == 0
+    wfile.first_line = 10
     wfile.scroll(10)
     assert wfile.first_line == 20
     wfile.scroll(-10)
@@ -116,6 +126,7 @@ _DEFAULT_WINDOW_OUTPUT = """[File: {path} (100 lines total)]
 
 def test_print_window(windowed_file, capsys):
     wfile = windowed_file
+    wfile.first_line = 10
     wfile.print_window()
     captured = capsys.readouterr()
     print(captured.out)
@@ -129,20 +140,11 @@ _DEFAULT_WINDOW_OUTPUT_NEW_FILE = """[File: {path} (1 lines total)]
 
 
 def test_print_window_new_file(with_tmp_env_file, capsys):
-    test_path = with_tmp_env_file.parent.joinpath("new_test.py")
-    registry = {
-        "CURRENT_FILE": str(test_path),
-        "FIRST_LINE": "10",
-        "WINDOW": "10",
-    }
-    with_tmp_env_file.write_text(json.dumps(registry))
-    new_file = with_tmp_env_file.parent.joinpath(registry["CURRENT_FILE"])
-    new_file.write_text("\n")
-    wfile = default_utils.WindowedFile()
+    wfile = create_test_file_with_content(with_tmp_env_file, "\n")
     assert wfile.n_lines == 1
     assert wfile.line_range == (0, 0)
     wfile.print_window()
     captured = capsys.readouterr()
     print(captured.out)
-    expected = _DEFAULT_WINDOW_OUTPUT_NEW_FILE.format(path=new_file.resolve())
+    expected = _DEFAULT_WINDOW_OUTPUT_NEW_FILE.format(path=wfile.path.resolve())
     assert captured.out == expected
