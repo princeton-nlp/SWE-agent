@@ -27,7 +27,7 @@ def test_init_swe_env_conservative_clone(test_env_args):
 @pytest.mark.slow
 def test_startup_commands(test_env_args):
     test_script = "echo 'hello world'"
-    test_env_args.startup_commands = [test_script]
+    test_env_args.post_startup_commands = [test_script]
     with swe_env_context(test_env_args):
         pass
 
