@@ -11,6 +11,7 @@ from swerex.deployment.abstract import AbstractDeployment
 from swerex.runtime.abstract import Command, UploadRequest
 from typing_extensions import Self
 
+from sweagent.utils.github import _parse_gh_repo_url
 from sweagent.utils.log import get_logger
 
 logger = get_logger("swea-config", emoji="🔧")
@@ -90,8 +91,7 @@ class GithubRepoConfig(BaseModel):
 
     @property
     def repo_name(self) -> str:
-        # fixme: Need to replace ":" etc.
-        org, repo = self.url.split("/")[-2:]
+        org, repo = _parse_gh_repo_url(self.url)
         return f"{org}__{repo}"
 
     def _get_url_with_token(self, token: str) -> str:
