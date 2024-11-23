@@ -8,15 +8,23 @@ Finally, we have a different tutorial for using SWE-agent for [coding challenges
 
 ## Getting started
 
-For the CLI, use the `run.py` script.
+After installing SWE-agent, you have the `sweagent` command available. Run `sweagent --help` to see the list of subcommands.
+The most important ones are
+
+* `sweagent run`: Run SWE-agent on a single problem statement.
+* `sweagent run-batch`: Run SWE-agent on a list of problem statements. This is what you would use for benchmarking, or when
+  working with a larger set of historic issues.
+
+In this tutorial, we will focus on the `run` subcommand.
+
 Let's start with an absolutely trivial example and solve an issue about a simple syntax error ([`swe-agent/test-repo #1`](https://github.com/SWE-agent/test-repo/issues/1))
 
 ```bash
 python run.py \
-  --model_name gpt4 \
-  --data_path https://github.com/SWE-agent/test-repo/issues/1 \
-  --config_file config/default_from_url.yaml \
-  --per_instance_cost_limit 2.00
+  --agent.model.name=gpt4 \
+  --agent.model.per_instance_cost_limit=2.00 \
+  --env.repo.url=https://github.com/SWE-agent/test-repo \
+  --problem_statement.url=https://github.com/SWE-agent/test-repo/issues/1
 ```
 
 <details>
@@ -27,12 +35,16 @@ python run.py \
 ```
 </details>
 
-Here,
+As you can see, the command line options are hierarchical. At the top level, there are three important sections:
 
-* `--model_name` sets the language model that is used by SWE-agent (with `gpt4` being the default). More information on the available models in our [FAQ](usage_faq.md)
-* `--data_path` points to the source of the *problem statement* (for example, the GitHub issue that you want to solve). You can also point it to local files (see [below](#specifying-the-repository))
-* `--config_file` includes settings such as the prompts. Changing the config file is the easiest way to get started with modifying SWE-agent (more advanced options are discussed [here](../config/config.md)).
-* `--per_instance_cost_limit` limits the total inference cost to $2 (default is $3).
+* `problem_statement`: What problem are you trying to solve?
+* `agent`: How do you want to solve the problem? This includes setting up the LM with `--agent.model`.
+  `--agent.model.per_instance_cost_limit` limits the total inference cost to $2.
+* `env`: What is the environment in which the problem statement should be solved.
+  This includes setting the repository/folder with the source files with `--env.repo`, as well as docker images and other dependencies.
+  This will also control where the code is executed (in a local container or in the cloud).
+
+
 
 !!! tip "All options"
     Run `python run.py --help` to see all available options for `run.py`. This tutorial will only cover a subset of options.
@@ -113,83 +125,11 @@ python run.py \
 
 This time, `pip install -e .` is called before SWE-agent gets to work, installing the package defined in the repository.
 
-Let's take a look at the `py310_default.yaml` config file
-
 REMOVED OUTDATED
-
-Here, `install` is an arbitrary command that is run, while `python` will be the required python version.
-The default install command will create an [editable install][] of the python package.
-We first try to use [`uv pip`][uv] (a much faster implementation of `pip` in [rust][]), but fall back to "normal" pip if it fails.
-
-!!! tip "Editable installs"
-    Using [editable installs][editable install] is crucial for SWE-agent so that
-    changes to the package code take effect without having to reinstall the package.
-
-[editable install]: https://setuptools.pypa.io/en/latest/userguide/development_mode.html
-[uv]: https://pypi.org/project/uv/
-[rust]: https://www.rust-lang.org/
-
-The config file can have the following keys:
-
-* `python`: Python version (will be set up via conda)
-* `packages`: Either `requirements.txt`, `environment.yml` (finds the corresponding file and installs from there) or a whitespace separated list of conda packages
-* `pip_packages`: A list of additional python packages that are installed with `pip install PACKAGE`
-* `pre_install`: A list of custom commands
-* `install`: A custom command
-* `post_install`: A list of custom commands
-
-Instead of the `setup.yaml` file, you can also directly specify the path to a shell script, e.g., `--environment_setup /path/to/setup.sh`.
-If you have very specific requirements, that can _not_ be installed via conda, you can [create a custom Docker image](../config/docker.md).
-
-### Installing non-python dependencies
-
-While SWE-agent has so far only been benchmarked and optimized for python project, you can still use it on repositories of any language.
-
-In most cases, this means creating a [custom Docker image](../config/docker.md). However, you can for example install node dependencies with
-`--environment_setup setup.sh`, where `setup.sh` looks as follows:
-
-```bash
-apt-get update
-yes|apt-get install curl
-yes|curl -L https://bit.ly/n-install | bash
-/root/n/bin/n latest
-npm install
-```
-
-However, this will take some time, so make sure to cache the environment (see the next section) or create a [custom Docker image](../config/docker.md).
 
 ## Speeding up SWE-agent <a name="speedup"></a>
 
-!!! tip "Speed up in v0.6"
-    SWE-agent v0.6 (June 4th, 2024) introduced major speedups. Please upgrade to the latest version.
-    To make use of [`uv pip`][uv], make sure that you have the latest `sweagent/swe-agent:latest` image.
-
-After the Docker container has been started, the target repository cloned/copied, and the dependencies installed,
-almost all of the remaining runtime can be attributed to waiting for your LM provider to answer your API calls.
-
-Therefore, speeding SWE-agent is mostly about speeding up the setup stages.
-We currently offer three ways to cache the setup stages:
-
-* By specifying `--container_name`, you run SWE-agent with a _persistent_ Docker container: Rather than being deleted
-  after every task, the Docker container will only be paused and can be resumed. Cloned repositories from previous
-  runs with the same container name, as well as any installed conda environments (versioned by the version of the package
-  you are installing) will be already available.
-* Alternatively, you can specify `--cache_task_images`. For every repository/base commit/environment setup, we
-  [commit][docker commit] the changes from the installation stage to the Docker image. The corresponding containers are temporary as usual.
-  Unlike the persistent containers, there will be a new image _for almost every base commit_ (that is, probably for every task
-  when evaluating on a benchmark), which makes this only relevant when running over the same tasks more than once
-  (for example when testing different agent configurations or LMs).
-* You can also [build your own Docker image](../config/docker.md) and ensure that all relevant conda environments and repositories
-  are available (check the logs from the previous runs to get the names for repositories and environments).
-
-!!! tip "Confused about the two options?"
-    Probably `--container_name my_container_name` will do what you want.
-
-!!! note "What's the difference between Docker images and containers?"
-    Docker containers are running instances of Docker images (that you can think of as snapshots of what
-    happens after you build the `Dockerfile`). [More information](https://stackoverflow.com/a/26960888/).
-
-[docker commit]: https://docs.docker.com/reference/cli/docker/container/commit/
+Do we have anything to mention here? (mostly removed outdated stuff)
 
 ## Taking actions
 
