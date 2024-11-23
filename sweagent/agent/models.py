@@ -34,6 +34,8 @@ logger = get_logger("swea-lm", emoji="🤖")
 
 
 class RetryConfig(PydanticBaseModel):
+    """This configuration object specifies how many times to retry a failed LM API call."""
+
     retries: int = 5
     """Number of retries"""
     min_wait: float = 1
@@ -43,8 +45,12 @@ class RetryConfig(PydanticBaseModel):
 
 
 class GenericAPIModelConfig(PydanticBaseModel):
-    name: str = Field(description="Model name.")
-    """Arguments configuring the model and its behavior."""
+    """This configuration object specifies a LM like GPT4 or similar.
+    The model will be served with the help of the `litellm` library.
+    """
+
+    name: str = Field(description="Name of the model.")
+
     per_instance_cost_limit: float = Field(
         default=3.0,
         description="Cost limit for every instance (task).",
@@ -61,6 +67,7 @@ class GenericAPIModelConfig(PydanticBaseModel):
     or putting your environment variables in a `.env` file.
     """
     stop: list[str] = []
+    """Custom stop sequences"""
 
     completion_kwargs: dict[str, Any] = {}
     """Additional kwargs to pass to `litellm.completion`"""
@@ -71,6 +78,7 @@ class GenericAPIModelConfig(PydanticBaseModel):
     """
 
     retry: RetryConfig = RetryConfig()
+    """Retry configuration"""
 
     # pydantic
     model_config = ConfigDict(extra="forbid")
@@ -131,6 +139,8 @@ GLOBAL_STATS_LOCK = Lock()
 
 
 class InstanceStats(PydanticBaseModel):
+    """This object tracks usage numbers (costs etc.) for a single instance."""
+
     instance_cost: float = 0
     tokens_sent: int = 0
     tokens_received: int = 0
@@ -172,6 +182,7 @@ class AbstractModel(ABC):
 
 class HumanModel(AbstractModel):
     def __init__(self, config: HumanModelConfig, tools: ToolConfig):
+        """Model that allows for human-in-the-loop"""
         self.config = config
         self.stats = InstanceStats()
 
@@ -251,6 +262,9 @@ class HumanThoughtModel(HumanModel):
 
 class ReplayModel(AbstractModel):
     def __init__(self, config: ReplayModelConfig, tools: ToolConfig):
+        """Model used for replaying a trajectory (i.e., taking all the actions for the `.traj` file
+        and re-issuing them.
+        """
         self.config = config
         self.stats = InstanceStats()
 
@@ -295,6 +309,7 @@ class ReplayModel(AbstractModel):
 
 class PredeterminedTestModel(AbstractModel):
     def __init__(self, outputs: list[dict | str]):
+        """Model that outputs a predetermined sequence of messages. Useful for testing."""
         self._outputs = outputs
         self._idx = -1
         self.stats = InstanceStats()
@@ -349,7 +364,8 @@ class InstantEmptySubmitTestModel(AbstractModel):
 
 
 class LiteLLMModel(AbstractModel):
-    def __init__(self, args: ModelConfig, tools: ToolConfig):
+    def __init__(self, args: GenericAPIModelConfig, tools: ToolConfig):
+        """Model served by the `litellm` library."""
         self.args = args
         self.stats = InstanceStats()
         self.tools = tools

@@ -77,6 +77,8 @@ class TemplateConfig(BaseModel):
 
 
 class AgentConfig(BaseModel):
+    """This configuration object specifies the behavior of an agent."""
+
     name: str = "main"
     templates: TemplateConfig = Field(default_factory=TemplateConfig)
     tools: ToolConfig = Field(default_factory=ToolConfig)

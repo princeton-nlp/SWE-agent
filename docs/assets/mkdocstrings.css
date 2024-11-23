@@ -1,0 +1,16 @@
+/* From https://mkdocstrings.github.io/python/usage/customization/#symbol-types */
+[data-md-color-scheme="default"] {
+  --doc-symbol-parameter-fg-color: #df50af;
+  --doc-symbol-attribute-fg-color: #0079ff;
+  --doc-symbol-function-fg-color: #00dfa2;
+  --doc-symbol-method-fg-color: #00dfa2;
+  --doc-symbol-class-fg-color: #d1b619;
+  --doc-symbol-module-fg-color: #ff0060;
+
+  --doc-symbol-parameter-bg-color: #df50af1a;
+  --doc-symbol-attribute-bg-color: #0079ff1a;
+  --doc-symbol-function-bg-color: #00dfa21a;
+  --doc-symbol-method-bg-color: #00dfa21a;
+  --doc-symbol-class-bg-color: #d1b6191a;
+  --doc-symbol-module-bg-color: #ff00601a;
+}

@@ -42,6 +42,7 @@ class PreExistingRepo(BaseModel):
     """Discriminator for (de)serialization/CLI. Do not change."""
 
     def copy(self, deployment: AbstractDeployment):
+        """Does nothing."""
         pass
 
 
@@ -105,6 +106,7 @@ class GithubRepoConfig(BaseModel):
         return f"https://{token}@{url_no_protocol}"
 
     def copy(self, deployment: AbstractDeployment):
+        """Clones the repository to the sandbox."""
         base_commit = self.base_commit
         github_token = os.getenv("GITHUB_TOKEN", "")
         url = self._get_url_with_token(github_token)

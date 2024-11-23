@@ -82,9 +82,13 @@ nav:
     - "Formatting conflicts": "dev/formatting_conflicts.md"
   - Reference:
     - "reference/index.md"
-    - "Agent": "reference/agent.md"
-    - "Models": "reference/models.md"
-    - "Environment": "reference/env.md"
+    - "Problem statements": "reference/problem_statements.md"
+    - "Repository": "reference/repo.md"
+    - "Model config": "reference/model_config.md"
+    - "Agent config": "reference/agent_config.md"
+    - "Environment config": "reference/env_config.md"
+    - "Agent class": "reference/agent.md"
+    - "Environment class": "reference/env.md"
   - "FAQ": "faq.md"
 plugins:
    - glightbox
@@ -95,8 +99,29 @@ plugins:
       handlers:
         python:
           paths: [sweagent]
+          options:
+            merge_init_into_class: true
+            summary: false
+            show_root_heading: true
+            heading_level: 2
+            docstring_style: google
+            show_if_no_docstring: true
+            show_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            separate_signature: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            extensions:
+              - griffe_pydantic:
+                  schema: false
+            filters:
+              - "!^_"
+              - "!^model_config"
+              - "!^model_post_init"
 repo_url: https://github.com/princeton-nlp/SWE-agent
 repo_name: princeton-nlp/SWE-agent
 edit_uri: edit/main/docs/
 extra_css:
   - assets/custom.css
+  - assets/mkdocstrings.css
