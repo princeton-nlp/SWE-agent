@@ -40,21 +40,30 @@ As you can see, the command line options are hierarchical. At the top level, the
 * `problem_statement`: What problem are you trying to solve?
 * `agent`: How do you want to solve the problem? This includes setting up the LM with `--agent.model`.
   `--agent.model.per_instance_cost_limit` limits the total inference cost to $2.
-* `env`: What is the environment in which the problem statement should be solved.
+* `env`: What is the environment in which the problem statement should be solved?
   This includes setting the repository/folder with the source files with `--env.repo`, as well as docker images and other dependencies.
   This will also control where the code is executed (in a local container or in the cloud).
 
+
+Watching the output, you can notice several stages:
+
+1. Setting up the **deployment**: SWE-agent lets LMs execute actions in sandboxed environments. It can run these environments
+   in docker containers (default), on modal, AWS fargate, or directly on your computer (not recommended).
+   When the deployment starts, you will notice a "starting runtime" message that takes a few seconds. The runtime is
+   what is executing the commands within your deployment.
+2. Setting up **tools**: The tools that you specified are copied and installed within the environment.
+3. **System and instance prompts**: The initial instructions are shown to the LM.
+4. **Main loop**: The LM starts to suggest and execute actions.
+5. **Submission**: The LM calls `submit` and we extract the patch (i.e., the changes to the source code that solve the problem).
+
+The complete details of the run are saved as a "trajectory" file (more about them [here](trajectories.md)). They can also be turned into new [demonstrations](../config/demonstrations.md) together with other log and output files.
 
 
 !!! tip "All options"
     Run `python run.py --help` to see all available options for `run.py`. This tutorial will only cover a subset of options.
 
 !!! tip "Running more than once"
-    * The complete details of the run are saved as a "trajectory" file (more about them [here](trajectories.md)). They can also be turned into new [demonstrations](../config/demonstrations.md).
     * If you run the same command more than once, you will find that SWE-agent aborts with ` Skipping existing trajectory`. You can either remove the trajectory from the warning message, or add the `--skip_existing=False` flag.
-    * If you solve multiple issues from the same repository/in the same environment, you can specify the
-      `--cache_task_images` flag. This will create a persistent docker image with the initialized environment
-      required for the problem.
 
 
 ## Specifying the repository
