@@ -7,7 +7,7 @@ from typing import Self
 from pydantic import BaseModel, ConfigDict, Field
 from swerex.deployment.abstract import AbstractDeployment
 from swerex.deployment.config import DeploymentConfig, DockerDeploymentConfig, get_deployment
-from swerex.runtime.abstract import BashAction, CreateBashSessionRequest
+from swerex.runtime.abstract import BashAction, BashInterruptAction, CreateBashSessionRequest
 
 from sweagent.environment.config.repo import Repo, RepoConfig
 from sweagent.environment.hooks.abstract import CombinedEnvHooks, EnvHook
@@ -162,6 +162,9 @@ class SWEEnv:
         asyncio.run(self.deployment.start())
         asyncio.run(self.deployment.runtime.create_session(CreateBashSessionRequest(startup_source=["/root/.bashrc"])))
         self.logger.info("Environment Initialized")
+
+    def interrupt_session(self):
+        asyncio.run(self.deployment.runtime.run_in_session(BashInterruptAction()))
 
     def communicate(
         self,

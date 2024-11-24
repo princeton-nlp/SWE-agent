@@ -465,6 +465,10 @@ class Agent:
         step.done = True
         assert self._env is not None
         try:
+            self._env.interrupt_session()
+        except Exception as e:
+            self.logger.debug("Failed to interrupt session before autosubmit: %s. Ignoring.", e)
+        try:
             observation = self._env.communicate(input="submit")
         except Exception as e:
             self.logger.debug("Failed to submit after error, got %s", e)
