@@ -3,7 +3,7 @@ import os
 from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional, Tuple, Union
 
 from typing_extensions import Literal
 
@@ -172,7 +172,7 @@ class WindowedFile:
         return len(self.text.splitlines())
 
     @property
-    def line_range(self) -> tuple[int, int]:
+    def line_range(self) -> Tuple[int, int]:
         """Return first and last line (inclusive) of the display window, such
         that exactly `window` many lines are displayed.
         This means `line_range[1] - line_range[0] == window-1` as long as there are
@@ -202,7 +202,7 @@ class WindowedFile:
         return "\n".join(out_lines)
 
     def set_window_text(
-        self, new_text: str, *, line_range: Optional[tuple[int, int]] = None
+        self, new_text: str, *, line_range: Optional[Tuple[int, int]] = None
     ) -> None:
         """Replace the text in the current display window with a new string.
 

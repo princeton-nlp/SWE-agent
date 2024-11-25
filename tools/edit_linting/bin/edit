@@ -2,7 +2,8 @@
 
 import argparse
 import sys
-from typing import Union
+from typing import Tuple, Union
+
 try:
     from sweagent import TOOLS_DIR
 except ImportError:
@@ -48,7 +49,7 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def parse_line_range(line_range: str) -> tuple[int, int]:
+def parse_line_range(line_range: str) -> Tuple[int, int]:
     try:
         start, end = map(int, line_range.split(":"))
         return start - 1, end  # Convert to 0-based indexing for start line
