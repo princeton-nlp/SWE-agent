@@ -90,6 +90,10 @@ class RunBatch:
             hooks: If not specified, the default hooks will be used.
             num_workers: Number of parallel workers to use. Default is 1 (sequential execution).
         """
+        if agent_config.model.name in ["human", "human_thought"] and num_workers > 1:
+            msg = "Cannot run with human model in parallel"
+            raise ValueError(msg)
+
         self.logger = get_logger("swea-run", emoji="🏃")
         add_file_handler(
             output_dir / "run_batch.log",
@@ -106,7 +110,9 @@ class RunBatch:
         self._num_workers = min(num_workers, len(instances))
         for hook in hooks or [SaveApplyPatchHook()]:
             self.add_hook(hook)
-        self._progress_manager = RunBatchProgressManager(num_instances=len(instances))
+        self._progress_manager = RunBatchProgressManager(
+            num_instances=len(instances), yaml_report_path=output_dir / "run_batch_exit_statuses.yaml"
+        )
 
     @classmethod
     def from_config(cls, config: RunBatchConfig) -> Self:

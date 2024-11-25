@@ -129,7 +129,7 @@ def test_exit_blocklist(dummy_env: SWEEnv, test_agent: Agent, tmp_path):
 
 class RuntimeRaisesFirst(DummyRuntime):
     async def run_in_session(self, action: Action) -> Observation:
-        if action.session_type == "bash" and action.command == "raise":
+        if action.action_type == "bash" and action.command == "raise":
             raise SweRexception()
         return await super().run_in_session(action)
 
@@ -188,7 +188,8 @@ def test_run_autosubmit(dummy_env: SWEEnv, default_agent: Agent, tmp_path):
     a.model = PredeterminedTestModel(["raise_cost"])  # type: ignore
     a.setup(dummy_env, EmptyProblemStatement())
     dummy_env.deployment.runtime.run_in_session_outputs = [  # type: ignore
-        BashObservation(output=r"<<SUBMISSION||mysubmission||SUBMISSION>>")
+        BashObservation(output=""),
+        BashObservation(output=r"<<SUBMISSION||mysubmission||SUBMISSION>>"),
     ]
     r = a.step()
     assert a.info is not None

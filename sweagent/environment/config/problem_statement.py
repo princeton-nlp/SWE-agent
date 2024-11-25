@@ -102,7 +102,7 @@ ProblemStatementConfig = TextProblemStatement | GithubIssue | EmptyProblemStatem
 def problem_statement_from_simplified_input(
     *, input: str, type: Literal["text", "text_file", "github_issue"]
 ) -> ProblemStatementConfig:
-    """Get a problem statement from a simplified input.
+    """Get a problem statement from an `input` string and a `type`.
 
     Args:
         input: Url/path/text
