@@ -29,7 +29,19 @@ python run.py \
 
 1. This limits the inference cost per instance to $2. The default is $3.
 
-TODO: Explain where to put model keys
+!!! tip "Annotations"
+    Notice the :material-chevron-right-circle: icon in the left margin in the code snippet? Click on it to display more information
+    about the line.
+
+The example above uses the `gpt4` model from OpenAI. In order to use it, you need to add your OpenAI API key to the environment:
+
+```bash
+export OPENAI_API_KEY=<your key>
+```
+
+alternatively, you can create a `.env` file in your working directory and put the key in there.
+More information about environment: TODO
+
 
 TODO: Update output
 
@@ -80,12 +92,30 @@ python run.py \
 1. Make sure to add anthropic keys to the environment for this one!
 2. This points to the [dockerhub image](https://hub.docker.com/_/python) of the same name
 
+```bash title="Github repo with custom problem statement" hl_lines="4"
+python run.py \
+  ...
+  --env.repo.url=https://github.com/SWE-agent/test-repo \
+  --problem_statement.text="Hey, can you fix all the bugs?"
+```
+
+For the next example, we will use a cloud-based execution environment instead of using local docker containers.
+For this, you first need to set up a modal account, following the instructions at XXX
+
+```bash title="Deployment on modal (cloud-based execution)" hl_lines="4"
+python run.py \
+  ...
+  --env.deployment.type=modal \
+  --env.deployment.image=python:3.12
+```
 
 !!! tip "All options"
     Run `python run.py --help` to see all available options for `run.py`. This tutorial will only cover a subset of options.
 
-!!! tip "Running more than once"
-    * If you run the same command more than once, you will find that SWE-agent aborts with ` Skipping existing trajectory`. You can either remove the trajectory from the warning message, or add the `--skip_existing=False` flag.
+## Configuration basics
+
+All configuration options can be specified either in `.yaml`
+
 
 
 ## Specifying the repository
