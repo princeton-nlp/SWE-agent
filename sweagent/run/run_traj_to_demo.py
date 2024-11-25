@@ -63,10 +63,10 @@ def convert_traj_to_action_demo(traj_path: str, output_file: str | Path, include
 
     history = traj["history"]
     action_traj = list()
-    admissible_roles = {"assistant", "user"} if include_user else {"assistant"}
+    admissible_roles = {"assistant", "user", "tool"} if include_user else {"assistant"}
     for step in history:
-        if step["role"] in admissible_roles and step.get("agent", "primary") == "primary":
-            action_traj.append({k: v for k, v in step.items() if k in {"content", "role"}})
+        if step["role"] in admissible_roles and step.get("agent", "main") in {"main", "primary"}:
+            action_traj.append({k: v for k, v in step.items() if k in {"content", "role", "tool_calls"}})
     save_demo(action_traj, output_file, traj_path)
     print(f"Saved demo to {output_file}")
 
