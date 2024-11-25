@@ -87,7 +87,7 @@ def test_run_ies_repo_ps_matrix(
     for fmt in output_formats:
         assert not list(Path(tmpdir).glob(f"*.{fmt}"))
     if problem_statement_source == "github":
-        ps_args = ["--problem_statement.url", "https://github.com/swe-agent/test-repo/issues/1"]
+        ps_args = ["--problem_statement.github_url", "https://github.com/swe-agent/test-repo/issues/1"]
     elif problem_statement_source == "local":
         ps_args = ["--problem_statement.path", str(swe_agent_test_repo_clone / "problem_statements" / "1.md")]
     elif problem_statement_source == "text":
@@ -97,7 +97,7 @@ def test_run_ies_repo_ps_matrix(
     if repo == "local":
         repo_args = ["--env.repo.path", str(swe_agent_test_repo_clone)]
     elif repo == "github":
-        repo_args = ["--env.repo.url", "https://github.com/swe-agent/test-repo"]
+        repo_args = ["--env.repo.github_url", "https://github.com/swe-agent/test-repo"]
     else:
         raise ValueError(repo)
     args = [

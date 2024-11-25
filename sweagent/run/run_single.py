@@ -14,8 +14,8 @@
 Basic usage: Run over a [bold][cyan]github issue[/bold][/cyan][green]:
 
 sweagent run --config config/config.yaml --agent.model.name "gpt-4o" \\
-    --env.repo.url=https://github.com/SWE-agent/test-repo/ \\
-    --problem_statement.url=https://github.com/SWE-agent/test-repo/issues/1
+    --env.repo.github_url=https://github.com/SWE-agent/test-repo/ \\
+    --problem_statement.github_url=https://github.com/SWE-agent/test-repo/issues/1
 [/green]
 
 By default this will start a docker container and run the agent in there.

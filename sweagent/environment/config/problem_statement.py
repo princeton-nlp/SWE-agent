@@ -76,7 +76,7 @@ class FileProblemStatement(BaseModel):
 
 
 class GithubIssue(BaseModel):
-    url: str
+    github_url: str
 
     type: Literal["github"] = "github"
     """Discriminator for (de)serialization/CLI. Do not change."""
@@ -88,11 +88,11 @@ class GithubIssue(BaseModel):
     def model_post_init(self, __context: Any) -> None:
         if self.id is None:
             logger.info("Setting problem statement based on github issue url")
-            owner, repo, issue_number = _parse_gh_issue_url(self.url)
+            owner, repo, issue_number = _parse_gh_issue_url(self.github_url)
             self.id = f"{owner}__{repo}-i{issue_number}"
 
     def get_problem_statement(self) -> str:
-        owner, repo, issue_number = _parse_gh_issue_url(self.url)
+        owner, repo, issue_number = _parse_gh_issue_url(self.github_url)
         return _get_problem_statement_from_github_issue(owner, repo, issue_number, token=os.getenv("GITHUB_TOKEN"))
 
 
@@ -113,7 +113,7 @@ def problem_statement_from_simplified_input(
     elif type == "text_file":
         return FileProblemStatement(path=Path(input))
     elif type == "github_issue":
-        return GithubIssue(url=input)
+        return GithubIssue(github_url=input)
     else:
         msg = f"Unknown problem statement type: {type}"
         raise ValueError(msg)

@@ -1,7 +1,7 @@
 import asyncio
 import os
 from pathlib import Path
-from typing import Literal, Protocol
+from typing import Any, Literal, Protocol
 
 import pydantic
 from git import InvalidGitRepositoryError
@@ -80,7 +80,7 @@ class LocalRepoConfig(BaseModel):
 
 
 class GithubRepoConfig(BaseModel):
-    url: str = ""
+    github_url: str = ""
 
     base_commit: str = "HEAD"
 
@@ -90,19 +90,23 @@ class GithubRepoConfig(BaseModel):
     type: Literal["github"] = "github"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
+    def model_post_init(self, __context: Any) -> None:
+        if self.github_url.count("/") == 1:
+            self.github_url = f"https://github.com/{self.github_url}"
+
     @property
     def repo_name(self) -> str:
-        org, repo = _parse_gh_repo_url(self.url)
+        org, repo = _parse_gh_repo_url(self.github_url)
         return f"{org}__{repo}"
 
     def _get_url_with_token(self, token: str) -> str:
         """Prepend github token to URL"""
         if not token:
-            return self.url
-        if "@" in self.url:
+            return self.github_url
+        if "@" in self.github_url:
             logger.warning("Cannot prepend token to URL. '@' found in URL")
-            return self.url
-        _, _, url_no_protocol = self.url.partition("://")
+            return self.github_url
+        _, _, url_no_protocol = self.github_url.partition("://")
         return f"https://{token}@{url_no_protocol}"
 
     def copy(self, deployment: AbstractDeployment):
@@ -148,12 +152,12 @@ def repo_from_simplified_input(
     if type == "local":
         return LocalRepoConfig(path=Path(input), base_commit=base_commit)
     if type == "github":
-        return GithubRepoConfig(url=input, base_commit=base_commit)
+        return GithubRepoConfig(github_url=input, base_commit=base_commit)
     if type == "preexisting":
         return PreExistingRepo(repo_name=input, base_commit=base_commit)
     if type == "auto":
         if input.startswith("https://github.com/"):
-            return GithubRepoConfig(url=input, base_commit=base_commit)
+            return GithubRepoConfig(github_url=input, base_commit=base_commit)
         else:
             return LocalRepoConfig(path=Path(input), base_commit=base_commit)
     msg = f"Unknown repo type: {type}"

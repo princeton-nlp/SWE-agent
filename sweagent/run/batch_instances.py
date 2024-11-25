@@ -125,7 +125,7 @@ class SimpleBatchInstance(BaseModel):
         if not self.repo_name:
             repo = None
         elif "github" in self.repo_name:
-            repo = GithubRepoConfig(url=self.repo_name, base_commit=self.base_commit)
+            repo = GithubRepoConfig(github_url=self.repo_name, base_commit=self.base_commit)
         elif "/" not in self.repo_name:
             repo = PreExistingRepo(repo_name=self.repo_name, base_commit=self.base_commit)
         else:

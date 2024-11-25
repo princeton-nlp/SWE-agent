@@ -23,8 +23,8 @@ Let's start with an absolutely trivial example and solve an issue about a simple
 python run.py \
   --agent.model.name=gpt4 \
   --agent.model.per_instance_cost_limit=2.00 \  # (1)!
-  --env.repo.url=https://github.com/SWE-agent/test-repo \
-  --problem_statement.url=https://github.com/SWE-agent/test-repo/issues/1
+  --env.repo.github_url=https://github.com/SWE-agent/test-repo \
+  --problem_statement.github_url=https://github.com/SWE-agent/test-repo/issues/1
 ```
 
 1. This limits the inference cost per instance to $2. The default is $3.
@@ -95,7 +95,7 @@ python run.py \
 ```bash title="Github repo with custom problem statement" hl_lines="4"
 python run.py \
   ...
-  --env.repo.url=https://github.com/SWE-agent/test-repo \
+  --env.repo.github_url=https://github.com/SWE-agent/test-repo \
   --problem_statement.text="Hey, can you fix all the bugs?"
 ```
 
@@ -114,8 +114,25 @@ python run.py \
 
 ## Configuration basics
 
-All configuration options can be specified either in `.yaml`
+All configuration options can be specified either in one or more `.yaml` files, or as command line arguments. For example, our first command can be written as
 
+```bash
+python run.py --config my_run.yaml
+```
+
+with
+
+```yaml title="my_run.yaml"
+agent:
+  model:
+    name: gpt4
+    per_instance_cost_limit: 2.00
+env:
+  repo:
+    github_url: https://github.com/SWE-agent/test-repo
+problem_statement:
+  github_url: https://github.com/SWE-agent/test-repo/issues/1
+```
 
 
 ## Specifying the repository
