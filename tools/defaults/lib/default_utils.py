@@ -5,8 +5,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, Tuple, Union
 
-from typing_extensions import Literal
-
 
 class EnvRegistry:
     def __init__(self, env_file: Optional[Path] = None):
@@ -223,7 +221,7 @@ class WindowedFile:
         search: str,
         replace: str,
         *,
-        reset_first_line: Literal["top", "keep"] = "top",
+        reset_first_line="top",
     ) -> ReplacementInfo:
         """Search and replace in the window.
 
@@ -256,9 +254,7 @@ class WindowedFile:
             n_replacements=1,
         )
 
-    def replace(
-        self, search: str, replace: str, *, reset_first_line: Literal["top", "keep"] = "top"
-    ) -> ReplacementInfo:
+    def replace(self, search: str, replace: str, *, reset_first_line="top") -> ReplacementInfo:
         indices = list(_find_all(self.text, search))
         if not indices:
             if self._exit_on_exception:
@@ -282,7 +278,7 @@ class WindowedFile:
     def print_window(self, *, line_numbers: bool = True, status_line: bool = True, pre_post_line: bool = True):
         print(self.get_window_text(line_numbers=line_numbers, status_line=status_line, pre_post_line=pre_post_line))
 
-    def goto(self, line: int, mode: Literal["top"] = "top"):
+    def goto(self, line: int, mode="top"):
         if mode == "top":
             self.first_line = line - self.window * self.offset_multiplier
         else:
@@ -299,7 +295,7 @@ class WindowedFile:
         self.first_line = self._original_first_line
 
     def insert(
-        self, text: str, line: Optional[int] = None, *, reset_first_line: Literal["top", "keep"] = "top"
+        self, text: str, line: Optional[int] = None, *, reset_first_line="top"
     ) -> InsertInfo:
         if line is None:
             if self.text.endswith("\n"):
