@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import sys
+from typing import List
 
 from default_utils import WindowedFile  # type: ignore
 
 
-def main(args: list[str]) -> int:
+def main(args: List[str]) -> int:
     if len(args) > 1:
         print("goto allows only one line number at a time.")
         return 1

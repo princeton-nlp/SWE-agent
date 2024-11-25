@@ -5,21 +5,20 @@
 # ruff: noqa: UP007 UP006 UP035
 
 import subprocess
-from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
 
 from default_utils import registry
 
 
-@dataclass
 class Flake8Error:
     """A class to represent a single flake8 error"""
 
-    filename: str
-    line_number: int
-    col_number: int
-    problem: str
+    def __init__(self, filename: str, line_number: int, col_number: int, problem: str):
+        self.filename = filename
+        self.line_number = line_number
+        self.col_number = col_number
+        self.problem = problem
 
     @classmethod
     def from_line(cls, line: str):
@@ -30,6 +29,16 @@ class Flake8Error:
             msg = f"Invalid flake8 error line: {line}"
             raise ValueError(msg) from e
         return cls(filename, int(line_number), int(col_number), problem)
+
+    def __eq__(self, other):
+        if not isinstance(other, Flake8Error):
+            return NotImplemented
+        return (
+            self.filename == other.filename
+            and self.line_number == other.line_number
+            and self.col_number == other.col_number
+            and self.problem == other.problem
+        )
 
 
 def _update_previous_errors(

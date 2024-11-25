@@ -1,14 +1,18 @@
 import json
 import os
-from collections.abc import Generator
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, Union
-
-from typing_extensions import Literal
+from typing import Any, Optional, Union, List, Tuple
 
 
 class EnvRegistry:
+    """Read and write variables into a file. This is used to persist state between tool
+    calls without using environment variables (which are problematic because you cannot
+    set them in a subprocess).
+
+    The default file location is `/root/.swe-agent-env`, though this can be overridden
+    by the `env_file` argument or the `SWE_AGENT_ENV_FILE` environment variable.
+    """
+
     def __init__(self, env_file: Optional[Path] = None):
         self._env_file = env_file
 
@@ -50,7 +54,7 @@ class TextNotFound(Exception):
     """Raised when the text is not found in the window."""
 
 
-def _find_all(a_str: str, sub: str) -> Generator[int, None, None]:
+def _find_all(a_str: str, sub: str):
     start = 0
     while True:
         start = a_str.find(sub, start)
@@ -60,28 +64,18 @@ def _find_all(a_str: str, sub: str) -> Generator[int, None, None]:
         start += len(sub)
 
 
-@dataclass
 class ReplacementInfo:
-    first_replaced_line: int
-    """Line number of the beginning of the first search hit."""
-
-    n_search_lines: int
-    """Number of lines of search string"""
-
-    n_replace_lines: int
-    """Number of lines of replace string"""
-
-    n_replacements: int
-    """Number of replacements made."""
+    def __init__(self, first_replaced_line: int, n_search_lines: int, n_replace_lines: int, n_replacements: int):
+        self.first_replaced_line = first_replaced_line
+        self.n_search_lines = n_search_lines
+        self.n_replace_lines = n_replace_lines
+        self.n_replacements = n_replacements
 
 
-@dataclass
 class InsertInfo:
-    first_inserted_line: int
-    """Line number of the beginning of the first search hit."""
-
-    n_lines_added: int
-    """Number of lines added."""
+    def __init__(self, first_inserted_line: int, n_lines_added: int):
+        self.first_inserted_line = first_inserted_line
+        self.n_lines_added = n_lines_added
 
 
 class WindowedFile:
@@ -172,7 +166,7 @@ class WindowedFile:
         return len(self.text.splitlines())
 
     @property
-    def line_range(self) -> tuple[int, int]:
+    def line_range(self) -> Tuple[int, int]:
         """Return first and last line (inclusive) of the display window, such
         that exactly `window` many lines are displayed.
         This means `line_range[1] - line_range[0] == window-1` as long as there are
@@ -193,7 +187,7 @@ class WindowedFile:
             if start_line > 0:
                 out_lines.append(f"({start_line} more lines above)")
         if line_numbers:
-            out_lines.extend(f"{i+start_line+1}:{line}" for i, line in enumerate(lines))
+            out_lines.extend(f"{i + start_line + 1}:{line}" for i, line in enumerate(lines))
         else:
             out_lines.extend(lines)
         if pre_post_line:
@@ -202,7 +196,7 @@ class WindowedFile:
         return "\n".join(out_lines)
 
     def set_window_text(
-        self, new_text: str, *, line_range: Optional[tuple[int, int]] = None
+        self, new_text: str, *, line_range: Optional[Tuple[int, int]] = None
     ) -> None:
         """Replace the text in the current display window with a new string.
 
@@ -223,8 +217,8 @@ class WindowedFile:
         search: str,
         replace: str,
         *,
-        reset_first_line: Literal["top", "keep"] = "top",
-    ) -> ReplacementInfo:
+        reset_first_line: str = "top",
+    ) -> "ReplacementInfo":
         """Search and replace in the window.
 
         Args:
@@ -256,9 +250,7 @@ class WindowedFile:
             n_replacements=1,
         )
 
-    def replace(
-        self, search: str, replace: str, *, reset_first_line: Literal["top", "keep"] = "top"
-    ) -> ReplacementInfo:
+    def replace(self, search: str, replace: str, *, reset_first_line: str = "top") -> "ReplacementInfo":
         indices = list(_find_all(self.text, search))
         if not indices:
             if self._exit_on_exception:
@@ -282,7 +274,7 @@ class WindowedFile:
     def print_window(self, *, line_numbers: bool = True, status_line: bool = True, pre_post_line: bool = True):
         print(self.get_window_text(line_numbers=line_numbers, status_line=status_line, pre_post_line=pre_post_line))
 
-    def goto(self, line: int, mode: Literal["top"] = "top"):
+    def goto(self, line: int, mode: str = "top"):
         if mode == "top":
             self.first_line = line - self.window * self.offset_multiplier
         else:
@@ -298,9 +290,7 @@ class WindowedFile:
         self.text = self._original_text
         self.first_line = self._original_first_line
 
-    def insert(
-        self, text: str, line: Optional[int] = None, *, reset_first_line: Literal["top", "keep"] = "top"
-    ) -> InsertInfo:
+    def insert(self, text: str, line: Optional[int] = None, *, reset_first_line: str = "top") -> "InsertInfo":
         if line is None:
             if self.text.endswith("\n"):
                 line = self.n_lines
