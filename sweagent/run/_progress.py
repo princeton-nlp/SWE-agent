@@ -139,7 +139,8 @@ class RunBatchProgressManager:
     def _get_overview_data(self) -> dict:
         """Get data like exit statuses, total costs, etc."""
         return {
-            "instances_by_exit_status": self._instances_by_exit_status,
+            # convert defaultdict to dict because of serialization
+            "instances_by_exit_status": dict(self._instances_by_exit_status),
             "total_cost": GLOBAL_STATS.total_cost,
         }
 
