@@ -1,6 +1,5 @@
 import json
 import os
-from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, Tuple, Union
@@ -48,7 +47,7 @@ class TextNotFound(Exception):
     """Raised when the text is not found in the window."""
 
 
-def _find_all(a_str: str, sub: str) -> Generator[int, None, None]:
+def _find_all(a_str: str, sub: str):
     start = 0
     while True:
         start = a_str.find(sub, start)
