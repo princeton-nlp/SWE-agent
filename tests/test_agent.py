@@ -129,7 +129,7 @@ def test_exit_blocklist(dummy_env: SWEEnv, test_agent: Agent, tmp_path):
 
 class RuntimeRaisesFirst(DummyRuntime):
     async def run_in_session(self, action: Action) -> Observation:
-        if action.session_type == "bash" and action.command == "raise":
+        if action.action_type == "bash" and action.command == "raise":
             raise SweRexception()
         return await super().run_in_session(action)
 
