@@ -228,7 +228,11 @@ class SWEEnv:
         env_output = self.communicate("env", check=True).strip()
         if not env_output:
             return {}
-        return dict(line.split("=", 1) for line in env_output.split("\n"))
+        try:
+            return dict(line.split("=", 1) for line in env_output.splitlines() if line.strip())
+        except ValueError:
+            self.logger.error(f"Env output: {env_output!r}")
+            raise
 
     def set_env_variables(self, env_variables: dict[str, str]) -> None:
         """Set environment variables in the environment."""
