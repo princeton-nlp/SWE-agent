@@ -152,7 +152,7 @@ class SimpleBatchInstance(BaseModel):
         iid = instance["instance_id"]
         # Docker doesn't allow double underscore, so we replace them with a magic token
         id_docker_compatible = iid.replace("__", "_1776_")
-        image_name = f"swebench/sweb.eval.x86_64.{id_docker_compatible}:v1"
+        image_name = f"swebench/sweb.eval.x86_64.{id_docker_compatible}:latest"
         return cls(
             image_name=image_name,
             problem_statement=instance["problem_statement"],
