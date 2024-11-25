@@ -1,8 +1,10 @@
 """This module contains an auxiliary class for rendering progress of the batch run."""
 
 import collections
+from pathlib import Path
 from threading import Lock
 
+import yaml
 from rich.console import Group
 from rich.progress import (
     BarColumn,
@@ -32,11 +34,13 @@ class RunBatchProgressManager:
     def __init__(
         self,
         num_instances: int,
+        yaml_report_path: Path | None = None,
     ):
         """This class manages a progress bar/UI for run-batch
 
         Args:
             num_instances: Number of task instances
+            yaml_report_path: Path to save a yaml report of the instances and their exit statuses
         """
 
         self._spinner_tasks: dict[str, TaskID] = {}
@@ -69,6 +73,7 @@ class RunBatchProgressManager:
         )
 
         self.render_group = Group(Table(), self._task_progress_bar, self._main_progress_bar)
+        self._yaml_report_path = yaml_report_path
 
     def update_exit_status_table(self):
         # We cannot update the existing table, so we need to create a new one and
@@ -87,7 +92,7 @@ class RunBatchProgressManager:
         assert self.render_group is not None
         self.render_group.renderables[0] = t
 
-    def _update_total_costs(self):
+    def _update_total_costs(self) -> None:
         with self._lock:
             self._main_progress_bar.update(self._main_task_id, total_cost=f"{GLOBAL_STATS.total_cost:.2f}")
 
@@ -111,15 +116,17 @@ class RunBatchProgressManager:
                 instance_id=instance_id,
             )
 
-    def on_instance_end(self, instance_id: str, exit_status: str):
+    def on_instance_end(self, instance_id: str, exit_status: str) -> None:
         self._instances_by_exit_status[exit_status].append(instance_id)
         with self._lock:
             self._task_progress_bar.remove_task(self._spinner_tasks[instance_id])
             self._main_progress_bar.update(TaskID(0), advance=1)
         self.update_exit_status_table()
         self._update_total_costs()
+        if self._yaml_report_path is not None:
+            self._save_overview_data_yaml(self._yaml_report_path)
 
-    def on_uncaught_exception(self, instance_id: str, exception: Exception):
+    def on_uncaught_exception(self, instance_id: str, exception: Exception) -> None:
         self.on_instance_end(instance_id, f"Uncaught {type(exception).__name__}")
 
     def print_report(self) -> None:
@@ -128,3 +135,15 @@ class RunBatchProgressManager:
             print(f"{status}: {len(instances)}")
             for instance in instances:
                 print(f"  {instance}")
+
+    def _get_overview_data(self) -> dict:
+        """Get data like exit statuses, total costs, etc."""
+        return {
+            "instances_by_exit_status": self._instances_by_exit_status,
+            "total_cost": GLOBAL_STATS.total_cost,
+        }
+
+    def _save_overview_data_yaml(self, path: Path) -> None:
+        """Save a yaml report of the instances and their exit statuses."""
+        with self._lock:
+            path.write_text(yaml.dump(self._get_overview_data(), indent=4))

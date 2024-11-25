@@ -110,7 +110,9 @@ class RunBatch:
         self._num_workers = min(num_workers, len(instances))
         for hook in hooks or [SaveApplyPatchHook()]:
             self.add_hook(hook)
-        self._progress_manager = RunBatchProgressManager(num_instances=len(instances))
+        self._progress_manager = RunBatchProgressManager(
+            num_instances=len(instances), yaml_report_path=output_dir / "run_batch_exit_statuses.yaml"
+        )
 
     @classmethod
     def from_config(cls, config: RunBatchConfig) -> Self:

@@ -130,12 +130,19 @@ ModelConfig = Annotated[
 
 
 class GlobalStats(PydanticBaseModel):
+    """This class tracks usage numbers (costs etc.) across all instances."""
+
     total_cost: float = 0
     """Cumulative cost for all instances so far"""
 
 
 GLOBAL_STATS = GlobalStats()
+"""This object tracks usage numbers (costs etc.) across all instances.
+Please use the `GLOBAL_STATS_LOCK` lock when accessing this object to avoid race conditions.
+"""
+
 GLOBAL_STATS_LOCK = Lock()
+"""Lock for accessing `GLOBAL_STATS` without race conditions"""
 
 
 class InstanceStats(PydanticBaseModel):
