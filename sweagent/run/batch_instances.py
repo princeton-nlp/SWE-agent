@@ -205,6 +205,7 @@ class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
     """Load instances from HuggingFace."""
 
     dataset_name: str
+    """Name of the HuggingFace dataset. Same as when using `datasets.load_dataset`."""
     split: str = "dev"
     filter: str = ".*"
     """Regular expression to filter the instances by instance id."""
@@ -219,7 +220,7 @@ class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
     deployment: DeploymentConfig = Field(
         default_factory=lambda: DockerDeploymentConfig(image="python:3.11"),
     )
-    """Deployment configuration. Note that the image_name option is overwritten by the images specified in the task instances.
+    """Deployment configuration. Note that the `image_name` option is overwritten by the images specified in the task instances.
     """
     type: Literal["huggingface"] = "huggingface"
     """Discriminator for (de)serialization/CLI. Do not change."""
