@@ -9,7 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 from simple_parsing.helpers.fields import field
-from swerex.exceptions import BashIncorrectSyntaxError, SweRexception
+from swerex.exceptions import BashIncorrectSyntaxError, CommandTimeoutError, SweRexception
 from tenacity import RetryError
 from typing_extensions import Self
 
@@ -68,7 +68,17 @@ class TemplateConfig(BaseModel):
         "of not adhering to the syntax for multi-line commands. Here is the output of `bash -n`:\n"
         "{bash_stdout}\n{bash_stderr}"
     )
-    """Message template for when the agent's bash command contains syntax errors."""
+    """Message template for when the agent's bash command contains syntax errors.
+    Available variables: `bash_stdout`, `bash_stderr`
+    """
+
+    command_cancelled_timeout_template: str = (
+        "The command {command!r} was cancelled because it took more than {timeout} seconds. "
+        "Please try a different command that completes more quickly."
+    )
+    """Message template for when the agent's command was cancelled because it took too long.
+    Available variables: `timeout`, `command`
+    """
 
     def model_post_init(self, __context):
         self.demonstrations = _convert_paths_to_abspath(self.demonstrations)
@@ -536,12 +546,25 @@ class Agent:
         self._chook.on_action_started(step=step)
         execution_t0 = time.perf_counter()
         run_action: str = self.tools.guard_multiline_input(step.action).strip()
-        step.observation = self._env.communicate(
-            input=run_action,
-            timeout=self.tools.config.execution_timeout,
-            set_last_action=True,
-            check=self._always_require_zero_exit_code,
-        )
+        try:
+            step.observation = self._env.communicate(
+                input=run_action,
+                timeout=self.tools.config.execution_timeout,
+                set_last_action=True,
+                check=self._always_require_zero_exit_code,
+            )
+        except CommandTimeoutError:
+            try:
+                self._env.interrupt_session()
+            except Exception as f:
+                self.logger.exception("Failed to interrupt session after command timeout: %s", f, exc_info=True)
+                raise
+            step.observation = self.templates.command_cancelled_timeout_template.format(
+                **self._get_format_dict(),
+                timeout=self.tools.config.execution_timeout,
+                command=run_action,
+            )
+
         step.execution_time = time.perf_counter() - execution_t0
         self._chook.on_action_executed(step=step)
         step.state = self.tools.get_state(env=self._env)
