@@ -22,10 +22,16 @@ Let's start with an absolutely trivial example and solve an issue about a simple
 ```bash
 python run.py \
   --agent.model.name=gpt4 \
-  --agent.model.per_instance_cost_limit=2.00 \
+  --agent.model.per_instance_cost_limit=2.00 \  # (1)!
   --env.repo.url=https://github.com/SWE-agent/test-repo \
   --problem_statement.url=https://github.com/SWE-agent/test-repo/issues/1
 ```
+
+1. This limits the inference cost per instance to $2. The default is $3.
+
+TODO: Explain where to put model keys
+
+TODO: Update output
 
 <details>
 <summary>Output</summary>
@@ -39,7 +45,6 @@ As you can see, the command line options are hierarchical. At the top level, the
 
 * `problem_statement`: What problem are you trying to solve?
 * `agent`: How do you want to solve the problem? This includes setting up the LM with `--agent.model`.
-  `--agent.model.per_instance_cost_limit` limits the total inference cost to $2.
 * `env`: What is the environment in which the problem statement should be solved?
   This includes setting the repository/folder with the source files with `--env.repo`, as well as docker images and other dependencies.
   This will also control where the code is executed (in a local container or in the cloud).
@@ -57,6 +62,23 @@ Watching the output, you can notice several stages:
 5. **Submission**: The LM calls `submit` and we extract the patch (i.e., the changes to the source code that solve the problem).
 
 The complete details of the run are saved as a "trajectory" file (more about them [here](trajectories.md)). They can also be turned into new [demonstrations](../config/demonstrations.md) together with other log and output files.
+
+
+## A few more examples
+
+Before we continue with a more structured explanation of the command line options, here are some more examples that you might find immediately useful:
+
+```bash title="Local repository with problem statement from file and custom docker image" hl_lines="4 5 6"
+git clone https://github.com/SWE-agent/test-repo.git
+python run.py \
+  --agent.model.name=claude-3.5 \  # (1)!
+  --env.repo.path=test-repo \
+  --problem_statement.path=test-repo/problem_statements/1.md \
+  --env.deployment.image=python:3.12  # (2)!
+```
+
+1. Make sure to add anthropic keys to the environment for this one!
+2. This points to the [dockerhub image](https://hub.docker.com/_/python) of the same name
 
 
 !!! tip "All options"

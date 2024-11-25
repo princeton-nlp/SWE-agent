@@ -4,6 +4,7 @@ theme:
   custom_dir: docs/overrides
   icon:
     repo: fontawesome/brands/github
+    annotation: material/chevron-right-circle
   logo: assets/swe-agent.svg
   palette:
     - media: "(prefers-color-scheme)"
@@ -32,6 +33,7 @@ theme:
     - content.footnote.tooltips
     - header.autohide
     - announce.dismiss
+    - content.code.annotate
 markdown_extensions:
   - admonition
   - pymdownx.details
