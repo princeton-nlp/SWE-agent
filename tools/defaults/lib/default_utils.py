@@ -3,7 +3,9 @@ import os
 from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal, Optional, Union
+from typing import Any, Optional, Union
+
+from typing_extensions import Literal
 
 
 class EnvRegistry:
