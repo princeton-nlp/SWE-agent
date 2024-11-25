@@ -2,7 +2,7 @@
 
 import argparse
 import sys
-
+from typing import Union
 try:
     from sweagent import TOOLS_DIR
 except ImportError:
@@ -57,7 +57,7 @@ def parse_line_range(line_range: str) -> tuple[int, int]:
         exit(1)
 
 
-def main(line_range: str, replacement_text: str | None = None):
+def main(line_range: str, replacement_text: Union[str, None] = None):
     # Handle file opening
     try:
         wf = WindowedFile(exit_on_exception=False)
