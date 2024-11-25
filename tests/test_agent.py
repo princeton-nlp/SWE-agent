@@ -188,7 +188,8 @@ def test_run_autosubmit(dummy_env: SWEEnv, default_agent: Agent, tmp_path):
     a.model = PredeterminedTestModel(["raise_cost"])  # type: ignore
     a.setup(dummy_env, EmptyProblemStatement())
     dummy_env.deployment.runtime.run_in_session_outputs = [  # type: ignore
-        BashObservation(output=r"<<SUBMISSION||mysubmission||SUBMISSION>>")
+        BashObservation(output=""),
+        BashObservation(output=r"<<SUBMISSION||mysubmission||SUBMISSION>>"),
     ]
     r = a.step()
     assert a.info is not None
