@@ -141,9 +141,11 @@ class RunSingle:
         load_environment_variables(config.env_var_path)
         config.set_default_output_dir()
         config.output_dir.mkdir(parents=True, exist_ok=True)
+        agent = Agent.from_config(config.agent)
+        agent.replay_config = config
         self = cls(
             env=SWEEnv.from_config(config.env),
-            agent=Agent.from_config(config.agent),
+            agent=agent,
             problem_statement=config.problem_statement,
             output_dir=config.output_dir,
             actions=config.actions,

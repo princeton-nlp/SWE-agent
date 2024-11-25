@@ -161,6 +161,11 @@ class Agent:
 
         self._chook = CombinedAgentHook()
 
+        self.replay_config: BaseModel | None = None
+        """This can be set to a RunSingleConfig from the Run instance whenever possible.
+        It can be used to replay the agent's trajectory in an environment.
+        """
+
     @classmethod
     def from_config(cls, config: AgentConfig) -> Self:
         model = get_model(config.model, config.tools)
@@ -215,7 +220,7 @@ class Agent:
     @property
     def local_history(self) -> list[dict[str, str]]:
         """Return the history of the agent since the last reset."""
-        return self.history_processor([entry for entry in self.history if entry["agent"] == self.name])
+        return self.history_processor([entry for entry in self.history if entry["agent"] == self.name])  # type: ignore
 
     # Methods
     # -------
@@ -223,7 +228,7 @@ class Agent:
     def _append_history(self, item: dict[str, Any]) -> None:
         """Adds an item to the history."""
         self._chook.on_query_message_added(**item)
-        self.history.append(item)
+        self.history.append(item)  # type: ignore
 
     def setup(
         self,
@@ -431,6 +436,8 @@ class Agent:
         data = {
             **get_attempt_data(0),
         }
+
+        data["replay_config"] = self.replay_config.model_dump(mode="json") if self.replay_config else None
 
         assert self.traj_path is not None
         self.traj_path.write_text(json.dumps(data, indent=2))

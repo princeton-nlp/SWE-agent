@@ -27,6 +27,7 @@ from sweagent.run.batch_instances import BatchInstance, BatchInstanceSourceConfi
 from sweagent.run.common import BasicCLI, save_predictions
 from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
 from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
+from sweagent.run.run_single import RunSingleConfig
 from sweagent.types import AgentRunResult
 from sweagent.utils.config import load_environment_variables
 from sweagent.utils.log import (
@@ -225,6 +226,12 @@ class RunBatch:
     def _run_instance(self, instance: BatchInstance) -> AgentRunResult:
         self.agent_config.name = f"{instance.problem_statement.id}"
         agent = Agent.from_config(self.agent_config)
+        single_run_replay_config = RunSingleConfig(
+            agent=self.agent_config,
+            problem_statement=instance.problem_statement,
+            env=instance.env,
+        )
+        agent.replay_config = single_run_replay_config
         agent.add_hook(SetStatusAgentHook(instance.problem_statement.id, self._progress_manager.update_instance_status))
         self._progress_manager.update_instance_status(instance.problem_statement.id, "Starting environment")
         instance.env.name = f"{instance.problem_statement.id}"
