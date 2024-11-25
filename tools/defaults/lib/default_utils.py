@@ -3,11 +3,11 @@ import os
 from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Optional, Union
 
 
 class EnvRegistry:
-    def __init__(self, env_file: Path | None = None):
+    def __init__(self, env_file: Optional[Path] = None):
         self._env_file = env_file
 
     @property
@@ -85,10 +85,10 @@ class InsertInfo:
 class WindowedFile:
     def __init__(
         self,
-        path: Path | None = None,
+        path: Optional[Path] = None,
         *,
-        first_line: int | None = None,
-        window: int | None = None,
+        first_line: Optional[int] = None,
+        window: Optional[int] = None,
         exit_on_exception: bool = True,
     ):
         """
@@ -150,7 +150,7 @@ class WindowedFile:
         return self._first_line
 
     @first_line.setter
-    def first_line(self, value: int | float):
+    def first_line(self, value: Union[int, float]):
         self._original_first_line = self.first_line
         value = int(value)
         self._first_line = max(0, min(value, self.n_lines - 1 - self.window))
@@ -199,7 +199,9 @@ class WindowedFile:
                 out_lines.append(f"({self.n_lines - end_line - 1} more lines below)")
         return "\n".join(out_lines)
 
-    def set_window_text(self, new_text: str, *, line_range: tuple[int, int] | None = None) -> None:
+    def set_window_text(
+        self, new_text: str, *, line_range: Optional[tuple[int, int]] = None
+    ) -> None:
         """Replace the text in the current display window with a new string.
 
         Args:
@@ -295,7 +297,7 @@ class WindowedFile:
         self.first_line = self._original_first_line
 
     def insert(
-        self, text: str, line: int | None = None, *, reset_first_line: Literal["top", "keep"] = "top"
+        self, text: str, line: Optional[int] = None, *, reset_first_line: Literal["top", "keep"] = "top"
     ) -> InsertInfo:
         if line is None:
             if self.text.endswith("\n"):
