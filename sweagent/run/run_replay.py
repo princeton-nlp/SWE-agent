@@ -3,7 +3,7 @@
 import json
 import sys
 import tempfile
-from getpass import getpass
+from getpass import getuser
 from pathlib import Path
 from typing import Any
 
@@ -37,7 +37,7 @@ class RunReplayConfig(BaseSettings):
 
     def model_post_init(self, __context: Any) -> None:
         if self.output_dir == Path("DEFAULT"):
-            user_id = getpass.getuser()
+            user_id = getuser()
             self.output_dir = (
                 Path.cwd() / "trajectories" / user_id / f"{self.config_path.name}__replay___{self.traj_path.stem}"
             )
@@ -85,7 +85,39 @@ class RunReplay:
     def _create_actions_file(self) -> None:
         traj_path = Path(self.traj_path)
         traj_data = json.loads(traj_path.read_text())
-        actions = [x["content"] for x in traj_data["history"] if x["role"] == "assistant"]
+
+        # Verify config compatibility with tool calls
+        has_tool_calls = any(
+            "tool_calls" in item and item["tool_calls"] is not None
+            for item in traj_data["history"]
+            if item["role"] == "assistant"
+        )
+        agent_config = yaml.safe_load(Path(self.config_path).read_text())["agent"]
+        parse_function = agent_config.get("tools", {}).get("parse_function", {}).get("type")
+        use_function_calling = parse_function == "function_calling"
+
+        if has_tool_calls and not use_function_calling:
+            msg = (
+                "Trajectory contains tool calls but config is not set up for function calling. "
+                "Check that the config you want to use has agent.tools.parse_function.type set to 'function_calling'."
+            )
+            raise ValueError(msg)
+        actions = []
+        for ix, item in enumerate(traj_data["history"]):
+            if item["role"] != "assistant":
+                continue
+            action = {"message": item["content"]}
+            if use_function_calling:
+                assert "tool_calls" in item and item["tool_calls"] is not None, (
+                    f"Config is set to use `function_calling` but trajectory item {ix} is missing a tool call "
+                    f"or has tool_calls set to None"
+                )
+                action["tool_calls"] = item["tool_calls"]
+            actions.append(action)
+        if len(actions) == 0:
+            msg = "No actions found in trajectory"
+            raise ValueError(msg)
+
         self._replay_action_trajs_path.write_text(json.dumps({self.instance_id: actions}))
 
     def _get_env(self) -> SWEEnv:

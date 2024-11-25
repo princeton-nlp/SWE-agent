@@ -284,6 +284,8 @@ class ReplayModel(AbstractModel):
         ]
         self._replay_idx = 0
         self._action_idx = 0
+        self.use_function_calling = tools.use_function_calling
+        self.submit_command = tools.submit_command
 
     def _next_replay(self) -> None:
         """Called after last action"""
@@ -297,20 +299,35 @@ class ReplayModel(AbstractModel):
         try:
             action = actions[self._action_idx]
         except IndexError:
-            msg = (
-                "This seems to be an incomplete trajectory. "
-                "We reached the end of it, but `submit` was not called. "
-                "Calling it now."
-            )
-            logger.warning(msg)
-            action = "```\nsubmit\n```"
+            # log error
+            logger.error("Reached end of replay trajectory without submitting. Submitting now.")
+            if self.use_function_calling:
+                action = {
+                    "message": f"Calling `{self.submit_command}` to submit.",
+                    "tool_calls": [
+                        {
+                            "type": "function",
+                            "id": "call_submit",
+                            "function": {
+                                "name": self.submit_command,
+                                "arguments": "{}",
+                            },
+                        }
+                    ],
+                }
+            else:
+                action = f"```\n{self.submit_command}\n```"
 
         self._action_idx += 1
 
         # Assuming `submit` is always last action of replay trajectory
-        if action == "submit":
+        if isinstance(action, str) and action == "submit":
             self._next_replay()
+            return {"message": action}
 
+        # Handle both dict and string actions
+        if isinstance(action, dict):
+            return action
         return {"message": action}
 
 
