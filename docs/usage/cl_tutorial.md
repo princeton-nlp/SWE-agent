@@ -116,24 +116,72 @@ python run.py \
 
 All configuration options can be specified either in one or more `.yaml` files, or as command line arguments. For example, our first command can be written as
 
+=== "Command line"
+
+    ```bash
+    python run.py --config my_run.yaml
+    ```
+
+=== "Configuration file"
+
+    ```yaml title="my_run.yaml"
+    agent:
+      model:
+        name: gpt4
+        per_instance_cost_limit: 2.00
+    env:
+      repo:
+        github_url: https://github.com/SWE-agent/test-repo
+    problem_statement:
+      github_url: https://github.com/SWE-agent/test-repo/issues/1
+    ```
+
+But we can also split it up into multiple files and additional command line options:
+
+=== "Command line"
+
+    ```bash
+    python run.py --config agent.yaml --config env.yaml \
+        --problem_statement.text="Hey, can you fix all the bugs?"
+    ```
+
+=== "`agent.yaml`"
+
+    ```yaml title="agent.yaml"
+    agent:
+      model:
+        name: gpt4
+        per_instance_cost_limit: 2.00
+    ```
+
+=== "`env.yaml`"
+
+    ```yaml title="env.yaml"
+    env:
+      repo:
+        github_url: https://github.com/SWE-agent/test-repo
+    ```
+
+The default config file is `config/default.yaml`. Let's take a look at it:
+
+<details>
+<summary>Example: default config <code>default.yaml</code></summary>
+
+```yaml
+--8<-- "config/default_from_url.yaml"
+```
+</details>
+
+As you can see, this is where all the templates are defined!
+
+This file is also loaded when no other `--config` options are specified.
+So to make sure that we get the default templates in the above examples with `--config`, we should have added
+
 ```bash
-python run.py --config my_run.yaml
+--config config/default.yaml
 ```
 
-with
-
-```yaml title="my_run.yaml"
-agent:
-  model:
-    name: gpt4
-    per_instance_cost_limit: 2.00
-env:
-  repo:
-    github_url: https://github.com/SWE-agent/test-repo
-problem_statement:
-  github_url: https://github.com/SWE-agent/test-repo/issues/1
-```
-
+in addition to all the other `--config` options.
 
 ## Specifying the repository
 
