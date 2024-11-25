@@ -36,4 +36,4 @@ repos:
       - id: prettier
         types_or: ["javascript", "css"]
 
-exclude: ^tests/test_data/
+exclude: "^tests/test_data/|^tools/.*/.*.py"
