@@ -8,29 +8,25 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import Field
 from pydantic_settings import BaseSettings
 from swerex.deployment.abstract import AbstractDeployment
-from swerex.deployment.config import DeploymentConfig, DockerDeploymentConfig, get_deployment
+from swerex.deployment.config import DeploymentConfig, get_deployment
 from typing_extensions import Self
 
-from sweagent import CONFIG_DIR
-from sweagent.agent.agents import Agent, AgentConfig
+from sweagent.agent.agents import Agent
 from sweagent.agent.models import ReplayModelConfig
 from sweagent.environment.config.problem_statement import EmptyProblemStatement
-from sweagent.environment.config.repo import RepoConfig
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.run.common import BasicCLI
-from sweagent.run.run_single import RunSingle
+from sweagent.run.run_single import RunSingle, RunSingleConfig
 from sweagent.utils.config import load_environment_variables
 from sweagent.utils.log import get_logger
 
 
 class RunReplayConfig(BaseSettings):
     traj_path: Path
-    config_path: Path = CONFIG_DIR / "default.yaml"
-    deployment: DeploymentConfig = Field(default_factory=DockerDeploymentConfig)
-    repo: RepoConfig | None = None
+    deployment: DeploymentConfig | None = None
+    """Override the deployment in the trajectory."""
     output_dir: Path = Path("DEFAULT")
     env_var_path: Path | None = None
     """Path to a .env file to load environment variables from."""
@@ -38,9 +34,7 @@ class RunReplayConfig(BaseSettings):
     def model_post_init(self, __context: Any) -> None:
         if self.output_dir == Path("DEFAULT"):
             user_id = getuser()
-            self.output_dir = (
-                Path.cwd() / "trajectories" / user_id / f"{self.config_path.name}__replay___{self.traj_path.stem}"
-            )
+            self.output_dir = Path.cwd() / "trajectories" / user_id / f"replay___{self.traj_path.stem}"
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
 
@@ -49,22 +43,37 @@ class RunReplay:
         self,
         *,
         traj_path: Path,
-        config_path: Path,
-        deployment: AbstractDeployment,
-        repo: RepoConfig | None,
+        deployment: AbstractDeployment | None,
         output_dir: Path,
         _catch_errors: bool = False,
         _require_zero_exit_code: bool = False,
     ):
         self.traj_path = traj_path
-        self.config_path = config_path
-        self.deployment = deployment
-        self.repo = repo
         self.output_dir = output_dir
         self._replay_action_trajs_path = Path(tempfile.NamedTemporaryFile(suffix=".json").name)
         self.logger = get_logger("swea-run", emoji="🏃")
         self._catch_errors = _catch_errors
         self._require_zero_exit_code = _require_zero_exit_code
+
+        if traj_path.suffix == ".yaml":
+            self._traj_data = yaml.safe_load(traj_path.read_text())
+        else:
+            self._traj_data = json.loads(traj_path.read_text())
+        self.config = self._get_config_from_agent(self._traj_data)
+
+        if deployment is None:
+            self.deployment = get_deployment(self.config.env.deployment)
+        else:
+            self.deployment = deployment
+
+    def _get_config_from_agent(self, traj_data):
+        try:
+            config = RunSingleConfig.model_validate(self._traj_data["replay_config"])
+        except KeyError:
+            msg = "Replay config not found in trajectory. Are you running on an old trajectory?"
+            raise ValueError(msg)
+        config.agent.model = ReplayModelConfig(replay_path=self._replay_action_trajs_path)
+        return config
 
     @property
     def instance_id(self) -> str:
@@ -75,27 +84,21 @@ class RunReplay:
         load_environment_variables(config.env_var_path)
         return cls(
             traj_path=config.traj_path,
-            config_path=config.config_path,
-            deployment=get_deployment(config.deployment),
-            repo=config.repo,
+            deployment=get_deployment(config.deployment) if config.deployment else None,
             output_dir=config.output_dir,
             **kwargs,
         )
 
     def _create_actions_file(self) -> None:
-        traj_path = Path(self.traj_path)
-        if traj_path.suffix == ".yaml":
-            history = yaml.safe_load(traj_path.read_text())
-        else:
-            traj_data = json.loads(traj_path.read_text())
-            history = traj_data["history"]
-
         # Verify config compatibility with tool calls
         has_tool_calls = any(
-            "tool_calls" in item and item["tool_calls"] is not None for item in history if item["role"] == "assistant"
+            "tool_calls" in item and item["tool_calls"] is not None
+            for item in self._traj_data["history"]
+            if item["role"] == "assistant"
         )
-        agent_config = yaml.safe_load(Path(self.config_path).read_text())["agent"]
-        parse_function = agent_config.get("tools", {}).get("parse_function", {}).get("type")
+
+        agent_config = self.config.agent
+        parse_function = agent_config.tools.parse_function.type
         use_function_calling = parse_function == "function_calling"
 
         if has_tool_calls and not use_function_calling:
@@ -105,7 +108,7 @@ class RunReplay:
             )
             raise ValueError(msg)
         actions = []
-        for ix, item in enumerate(history):
+        for ix, item in enumerate(self._traj_data["history"]):
             if item["role"] != "assistant":
                 continue
             action = {"message": item["content"]}
@@ -124,15 +127,12 @@ class RunReplay:
     def _get_env(self) -> SWEEnv:
         return SWEEnv(
             deployment=self.deployment,
-            repo=self.repo,
+            repo=self.config.env.repo,
             post_startup_commands=[],
         )
 
     def _get_agent(self) -> Agent:
-        _agent_config = yaml.safe_load(Path(self.config_path).read_text())["agent"]
-        _agent_config["model"] = ReplayModelConfig(replay_path=self._replay_action_trajs_path).model_dump()
-        agent_config = AgentConfig(**_agent_config)
-        agent = Agent.from_config(agent_config)
+        agent = Agent.from_config(self.config.agent)
         agent._catch_errors = self._catch_errors
         agent._always_require_zero_exit_code = self._require_zero_exit_code
         return agent
