@@ -84,13 +84,15 @@ class RunReplay:
 
     def _create_actions_file(self) -> None:
         traj_path = Path(self.traj_path)
-        traj_data = json.loads(traj_path.read_text())
+        if traj_path.suffix == ".yaml":
+            history = yaml.safe_load(traj_path.read_text())
+        else:
+            traj_data = json.loads(traj_path.read_text())
+            history = traj_data["history"]
 
         # Verify config compatibility with tool calls
         has_tool_calls = any(
-            "tool_calls" in item and item["tool_calls"] is not None
-            for item in traj_data["history"]
-            if item["role"] == "assistant"
+            "tool_calls" in item and item["tool_calls"] is not None for item in history if item["role"] == "assistant"
         )
         agent_config = yaml.safe_load(Path(self.config_path).read_text())["agent"]
         parse_function = agent_config.get("tools", {}).get("parse_function", {}).get("type")
@@ -103,7 +105,7 @@ class RunReplay:
             )
             raise ValueError(msg)
         actions = []
-        for ix, item in enumerate(traj_data["history"]):
+        for ix, item in enumerate(history):
             if item["role"] != "assistant":
                 continue
             action = {"message": item["content"]}
@@ -117,7 +119,6 @@ class RunReplay:
         if len(actions) == 0:
             msg = "No actions found in trajectory"
             raise ValueError(msg)
-
         self._replay_action_trajs_path.write_text(json.dumps({self.instance_id: actions}))
 
     def _get_env(self) -> SWEEnv:
