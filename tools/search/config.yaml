@@ -1,11 +1,11 @@
 tools:
   find_file:
     signature: "find_file <file_name> [<dir>]"
-    docstring: "finds all files with the given name in dir. If dir is not provided, searches in the current directory"
+    docstring: "finds all files with the given name or pattern in dir. If dir is not provided, searches in the current directory"
     arguments:
       - name: file_name
         type: string
-        description: "the name of the file to search for"
+        description: "the name of the file or pattern to search for. supports shell-style wildcards (e.g. *.py)"
         required: true
       - name: dir
         type: string

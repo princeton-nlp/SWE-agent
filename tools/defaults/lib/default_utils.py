@@ -179,7 +179,7 @@ class WindowedFile:
         self, *, line_numbers: bool = False, status_line: bool = False, pre_post_line: bool = False
     ) -> str:
         start_line, end_line = self.line_range
-        lines = self.text.splitlines()[start_line : end_line + 1]
+        lines = self.text.split("\n")[start_line : end_line + 1]
         out_lines = []
         if status_line:
             out_lines.append(f"[File: {self.path} ({self.n_lines} lines total)]")
@@ -198,22 +198,15 @@ class WindowedFile:
     def set_window_text(
         self, new_text: str, *, line_range: Optional[Tuple[int, int]] = None
     ) -> None:
-        """Replace the text in the current display window with a new string.
-
-        Args:
-            line_range: Range of lines to replace.
-                If None, we use the current window.
-        """
-        text = self.text.splitlines()
+        """Replace the text in the current display window with a new string."""
+        text = self.text.split("\n")
         if line_range is not None:
             start, stop = line_range
         else:
             start, stop = self.line_range
-        # Preserve trailing newline if present
-        ends_with_newline = new_text.endswith('\n')
-        new_lines = new_text.splitlines()
-        if ends_with_newline:
-            new_lines.append('')
+        
+        # Handle empty replacement text (deletion case)
+        new_lines = new_text.split("\n") if new_text else []
         text[start : stop + 1] = new_lines
         self.text = "\n".join(text)
 
@@ -241,7 +234,7 @@ class WindowedFile:
                 exit(1)
             raise TextNotFound
         window_start_line, _ = self.line_range
-        replace_start_line = window_start_line + len(window_text[:index].splitlines())
+        replace_start_line = window_start_line + len(window_text[:index].split("\n"))
         new_window_text = window_text.replace(search, replace)
         self.set_window_text(new_window_text)
         if reset_first_line == "keep":
@@ -250,8 +243,8 @@ class WindowedFile:
             self.goto(replace_start_line, mode=reset_first_line)
         return ReplacementInfo(
             first_replaced_line=replace_start_line,
-            n_search_lines=len(search.splitlines()) + 1,
-            n_replace_lines=len(replace.splitlines()) + 1,
+            n_search_lines=len(search.split("\n")),
+            n_replace_lines=len(replace.split("\n")),
             n_replacements=1,
         )
 
@@ -262,7 +255,7 @@ class WindowedFile:
                 print(f"Error: Text not found: {search}")
                 exit(1)
             raise TextNotFound
-        replace_start_line = len(self.text[: indices[0]].splitlines())
+        replace_start_line = len(self.text[: indices[0]].split("\n"))
         new_text = self.text.replace(search, replace)
         self.text = new_text
         if reset_first_line == "keep":
@@ -271,8 +264,8 @@ class WindowedFile:
             self.goto(replace_start_line, mode=reset_first_line)
         return ReplacementInfo(
             first_replaced_line=replace_start_line,
-            n_search_lines=len(search.splitlines()) + 1,
-            n_replace_lines=len(replace.splitlines()) + 1,
+            n_search_lines=len(search.split("\n")),
+            n_replace_lines=len(replace.split("\n")),
             n_replacements=len(indices),
         )
 
@@ -296,22 +289,44 @@ class WindowedFile:
         self.first_line = self._original_first_line
 
     def insert(self, text: str, line: Optional[int] = None, *, reset_first_line: str = "top") -> "InsertInfo":
+        # Standardize empty text handling
+        if not text:
+            return InsertInfo(
+                first_inserted_line=(self.n_lines if line is None else line), 
+                n_lines_added=0
+            )
+
+        # Remove single trailing newline if it exists
+        text = text[:-1] if text.endswith("\n") else text
+        
         if line is None:
-            if self.text.endswith("\n"):
-                line = self.n_lines
-                new_text = self.text + text
+            # Append to end of file
+            if not self.text:
+                new_text = text
             else:
-                line = self.n_lines + 1
-                new_text = self.text + "\n" + text
+                current_text = self.text[:-1] if self.text.endswith("\n") else self.text
+                new_text = current_text + "\n" + text
+            insert_line = self.n_lines
         elif line < 0:
-            new_text = text + "\n" + self.text
+            # Insert at start of file
+            if not self.text:
+                new_text = text
+            else:
+                current_text = self.text[1:] if self.text.startswith("\n") else self.text
+                new_text = text + "\n" + current_text
+            insert_line = 0
         else:
-            _lines = self.text.splitlines()
-            lines = _lines[: line + 1] + text.splitlines() + _lines[line + 1 :]
+            # Insert at specific line
+            lines = self.text.split("\n")
+            lines.insert(line, text)
             new_text = "\n".join(lines)
+            insert_line = line
+
         self.text = new_text
-        if reset_first_line == "keep":
-            pass
-        else:
-            self.goto(line, mode=reset_first_line)
-        return InsertInfo(first_inserted_line=line, n_lines_added=len(text.splitlines()))
+        if reset_first_line != "keep":
+            self.goto(insert_line, mode=reset_first_line)
+        
+        return InsertInfo(
+            first_inserted_line=insert_line,
+            n_lines_added=len(text.split("\n"))
+        )
