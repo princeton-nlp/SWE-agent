@@ -88,10 +88,6 @@ def main(line_range: str, replacement_text: Union[str, None] = None):
     else:
         replacement_text += "\n"  # add implicit newline at the end
 
-    import json
-
-    print(json.dumps(replacement_text))
-
     if not replacement_text:
         print(_USAGE_MSG)
         exit(1)
