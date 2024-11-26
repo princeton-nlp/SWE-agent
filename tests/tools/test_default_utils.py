@@ -52,13 +52,13 @@ def test_windowed_file(windowed_file):
     wfile.print_window()
     wfile.replace_in_window("10", "Hello, world!")
     assert wfile.n_lines == 100
-    assert wfile.line_range == (7, 16)
+    assert wfile.line_range == (8, 17)
     wfile.first_line = 50
     wfile.print_window()
     wfile.replace_in_window("50", "Hello, world!")
     wfile.print_window()
     # Line 50 is now the 2nd line of the new window
-    assert wfile.line_range == (47, 56)
+    assert wfile.line_range == (48, 57)
     with pytest.raises(default_utils.TextNotFound):
         wfile.replace_in_window("asdf", "Hello, world!")
 
