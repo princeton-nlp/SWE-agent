@@ -6,7 +6,7 @@ from typing import Any, Literal, Protocol
 import pydantic
 from git import InvalidGitRepositoryError
 from git import Repo as GitRepo
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from swerex.deployment.abstract import AbstractDeployment
 from swerex.runtime.abstract import Command, UploadRequest
 from typing_extensions import Self
@@ -15,6 +15,13 @@ from sweagent.utils.github import _parse_gh_repo_url
 from sweagent.utils.log import get_logger
 
 logger = get_logger("swea-config", emoji="🔧")
+
+
+_BASE_COMMIT_DOC = """The commit to reset the repository to. The default is HEAD,
+i.e., the latest commit. You can also set this to a branch name (e.g., `dev`),
+a tag (e.g., `v0.1.0`), or a commit hash (e.g., `a4464baca1f`).
+SWE-agent will then start from this commit when trying to solve the problem.
+"""
 
 
 class Repo(Protocol):
@@ -35,7 +42,7 @@ class PreExistingRepo(BaseModel):
 
     repo_name: str
     """The repo name (the repository must be located at the root of the deployment)."""
-    base_commit: str = "HEAD"
+    base_commit: str = Field(default="HEAD", description=_BASE_COMMIT_DOC)
     """Used to reset repo."""
 
     type: Literal["preexisting"] = "preexisting"
@@ -48,7 +55,7 @@ class PreExistingRepo(BaseModel):
 
 class LocalRepoConfig(BaseModel):
     path: Path
-    base_commit: str = "HEAD"
+    base_commit: str = Field(default="HEAD", description=_BASE_COMMIT_DOC)
 
     type: Literal["local"] = "local"
     """Discriminator for (de)serialization/CLI. Do not change."""
@@ -82,7 +89,7 @@ class LocalRepoConfig(BaseModel):
 class GithubRepoConfig(BaseModel):
     github_url: str = ""
 
-    base_commit: str = "HEAD"
+    base_commit: str = Field(default="HEAD", description=_BASE_COMMIT_DOC)
 
     clone_timeout: float = 500
     """Timeout for git clone operation."""
