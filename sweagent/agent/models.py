@@ -187,6 +187,15 @@ class AbstractModel(ABC):
     def query(self, history: History, action_prompt: str = "> ") -> dict: ...
 
 
+def _handle_raise_commands(action: str) -> None:
+    if action == "raise_runtime":
+        raise SweRexception()
+    elif action == "raise_cost":
+        raise CostLimitExceededError()
+    elif action == "raise_context":
+        raise ContextWindowExceededError()
+
+
 class HumanModel(AbstractModel):
     def __init__(self, config: HumanModelConfig, tools: ToolConfig):
         """Model that allows for human-in-the-loop"""
@@ -242,6 +251,7 @@ class HumanModel(AbstractModel):
         else:
             # Input has escaped things like \n, so we need to unescape it
             action = action.encode("utf8").decode("unicode_escape")
+        _handle_raise_commands(action)
         return action
 
     def query(self, history: History, action_prompt: str = "> ") -> dict:
@@ -342,12 +352,7 @@ class PredeterminedTestModel(AbstractModel):
         self._idx += 1
         output = self._outputs[self._idx]
         if isinstance(output, str):
-            if output == "raise_runtime":
-                raise SweRexception()
-            elif output == "raise_cost":
-                raise CostLimitExceededError()
-            elif output == "raise_context":
-                raise ContextWindowExceededError()
+            _handle_raise_commands(output)
             return {"message": output}
         if not isinstance(output, dict):
             msg = f"Output must be string or dict, got {type(output)}"
