@@ -251,6 +251,11 @@ class RunBatch:
                 env=env,
                 output_dir=Path(self.output_dir),
             )
+        except Exception:
+            # The actual handling is happening in `run_instance`, but we need to make sure that
+            # we log it to the agent specific logger as well
+            agent.logger.error(traceback.format_exc())
+            raise
         finally:
             env.close()
         save_predictions(self.output_dir, instance.problem_statement.id, result)
