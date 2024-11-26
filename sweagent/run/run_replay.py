@@ -15,7 +15,6 @@ from typing_extensions import Self
 
 from sweagent.agent.agents import Agent
 from sweagent.agent.models import ReplayModelConfig
-from sweagent.environment.config.problem_statement import EmptyProblemStatement
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.run.common import BasicCLI
 from sweagent.run.run_single import RunSingle, RunSingleConfig
@@ -141,7 +140,7 @@ class RunReplay:
         return RunSingle(
             self._get_env(),
             self._get_agent(),
-            problem_statement=EmptyProblemStatement(),
+            problem_statement=self.config.problem_statement,
             output_dir=Path(self.output_dir),
         )
 
