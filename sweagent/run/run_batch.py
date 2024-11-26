@@ -44,8 +44,12 @@ class RunBatchConfig(BaseSettings, cli_implicit_flags=True):
     instances: BatchInstanceSourceConfig = Field(description="Instances to run.")
     agent: AgentConfig = Field(description="Agent options.")
     output_dir: Path = Field(default=Path("DEFAULT"), description="Output directory.")
+    suffix: str = ""
+    """Suffix to add to the output directory. Only used if `output_dir` is `DEFAULT`."""
     raise_exceptions: bool = False
+    """Raise exceptions instead of skipping instances."""
     redo_existing: bool = False
+    """Do not skip instances that already have a trajectory."""
     env_var_path: Path | None = None
     """Path to a .env file to load environment variables from."""
     num_workers: int = Field(default=1, description="Number of parallel workers to use.")
@@ -65,7 +69,8 @@ class RunBatchConfig(BaseSettings, cli_implicit_flags=True):
             config_file = getattr(self, "_config_files", ["no_config"])[0]
             if isinstance(config_file, Path):
                 config_file = config_file.stem
-            self.output_dir = Path.cwd() / "trajectories" / user_id / f"{config_file}__{model_id}___{source_id}"
+            suffix = f"__{self.suffix}" if self.suffix else ""
+            self.output_dir = Path.cwd() / "trajectories" / user_id / f"{config_file}__{model_id}___{source_id}{suffix}"
 
 
 class _BreakLoop(Exception):
