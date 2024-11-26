@@ -76,6 +76,13 @@ def main(search: str, replace: str, replace_all: bool):
 
     try:
         if not replace_all:
+            window_text = wf.get_window_text()
+            if window_text.count(search) > 1:
+                print(
+                    f"Error: Found more than one occurrence of {search} in the window while replace_all=False. "
+                    "Aborting edit."
+                )
+                exit(4)
             replacement_info = wf.replace_in_window(search, replace)
             # todo: Should warn if more than one occurrence was found?
         else:

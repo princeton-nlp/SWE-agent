@@ -120,7 +120,7 @@ class WindowedFile:
                 exit(1)
             raise IsADirectoryError(msg)
         if not self.path.exists():
-            msg = f"File {self.path} not found"
+            msg = f"Error: File {self.path} not found"
             if self._exit_on_exception:
                 print(msg)
                 exit(1)
@@ -237,12 +237,12 @@ class WindowedFile:
         index = window_text.find(search)
         if index == -1:
             if self._exit_on_exception:
-                print(f"Text not found: {search}")
+                print(f"Error: Text not found: {search}")
                 exit(1)
             raise TextNotFound
         window_start_line, _ = self.line_range
         replace_start_line = window_start_line + len(window_text[:index].splitlines())
-        new_window_text = window_text.replace(search, replace, 1)
+        new_window_text = window_text.replace(search, replace)
         self.set_window_text(new_window_text)
         if reset_first_line == "keep":
             pass
@@ -259,7 +259,7 @@ class WindowedFile:
         indices = list(_find_all(self.text, search))
         if not indices:
             if self._exit_on_exception:
-                print(f"Text not found: {search}")
+                print(f"Error: Text not found: {search}")
                 exit(1)
             raise TextNotFound
         replace_start_line = len(self.text[: indices[0]].splitlines())
