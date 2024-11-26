@@ -223,17 +223,6 @@ class SWEEnv:
         path_in_container = f"/{self.repo.repo_name}/{path}"
         return self.communicate(f"cat {str(path_in_container)}")
 
-    def get_env_vars(self) -> dict[str, str]:
-        """Get all environment variables set in the environment."""
-        env_output = self.communicate("env", check=True).strip()
-        if not env_output:
-            return {}
-        try:
-            return dict(line.split("=", 1) for line in env_output.splitlines() if line.strip())
-        except ValueError:
-            self.logger.error(f"Env output: {env_output!r}")
-            raise
-
     def set_env_variables(self, env_variables: dict[str, str]) -> None:
         """Set environment variables in the environment."""
         _env_setters = [f"export {k}={v}" for k, v in env_variables.items()]

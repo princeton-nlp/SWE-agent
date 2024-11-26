@@ -235,8 +235,8 @@ class ToolHandler:
                 timeout=self.config.install_timeout,
             )
         env.communicate(f"cd {cwd}", check=True)
-        env_vars = env.get_env_vars()
-        asyncio.run(self._check_available_commands(env, env_vars))
+        path = env.communicate("echo $PATH", check=True).strip()
+        asyncio.run(self._check_available_commands(env, {"PATH": path}))
 
     # Getting state
     # -------------
