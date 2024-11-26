@@ -204,7 +204,9 @@ class ToolHandler:
 
     async def _is_command_available(self, env, command: str, env_vars: dict[str, str]) -> None:
         try:
-            env.deployment.runtime.execute(RexCommand(command=f"which {command}", shell=True, check=True, env=env_vars))
+            await env.deployment.runtime.execute(
+                RexCommand(command=f"which {command}", shell=True, check=True, env=env_vars)
+            )
         except Exception:
             msg = f"Tool {command} is not available in the container."
             raise RuntimeError(msg) from None
