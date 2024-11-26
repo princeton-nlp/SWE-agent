@@ -61,12 +61,13 @@ def _slice_spec_to_slice(slice_spec: str) -> slice:
     if slice_spec == "":
         return slice(None)
     parts = slice_spec.split(":")
+    values = [None if p == "" else int(p) for p in parts]
     if len(parts) == 1:
-        return slice(int(parts[0]))
+        return slice(values[0])
     if len(parts) == 2:
-        return slice(int(parts[0]), int(parts[1]))
+        return slice(values[0], values[1])
     if len(parts) == 3:
-        return slice(int(parts[0]), int(parts[1]), int(parts[2]))
+        return slice(values[0], values[1], values[2])
     msg = (
         f"Invalid slice specification: {slice_spec!r}. "
         "Here's the expected format: stop or start:stop or start:stop:step "
