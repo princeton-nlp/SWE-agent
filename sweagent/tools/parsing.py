@@ -225,12 +225,12 @@ class FunctionCallingParser(AbstractParseFunction, BaseModel):
     """Expects the model response to be a LiteLLM tool call."""
 
     error_message: str = """\
-    Your output could not be parsed as a tool call.
-    Please make sure your output includes a thought and exactly _ONE_ tool call.
+    Your output could not be parsed properly.
+    Please make sure your output includes a thought and exactly _ONE_ function call.
 
-    Make sure your tool call doesn't include any extra arguments that are not in the allowed arguments, and only use the allowed commands.
+    Make sure your function call doesn't include any extra arguments that are not in the allowed arguments, and only use the allowed commands.
 
-    You must invoke the tool directly using the function call format.
+    You must invoke the function directly using the function call format. You cannot invoke commands using with ```, you have to use the function call format.
     """
 
     type: Literal["function_calling"] = "function_calling"
