@@ -547,6 +547,7 @@ class Agent:
             step.done = True
             step.observation = "Exited"
             step.exit_status = "exit_command"
+            step.state = self.tools.get_state(env=self._env)  # for history
             return step
 
         assert self._env is not None
@@ -756,8 +757,7 @@ class Agent:
         self._chook.on_step_start()
 
         step_output = self.forward_with_handling(self.local_history)
-        if not step_output.done:
-            self.add_step_to_history(step_output)
+        self.add_step_to_history(step_output)
 
         self.info["submission"] = step_output.submission
         self.info["exit_status"] = step_output.exit_status  # type: ignore
