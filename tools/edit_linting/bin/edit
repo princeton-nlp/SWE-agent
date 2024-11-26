@@ -69,8 +69,9 @@ def main(line_range: str, replacement_text: Union[str, None] = None):
     # Parse line range
     start_line, end_line = parse_line_range(line_range)
 
-    # Read replacement text from stdin if not provided as argument
     if replacement_text is None:
+        # Read replacement text from stdin (e.g., when sent via bash heredoc)
+        # if not provided as argument
         replacement_lines = []
         while True:
             try:
@@ -81,7 +82,7 @@ def main(line_range: str, replacement_text: Union[str, None] = None):
             except EOFError:
                 break
         replacement_text = "\n".join(replacement_lines)
-    if replacement_text == "":
+    elif replacement_text == "":
         # basically delete the lines
         pass
     else:
