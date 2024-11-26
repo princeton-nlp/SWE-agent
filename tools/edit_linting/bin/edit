@@ -81,6 +81,15 @@ def main(line_range: str, replacement_text: Union[str, None] = None):
             except EOFError:
                 break
         replacement_text = "\n".join(replacement_lines)
+    if replacement_text == "":
+        # basically delete the lines
+        pass
+    else:
+        replacement_text += "\n"  # add implicit newline at the end
+
+    import json
+
+    print(json.dumps(replacement_text))
 
     if not replacement_text:
         print(_USAGE_MSG)

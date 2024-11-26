@@ -209,7 +209,12 @@ class WindowedFile:
             start, stop = line_range
         else:
             start, stop = self.line_range
-        text[start : stop + 1] = new_text.splitlines()
+        # Preserve trailing newline if present
+        ends_with_newline = new_text.endswith('\n')
+        new_lines = new_text.splitlines()
+        if ends_with_newline:
+            new_lines.append('')
+        text[start : stop + 1] = new_lines
         self.text = "\n".join(text)
 
     def replace_in_window(
