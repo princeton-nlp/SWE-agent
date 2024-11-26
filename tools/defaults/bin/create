@@ -19,7 +19,7 @@ def main():
     path.write_text("\n")
 
     wfile = WindowedFile(path=path)
-    wfile.current_line = 0
+    wfile.first_line = 0
     wfile.print_window()
 
 
