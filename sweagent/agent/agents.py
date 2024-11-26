@@ -757,7 +757,11 @@ class Agent:
         self._chook.on_step_start()
 
         step_output = self.forward_with_handling(self.local_history)
-        self.add_step_to_history(step_output)
+        if not step_output.done:
+            # When we're done because of an error, the state might not be updated,
+            # and we might not be able to format the templates correctly. So let's just not
+            # add the history (because we stop anyway).
+            self.add_step_to_history(step_output)
 
         self.info["submission"] = step_output.submission
         self.info["exit_status"] = step_output.exit_status  # type: ignore
