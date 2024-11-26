@@ -20,7 +20,7 @@ tools:
         required: false
   insert:
     signature: |
-      insert <text> [--line <line>]
+      insert <text> [<line>]
     docstring: >
       Insert <text> at the end of the currently opened file or after <line> if specified.
     arguments:
