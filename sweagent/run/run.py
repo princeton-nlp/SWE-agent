@@ -8,7 +8,9 @@ import sys
 
 def get_cli():
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("command", choices=["run", "run-batch", "run-replay", "traj-to-demo", "run-api"], nargs="?")
+    parser.add_argument(
+        "command", choices=["run", "run-batch", "run-replay", "traj-to-demo", "run-api", "merge-preds"], nargs="?"
+    )
     parser.add_argument("-h", "--help", action="store_true", help="Show this help message and exit")
     return parser
 
@@ -52,6 +54,10 @@ def main(args: list[str] | None = None):
         from sweagent.api.server import run_from_cli as run_api_main
 
         run_api_main(remaining_args)
+    elif command == "merge-preds":
+        from sweagent.run.merge_predictions import run_from_cli as merge_predictions_main
+
+        merge_predictions_main(remaining_args)
     else:
         msg = f"Unknown command: {command}"
         raise ValueError(msg)

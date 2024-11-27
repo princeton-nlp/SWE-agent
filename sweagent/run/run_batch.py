@@ -28,6 +28,7 @@ from sweagent.run.batch_instances import BatchInstance, BatchInstanceSourceConfi
 from sweagent.run.common import BasicCLI, save_predictions
 from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
 from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
+from sweagent.run.merge_predictions import merge_predictions
 from sweagent.run.run_single import RunSingleConfig
 from sweagent.types import AgentRunResult
 from sweagent.utils.config import load_environment_variables
@@ -159,6 +160,8 @@ class RunBatch:
             self.main_single_worker()
         else:
             self.main_multi_worker()
+
+        merge_predictions(self.output_dir)
 
         self._chooks.on_end()
 
