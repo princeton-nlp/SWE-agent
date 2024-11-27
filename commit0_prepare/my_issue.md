@@ -1,7 +1,7 @@
 Here is your task:
 
   You need to complete the implementations for all functions (i.e., those with pass
-  statements) and pass the unit tests. 
+  statements) and pass the unit tests.
 
   Do not change the names of existing functions or classes, as they may be referenced
   from other code like unit tests, etc.

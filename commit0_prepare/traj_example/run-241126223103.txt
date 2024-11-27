@@ -873,7 +873,7 @@ state
 Here is your task:
 
 You need to complete the implementations for all functions (i.e., those with pass
-statements) and pass the unit tests. 
+statements) and pass the unit tests.
 
 Do not change the names of existing functions or classes, as they may be referenced
 from other code like unit tests, etc.
@@ -1569,7 +1569,7 @@ submit
 2024-11-26 22:32:28,190 TRACE Output:
 <<SUBMISSION||
 ||SUBMISSION>>
-2024-11-26 22:32:28,225 INFO Found submission: 
+2024-11-26 22:32:28,225 INFO Found submission:
 
 2024-11-26 22:32:28,229 INFO Trajectory saved to trajectories/willjiang/claude-3-5-sonnet-20240620__my_issue_simpy__simpy__t-0.00__p-0.95__c-0.50__install-1/97af1e.traj
 2024-11-26 22:32:28,231 INFO Saved predictions to trajectories/willjiang/claude-3-5-sonnet-20240620__my_issue_simpy__simpy__t-0.00__p-0.95__c-0.50__install-1/all_preds.jsonl
