@@ -10,6 +10,7 @@ import sys
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import ExitStack
 from pathlib import Path
 from typing import Self
 
@@ -162,7 +163,10 @@ class RunBatch:
         self._chooks.on_end()
 
     def main_single_worker(self) -> None:
-        with Live(self._progress_manager.render_group):
+        with ExitStack() as stack:
+            # Conditionally add progress bar
+            if self.agent_config.model.name not in ["human", "human_thought"]:
+                stack.enter_context(Live(self._progress_manager.render_group))
             for instance in self.instances:
                 try:
                     self.run_instance(instance)
