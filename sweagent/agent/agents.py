@@ -34,7 +34,7 @@ from sweagent.tools.parsing import (
 )
 from sweagent.tools.tools import ToolConfig, ToolHandler
 from sweagent.types import AgentInfo, AgentRunResult, History, StepOutput, Trajectory, TrajectoryStep
-from sweagent.utils.config import _convert_paths_to_abspath
+from sweagent.utils.config import _convert_paths_to_abspath, _strip_abspath_from_dict
 from sweagent.utils.log import get_logger
 from sweagent.utils.patch_formatter import PatchFormatter
 
@@ -161,7 +161,7 @@ class Agent:
 
         self._chook = CombinedAgentHook()
 
-        self.replay_config: BaseModel | None = None
+        self._replay_config: BaseModel | None = None
         """This can be set to a RunSingleConfig from the Run instance whenever possible.
         It can be used to replay the agent's trajectory in an environment.
         """
@@ -184,6 +184,14 @@ class Agent:
 
     # Properties
     # ----------
+
+    @property
+    def replay_config(self) -> dict | None:
+        return self._replay_config
+
+    @replay_config.setter
+    def replay_config(self, value: BaseModel | None):
+        self._replay_config = _strip_abspath_from_dict(value.model_dump(mode="json")) if value else None
 
     @property
     def history(self) -> History:
@@ -425,20 +433,20 @@ class Agent:
             assert self._env is not None
             # The deepcopy here is important because else the
             # data["info"]["model_stats"] update will create havoc!
-            return copy.deepcopy(
+            attempt_data = copy.deepcopy(
                 {
-                    "environment": self._env.name,
                     "trajectory": self._trajectory_by_attempt[attempt_idx],
                     "history": self._history_by_attempt[attempt_idx],
                     "info": self._info_by_attempt[attempt_idx],
                 }
             )
+            attempt_data["replay_config"] = self.replay_config
+            attempt_data["environment"] = self._env.name
+            return attempt_data
 
         data = {
             **get_attempt_data(0),
         }
-
-        data["replay_config"] = self.replay_config.model_dump(mode="json") if self.replay_config else None
 
         assert self.traj_path is not None
         self.traj_path.write_text(json.dumps(data, indent=2))
@@ -508,7 +516,10 @@ class Agent:
         assert self.tools is not None
         submission = self.tools.parse_submission_cmd_output(observation or step.observation)
         if submission is not None:
-            step.submission = submission
+            if submission.strip() != "":
+                step.submission = None
+            else:
+                step.submission = None
             step.observation = submission
             if not step.exit_status:
                 step.exit_status = "submitted"
