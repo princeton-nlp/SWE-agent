@@ -67,8 +67,7 @@ for repo in "${repos[@]}"; do
         --model_name claude-3-5-sonnet-20240620 \
         --data_path "repos/$repo/my_issue_$repo.md" \
         --repo_path "commit0_prepare/empty_repo" \
-        --config_file "/Users/willjiang/Desktop/ai2dev/SWE-agent/config/commit0/prompt/$repo.yaml" \
-        --environment_setup "/Users/willjiang/Desktop/ai2dev/SWE-agent/config/commit0/setup/$repo.yaml" \
+        --config_file "commit0/prompt/$repo.yaml" \
         --image_name wentingzhao/$repo:v0 \
         --per_instance_cost_limit 3.00 \
         --apply_patch_locally > "log/commit0/$repo.log" 2>&1
