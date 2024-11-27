@@ -147,6 +147,11 @@ class RunReplay:
     def main(self):
         self._create_actions_file()
         run_single = self._get_run_single()
+        run_single.agent.replay_config = RunSingleConfig(
+            agent=self.config.agent,
+            problem_statement=run_single.problem_statement,
+            env=self.config.env,
+        )
         run_single.run()
 
 
