@@ -375,10 +375,15 @@ class SWEEnv(gym.Env):
         self._reset_repository()
         self._reset_environment_variables()
 
+        # # Set up environment
+        # self.communicate_with_handling(
+        #     "source /root/miniconda3/etc/profile.d/conda.sh",
+        #     error_msg="Failed to source conda",
+        # )
         # Set up environment
         self.communicate_with_handling(
-            "source /root/miniconda3/etc/profile.d/conda.sh",
-            error_msg="Failed to source conda",
+            "source /testbed/.venv/bin/activate",
+            error_msg="Failed to source virtual environment",
         )
 
         system = self.communicate("uname -s").strip().lower()
@@ -391,6 +396,7 @@ class SWEEnv(gym.Env):
             )
 
         # Call install environment helper function if specified
+        self.install_environment = False
         if self.install_environment:
             self.install_env()
         # Install mypy for linting purposes
