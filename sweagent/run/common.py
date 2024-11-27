@@ -1,8 +1,11 @@
 """Common functionality for the run scripts."""
 
 import json
+import sys
 from argparse import ArgumentParser
 from pathlib import Path
+from types import UnionType
+from typing import Any
 
 import yaml
 from pydantic import ValidationError
@@ -64,6 +67,43 @@ _SETTING_ERROR_HINTS = """
 """
 
 
+class ConfigHelper:
+    def _get_type_name(self, item: Any, full: bool = False):
+        full_name = str(item).removeprefix("<class '").removesuffix("'>")
+        if full:
+            return full_name
+        return full_name.split(".")[-1]
+
+    def _get_value_help_string(self, item: Any, description: str | None):
+        if hasattr(item, "model_fields"):
+            full_name = self._get_type_name(item, full=True)
+            name = self._get_type_name(item)
+            out = f"{name}\n"
+            if description:
+                out += f"    {description}\n"
+            out += f"    Run --help_option {full_name} for more info"
+            return out
+        if isinstance(item, UnionType):
+            out = "This config item can be one of the following things:\n"
+            things = str(item).split("|")
+            for thing in things:
+                out += f"    {thing.strip()}\n"
+            return out.strip()
+        return self._get_type_name(item)
+
+    def get_help(self, config_type: type[BaseSettings]) -> str:
+        lines = []
+        for name, field_info in config_type.model_fields.items():
+            line = name
+            # print(field_info)
+            if field_info.is_required:
+                line += " (required)"
+            line += ": "
+            line += self._get_value_help_string(field_info.annotation, field_info.description)
+            lines.append(line)
+        return "\n\n".join(lines)
+
+
 # todo: Parameterize type hints
 class BasicCLI:
     def __init__(self, config_type: type[BaseSettings], *, default_settings: bool = True, help_text: str | None = None):
@@ -104,8 +144,12 @@ class BasicCLI:
         parser.add_argument(
             "-h",
             "--help",
-            action="store_true",
             help="Show help text and exit",
+            action="store_true",
+        )
+        parser.add_argument(
+            "--help_option",
+            help="Show help text for a specific option",
         )
         if self.default_settings:
             parser.add_argument(
@@ -113,11 +157,6 @@ class BasicCLI:
                 action="store_true",
                 help="Do not load default config file when no config file is provided",
             )
-        parser.add_argument(
-            "--print_options",
-            action="store_true",
-            help="Print all additional configuration options that can be set via CLI and exit",
-        )
         parser.add_argument(
             "--print_config",
             action="store_true",
@@ -135,12 +174,12 @@ class BasicCLI:
             else:
                 parser.print_help()
             exit(0)
-
-        if cli_args.print_options:
-            CliApp.run(
-                self.arg_type,
-                ["--help"],
-            )
+        if cli_args.help_option:
+            module, _, name = cli_args.help_option.rpartition(".")
+            if module not in sys.modules:
+                __import__(module)
+            type_ = getattr(sys.modules[module], name)
+            print(ConfigHelper().get_help(type_))
             exit(0)
 
         # >>> Step 3: Load config files and merge them in a big nested data structure

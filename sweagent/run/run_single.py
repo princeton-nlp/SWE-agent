@@ -27,12 +27,6 @@ Here's an example that uses [bold][cyan]modal[/bold][/cyan] instead of docker an
     --env.deployment.type=modal --env.repo.path /path/to/repo \\
     --problem_statement.path=path/to/problem_statement.md
 [/green]
-
-[cyan][bold]=== MORE ===[/bold][/cyan]
-
-To find out all command line options, run [green]sweagent run --print_options[/green]!
-
-Want to run over more than one issue? Check out the [bold][cyan]batch mode[/bold][/cyan]: [green]sweagent run-batch --help[/green]!
 """
 
 import getpass
@@ -50,7 +44,7 @@ from sweagent.environment.config.problem_statement import (
     ProblemStatementConfig,
 )
 from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
-from sweagent.run.common import BasicCLI, save_predictions
+from sweagent.run.common import BasicCLI, ConfigHelper, save_predictions
 from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
 from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
 from sweagent.run.hooks.open_pr import OpenPRConfig, OpenPRHook
@@ -185,7 +179,10 @@ def run_from_config(config: RunSingleConfig):
 def run_from_cli(args: list[str] | None = None):
     if args is None:
         args = sys.argv[1:]
-    run_from_config(BasicCLI(RunSingleConfig, help_text=__doc__).get_config(args))  # type: ignore
+    help_text = (  # type: ignore
+        __doc__ + "\n[cyan][bold]=== ALL THE OPTIONS ===[/bold][/cyan]\n\n" + ConfigHelper().get_help(RunSingleConfig)
+    )
+    run_from_config(BasicCLI(RunSingleConfig, help_text=help_text).get_config(args))  # type: ignore
 
 
 if __name__ == "__main__":
