@@ -29,6 +29,11 @@ def merge_predictions(directory: Path, output: Path | None = None) -> None:
     for pred in preds:
         _data = json.loads(pred.read_text())
         instance_id = _data["instance_id"]
+        if "model_patch" not in _data:
+            logger.warning("Prediction %s does not contain a model patch. SKIPPING", pred)
+            continue
+        # Ensure model_patch is a string
+        _data["model_patch"] = str(_data["model_patch"]) if _data["model_patch"] is not None else ""
         data[instance_id] = _data
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(data))
