@@ -19,6 +19,8 @@ class ProblemStatement(Protocol):
 
     def get_problem_statement(self) -> str: ...
 
+    def get_extra_fields(self) -> dict[str, Any]: ...
+
 
 class EmptyProblemStatement(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -30,9 +32,19 @@ class EmptyProblemStatement(BaseModel):
     def get_problem_statement(self) -> str:
         return ""
 
+    def get_extra_fields(self) -> dict[str, Any]:
+        return {}
+
+
+_EXTRA_FIELDS_DOC = """Any additional data to be added to the instance.
+This data will be available when formatting prompt templates.
+"""
+
 
 class TextProblemStatement(BaseModel):
     text: str
+
+    extra_fields: dict[str, Any] = Field(default_factory=dict, description=_EXTRA_FIELDS_DOC)
 
     type: Literal["text"] = "text"
     """Discriminator for (de)serialization/CLI. Do not change."""
@@ -49,6 +61,9 @@ class TextProblemStatement(BaseModel):
     def get_problem_statement(self) -> str:
         return self.text
 
+    def get_extra_fields(self) -> dict[str, Any]:
+        return self.extra_fields
+
     def __repr__(self) -> str:
         return f"TextProblemStatement(id={self.id}, text={self.text[:30]}...)"
 
@@ -58,6 +73,8 @@ class TextProblemStatement(BaseModel):
 
 class FileProblemStatement(BaseModel):
     path: Path
+
+    extra_fields: dict[str, Any] = Field(default_factory=dict, description=_EXTRA_FIELDS_DOC)
 
     type: Literal["text_file"] = "text_file"
     """Discriminator for (de)serialization/CLI. Do not change."""
@@ -74,9 +91,14 @@ class FileProblemStatement(BaseModel):
     def get_problem_statement(self) -> str:
         return self.path.read_text()
 
+    def get_extra_fields(self) -> dict[str, Any]:
+        return self.extra_fields
+
 
 class GithubIssue(BaseModel):
     github_url: str
+
+    extra_fields: dict[str, Any] = Field(default_factory=dict, description=_EXTRA_FIELDS_DOC)
 
     type: Literal["github"] = "github"
     """Discriminator for (de)serialization/CLI. Do not change."""
@@ -94,6 +116,9 @@ class GithubIssue(BaseModel):
     def get_problem_statement(self) -> str:
         owner, repo, issue_number = _parse_gh_issue_url(self.github_url)
         return _get_problem_statement_from_github_issue(owner, repo, issue_number, token=os.getenv("GITHUB_TOKEN"))
+
+    def get_extra_fields(self) -> dict[str, Any]:
+        return self.extra_fields
 
 
 ProblemStatementConfig = TextProblemStatement | GithubIssue | EmptyProblemStatement | FileProblemStatement

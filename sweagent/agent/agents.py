@@ -284,6 +284,7 @@ class Agent:
             command_docs=self.tools.config.command_docs,
             **self.tools.config.env_variables,
             problem_statement=self._problem_statement.get_problem_statement(),
+            **self._problem_statement.get_extra_fields(),
         )
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
         self._append_history({"role": "system", "content": system_msg, "agent": self.name})

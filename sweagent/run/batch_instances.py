@@ -115,6 +115,10 @@ class SimpleBatchInstance(BaseModel):
     """
     base_commit: str = "HEAD"
     """Used to reset repo."""
+    extra_fields: dict[str, Any] = Field(default_factory=dict)
+    """Any additional data to be added to the instance.
+    This data will be available when formatting prompt templates.
+    """
 
     def to_full_batch_instance(self, deployment: DeploymentConfig) -> BatchInstance:
         """Merge the deployment options into the `SimpleBatchInstance` object to get a full `BatchInstance`."""
@@ -122,7 +126,9 @@ class SimpleBatchInstance(BaseModel):
         # subclasses, we use a TypeAdapter to validate/instantiate the object.
         # Very important: Make a copy of the deployment config because it will be shared among instances!!!
         deployment = deployment.model_copy()
-        problem_statement = TextProblemStatement(text=self.problem_statement, id=self.id)
+        problem_statement = TextProblemStatement(
+            text=self.problem_statement, id=self.id, extra_fields=self.extra_fields
+        )
         if not self.repo_name:
             repo = None
         elif "github" in self.repo_name:
