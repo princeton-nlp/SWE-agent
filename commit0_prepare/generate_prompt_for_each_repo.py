@@ -18,6 +18,7 @@ def copy_to_subdirs(source_file: str, target_dir: str) -> None:
     if not os.path.isfile(source_file):
         raise FileNotFoundError(f"Source file {source_file} does not exist")
 
+    os.makedirs(target_dir, exist_ok=True)
     # Verify target directory exists
     if not os.path.isdir(target_dir):
         raise NotADirectoryError(f"Target directory {target_dir} does not exist")
