@@ -44,7 +44,7 @@ def get_agent_version_info() -> str:
     return f"This is SWE-agent version {__version__} with commit hash {hash}."
 
 
-getLogger("swe-agent").info(get_agent_version_info())
+get_logger("swe-agent", emoji="👋").info(get_agent_version_info())
 
 
 __all__ = [
