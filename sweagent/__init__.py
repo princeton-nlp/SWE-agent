@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from functools import partial
+
 from git import Repo
 
 __version__ = "0.7.0"
@@ -12,7 +14,7 @@ import swerex.utils.log as log_swerex
 from sweagent.utils.log import get_logger
 
 # Monkey patch the logger to use our implementation
-log_swerex.get_logger = get_logger
+log_swerex.get_logger = partial(get_logger, emoji="🦖")
 
 # See https://github.com/princeton-nlp/SWE-agent/issues/585
 getLogger("datasets").setLevel(WARNING)
