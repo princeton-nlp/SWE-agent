@@ -28,7 +28,7 @@ def copy_to_subdirs(source_file: str, target_dir: str) -> None:
 
     # Get all immediate subdirectories
     subdirs = [
-        "simply",
+        "simpy",
         "wcwidth",
         "parsel",
         "chardet",
@@ -100,7 +100,7 @@ def copy_to_subdirs(source_file: str, target_dir: str) -> None:
 commit0_dataset = load_dataset("wentingzhao/commit0_combined", split="test")
 
 file = "commit0_prepare/my_issue.md"
-target_dir = "commit0_prepare/commit0_repo/"
+target_dir = "commit0_prepare/repos/"
 
 copy_to_subdirs(file, target_dir)
 

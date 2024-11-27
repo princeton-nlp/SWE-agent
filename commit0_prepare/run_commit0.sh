@@ -65,11 +65,12 @@ for repo in "${repos[@]}"; do
 
     python run.py \
         --model_name claude-3-5-sonnet-20240620 \
-        --data_path "commit0_prepare/commit0_repo/$repo/my_issue_$repo.md" \
-        --repo_path "commit0_prepare/empty_repo" \
+        --data_path "commit0_prepare/repos/$repo/my_issue_$repo.md" \
+        --repo_path "commit0_prepare/repos/$repo" \ 
+        # you can also do --repo_path "commit0_prepare/empty_repo" \ 
         --config_file "config/commit0/prompt/$repo.yaml" \
         --image_name wentingzhao/$repo:v0 \
-        --per_instance_cost_limit 3.00 \
+        --per_instance_cost_limit 1.00 \
         --apply_patch_locally > "log/commit0/$repo.log" 2>&1
 
     echo "Completed $repo"
