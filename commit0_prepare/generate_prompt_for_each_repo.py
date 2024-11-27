@@ -28,7 +28,7 @@ def copy_to_subdirs(source_file: str, target_dir: str) -> None:
 
     # Get all immediate subdirectories
     subdirs = [
-        "simply",
+        "simpy",
         "wcwidth",
         "parsel",
         "chardet",
