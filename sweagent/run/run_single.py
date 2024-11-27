@@ -52,7 +52,7 @@ from sweagent.utils.config import load_environment_variables
 from sweagent.utils.log import add_file_handler, get_logger
 
 
-class RunSingleActionConfig(BaseModel, cli_implicit_flags=True):
+class RunSingleActionConfig(BaseModel, cli_implicit_flags=False):
     """Run real-life actions (opening PRs, etc.) if we can solve the issue."""
 
     # Open a PR with the patch if we can solve the issue
@@ -62,7 +62,7 @@ class RunSingleActionConfig(BaseModel, cli_implicit_flags=True):
     apply_patch_locally: bool = False
 
 
-class RunSingleConfig(BaseSettings, cli_implicit_flags=True):
+class RunSingleConfig(BaseSettings, cli_implicit_flags=False):
     env: EnvironmentConfig = Field(default_factory=EnvironmentConfig, description="Environment options.")
     agent: AgentConfig = Field(description="Agent options.")
     problem_statement: ProblemStatementConfig = Field(

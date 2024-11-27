@@ -42,7 +42,7 @@ from sweagent.utils.log import (
 )
 
 
-class RunBatchConfig(BaseSettings, cli_implicit_flags=True):
+class RunBatchConfig(BaseSettings, cli_implicit_flags=False):
     instances: BatchInstanceSourceConfig = Field(description="Instances to run.")
     agent: AgentConfig = Field(description="Agent options.")
     output_dir: Path = Field(default=Path("DEFAULT"), description="Output directory.")

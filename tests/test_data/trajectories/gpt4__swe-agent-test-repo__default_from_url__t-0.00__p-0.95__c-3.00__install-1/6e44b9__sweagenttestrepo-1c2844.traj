@@ -251,19 +251,19 @@
         },
         "bundles": [
           {
-            "path": "/Users/fuchur/Documents/24/git_sync/SWE-agent/tools/defaults",
+            "path": "tools/defaults",
             "hidden_tools": []
           },
           {
-            "path": "/Users/fuchur/Documents/24/git_sync/SWE-agent/tools/search",
+            "path": "tools/search",
             "hidden_tools": []
           },
           {
-            "path": "/Users/fuchur/Documents/24/git_sync/SWE-agent/tools/edit_replace",
+            "path": "tools/edit_replace",
             "hidden_tools": []
           },
           {
-            "path": "/Users/fuchur/Documents/24/git_sync/SWE-agent/tools/submit",
+            "path": "tools/submit",
             "hidden_tools": []
           }
         ],
@@ -314,7 +314,6 @@
       "type": "github",
       "id": "SWE-agent__test-repo-i1"
     },
-    "output_dir": "/Users/fuchur/Documents/24/git_sync/SWE-agent/trajectories/fuchur/config/function_calling_replace.yaml__gpt-4o__t-1.00__p-1.00__c-3.00___SWE-agent__test-repo-i1",
     "actions": {
       "open_pr": false,
       "pr_config": {

@@ -506,7 +506,7 @@ agent:
 environment:
   base_commit: null
   container_name: null
-  data_path: /Users/fuchur/Documents/24/git_sync/SWE-agent/tests/test_data/data_sources/swe-bench-dev-easy_first_only.json
+  data_path: tests/test_data/data_sources/swe-bench-dev-easy_first_only.json
   environment_setup: null
   image_name: sweagent/swe-agent:latest
   install_environment: true
