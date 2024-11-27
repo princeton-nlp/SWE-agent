@@ -280,12 +280,7 @@ class Agent:
     def add_system_message_to_history(self) -> None:
         """Add system message to history"""
         assert self._problem_statement is not None
-        system_msg = self.templates.system_template.format(
-            command_docs=self.tools.config.command_docs,
-            **self.tools.config.env_variables,
-            problem_statement=self._problem_statement.get_problem_statement(),
-            **self._problem_statement.get_extra_fields(),
-        )
+        system_msg = self.templates.system_template.format(**self._get_format_dict())
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
         self._append_history({"role": "system", "content": system_msg, "agent": self.name})
 
@@ -329,7 +324,11 @@ class Agent:
             )
 
     def _get_format_dict(self, **kwargs) -> dict[str, Any]:
-        """Get the dictionary of key value pairs used to format the templates"""
+        """Get the dictionary of key value pairs used to format the templates
+
+        Args:
+            **kwargs: additional keyword arguments to be added to the format dictionary
+        """
         assert self._problem_statement is not None
         assert self._env is not None
         return dict(
@@ -339,6 +338,7 @@ class Agent:
             **self._forwarded_vars,
             problem_statement=self._problem_statement.get_problem_statement(),
             repo=self._env.repo.repo_name if self._env.repo is not None else "",
+            **self._problem_statement.get_extra_fields(),
         )
 
     def _add_templated_messages_to_history(
