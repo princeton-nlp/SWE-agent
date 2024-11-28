@@ -22,13 +22,15 @@ from sweagent.utils.config import load_environment_variables
 from sweagent.utils.log import get_logger
 
 
-class RunReplayConfig(BaseSettings):
+class RunReplayConfig(BaseSettings, cli_implicit_flags=False):
     traj_path: Path
     deployment: DeploymentConfig | None = None
     """Override the deployment in the trajectory."""
     output_dir: Path = Path("DEFAULT")
     env_var_path: Path | None = None
     """Path to a .env file to load environment variables from."""
+    update_config: list[Path] = []
+    """Additional config files to merge with the replay config."""
 
     def model_post_init(self, __context: Any) -> None:
         if self.output_dir == Path("DEFAULT"):
@@ -44,6 +46,7 @@ class RunReplay:
         traj_path: Path,
         deployment: AbstractDeployment | None,
         output_dir: Path,
+        update_config: list[Path] | None = None,
         _catch_errors: bool = False,
         _require_zero_exit_code: bool = False,
     ):
@@ -53,6 +56,7 @@ class RunReplay:
         self.logger = get_logger("swea-run", emoji="🏃")
         self._catch_errors = _catch_errors
         self._require_zero_exit_code = _require_zero_exit_code
+        self._update_config = update_config if update_config is not None else []
 
         if traj_path.suffix == ".yaml":
             self._traj_data = yaml.safe_load(traj_path.read_text())
@@ -71,6 +75,22 @@ class RunReplay:
         except KeyError:
             msg = "Replay config not found in trajectory. Are you running on an old trajectory?"
             raise ValueError(msg)
+
+        # Merge any additional config files
+        for config_path in self._update_config:
+            update_data = yaml.safe_load(config_path.read_text())
+            # Store the current model config before merging
+            current_model = config.agent.model
+            # Convert the merged data back to a RunSingleConfig
+            config_dict = config.model_dump(mode="json")
+            merged_dict = config_dict | update_data
+
+            # Ensure agent.model is preserved if not explicitly updated
+            if "agent" in merged_dict and "model" not in merged_dict["agent"]:
+                merged_dict["agent"]["model"] = current_model.model_dump(mode="json")
+
+            config = RunSingleConfig.model_validate(merged_dict)
+
         config.agent.model = ReplayModelConfig(replay_path=self._replay_action_trajs_path)
         return config
 
@@ -85,6 +105,7 @@ class RunReplay:
             traj_path=config.traj_path,
             deployment=get_deployment(config.deployment) if config.deployment else None,
             output_dir=config.output_dir,
+            update_config=config.update_config,
             **kwargs,
         )
 
