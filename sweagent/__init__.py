@@ -30,6 +30,9 @@ assert CONFIG_DIR.is_dir()
 TOOLS_DIR = PACKAGE_DIR.parent / "tools"
 assert TOOLS_DIR.is_dir()
 
+TRAJECTORY_DIR = PACKAGE_DIR.parent / "trajectories"
+assert TRAJECTORY_DIR.is_dir()
+
 
 def get_agent_commit_hash() -> str:
     repo = Repo(REPO_ROOT, search_parent_directories=True)

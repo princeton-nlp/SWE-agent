@@ -11,6 +11,8 @@ from typing import Any
 
 import yaml
 
+from sweagent import TRAJECTORY_DIR
+
 
 def append_exit(content):
     last_entry = content["history"][-1]
@@ -303,10 +305,20 @@ def main(data_path, directory, port):
             raise e
 
 
-if __name__ == "__main__":
+def get_parser():
     parser = ArgumentParser()
     parser.add_argument("--data_path", type=str, help="Path to dataset that was used for the trajectories")
-    parser.add_argument("--directory", type=str, help="Directory to serve", default="./trajectories", nargs="?")
+    parser.add_argument("--directory", type=str, help="Directory to serve", default=TRAJECTORY_DIR, nargs="?")
     parser.add_argument("--port", type=int, help="Port to serve", default=8000)
-    args = parser.parse_args()
-    main(**vars(args))
+    return parser
+
+
+def run_from_cli(args: list[str] | None = None):
+    # Hack to make sure all the templates and all are found
+    os.chdir(Path(__file__).parent)
+    parsed_args = get_parser().parse_args(args)
+    main(**vars(parsed_args))
+
+
+if __name__ == "__main__":
+    run_from_cli()
