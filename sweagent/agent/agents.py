@@ -519,7 +519,7 @@ class Agent:
             if submission.strip() != "":
                 step.submission = None
             else:
-                step.submission = None
+                step.submission = submission
             step.observation = submission
             if not step.exit_status:
                 step.exit_status = "submitted"
