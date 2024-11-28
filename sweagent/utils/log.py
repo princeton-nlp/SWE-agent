@@ -165,5 +165,5 @@ def set_stream_handler_levels(level: int) -> None:
         for handler in logger.handlers:
             if isinstance(handler, _RichHandlerWithEmoji):
                 current_level = handler.level
-                if current_level > level:
+                if current_level < level:
                     handler.setLevel(level)
