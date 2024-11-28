@@ -29,7 +29,10 @@ class ToolFilterConfig(BaseModel):
         "git",
         "gdb",
         "less",
+        "tail -f",
+        "python -m venv",
     ]
+    """Block any command that starts with one of these"""
     blocklist_standalone: list[str] = [
         "python",
         "python3",
@@ -45,11 +48,12 @@ class ToolFilterConfig(BaseModel):
         "nano",
         "su",
     ]
-    # todo: probably rename this
+    """Block any command that matches one of these exactly"""
     block_unless_regex: dict[str, str] = {
         "radare2": r"\b(?:radare2)\b.*\s+-c\s+.*",
         "r2": r"\b(?:radare2)\b.*\s+-c\s+.*",
     }
+    """Block any command that matches one of these regexes unless it also matches the regex"""
 
 
 class ToolConfig(BaseModel):
@@ -268,14 +272,14 @@ class ToolHandler:
 
     def should_block_action(self, action: str) -> bool:
         """Check if the command should be blocked."""
-        names = action.strip().split()
-        if len(names) == 0:
+        action = action.strip()
+        if not action:
             return False
-        name = names[0]
-        if name in self.config.filter.blocklist:
+        if any(f.startswith(action) for f in self.config.filter.blocklist):
             return True
-        if name in self.config.filter.blocklist_standalone and name == action.strip():
+        if action in self.config.filter.blocklist_standalone:
             return True
+        name = action.split()[0]
         if name in self.config.filter.block_unless_regex and not re.search(
             self.config.filter.block_unless_regex[name], action
         ):
