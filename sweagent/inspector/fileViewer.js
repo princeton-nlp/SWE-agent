@@ -69,11 +69,15 @@ function viewFile(fileName) {
         let delay = 200; // Initial delay
         const delayIncrement = 50; // Delay between each message, in milliseconds
 
+        // Step through the history and add each message to the container
         content.history.forEach((item, index) => {
           const timeoutId = setTimeout(() => {
-            const contentText = item.content
+            let contentText = item.content
               ? item.content.replace(/</g, "&lt;").replace(/>/g, "&gt;")
               : "";
+            if (item.tool_calls && item.tool_calls.length > 0) {
+              contentText = `${item.thought}\n\`\`\`\n${item.action}\n\`\`\``;
+            }
             let roleClass =
               item.agent && item.agent !== "primary"
                 ? "subroutine"
