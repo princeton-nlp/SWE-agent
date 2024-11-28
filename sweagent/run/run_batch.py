@@ -38,7 +38,7 @@ from sweagent.utils.log import (
     get_logger,
     register_thread_name,
     remove_file_handler,
-    set_default_stream_level,
+    set_stream_handler_levels,
 )
 
 
@@ -179,7 +179,10 @@ class RunBatch:
 
     def main_multi_worker(self) -> None:
         add_logger_names_to_stream_handlers()
-        set_default_stream_level(logging.WARNING)
+        # Set all stream handlers to WARNING and set everything where we want to have
+        # more verbosity explicitly
+        set_stream_handler_levels(logging.WARNING)
+        self.logger.setLevel(logging.DEBUG)
 
         with Live(self._progress_manager.render_group):
             with ThreadPoolExecutor(max_workers=self._num_workers) as executor:
@@ -201,7 +204,7 @@ class RunBatch:
         self.logger.info("Running on instance %s", instance.problem_statement.id)
         register_thread_name(instance.problem_statement.id)
         self._add_instance_log_file_handlers(instance.problem_statement.id, multi_worker=self._num_workers > 1)
-        # Let's add some randomness to avoid any potential race conditions
+        # Let's add some randomness to avoid any potential race conditions or thundering herd
         time.sleep(random.random() * 0.3 * (self._num_workers - 1))
 
         self._progress_manager.on_instance_start(instance.problem_statement.id)

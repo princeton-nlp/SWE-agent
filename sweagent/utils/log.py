@@ -152,7 +152,18 @@ def add_logger_names_to_stream_handlers() -> None:
 default_logger = get_logger("swe-agent")
 
 
-def set_default_stream_level(level: int) -> None:
-    """Set the default stream level. Note: Can only be used to lower the level, not raise it."""
+def set_stream_handler_levels(level: int) -> None:
+    """Set the default stream level and adjust the levels of all stream handlers
+    to be at most the given level.
+
+    Note: Can only be used to lower the level, not raise it.
+    """
     global _STREAM_LEVEL
     _STREAM_LEVEL = level
+    for name in _SET_UP_LOGGERS:
+        logger = logging.getLogger(name)
+        for handler in logger.handlers:
+            if isinstance(handler, _RichHandlerWithEmoji):
+                current_level = handler.level
+                if current_level > level:
+                    handler.setLevel(level)
