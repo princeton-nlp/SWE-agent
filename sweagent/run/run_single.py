@@ -3,10 +3,9 @@
 [cyan][bold]=== BASICOPTIONS ===[/bold][/cyan]
 
   -h --help           Show help text and exit
+  --help_options      Print specific help text and exit
   --config CONFIG     Load additional config files. Use this option multiple times to load
                       multiple files, e.g., --config config1.yaml --config config2.yaml
-  --no_config_file    Do not load default config file when no config file is provided
-  --print_options     Print all additional configuration options that can be set via CLI and exit
   [cyan][bold]--... Many more options[/cyan][/bold] (run `sweagent run --print_options` for a complete overview)
 
 [cyan][bold]=== EXAMPLES ===[/bold][/cyan]
