@@ -177,7 +177,7 @@ def test_run_step_by_step_checking_history(dummy_env: SWEEnv, default_agent: Age
     assert "Current directory: /root" in a.local_history[4]["content"]
     a.step()
     assert len(a.trajectory) == 3
-    assert len(a.local_history) == 5  # no message added if done==True
+    assert len(a.local_history) == 6
     a.step()
     assert len(a.trajectory) == 4
     assert a.info["exit_status"] == "exit_cost"  # type: ignore
