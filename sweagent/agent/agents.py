@@ -517,9 +517,9 @@ class Agent:
         submission = self.tools.parse_submission_cmd_output(observation or step.observation)
         if submission is not None:
             if submission.strip() != "":
-                step.submission = None
-            else:
                 step.submission = submission
+            else:
+                step.submission = None
             step.observation = submission
             if not step.exit_status:
                 step.exit_status = "submitted"
