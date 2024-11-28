@@ -78,22 +78,20 @@ def append_results(traj_path: Path, instance_id: str, content, results, results_
     status = []
     if results is None:
         status.append("Evaluation results not found")
-    elif "not_generated" in results and "generated" in results and "applied" in results and "resolved" in results:
-        is_generated = instance_id in results["generated"]
-        is_applied = instance_id in results["applied"]
-        is_resolved = instance_id in results["resolved"]
+    elif "completed_ids" in results and "submitted_ids" in results and "resolved_ids" in results:
+        is_completed = instance_id in results["completed_ids"]
+        is_submitted = instance_id in results["submitted_ids"]
+        is_resolved = instance_id in results["resolved_ids"]
 
         status.append("**** Statuses ****")
         status.append(
-            f"  {'✅' if is_generated else '❌'} Generated (The agent was {'' if is_generated else 'not '}"
-            "able to generate a pull request to address this issue)",
+            f"  {'✅' if is_completed else '❌'} Completed (The agent successfully ran)",
         )
         status.append(
-            f"  {'✅' if is_applied else '❌'} Applied (The pull request was {'' if is_applied else 'not '}"
-            "successfully applied to the repo during eval)",
+            f"  {'✅' if is_submitted else '❌'} Submitted (The agent successfully submitted a pull request)",
         )
         status.append(
-            f"  {'✅' if is_resolved else '❌'} Resolved (The pull request {'' if is_resolved else 'not '}"
+            f"  {'✅' if is_resolved else '❌'} Resolved (The pull request {'' if is_resolved else 'has not '}"
             "successfully resolved the issue during eval)",
         )
     else:
@@ -188,15 +186,10 @@ def get_status(traj_path) -> str:
     instance_id = Path(traj_path).stem
     if results is None:
         return "❓"
-    elif "not_generated" in results and "generated" in results and "applied" in results and "resolved" in results:
-        if instance_id in results["not_generated"]:
-            return "❓"
-        if instance_id in results["generated"]:
-            if instance_id in results["resolved"]:
-                return "✅"
-            else:
-                return "❌"
-    return "❓"
+    elif instance_id in results["resolved_ids"]:
+        return "✅"
+    else:
+        return "❌"
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
