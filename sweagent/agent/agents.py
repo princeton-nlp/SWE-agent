@@ -47,7 +47,7 @@ class TemplateConfig(BaseModel):
 
     system_template: str = ""
     instance_template: str = ""
-    next_step_template: str = "Observation: {observation}"
+    next_step_template: str = "Observation: {{observation}}"
 
     next_step_no_output_template: str = None  # type: ignore
     """Template for the next step when the last output was empty. Defaults to next_step_template."""
@@ -67,14 +67,14 @@ class TemplateConfig(BaseModel):
         "Your bash command contained syntax errors and was NOT executed. "
         "Please fix the syntax errors and try again. This can be the result "
         "of not adhering to the syntax for multi-line commands. Here is the output of `bash -n`:\n"
-        "{bash_stdout}\n{bash_stderr}"
+        "{{bash_stdout}}\n{{bash_stderr}}"
     )
     """Message template for when the agent's bash command contains syntax errors.
     Available variables: `bash_stdout`, `bash_stderr`
     """
 
     command_cancelled_timeout_template: str = (
-        "The command {command!r} was cancelled because it took more than {timeout} seconds. "
+        "The command '{{command}}' was cancelled because it took more than {{timeout}} seconds. "
         "Please try a different command that completes more quickly."
     )
     """Message template for when the agent's command was cancelled because it took too long.
