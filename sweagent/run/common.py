@@ -133,7 +133,7 @@ class BasicCLI:
         parser = ArgumentParser(description=__doc__, add_help=False)
         parser.add_argument(
             "--config",
-            type=str,
+            type=Path,
             action="append",
             default=[],
             help=(

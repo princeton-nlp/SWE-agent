@@ -69,8 +69,8 @@ class RunBatchConfig(BaseSettings, cli_implicit_flags=False):
             source_id = self.instances.id
             model_id = self.agent.model.id
             config_file = getattr(self, "_config_files", ["no_config"])[0]
-            if isinstance(config_file, Path):
-                config_file = config_file.stem
+            if config_file != "no_config":
+                config_file = Path(config_file).stem
             suffix = f"__{self.suffix}" if self.suffix else ""
             self.output_dir = Path.cwd() / "trajectories" / user_id / f"{config_file}__{model_id}___{source_id}{suffix}"
 
