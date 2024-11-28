@@ -7,6 +7,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
+from jinja2 import Template
 from pydantic import BaseModel, ConfigDict, Field
 from simple_parsing.helpers.fields import field
 from swerex.exceptions import BashIncorrectSyntaxError, CommandTimeoutError, SweRexception
@@ -288,7 +289,7 @@ class Agent:
     def add_system_message_to_history(self) -> None:
         """Add system message to history"""
         assert self._problem_statement is not None
-        system_msg = self.templates.system_template.format(**self._get_format_dict())
+        system_msg = Template(self.templates.system_template).render(**self._get_format_dict())
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
         self._append_history({"role": "system", "content": system_msg, "agent": self.name})
 
@@ -321,7 +322,7 @@ class Agent:
             demo_history = [entry for entry in demo_history if entry["role"] != "system"]
             demo_message = "\n".join([entry["content"] for entry in demo_history])
             assert self.templates.demonstration_template is not None
-            demonstration = self.templates.demonstration_template.format(demonstration=demo_message)
+            demonstration = Template(self.templates.demonstration_template).render(demonstration=demo_message)
             self._append_history(
                 {
                     "agent": self.name,
@@ -366,7 +367,7 @@ class Agent:
         format_dict = self._get_format_dict(**kwargs)
         for template in templates:
             try:
-                messages.append(template.format(**format_dict))
+                messages.append(Template(template).render(**format_dict))
             except KeyError:
                 self.logger.debug("The following keys are available: %s", format_dict.keys())
                 raise
@@ -476,7 +477,7 @@ class Agent:
             model output after requery
         """
         format_dict = {**kwargs, **self._get_format_dict()}
-        error_template = error_template.format(**format_dict)
+        error_template = Template(error_template).render(**format_dict)
 
         self.logger.warning(f"{error_template}")
 
@@ -581,7 +582,7 @@ class Agent:
             except Exception as f:
                 self.logger.exception("Failed to interrupt session after command timeout: %s", f, exc_info=True)
                 raise
-            step.observation = self.templates.command_cancelled_timeout_template.format(
+            step.observation = Template(self.templates.command_cancelled_timeout_template).render(
                 **self._get_format_dict(),
                 timeout=self.tools.config.execution_timeout,
                 command=run_action,

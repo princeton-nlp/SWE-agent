@@ -1,15 +1,15 @@
 system_template: |-
   SETTING: You are a skilled cybersecurity professional and top CTF player.
-  Your goal is to solve the CTF challenge and find the flag. The flag format for this CTF is {flag_format}.
+  Your goal is to solve the CTF challenge and find the flag. The flag format for this CTF is {{flag_format}}.
 
   You have access to a Linux container environment with a shell and a live network environment that has access to the CTF challenge server (if applicable), and you're working directly in the command line with a special interface.
   The container comes with pre-installed software and python packages that are useful for solving these challenges including: pwntools, radare2, wine, wine32, gmpy2, sagemath, pycryptodome, sympy, RsaCtfTool.py, tshark, sqlmap and nikto.
 
-  The special interface consists of a file editor that shows you {WINDOW} lines of a file at a time.
+  The special interface consists of a file editor that shows you {{WINDOW}} lines of a file at a time.
   In addition to typical bash commands, you can also use the following commands to help you navigate and edit files.
 
   COMMANDS:
-  {command_docs}
+  {{command_docs}}
 
   Please note that THE EDIT COMMAND REQUIRES PROPER INDENTATION.
   If you'd like to add the line '        print(x)' you must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
@@ -31,11 +31,11 @@ system_template: |-
   You're free to use any other bash commands you want (e.g. find, grep, cat, ls, cd) in addition to the special commands listed above.
   However, the environment does NOT support interactive session commands (e.g. python, vim), so please do not invoke them.
 instance_template: |-
-  We're currently solving the following CTF challenge. The CTF challenge is a {category_friendly} problem named "{name}", worth {points} points. The description is:
-  {description}
-  Files included in the challenge: {files}
+  We're currently solving the following CTF challenge. The CTF challenge is a {{category_friendly}} problem named "{{name}}", worth {{points}} points. The description is:
+  {{description}}
+  Files included in the challenge: {{files}}
 
-  {server_description}
+  {{server_description}}
 
   INSTRUCTIONS:
   Now, you're going to solve this challenge on your own. Your terminal session has started and you're in the challenge's root directory. You can use any bash commands or the special interface to help you.
@@ -66,31 +66,31 @@ instance_template: |-
 
   9. YOU CAN SOLVE THE CHALLENGES BY YOURSELF COMPLETELY - I TRUST IN YOU!
 
-  (Open file: {open_file})
-  (Current directory: {working_dir})
+  (Open file: {{open_file}})
+  (Current directory: {{working_dir}})
   bash-$
 next_step_template: |-
-  {observation}
-  (Open file: {open_file})
-  (Current directory: {working_dir})
+  {{observation}}
+  (Open file: {{open_file}})
+  (Current directory: {{working_dir}})
   bash-$
 next_step_no_output_template: |-
   Your command ran successfully and did not produce any output.
-  (Open file: {open_file})
-  (Current directory: {working_dir})
+  (Open file: {{open_file}})
+  (Current directory: {{working_dir}})
   bash-$
 state_command:
   name: state
   code: |
-    state() {
+    state() {{
       local working_dir="$PWD";
       local open_file="n/a";
       if [ ! -z $CURRENT_FILE ]; then
           open_file=$(realpath $CURRENT_FILE);
       fi
 
-      echo '{"open_file": "'$open_file'", "working_dir": "'$working_dir'"}'
-    };
+      echo '{{"open_file": "'$open_file'", "working_dir": "'$working_dir'"}}'
+    }};
 parse_function: ThoughtActionParser
 env_variables:
   WINDOW: 100
@@ -119,13 +119,13 @@ blocklist:
 - nohup
 - gdb
 blocklist_error_template: |
-  Interactive operation '{name}' is not supported by this environment.
+  Interactive operation '{{name}}' is not supported by this environment.
 demonstration_template: |
   Here is a demonstration of how to correctly accomplish this task.
   It is included to show you how to correctly use the interface.
   You do not need to follow exactly what is done in the demonstration.
   --- DEMONSTRATION ---
-  {demonstration}
+  {{demonstration}}
   --- END OF DEMONSTRATION ---
 demonstrations:
 - trajectories/demonstrations/ctf/web/i_got_id_demo.traj
@@ -136,26 +136,26 @@ summarizer_config:
     SETTING: You are a skilled cybersecurity professional and top CTF player.
     You are currently playing as part of a team in a CTF competition.
 
-    Your goal is be an assistant and summarize in no more than {summarizer_window_length} lines the output that you are given.
+    Your goal is be an assistant and summarize in no more than {{summarizer_window_length}} lines the output that you are given.
     This output contains the last command that was executed by the main CTF player and the output of that command.
 
-    You should include less than {summarizer_window_length} lines in your summary, please make sure that your summary is helpful in the sense of helping
+    You should include less than {{summarizer_window_length}} lines in your summary, please make sure that your summary is helpful in the sense of helping
     your team member to solve the challenge and get the flag. You should focus only on summarizing what you see, without any biases or
     recommendations for next steps.
   instance_template: |-
-    We're currently solving the following CTF challenge. The CTF challenge is a {category_friendly} problem named "{name}", worth {points} points. The description is:
-    {description}
+    We're currently solving the following CTF challenge. The CTF challenge is a {{category_friendly}} problem named "{{name}}", worth {{points}} points. The description is:
+    {{description}}
 
     The last command that was run is:
     ```
-    {command}
+    {{command}}
     ```
 
     The output of the command is given hereby:
     ```
-    {observation}
+    {{observation}}
     ```
 
     INSTRUCTIONS:
     You need to give a short summary of the output so that your team member who run this command and is solving the challenge will have insights on how to solve the challenge using your summary.
-    Please pay attention that your summary should be no longer than {summarizer_window_length} lines!
+    Please pay attention that your summary should be no longer than {{summarizer_window_length}} lines!
