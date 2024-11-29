@@ -666,6 +666,11 @@ class Agent:
             step = getattr(exception, "step", StepOutput())
             self.add_step_to_trajectory(step)
             exception_message = getattr(exception, "message", "")
+            if not exception_message:
+                try:
+                    exception_message = exception.args[0]
+                except (IndexError, AttributeError):
+                    pass
             return self.get_model_requery_history(
                 error_template=template,
                 **step.model_dump(),
