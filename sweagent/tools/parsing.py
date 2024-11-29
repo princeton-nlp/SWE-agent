@@ -17,6 +17,21 @@ class FormatError(Exception):
     pass
 
 
+class FunctionCallingFormatError(FormatError):
+    """Format error exception used by the function
+    calling parser."""
+
+    def __init__(
+        self,
+        message: str,
+        error_code: Literal[
+            "missing", "multiple", "incorrect_args", "invalid_json", "invalid_command", "missing_arg", "unexpected_arg"
+        ],
+    ):
+        super().__init__(message + f"[error_code={error_code}]")
+        self.extra_info = {"error_code": error_code}
+
+
 class AbstractParseFunction(ABC):
     """
     Abstract class for parsing functions.
@@ -241,18 +256,18 @@ class FunctionCallingParser(AbstractParseFunction, BaseModel):
         command = {c.name: c for c in commands}.get(name)
         if not command:
             msg = f"Command '{name}' not found in list of available commands."
-            raise FormatError(msg)
+            raise FunctionCallingFormatError(msg, "invalid_command")
         if not isinstance(tool_call["function"]["arguments"], dict):
             try:
                 values = json.loads(tool_call["function"]["arguments"])
             except json.JSONDecodeError:
                 msg = "Tool call arguments are not valid JSON."
-                raise FormatError(msg)
+                raise FunctionCallingFormatError(msg, "invalid_json")
         required_args = {arg.name for arg in command.arguments if arg.required}
         missing_args = required_args - values.keys()
         if missing_args:
             msg = f"Required argument(s) missing: {', '.join(missing_args)}"
-            raise FormatError(msg)
+            raise FunctionCallingFormatError(msg, "missing_arg")
         valid_args = {arg.name for arg in command.arguments}
         extra_args = set(values.keys()) - valid_args
         if command.end_name:
@@ -260,7 +275,7 @@ class FunctionCallingParser(AbstractParseFunction, BaseModel):
             extra_args.discard(command.end_name)
         if extra_args:
             msg = f"Unexpected argument(s): {', '.join(extra_args)}"
-            raise FormatError(msg)
+            raise FunctionCallingFormatError(msg, "unexpected_arg")
         formatted_args = {
             arg.name: arg.argument_format.format(
                 value=quote(values[arg.name]) if _should_quote(values[arg.name], command) else values[arg.name]
@@ -280,7 +295,8 @@ class FunctionCallingParser(AbstractParseFunction, BaseModel):
                 f"Expected exactly one tool call in model response - received {num_tools} "
                 f"tool calls with message: {message}"
             )
-            raise FormatError(msg)
+            error_code = "missing" if num_tools == 0 else "multiple"
+            raise FunctionCallingFormatError(msg, error_code)
         tool_call = tool_calls[0]
         action = self._parse_tool_call(tool_call, commands)
         return message, action
