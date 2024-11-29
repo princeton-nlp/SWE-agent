@@ -155,6 +155,7 @@ class RunBatch:
             raise_exceptions=config.raise_exceptions,
             redo_existing=config.redo_existing,
             num_workers=config.num_workers,
+            progress_bar=config.progress_bar,
         )
 
     def add_hook(self, hook: RunHook) -> None:
