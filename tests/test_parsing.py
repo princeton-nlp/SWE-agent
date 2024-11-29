@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import pytest
+from jinja2 import Template
 
 from sweagent.tools.commands import Command
 from sweagent.tools.parsing import (
     ActionParser,
     EditFormat,
     FormatError,
+    FunctionCallingFormatError,
     FunctionCallingParser,
     Identity,
     JsonParser,
@@ -122,3 +124,9 @@ def test_function_calling_parser():
     }
     with pytest.raises(FormatError):
         parser(invalid_json, [command])
+
+
+def test_function_calling_parser_error_message():
+    template = Template(FunctionCallingParser().error_message)
+    exc1 = FunctionCallingFormatError("test", "missing")
+    assert "did not use any tool calls" in template.render(**exc1.extra_info, exception_message=exc1.message)

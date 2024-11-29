@@ -156,7 +156,6 @@ class ToolConfig(BaseModel):
         )
         if self.format_error_template is None:
             self.format_error_template = self.parse_function.format_error_template
-        self.format_error_template = self.format_error_template.format(**self.__dict__)
         for command in commands:
             if command.name == self.submit_command:
                 self.submit_command_end_name = command.end_name
