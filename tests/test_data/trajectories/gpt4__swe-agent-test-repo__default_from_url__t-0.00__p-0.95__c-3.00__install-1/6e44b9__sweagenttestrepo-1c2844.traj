@@ -285,10 +285,12 @@
         "execution_timeout": 30,
         "install_timeout": 300
       },
-      "history_processor": {
-        "n": 5,
-        "type": "last_n_observations"
-      },
+      "history_processors": [
+        {
+          "n": 5,
+          "type": "last_n_observations"
+        }
+      ],
       "model": {
         "name": "gpt-4o",
         "per_instance_cost_limit": 3.0,

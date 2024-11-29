@@ -233,7 +233,6 @@ class Agent:
 
         # Chain the history processors
         processed_history = filtered_history
-        breakpoint()
         for processor in self.history_processors:
             processed_history = processor(processed_history)
 
