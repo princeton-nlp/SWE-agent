@@ -171,7 +171,7 @@ class RunBatch:
         else:
             self.main_multi_worker()
 
-        merge_predictions(self.output_dir)
+        merge_predictions([self.output_dir], self.output_dir / "preds.json")
 
         self._chooks.on_end()
 
