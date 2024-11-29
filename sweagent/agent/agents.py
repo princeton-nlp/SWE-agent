@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from jinja2 import Template
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from simple_parsing.helpers.fields import field
 from swerex.exceptions import BashIncorrectSyntaxError, CommandTimeoutError, SweRexception
 from tenacity import RetryError
@@ -38,6 +38,18 @@ from sweagent.types import AgentInfo, AgentRunResult, History, StepOutput, Traje
 from sweagent.utils.config import _convert_paths_to_abspath, _strip_abspath_from_dict
 from sweagent.utils.log import get_logger
 from sweagent.utils.patch_formatter import PatchFormatter
+
+
+def _warn_probably_wrong_jinja_syntax(template: str | None) -> None:
+    if template is None:
+        return
+    if "{" not in template:
+        return
+    for s in ["{%", "{ %", "{{"]:
+        if s in template:
+            return
+    logger = get_logger("swea-config", emoji="⚙️")
+    logger.warning("Probably wrong Jinja syntax in template: %s. Make sure to use {{var}} instead of {var}.", template)
 
 
 class TemplateConfig(BaseModel):
@@ -85,6 +97,18 @@ class TemplateConfig(BaseModel):
         self.demonstrations = _convert_paths_to_abspath(self.demonstrations)
         if self.next_step_no_output_template is None:
             self.next_step_no_output_template = self.next_step_template
+
+    @model_validator(mode="after")
+    @classmethod
+    def validate_template_jinja_syntax(cls, data: Any) -> Any:
+        template_fields = [field for field in cls.model_fields.keys() if field.endswith("_template")]
+        for field in template_fields:
+            if isinstance(data, dict):
+                value = data[field]
+            else:
+                value = getattr(data, field)
+            _warn_probably_wrong_jinja_syntax(value)
+        return data
 
 
 class AgentConfig(BaseModel):
