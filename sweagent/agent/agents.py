@@ -562,6 +562,7 @@ class Agent:
             step.done = True
             step.observation = "Exited"
             step.exit_status = "exit_command"
+            assert self._env is not None
             step.state = self.tools.get_state(env=self._env)  # for history
             return step
 
@@ -613,7 +614,7 @@ class Agent:
         try:
             # Forward model and get actions
             self._chook.on_model_query(messages=history, agent=self.name)
-            output = self.model.query(history)
+            output = self.model.query(history)  # type: ignore
             step.output = output["message"]
             if isinstance(self.model, HumanThoughtModel):
                 # TODO: This might be a bit hacky
