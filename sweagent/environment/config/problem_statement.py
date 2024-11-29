@@ -36,15 +36,13 @@ class EmptyProblemStatement(BaseModel):
         return {}
 
 
-_EXTRA_FIELDS_DOC = """Any additional data to be added to the instance.
-This data will be available when formatting prompt templates.
-"""
-
-
 class TextProblemStatement(BaseModel):
     text: str
 
-    extra_fields: dict[str, Any] = Field(default_factory=dict, description=_EXTRA_FIELDS_DOC)
+    extra_fields: dict[str, Any] = Field(default_factory=dict)
+    """Any additional data to be added to the instance.
+    This data will be available when formatting prompt templates.
+    """
 
     type: Literal["text"] = "text"
     """Discriminator for (de)serialization/CLI. Do not change."""
@@ -74,7 +72,10 @@ class TextProblemStatement(BaseModel):
 class FileProblemStatement(BaseModel):
     path: Path
 
-    extra_fields: dict[str, Any] = Field(default_factory=dict, description=_EXTRA_FIELDS_DOC)
+    extra_fields: dict[str, Any] = Field(default_factory=dict)
+    """Any additional data to be added to the instance.
+    This data will be available when formatting prompt templates.
+    """
 
     type: Literal["text_file"] = "text_file"
     """Discriminator for (de)serialization/CLI. Do not change."""
@@ -98,7 +99,10 @@ class FileProblemStatement(BaseModel):
 class GithubIssue(BaseModel):
     github_url: str
 
-    extra_fields: dict[str, Any] = Field(default_factory=dict, description=_EXTRA_FIELDS_DOC)
+    extra_fields: dict[str, Any] = Field(default_factory=dict)
+    """Any additional data to be added to the instance.
+    This data will be available when formatting prompt templates.
+    """
 
     type: Literal["github"] = "github"
     """Discriminator for (de)serialization/CLI. Do not change."""
