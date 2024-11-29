@@ -106,6 +106,8 @@ command_files:
   - config/commands/search.sh
   - config/commands/_split_string.py
 parse_command: ParseCommandDetailed
-history_processor: Last5Observations
+history_processors:
+  - type: last_n_observations
+    n: 5
 demonstrations:
   - trajectories/demonstrations/replay__marshmallow-code__marshmallow-1867__xml_sys-env_cursors_window100__t-0.20__p-0.95__c-2.00__install-1/marshmallow-code__marshmallow-1867.traj

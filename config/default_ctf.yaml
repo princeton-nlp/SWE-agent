@@ -116,7 +116,9 @@ command_files:
 - config/commands/_connect.py
 - config/commands/server_connection.sh
 - config/commands/forfeit.sh
-history_processor: Last5Observations
+history_processors:
+  - type: last_n_observations
+    n: 5
 blocklist:
 - vim
 - vi

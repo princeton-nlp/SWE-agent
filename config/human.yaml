@@ -13,8 +13,8 @@ agent:
       - path: tools/submit
     parse_function:
       type: thought_action
-  history_processor:
-    type: last_n_observations
-    n: 5
+  history_processors:
+    - type: last_n_observations
+      n: 5
   model:
     name: human

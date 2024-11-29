@@ -50,6 +50,7 @@ def _last_n_history(history, n):
         else:
             data["content"] = f'Old output omitted ({len(entry["content"].splitlines())} lines)'
             new_history.append(data)
+    breakpoint()
     return new_history
 
 

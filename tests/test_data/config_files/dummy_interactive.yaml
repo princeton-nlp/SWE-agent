@@ -47,7 +47,9 @@ command_files:
 - tests/test_commands/interactive_dummy_wrapper.sh
 - tests/test_commands/_interactive_dummy.py
 parse_command: ParseCommandDetailed
-history_processor: Last5Observations
+history_processors:
+  - type: last_n_observations
+    n: 5
 blocklist:
 - vim
 - vi

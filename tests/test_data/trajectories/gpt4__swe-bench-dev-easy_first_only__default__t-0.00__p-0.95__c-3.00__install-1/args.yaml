@@ -386,8 +386,7 @@ agent:
       ```
       command(s) that you're going to run
       ```
-    history_processor: {}
-    history_processor_args: {}
+    history_processors: []
     instance_template: "We're currently solving the following issue within our repository.\
       \ Here's the issue text:\nISSUE:\n{issue}\n\nINSTRUCTIONS:\nNow, you're going\
       \ to solve this issue on your own. Your terminal session has started and you're\

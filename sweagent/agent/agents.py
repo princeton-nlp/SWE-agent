@@ -93,7 +93,7 @@ class AgentConfig(BaseModel):
     name: str = "main"
     templates: TemplateConfig = Field(default_factory=TemplateConfig)
     tools: ToolConfig = Field(default_factory=ToolConfig)
-    history_processor: HistoryProcessor = Field(default_factory=DefaultHistoryProcessor)
+    history_processors: list[HistoryProcessor] = Field(default_factory=lambda: [DefaultHistoryProcessor()])
     model: ModelConfig = Field(description="Model options.")
 
     max_requeries: int = 3
@@ -121,7 +121,7 @@ class Agent:
         *,
         templates: TemplateConfig,
         tools: ToolHandler,
-        history_processor: HistoryProcessor,
+        history_processors: list[HistoryProcessor],
         model: AbstractModel,
         max_requeries: int = 3,
         name: str = "main",
@@ -138,7 +138,7 @@ class Agent:
         self.model = model
         self.templates = templates
         self.tools = tools
-        self.history_processor = history_processor
+        self.history_processors = history_processors
         self.max_requeries = max_requeries
         self.logger = get_logger("swea-agent", emoji="🤠")
 
@@ -173,7 +173,7 @@ class Agent:
         return cls(
             templates=config.templates,
             tools=ToolHandler(config.tools),
-            history_processor=config.history_processor,
+            history_processors=config.history_processors,
             model=model,
             max_requeries=config.max_requeries,
         )
@@ -228,8 +228,16 @@ class Agent:
 
     @property
     def local_history(self) -> list[dict[str, str]]:
-        """Return the history of the agent since the last reset."""
-        return self.history_processor([entry for entry in self.history if entry["agent"] == self.name])  # type: ignore
+        """Return the history of the agent since the last reset, processed through all history processors."""
+        filtered_history = [entry for entry in self.history if entry["agent"] == self.name]  # type: ignore
+
+        # Chain the history processors
+        processed_history = filtered_history
+        breakpoint()
+        for processor in self.history_processors:
+            processed_history = processor(processed_history)
+
+        return processed_history
 
     # Methods
     # -------

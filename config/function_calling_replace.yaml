@@ -89,6 +89,6 @@ agent:
     enable_bash_tool: true
     parse_function:
       type: function_calling
-  history_processor:
-    type: last_n_observations
-    n: 5
+  history_processors:
+    - type: last_n_observations
+      n: 5
