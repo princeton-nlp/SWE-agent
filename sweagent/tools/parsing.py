@@ -5,7 +5,7 @@ import re
 import textwrap
 from abc import ABC, abstractmethod
 from shlex import quote
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -27,9 +27,10 @@ class FunctionCallingFormatError(FormatError):
         error_code: Literal[
             "missing", "multiple", "incorrect_args", "invalid_json", "invalid_command", "missing_arg", "unexpected_arg"
         ],
+        **extra_info: Any,
     ):
         super().__init__(message + f"[error_code={error_code}]")
-        self.extra_info = {"error_code": error_code}
+        self.extra_info = {"error_code": error_code, **extra_info}
 
 
 class AbstractParseFunction(ABC):
@@ -240,7 +241,7 @@ class FunctionCallingParser(AbstractParseFunction, BaseModel):
     """Expects the model response to be a LiteLLM tool call."""
 
     error_message: str = """\
-    Your output could not be parsed properly.
+    Your action could not be parsed properly.
     Please make sure your output includes a thought and exactly _ONE_ function call.
 
     Make sure your function call doesn't include any extra arguments that are not in the allowed arguments, and only use the allowed commands.
@@ -296,7 +297,7 @@ class FunctionCallingParser(AbstractParseFunction, BaseModel):
                 f"tool calls with message: {message}"
             )
             error_code = "missing" if num_tools == 0 else "multiple"
-            raise FunctionCallingFormatError(msg, error_code)
+            raise FunctionCallingFormatError(msg, error_code, num_tools=num_tools)
         tool_call = tool_calls[0]
         action = self._parse_tool_call(tool_call, commands)
         return message, action

@@ -665,10 +665,12 @@ class Agent:
             """Requeries the model if the error is a format/blocklist/bash syntax error."""
             step = getattr(exception, "step", StepOutput())
             self.add_step_to_trajectory(step)
+            exception_message = getattr(exception, "message", "")
             return self.get_model_requery_history(
                 error_template=template,
                 **step.model_dump(),
                 **getattr(exception, "extra_info", {}),
+                exception_message=exception_message,
             )
 
         n_fails = 0
