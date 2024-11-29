@@ -88,7 +88,7 @@ class Command(BaseModel):
     signature: str | None = None
     # if there is an end_name, then it is a multi-line command
     end_name: str | None = None
-    arguments: list[Argument] | None = None
+    arguments: list[Argument] = []
 
     @cached_property
     def invoke_format(self) -> str:
