@@ -54,11 +54,16 @@ class RunBatchConfig(BaseSettings, cli_implicit_flags=False):
     """Do not skip instances that already have a trajectory."""
     env_var_path: Path | None = None
     """Path to a .env file to load environment variables from."""
-    num_workers: int = Field(default=1, description="Number of parallel workers to use.")
+    num_workers: int = Field(default=1)
+    """Number of parallel workers to use."""
     random_delay_multiplier: float = 0.3
     """We will wait for a random amount of time between 0 and `random_delay_multiplier`
     times the number of workers at the start of each instance. This is to avoid any
     potential race conditions.
+    """
+    progress_bar: bool = True
+    """Whether to show a progress bar. Progress bar is never shown for human models.
+    Progress bar is always shown for multi-worker runs.
     """
 
     def set_default_output_dir(self) -> None:
@@ -90,6 +95,7 @@ class RunBatch:
         raise_exceptions: bool = False,
         redo_existing: bool = False,
         num_workers: int = 1,
+        progress_bar: bool = True,
     ):
         """Note: When initializing this class, make sure to add the hooks that are required by your actions.
         See `from_config` for an example.
@@ -97,6 +103,8 @@ class RunBatch:
         Args:
             hooks: If not specified, the default hooks will be used.
             num_workers: Number of parallel workers to use. Default is 1 (sequential execution).
+            progress_bar: Whether to show a progress bar. Progress bar is never shown for human models.
+                Progress bar is always shown for multi-worker runs.
         """
         if agent_config.model.name in ["human", "human_thought"] and num_workers > 1:
             msg = "Cannot run with human model in parallel"
@@ -121,6 +129,7 @@ class RunBatch:
         self._progress_manager = RunBatchProgressManager(
             num_instances=len(instances), yaml_report_path=output_dir / "run_batch_exit_statuses.yaml"
         )
+        self._show_progress_bar = progress_bar
 
     @classmethod
     def from_config(cls, config: RunBatchConfig) -> Self:
@@ -168,7 +177,7 @@ class RunBatch:
     def main_single_worker(self) -> None:
         with ExitStack() as stack:
             # Conditionally add progress bar
-            if self.agent_config.model.name not in ["human", "human_thought"]:
+            if self.agent_config.model.name not in ["human", "human_thought"] and self._show_progress_bar:
                 stack.enter_context(Live(self._progress_manager.render_group))
             for instance in self.instances:
                 try:

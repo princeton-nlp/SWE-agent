@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from jinja2 import Template
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from simple_parsing.helpers.fields import field
 from swerex.exceptions import BashIncorrectSyntaxError, CommandTimeoutError, SweRexception
 from tenacity import RetryError
@@ -38,6 +38,18 @@ from sweagent.types import AgentInfo, AgentRunResult, History, StepOutput, Traje
 from sweagent.utils.config import _convert_paths_to_abspath, _strip_abspath_from_dict
 from sweagent.utils.log import get_logger
 from sweagent.utils.patch_formatter import PatchFormatter
+
+
+def _warn_probably_wrong_jinja_syntax(template: str | None) -> None:
+    if template is None:
+        return
+    if "{" not in template:
+        return
+    for s in ["{%", "{ %", "{{"]:
+        if s in template:
+            return
+    logger = get_logger("swea-config", emoji="⚙️")
+    logger.warning("Probably wrong Jinja syntax in template: %s. Make sure to use {{var}} instead of {var}.", template)
 
 
 class TemplateConfig(BaseModel):
@@ -85,6 +97,18 @@ class TemplateConfig(BaseModel):
         self.demonstrations = _convert_paths_to_abspath(self.demonstrations)
         if self.next_step_no_output_template is None:
             self.next_step_no_output_template = self.next_step_template
+
+    @model_validator(mode="after")
+    @classmethod
+    def validate_template_jinja_syntax(cls, data: Any) -> Any:
+        template_fields = [field for field in cls.model_fields.keys() if field.endswith("_template")]
+        for field in template_fields:
+            if isinstance(data, dict):
+                value = data[field]
+            else:
+                value = getattr(data, field)
+            _warn_probably_wrong_jinja_syntax(value)
+        return data
 
 
 class AgentConfig(BaseModel):
@@ -569,6 +593,7 @@ class Agent:
             step.done = True
             step.observation = "Exited"
             step.exit_status = "exit_command"
+            assert self._env is not None
             step.state = self.tools.get_state(env=self._env)  # for history
             return step
 
@@ -620,7 +645,7 @@ class Agent:
         try:
             # Forward model and get actions
             self._chook.on_model_query(messages=history, agent=self.name)
-            output = self.model.query(history)
+            output = self.model.query(history)  # type: ignore
             step.output = output["message"]
             if isinstance(self.model, HumanThoughtModel):
                 # TODO: This might be a bit hacky
@@ -672,10 +697,17 @@ class Agent:
             """Requeries the model if the error is a format/blocklist/bash syntax error."""
             step = getattr(exception, "step", StepOutput())
             self.add_step_to_trajectory(step)
+            exception_message = getattr(exception, "message", "")
+            if not exception_message:
+                try:
+                    exception_message = exception.args[0]
+                except (IndexError, AttributeError):
+                    pass
             return self.get_model_requery_history(
                 error_template=template,
                 **step.model_dump(),
                 **getattr(exception, "extra_info", {}),
+                exception_message=exception_message,
             )
 
         n_fails = 0

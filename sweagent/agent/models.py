@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import random
+import shlex
 import time
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -21,6 +22,7 @@ from tenacity import (
 )
 
 from sweagent import REPO_ROOT
+from sweagent.tools.parsing import FunctionCallingFormatError
 from sweagent.tools.tools import ToolConfig
 from sweagent.types import History, HistoryItem
 from sweagent.utils.log import get_logger
@@ -194,6 +196,13 @@ def _handle_raise_commands(action: str) -> None:
         raise CostLimitExceededError()
     elif action == "raise_context":
         raise ContextWindowExceededError()
+    elif action.startswith("raise_function_calling"):
+        parts = shlex.split(action)
+        error_code = parts[1]
+        if len(parts) == 3:
+            error_message = parts[2]
+        assert len(parts) < 4
+        raise FunctionCallingFormatError(error_message, error_code)  # type: ignore
 
 
 class HumanModel(AbstractModel):

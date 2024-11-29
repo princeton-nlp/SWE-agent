@@ -5,7 +5,7 @@ import re
 import textwrap
 from abc import ABC, abstractmethod
 from shlex import quote
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -27,9 +27,11 @@ class FunctionCallingFormatError(FormatError):
         error_code: Literal[
             "missing", "multiple", "incorrect_args", "invalid_json", "invalid_command", "missing_arg", "unexpected_arg"
         ],
+        **extra_info: Any,
     ):
-        super().__init__(message + f"[error_code={error_code}]")
-        self.extra_info = {"error_code": error_code}
+        super().__init__(message + f" [error_code={error_code}]")
+        self.message = message
+        self.extra_info = {"error_code": error_code, **extra_info}
 
 
 class AbstractParseFunction(ABC):
@@ -239,13 +241,23 @@ class Identity(AbstractParseFunction, BaseModel):
 class FunctionCallingParser(AbstractParseFunction, BaseModel):
     """Expects the model response to be a LiteLLM tool call."""
 
-    error_message: str = """\
-    Your output could not be parsed properly.
+    error_message: str = """{% if error_code == "missing" %}
+    Your last output did not use any tool calls!
+    Please make sure your output includes exactly _ONE_ function call!
+    You must invoke the function directly using the function call format.
+    You cannot invoke commands using with ```, you have to use the function call format.
+    If you think you have already resolved the issue, please submit your changes by running the `submit` command.
+    If you think you cannot solve the problem, please run `exit_forfeit` (if available).
+    Else, please continue with a new tool call!
+    {% elif error_code == "multiple" %}
+    Your last output included multiple tool calls!
     Please make sure your output includes a thought and exactly _ONE_ function call.
-
+    {% elif error_code == "unexpected_arg" %}
+    Your action could not be parsed properly: {{exception_message}}.
     Make sure your function call doesn't include any extra arguments that are not in the allowed arguments, and only use the allowed commands.
-
-    You must invoke the function directly using the function call format. You cannot invoke commands using with ```, you have to use the function call format.
+    {% else %}
+    Your action could not be parsed properly: {{exception_message}}.
+    {% endif %}
     """
 
     type: Literal["function_calling"] = "function_calling"
@@ -296,7 +308,7 @@ class FunctionCallingParser(AbstractParseFunction, BaseModel):
                 f"tool calls with message: {message}"
             )
             error_code = "missing" if num_tools == 0 else "multiple"
-            raise FunctionCallingFormatError(msg, error_code)
+            raise FunctionCallingFormatError(msg, error_code, num_tools=num_tools)
         tool_call = tool_calls[0]
         action = self._parse_tool_call(tool_call, commands)
         return message, action
