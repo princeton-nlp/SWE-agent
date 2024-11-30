@@ -242,7 +242,8 @@ class InstancesFromHuggingFace(BaseModel, AbstractInstanceSource):
 
     @property
     def id(self) -> str:
-        return "".join(l for l in self.dataset_name if l.isalnum())
+        ds_name = "".join(l for l in self.dataset_name if l.isalnum() or l in ["-", "_"])
+        return f"{ds_name}_{self.split}"
 
 
 class SWEBenchInstances(BaseModel, AbstractInstanceSource):
@@ -292,7 +293,7 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
 
     @property
     def id(self) -> str:
-        return f"swe_bench_{self.subset}"
+        return f"swe_bench_{self.subset}_{self.split}"
 
 
 class ExpertInstancesFromFile(BaseModel, AbstractInstanceSource):
