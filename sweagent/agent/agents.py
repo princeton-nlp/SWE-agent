@@ -14,7 +14,7 @@ from swerex.exceptions import BashIncorrectSyntaxError, CommandTimeoutError, Swe
 from tenacity import RetryError
 from typing_extensions import Self
 
-from sweagent import __version__, get_agent_commit_hash
+from sweagent import __version__, get_agent_commit_hash, get_rex_commit_hash, get_rex_version
 from sweagent.agent.history_processors import DefaultHistoryProcessor, HistoryProcessor
 from sweagent.agent.hooks.abstract import AbstractAgentHook, CombinedAgentHook
 from sweagent.agent.models import (
@@ -294,6 +294,8 @@ class Agent:
         self.info = AgentInfo()
         self.info["swe_agent_hash"] = get_agent_commit_hash()
         self.info["swe_agent_version"] = __version__
+        self.info["swe_rex_version"] = get_rex_version()
+        self.info["swe_rex_hash"] = get_rex_commit_hash()
         self.traj_path = output_dir / (self._problem_statement.id + ".traj")
         self.logger.info("Trajectory will be saved to %s", self.traj_path)
 

@@ -35,16 +35,40 @@ assert TRAJECTORY_DIR.is_dir()
 
 
 def get_agent_commit_hash() -> str:
-    repo = Repo(REPO_ROOT, search_parent_directories=True)
+    """Get the commit hash of the current SWE-agent commit.
+
+    If we cannot get the hash, we return an empty string.
+    """
+    try:
+        repo = Repo(REPO_ROOT, search_parent_directories=False)
+    except Exception:
+        return ""
     return repo.head.object.hexsha
 
 
-def get_agent_version_info() -> str:
+def get_rex_commit_hash() -> str:
+    import swerex
+
+    print(swerex.__file__)
+
     try:
-        hash = get_agent_commit_hash()
+        repo = Repo(Path(swerex.__file__).resolve().parent.parent.parent, search_parent_directories=False)
     except Exception:
-        hash = "unknown"
-    return f"This is SWE-agent version {__version__} with commit hash {hash}."
+        return ""
+    return repo.head.object.hexsha
+
+
+def get_rex_version() -> str:
+    from swerex import __version__ as rex_version
+
+    return rex_version
+
+
+def get_agent_version_info() -> str:
+    hash = get_agent_commit_hash()
+    rex_hash = get_rex_commit_hash()
+    rex_version = get_rex_version()
+    return f"This is SWE-agent version {__version__} ({hash}) with SWE-ReX {rex_version} ({rex_hash})."
 
 
 get_logger("swe-agent", emoji="👋").info(get_agent_version_info())
