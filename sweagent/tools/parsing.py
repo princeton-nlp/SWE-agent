@@ -245,7 +245,7 @@ class FunctionCallingParser(AbstractParseFunction, BaseModel):
     Your last output did not use any tool calls!
     Please make sure your output includes exactly _ONE_ function call!
     You must invoke the function directly using the function call format.
-    You cannot invoke commands using with ```, you have to use the function call format.
+    You cannot invoke commands with ```, you have to use the function call format.
     If you think you have already resolved the issue, please submit your changes by running the `submit` command.
     If you think you cannot solve the problem, please run `exit_forfeit` (if available).
     Else, please continue with a new tool call!

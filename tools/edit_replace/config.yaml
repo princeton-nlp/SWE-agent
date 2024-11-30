@@ -5,14 +5,36 @@ tools:
     docstring: >
       Replace first occurrence of <search> with <replace> in the currently displayed lines.
       If --replace-all is specified, replace all occurrences of <search> with <replace>.
+
+      For example, if you are looking at this file:
+
+      def fct():
+          print("Hello world")
+
+      and you want to edit the file to read:
+
+      def fct():
+          print("Hello")
+          print("world")
+
+      you search string should be `Hello world` and your replace string should be `"Hello"\n    print("world")`
+      (note the extra spaces before the print statement!).
+
+      You could also get the same result by search for `    print("Hello world")` and replace with `    print("Hello")\n    print("world")`.
+
+      Tips:
+
+      1. Always include proper whitespace and indentation
+      2. When you are adding an if/with/try statement, you need to INDENT the block that follows, so make sure to include it in both your search and replace strings!
+      3. If you are wrapping code in a try statement, make sure to also add an 'except' or 'finally' block.
     arguments:
       - name: search
         type: string
-        description: "the text to search for"
+        description: "the text to search for (make sure to include proper whitespace if needed)"
         required: true
       - name: replace
         type: string
-        description: "the text to replace the search with"
+        description: "the text to replace the search with (make sure to include proper whitespace if needed)"
         required: true
       - name: replace-all
         type: boolean
