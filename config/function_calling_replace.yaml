@@ -92,6 +92,7 @@ agent:
       --- END OF DEMONSTRATION ---
     demonstrations:
       - trajectories/demonstrations/replay__marshmallow-code__marshmallow-1867__function_calling_replace__install-1/marshmallow-code__marshmallow-1867.traj
+    put_demos_in_history: true
   tools:
     env_variables:
       WINDOW: 100
