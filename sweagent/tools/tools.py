@@ -19,7 +19,7 @@ from sweagent.utils.log import get_logger
 
 
 class ToolFilterConfig(BaseModel):
-    blocklist_error_template: str = "Interactive operation '{action}' is not supported by this environment."
+    blocklist_error_template: str = "Operation '{{action}}' is not supported by this environment."
     blocklist: list[str] = [
         "vim",
         "vi",
