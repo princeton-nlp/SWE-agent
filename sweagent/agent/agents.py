@@ -99,16 +99,19 @@ class TemplateConfig(BaseModel):
             self.next_step_no_output_template = self.next_step_template
 
     @model_validator(mode="after")
-    @classmethod
-    def validate_template_jinja_syntax(cls, data: Any) -> Any:
-        template_fields = [field for field in cls.model_fields.keys() if field.endswith("_template")]
+    def validate_template_jinja_syntax(self) -> Self:
+        template_fields = [field for field in self.model_fields.keys() if field.endswith("_template")]
         for field in template_fields:
-            if isinstance(data, dict):
-                value = data[field]
-            else:
-                value = getattr(data, field)
+            value = getattr(self, field)
             _warn_probably_wrong_jinja_syntax(value)
-        return data
+        return self
+
+    @model_validator(mode="after")
+    def warn_models_in_history(self) -> Self:
+        if self.put_demos_in_history and self.demonstration_template is not None:
+            logger = get_logger("swea-config", emoji="⚙️")
+            logger.warning("demonstration_template is ignored when put_demos_in_history is True")
+        return self
 
 
 class AgentConfig(BaseModel):
@@ -342,10 +345,6 @@ class Agent:
         demo_history = json.loads(Path(demonstration_path).read_text())["history"]
 
         if self.templates.put_demos_in_history:
-            if self.templates.demonstration_template is not None:
-                self.logger.warning("Demonstration template is ignored for put_demos_in_history=True")
-            # Add demonstration to history directly as separate messages
-            # TODO: check that this still works with function calling
             for entry in demo_history:
                 if entry["role"] != "system":
                     entry["is_demo"] = True
