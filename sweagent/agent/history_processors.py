@@ -33,22 +33,19 @@ def _last_n_history(history, n):
         msg = "n must be a positive integer"
         raise ValueError(msg)
     new_history = list()
-    user_messages = len([entry for entry in history if (entry["role"] == "user" and not entry.get("is_demo", False))])
-    user_msg_idx = 0
-    for entry in history:
-        data = entry.copy()
-        if data["role"] != "user":
-            new_history.append(entry)
-            continue
-        if data.get("is_demo", False):
-            new_history.append(entry)
-            continue
-        else:
-            user_msg_idx += 1
-        if user_msg_idx == 1 or user_msg_idx in range(user_messages - n + 1, user_messages + 1):
+    observation_idxs = [
+        idx
+        for idx, entry in enumerate(history)
+        if entry["message_type"] == "observation" and not entry.get("is_demo", False)
+    ]
+    omit_content_idxs = [idx for idx in observation_idxs[1:-n]]
+    for idx, entry in enumerate(history):
+        if idx not in omit_content_idxs:
             new_history.append(entry)
         else:
-            data["content"] = f'Old output omitted ({len(entry["content"].splitlines())} lines)'
+            data = entry.copy()
+            assert data["message_type"] == "observation", "Expected observation for dropped entry"
+            data["content"] = f'Old environment output: ({len(entry["content"].splitlines())} lines omitted)'
             new_history.append(data)
     return new_history
 

@@ -322,7 +322,9 @@ class Agent:
         assert self._problem_statement is not None
         system_msg = Template(self.templates.system_template).render(**self._get_format_dict())
         self.logger.info(f"SYSTEM ({self.name})\n{system_msg}")
-        self._append_history({"role": "system", "content": system_msg, "agent": self.name})
+        self._append_history(
+            {"role": "system", "content": system_msg, "agent": self.name, "message_type": "system_prompt"}
+        )
 
     def add_demonstrations_to_history(self) -> None:
         """Add demonstrations to history"""
@@ -360,6 +362,7 @@ class Agent:
                     "content": demonstration,
                     "is_demo": True,
                     "role": "user",
+                    "message_type": "demonstration",
                 },
             )
 
@@ -406,7 +409,7 @@ class Agent:
         message = "\n".join(messages)
 
         self.logger.info(f"🤖 MODEL INPUT\n{message}")
-        history_item = {"role": "user", "content": message, "agent": self.name}
+        history_item = {"role": "user", "content": message, "agent": self.name, "message_type": "observation"}
         if tool_call_ids:
             assert len(tool_call_ids) == 1, "This should be ensured by the FunctionCalling parse method"
             history_item["role"] = "tool"
@@ -423,6 +426,7 @@ class Agent:
                 "action": step.action,
                 "agent": self.name,
                 "tool_calls": step.tool_calls,
+                "message_type": "action",
             },
         )
         if step.done:
