@@ -72,6 +72,8 @@ class AgentInfo(TypedDict, total=False):
     summarizer: dict
     swe_agent_hash: str
     swe_agent_version: str
+    swe_rex_version: str
+    swe_rex_hash: str
 
 
 @dataclass
