@@ -56,7 +56,10 @@ class RunBatchProgressManager:
             MofNCompleteColumn(),
             TaskProgressColumn(),
             TimeElapsedColumn(),
+            TextColumn("[cyan]eta:[/cyan]"),
             TimeRemainingColumn(),
+            # Wait 5 min before estimating speed
+            speed_estimate_period=60 * 5,
         )
         self._task_progress_bar = Progress(
             SpinnerColumn(),
