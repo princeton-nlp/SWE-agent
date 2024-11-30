@@ -10,21 +10,25 @@ from sweagent.utils.log import get_logger
 logger = get_logger("merge", emoji="➕")
 
 
-def merge_predictions(directory: Path, output: Path | None = None) -> None:
-    """Merge predictions found in `directory` into a single JSON file.
+def merge_predictions(directories: list[Path], output: Path | None = None) -> None:
+    """Merge predictions found in `directories` into a single JSON file.
 
     Args:
         directory: Directory containing predictions.
         output: Output file. If not provided, the merged predictions will be
             written to `directory/preds.json`.
     """
-    preds = list(directory.glob("*.pred"))
+    preds = []
+    for directory in directories:
+        new = list(directory.glob("*.pred"))
+        preds.extend(new)
+        logger.debug("Found %d predictions in %s", len(new), directory)
     logger.info("Found %d predictions", len(preds))
     if not preds:
         logger.warning("No predictions found in %s", directory)
         return
     if output is None:
-        output = directory / "preds.json"
+        output = directories[0] / "preds.json"
     data = {}
     for pred in preds:
         _data = json.loads(pred.read_text())
@@ -34,6 +38,9 @@ def merge_predictions(directory: Path, output: Path | None = None) -> None:
             continue
         # Ensure model_patch is a string
         _data["model_patch"] = str(_data["model_patch"]) if _data["model_patch"] is not None else ""
+        if instance_id in data:
+            msg = f"Duplicate instance ID found: {instance_id}"
+            raise ValueError(msg)
         data[instance_id] = _data
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(data))
@@ -42,7 +49,7 @@ def merge_predictions(directory: Path, output: Path | None = None) -> None:
 
 def get_cli_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("directory", type=Path, help="Directory containing predictions")
+    parser.add_argument("directories", type=Path, help="Directory containing predictions", nargs="+")
     parser.add_argument("--output", type=Path, help="Output file")
     return parser
 
@@ -50,7 +57,7 @@ def get_cli_parser() -> argparse.ArgumentParser:
 def run_from_cli(args: list[str] | None = None) -> None:
     cli_parser = get_cli_parser()
     cli_args = cli_parser.parse_args(args)
-    merge_predictions(cli_args.directory, cli_args.output)
+    merge_predictions(cli_args.directories, cli_args.output)
 
 
 if __name__ == "__main__":
