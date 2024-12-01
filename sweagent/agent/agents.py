@@ -500,7 +500,9 @@ class Agent:
         assert self.traj_path is not None
         self.traj_path.write_text(json.dumps(data, indent=2))
 
-    def get_model_requery_history(self, error_template: str, *, output: str, **kwargs: str) -> list[dict[str, str]]:
+    def get_model_requery_history(
+        self, error_template: str, *, output: str, **kwargs: str | int | float | bool | None
+    ) -> list[dict[str, str]]:
         """Ask the model to correct after a hitting one of the following errors:
 
         1. Malformatted output (could not parse action)
@@ -718,7 +720,7 @@ class Agent:
 
         def handle_error_with_retry(exception: Exception, template: str) -> list[dict[str, str]]:
             """Requeries the model if the error is a format/blocklist/bash syntax error."""
-            step = getattr(exception, "step", StepOutput())
+            step: StepOutput = getattr(exception, "step", StepOutput())
             self.add_step_to_trajectory(step)
             exception_message = getattr(exception, "message", "")
             if not exception_message:
@@ -728,7 +730,7 @@ class Agent:
                     pass
             return self.get_model_requery_history(
                 error_template=template,
-                **step.model_dump(),
+                **step.to_template_format_dict(),
                 **getattr(exception, "extra_info", {}),
                 exception_message=exception_message,
             )
