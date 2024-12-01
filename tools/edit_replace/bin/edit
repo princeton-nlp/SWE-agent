@@ -65,7 +65,7 @@ def main(search: str, replace: str, replace_all: bool):
     try:
         wf = WindowedFile(exit_on_exception=False)
     except FileNotOpened:
-        print("No file opened. Either `open` a file first.")
+        print("No file opened. Either `open` or `create` a file first.")
         exit(1)
 
     # Turn \\n into \n etc., i.e., undo the escaping

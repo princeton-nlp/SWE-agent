@@ -6,14 +6,15 @@ from typing import Union
 from default_utils import FileNotOpened, WindowedFile  # type: ignore
 from flake8_utils import flake8, format_flake8_output  # type: ignore
 
-_SINGLE_EDIT_SUCCESS_MSG = """Text appended. Please review the changes and make sure they are correct
-(correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
+RETRY_WITH_OUTPUT_TOKEN = "###SWE-AGENT-RETRY-WITH-OUTPUT###"
 
-_LINT_ERROR_TEMPLATE = """ Your proposed edit has introduced new syntax error(s). Please read this error message carefully and then retry editing the file.
+_LINT_ERROR_TEMPLATE = """Your proposed edit has introduced new syntax error(s).
+Please read this error message carefully and then retry editing the file.
 
 ERRORS:
 
 {errors}
+
 This is how your edit would have looked if applied
 ------------------------------------------------
 {window_applied}
@@ -41,6 +42,7 @@ def main(text: str, line: Union[int, None] = None):
         wf = WindowedFile(exit_on_exception=False)
     except FileNotOpened:
         print("No file opened. Use the `create` or `open` command first.")
+        print(RETRY_WITH_OUTPUT_TOKEN)
         exit(1)
 
     pre_edit_lint = flake8(wf.path)
@@ -65,6 +67,7 @@ def main(text: str, line: Union[int, None] = None):
                 errors=new_flake8_output, window_applied=with_edits, window_original=without_edits
             )
         )
+        print(RETRY_WITH_OUTPUT_TOKEN)
         exit(4)
 
     wf.print_window()
