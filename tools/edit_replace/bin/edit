@@ -16,6 +16,8 @@ else:
 from default_utils import FileNotOpened, TextNotFound, WindowedFile  # type: ignore
 from flake8_utils import flake8, format_flake8_output  # type: ignore
 
+RETRY_WITH_OUTPUT_TOKEN = "###SWE-AGENT-RETRY-WITH-OUTPUT###"
+
 _NOT_FOUND_IN_WINDOW_MSG = """Text {search!r} not found in displayed lines.
 Note: By default, we only replace the first occurrence in the lines that are currently visible in the editor.
 If you want to replace all occurrences in and outside of the visible lines, use the `--replace-all` flag.
@@ -35,6 +37,7 @@ Your proposed edit has introduced new syntax error(s). Please read this error me
 ERRORS:
 
 {errors}
+
 This is how your edit would have looked if applied
 ------------------------------------------------
 {window_applied}
@@ -70,6 +73,7 @@ def main(search: str, replace: str, replace_all: bool):
 
     if search == replace:
         print(_NO_CHANGES_MADE_MSG)
+        print(RETRY_WITH_OUTPUT_TOKEN)
         exit(2)
 
     pre_edit_lint = flake8(wf.path)
@@ -82,6 +86,7 @@ def main(search: str, replace: str, replace_all: bool):
                     f"Error: Found more than one occurrence of {search} in the window while replace_all=False. "
                     "Aborting edit."
                 )
+                print(RETRY_WITH_OUTPUT_TOKEN)
                 exit(4)
             replacement_info = wf.replace_in_window(search, replace)
             # todo: Should warn if more than one occurrence was found?
@@ -90,6 +95,7 @@ def main(search: str, replace: str, replace_all: bool):
             replacement_info = wf.replace(search, replace)
     except TextNotFound:
         print(_NOT_FOUND_IN_WINDOW_MSG.format(search=search))
+        print(RETRY_WITH_OUTPUT_TOKEN)
         exit(3)
 
     post_edit_lint = flake8(wf.path)
@@ -117,9 +123,10 @@ def main(search: str, replace: str, replace_all: bool):
         without_edits = wf.get_window_text(line_numbers=True, status_line=True, pre_post_line=True)
         print(
             _LINT_ERROR_TEMPLATE.format(
-                errors=new_flake8_output, window_applied=with_edits, window_original=without_edits
+                errors=new_flake8_output, window_applied=with_edits, window_original=without_edits,
             )
         )
+        print(RETRY_WITH_OUTPUT_TOKEN)
         exit(4)
     if not replace_all:
         print(_SINGLE_EDIT_SUCCESS_MSG)

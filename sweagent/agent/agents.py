@@ -142,6 +142,16 @@ class Skipped(Exception): ...
 class Submitted(Exception): ...
 
 
+class RetryWithOutput(Exception): ...
+
+
+class RetryWithoutOutput(Exception): ...
+
+
+RETRY_WITH_OUTPUT_TOKEN = "###SWE-AGENT-RETRY-WITH-OUTPUT###"
+RETRY_WITHOUT_OUTPUT_TOKEN = "###SWE-AGENT-RETRY-WITHOUT-OUTPUT###"
+
+
 class Agent:
     def __init__(
         self,
@@ -628,6 +638,14 @@ class Agent:
         step.execution_time = time.perf_counter() - execution_t0
         self._chook.on_action_executed(step=step)
         step.state = self.tools.get_state(env=self._env)
+
+        if RETRY_WITH_OUTPUT_TOKEN in step.observation:
+            step.observation = step.observation.replace(RETRY_WITH_OUTPUT_TOKEN, "")
+            raise RetryWithOutput()
+        elif RETRY_WITHOUT_OUTPUT_TOKEN in step.observation:
+            step.observation = step.observation.replace(RETRY_WITHOUT_OUTPUT_TOKEN, "")
+            raise RetryWithoutOutput()
+
         return self.handle_submission(step)
 
     def forward(self, history: list[dict[str, str]]) -> StepOutput:
@@ -715,8 +733,8 @@ class Agent:
                 exception_message=exception_message,
             )
 
-        n_fails = 0
-        while n_fails < self.max_requeries:
+        n_format_fails = 0
+        while n_format_fails < self.max_requeries:
             try:
                 return self.forward(history)
 
@@ -728,19 +746,30 @@ class Agent:
             # Errors that cause requery
 
             except FormatError as e:
-                n_fails += 1
+                n_format_fails += 1
                 history = handle_error_with_retry(exception=e, template=self.tools.config.format_error_template)
             except BlockedActionError as e:
-                n_fails += 1
+                n_format_fails += 1
                 history = handle_error_with_retry(
                     exception=e, template=self.tools.config.filter.blocklist_error_template
                 )
             except BashIncorrectSyntaxError as e:
-                n_fails += 1
+                n_format_fails += 1
                 history = handle_error_with_retry(
                     exception=e,
                     template=self.templates.shell_check_error_template,
                 )
+            except RetryWithOutput as e:
+                self.logger.warning("Requerying model with output from last step (RetryWithOutput)")
+                n_format_fails = 0
+                history = handle_error_with_retry(
+                    exception=e,
+                    template=self.templates.next_step_template,
+                )
+            except RetryWithoutOutput:
+                self.logger.warning("Requerying model (RetryWithoutOutput)")
+                n_format_fails = 0
+                # Requery with the same template as the last step
 
             # Errors that cause exit
 
