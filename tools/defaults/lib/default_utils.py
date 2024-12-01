@@ -71,6 +71,9 @@ class ReplacementInfo:
         self.n_replace_lines = n_replace_lines
         self.n_replacements = n_replacements
 
+    def __repr__(self):
+        return f"ReplacementInfo(first_replaced_line={self.first_replaced_line}, n_search_lines={self.n_search_lines}, n_replace_lines={self.n_replace_lines}, n_replacements={self.n_replacements})"
+
 
 class InsertInfo:
     def __init__(self, first_inserted_line: int, n_lines_added: int):
@@ -241,7 +244,7 @@ class WindowedFile:
                 exit(1)
             raise TextNotFound
         window_start_line, _ = self.line_range
-        replace_start_line = window_start_line + len(window_text[:index].split("\n"))
+        replace_start_line = window_start_line + len(window_text[:index].split("\n")) - 1
         new_window_text = window_text.replace(search, replace)
         self.set_window_text(new_window_text)
         if reset_first_line == "keep":

@@ -104,8 +104,12 @@ def main(search: str, replace: str, replace_all: bool):
         # Try to filter out pre-existing errors
         replacement_window = (
             replacement_info.first_replaced_line,
-            replacement_info.first_replaced_line + replacement_info.n_search_lines,
+            replacement_info.first_replaced_line + replacement_info.n_search_lines - 1,
         )
+        # print(f"{replacement_info=}")
+        # print(f"{replacement_window=}")
+        # print(f"{pre_edit_lint=}")
+        # print(f"{post_edit_lint=}")
         new_flake8_output = format_flake8_output(
             post_edit_lint,
             previous_errors_string=pre_edit_lint,

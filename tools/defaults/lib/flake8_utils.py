@@ -51,6 +51,9 @@ class Flake8Error:
             and self.problem == other.problem
         )
 
+    def __repr__(self):
+        return f"Flake8Error(filename={self.filename}, line_number={self.line_number}, col_number={self.col_number}, problem={self.problem})"
+
 
 def _update_previous_errors(
     previous_errors: List[Flake8Error], replacement_window: Tuple[int, int], replacement_n_lines: int
@@ -106,6 +109,7 @@ def format_flake8_output(
         The filtered flake8 output as a string
     """
     errors = [Flake8Error.from_line(line.strip()) for line in input_string.split("\n") if line.strip()]
+    # print(f"New errors before filtering: {errors=}")
     lines = []
     if previous_errors_string:
         assert replacement_window is not None
@@ -113,8 +117,11 @@ def format_flake8_output(
         previous_errors = [
             Flake8Error.from_line(line.strip()) for line in previous_errors_string.split("\n") if line.strip()
         ]
+        # print(f"Previous errors before updating: {previous_errors=}")
         previous_errors = _update_previous_errors(previous_errors, replacement_window, replacement_n_lines)
+        # print(f"Previous errors after updating: {previous_errors=}")
         errors = [error for error in errors if error not in previous_errors]
+        # print(f"New errors after filtering: {errors=}")
     for error in errors:
         if not show_line_numbers:
             lines.append(f"- {error.problem}")
