@@ -41,15 +41,11 @@ class Flake8Error:
         )
 
 
-def _filter_errors(
-    errors: List[Flake8Error],
-    previous_errors: List[Flake8Error],
-    replacement_window: Tuple[int, int],
-    replacement_n_lines: int,
-    grace_n_lines: int = 5,
-    max_distance_from_edit_window: int = 100,
+def _update_previous_errors(
+    previous_errors: List[Flake8Error], replacement_window: Tuple[int, int], replacement_n_lines: int
 ) -> List[Flake8Error]:
-    """
+    """Update the line numbers of the previous errors to what they would be after the edit window.
+    This is a helper function for `_filter_previous_errors`.
 
     All previous errors that are inside of the edit window should not be ignored,
     so they are removed from the previous errors list.
@@ -58,45 +54,25 @@ def _filter_errors(
         previous_errors: list of errors with old line numbers
         replacement_window: the window of the edit/lines that will be replaced
         replacement_n_lines: the number of lines that will be used to replace the text
-        grace_n_lines: +/- this amount of lines around the replacement window will not be ignored
-            and also we'll use this amount to be lose when matching old errors
-        max_distance_from_edit_window: the maximum distance from the edit window to still
-            consider an error
 
     Returns:
         list of errors with updated line numbers
     """
-    updated_previous_errors = []
+    updated = []
     lines_added = replacement_n_lines - (replacement_window[1] - replacement_window[0] + 1)
     for error in previous_errors:
         if error.line_number < replacement_window[0]:
             # no need to adjust the line number
-            updated_previous_errors.append(error)
+            updated.append(error)
             continue
-        if replacement_window[0] - grace_n_lines <= error.line_number <= replacement_window[1] + grace_n_lines:
+        if replacement_window[0] <= error.line_number <= replacement_window[1]:
             # The error is within the edit window, so let's not ignore it
             # either way (we wouldn't know how to adjust the line number anyway)
             continue
         # We're out of the edit window, so we need to adjust the line number
-        updated_previous_errors.append(
-            Flake8Error(error.filename, error.line_number + lines_added, error.col_number, error.problem)
-        )
-    filtered_errors = []
-    for error in errors:
-        # -1 just to be safe
-        if error.line_number < replacement_window[0] - 1:
-            # Before the edit window. Ignore
-            continue
-        # This is mostly because we tend to be off by one
-        for line_diff in range(-grace_n_lines, grace_n_lines + 1):
-            for pe in updated_previous_errors:
-                if error.line_number + line_diff == pe.line_number and error.problem == pe.problem:
-                    continue
-        if error.line_number - replacement_window[1] - lines_added > max_distance_from_edit_window:
-            # Far away error. Ignore
-            continue
-        filtered_errors.append(error)
-    return filtered_errors
+        updated.append(Flake8Error(error.filename, error.line_number + lines_added, error.col_number, error.problem))
+    return updated
+
 
 def format_flake8_output(
     input_string: str,
@@ -126,7 +102,8 @@ def format_flake8_output(
         previous_errors = [
             Flake8Error.from_line(line.strip()) for line in previous_errors_string.split("\n") if line.strip()
         ]
-        errors = _filter_errors(errors, previous_errors, replacement_window, replacement_n_lines)
+        previous_errors = _update_previous_errors(previous_errors, replacement_window, replacement_n_lines)
+        errors = [error for error in errors if error not in previous_errors]
     for error in errors:
         if not show_line_numbers:
             lines.append(f"- {error.problem}")
