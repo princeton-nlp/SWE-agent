@@ -76,7 +76,7 @@ def _update_previous_errors(
 
 def format_flake8_output(
     input_string: str,
-    show_line_numbers: bool = False,
+    show_line_numbers: bool = True,
     *,
     previous_errors_string: str = "",
     replacement_window: Optional[Tuple[int, int]] = None,
@@ -108,7 +108,7 @@ def format_flake8_output(
         if not show_line_numbers:
             lines.append(f"- {error.problem}")
         else:
-            lines.append(f"- {error.line_number}:{error.col_number} {error.problem}")
+            lines.append(f"- line {error.line_number} col {error.col_number}: {error.problem}")
     return "\n".join(lines)
 
 

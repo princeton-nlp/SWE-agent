@@ -178,6 +178,13 @@ class WindowedFile:
     def get_window_text(
         self, *, line_numbers: bool = False, status_line: bool = False, pre_post_line: bool = False
     ) -> str:
+        """Get the text in the current display window with optional status/extra information
+
+        Args:
+            line_numbers: include line numbers in the output
+            status_line: include the status line in the output (file path, total lines)
+            pre_post_line: include the pre/post line in the output (number of lines above/below)
+        """
         start_line, end_line = self.line_range
         lines = self.text.split("\n")[start_line : end_line + 1]
         out_lines = []
