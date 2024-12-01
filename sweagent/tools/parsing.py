@@ -242,7 +242,8 @@ class Identity(AbstractParseFunction, BaseModel):
 class FunctionCallingParser(AbstractParseFunction, BaseModel):
     """Expects the model response to be a LiteLLM tool call."""
 
-    error_message: str = dedent("""{% if error_code == "missing" %}
+    error_message: str = dedent("""\
+    {% if error_code == "missing" %}
     Your last output did not use any tool calls!
     Please make sure your output includes exactly _ONE_ function call!
     You must invoke the function directly using the function call format.
