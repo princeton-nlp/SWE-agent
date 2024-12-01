@@ -272,6 +272,9 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
     shuffle: bool = False
     """Shuffle the instances (before filtering and slicing)."""
 
+    evaluate: bool = True
+    """Run sb-cli to evaluate"""
+
     def _get_huggingface_name(self) -> str:
         if self.subset == "full":
             return "princeton-nlp/SWE-Bench"
