@@ -121,6 +121,9 @@ def format_flake8_output(
         previous_errors = _update_previous_errors(previous_errors, replacement_window, replacement_n_lines)
         # print(f"Previous errors after updating: {previous_errors=}")
         errors = [error for error in errors if error not in previous_errors]
+        # Sometimes new errors appear above the replacement window that were 'shadowed' by the previous errors
+        # they still clearly aren't caused by the edit.
+        errors = [error for error in errors if error.line_number >= replacement_window[0]]
         # print(f"New errors after filtering: {errors=}")
     for error in errors:
         if not show_line_numbers:
