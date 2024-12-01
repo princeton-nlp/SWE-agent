@@ -49,8 +49,6 @@ def get_agent_commit_hash() -> str:
 def get_rex_commit_hash() -> str:
     import swerex
 
-    print(swerex.__file__)
-
     try:
         repo = Repo(Path(swerex.__file__).resolve().parent.parent.parent, search_parent_directories=False)
     except Exception:
