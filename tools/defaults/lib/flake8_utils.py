@@ -8,6 +8,17 @@ import subprocess
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+try:
+    from sweagent import TOOLS_DIR
+except ImportError:
+    pass
+else:
+    import sys
+
+    default_lib = TOOLS_DIR / "defaults" / "lib"
+    assert default_lib.is_dir()
+    sys.path.append(str(default_lib))
+
 from default_utils import registry
 
 

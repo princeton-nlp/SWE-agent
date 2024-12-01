@@ -46,7 +46,11 @@ def test_flake8_format_no_error_2():
 def test_flake8_format_no_error_3():
     assert (
         format_flake8_output(
-            "a:12:41: e", previous_errors_string="a:13:41: e", replacement_window=(1, 2), replacement_n_lines=1
+            "a:12:41: e",
+            previous_errors_string="a:13:41: e",
+            replacement_window=(1, 2),
+            replacement_n_lines=1,
+            show_line_numbers=False,
         )
         == ""
     )
@@ -55,7 +59,11 @@ def test_flake8_format_no_error_3():
 def test_flake8_format_error_1():
     assert (
         format_flake8_output(
-            "a:12:41: e", previous_errors_string="a:13:41: e", replacement_window=(12, 13), replacement_n_lines=10
+            "a:12:41: e",
+            previous_errors_string="a:13:41: e",
+            replacement_window=(12, 13),
+            replacement_n_lines=10,
+            show_line_numbers=False,
         )
         == "- e"
     )
@@ -70,5 +78,5 @@ def test_flake8_format_error_1_linenumbers():
             replacement_n_lines=10,
             show_line_numbers=True,
         )
-        == "- 12:41 e"
+        == "- line 12 col 41: e"
     )
