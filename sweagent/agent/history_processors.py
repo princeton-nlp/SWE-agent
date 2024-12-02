@@ -29,9 +29,21 @@ class DefaultHistoryProcessor(BaseModel):
 
 
 class LastNObservations(BaseModel):
-    """Keep the last n observations"""
+    """Keep the last n observations."""
 
     n: int
+    """Number of observations to keep."""
+
+    always_remove_output_for_tags: list[str] = []
+    """Any observation with a `tag` field containing one of these strings will be elided,
+    even if it is one of the last n observations.
+    """
+
+    always_keep_output_for_tags: list[str] = []
+    """Any observation with a `tag` field containing one of these strings will be kept,
+    even if it is not one of the last n observations.
+    """
+
     type: Literal["last_n_observations"] = "last_n_observations"
     """Do not change. Used for (de)serialization."""
 
@@ -50,11 +62,15 @@ class LastNObservations(BaseModel):
         ]
         omit_content_idxs = [idx for idx in observation_idxs[1 : -self.n]]
         for idx, entry in enumerate(history):
-            if idx not in omit_content_idxs:
+            if ((idx not in omit_content_idxs) or (entry.get("tag") in self.always_keep_output_for_tags)) and (
+                entry.get("tag") not in self.always_remove_output_for_tags
+            ):
                 new_history.append(entry)
             else:
                 data = entry.copy()
-                assert data["message_type"] == "observation", "Expected observation for dropped entry"
+                assert (
+                    data["message_type"] == "observation"
+                ), f"Expected observation for dropped entry, got: {data['message_type']}"
                 data["content"] = f'Old environment output: ({len(entry["content"].splitlines())} lines omitted)'
                 new_history.append(data)
         return new_history
