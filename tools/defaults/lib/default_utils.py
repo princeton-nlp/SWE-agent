@@ -71,6 +71,9 @@ class ReplacementInfo:
         self.n_replace_lines = n_replace_lines
         self.n_replacements = n_replacements
 
+    def __repr__(self):
+        return f"ReplacementInfo(first_replaced_line={self.first_replaced_line}, n_search_lines={self.n_search_lines}, n_replace_lines={self.n_replace_lines}, n_replacements={self.n_replacements})"
+
 
 class InsertInfo:
     def __init__(self, first_inserted_line: int, n_lines_added: int):
@@ -178,6 +181,13 @@ class WindowedFile:
     def get_window_text(
         self, *, line_numbers: bool = False, status_line: bool = False, pre_post_line: bool = False
     ) -> str:
+        """Get the text in the current display window with optional status/extra information
+
+        Args:
+            line_numbers: include line numbers in the output
+            status_line: include the status line in the output (file path, total lines)
+            pre_post_line: include the pre/post line in the output (number of lines above/below)
+        """
         start_line, end_line = self.line_range
         lines = self.text.split("\n")[start_line : end_line + 1]
         out_lines = []
@@ -234,7 +244,7 @@ class WindowedFile:
                 exit(1)
             raise TextNotFound
         window_start_line, _ = self.line_range
-        replace_start_line = window_start_line + len(window_text[:index].split("\n"))
+        replace_start_line = window_start_line + len(window_text[:index].split("\n")) - 1
         new_window_text = window_text.replace(search, replace)
         self.set_window_text(new_window_text)
         if reset_first_line == "keep":

@@ -3,6 +3,12 @@ env:
     image: python:3.11
 agent:
   templates:
+    system_template: |-
+      Enter any commands you want to run.
+
+      There are a few special commands you can use to raise exceptions for testing:
+      `raise_runtime`, `raise_cost`, `raise_context`, `raise_function_calling:<error_code>`,
+      etc.
     instance_template: |-
       We're currently solving the following issue within our repository. Here's the issue text:
       ISSUE:

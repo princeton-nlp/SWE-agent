@@ -5,6 +5,7 @@ import re
 import textwrap
 from abc import ABC, abstractmethod
 from shlex import quote
+from textwrap import dedent
 from typing import Any, Literal
 
 from pydantic import BaseModel
@@ -89,7 +90,7 @@ class ThoughtActionParser(AbstractParseFunction, BaseModel):
     ```
     """
 
-    error_message: str = """\
+    error_message: str = dedent("""\
     Your output was not formatted correctly. You must always include one discussion and one command as part of your response. Make sure you do not have multiple discussion/command tags.
     Please make sure your output precisely matches the following format:
     DISCUSSION
@@ -98,7 +99,7 @@ class ThoughtActionParser(AbstractParseFunction, BaseModel):
     ```
     command(s) that you're going to run
     ```
-    """
+    """)
 
     type: Literal["thought_action"] = "thought_action"
     """Type for (de)serialization. Do not change."""
@@ -148,10 +149,10 @@ class XMLThoughtActionParser(AbstractParseFunction, BaseModel):
     </command>
     """
 
-    error_message: str = """\
+    error_message: str = dedent("""\
     Your output was not formatted correctly. You must always include one discussion and one command as part of your response. Make sure you do not have multiple discussion/command tags.
     Please make sure your output precisely matches the following format:
-    """
+    """)
 
     type: Literal["xml_thought_action"] = "xml_thought_action"
     """Type for (de)serialization. Do not change."""
@@ -202,7 +203,7 @@ class EditFormat(ThoughtActionParser, BaseModel):
     ```
     """
 
-    error_message: str = """\
+    error_message: str = dedent("""\
     Your output was not formatted correctly. You must wrap the replacement text in backticks (```).
     Please make sure your output precisely matches the following format:
     COMMENTS
@@ -215,7 +216,7 @@ class EditFormat(ThoughtActionParser, BaseModel):
     Remember that all of the window's contents will be replaced with the contents of this window.
     Don't include line numbers in your response.
     ```
-    """
+    """)
 
     type: Literal["edit_format"] = "edit_format"
     """Type for (de)serialization. Do not change."""
@@ -241,11 +242,12 @@ class Identity(AbstractParseFunction, BaseModel):
 class FunctionCallingParser(AbstractParseFunction, BaseModel):
     """Expects the model response to be a LiteLLM tool call."""
 
-    error_message: str = """{% if error_code == "missing" %}
+    error_message: str = dedent("""\
+    {% if error_code == "missing" %}
     Your last output did not use any tool calls!
     Please make sure your output includes exactly _ONE_ function call!
     You must invoke the function directly using the function call format.
-    You cannot invoke commands using with ```, you have to use the function call format.
+    You cannot invoke commands with ```, you have to use the function call format.
     If you think you have already resolved the issue, please submit your changes by running the `submit` command.
     If you think you cannot solve the problem, please run `exit_forfeit` (if available).
     Else, please continue with a new tool call!
@@ -258,7 +260,7 @@ class FunctionCallingParser(AbstractParseFunction, BaseModel):
     {% else %}
     Your action could not be parsed properly: {{exception_message}}.
     {% endif %}
-    """
+    """)
 
     type: Literal["function_calling"] = "function_calling"
     """Type for (de)serialization. Do not change."""
@@ -317,11 +319,11 @@ class FunctionCallingParser(AbstractParseFunction, BaseModel):
 class JsonParser(AbstractParseFunction, BaseModel):
     """Expects the model response to be a JSON object."""
 
-    error_message: str = """\
+    error_message: str = dedent("""\
     Your output could not be parsed as JSON. Please make sure your output 1) is valid JSON and
     2) Includes the "thought" and "command" fields.
 
-    """
+    """)
 
     type: Literal["json"] = "json"
     """Type for (de)serialization. Do not change."""

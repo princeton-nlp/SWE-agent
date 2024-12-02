@@ -166,6 +166,7 @@ class SWEEnv:
     def interrupt_session(self):
         asyncio.run(self.deployment.runtime.run_in_session(BashInterruptAction()))
 
+    # todo: return exit code?
     def communicate(
         self,
         input: str,
@@ -189,7 +190,10 @@ class SWEEnv:
             output: output from container
         """
         self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
-        r = asyncio.run(self.deployment.runtime.run_in_session(BashAction(command=input, timeout=timeout)))
+        rex_check = "silent" if check else "ignore"
+        r = asyncio.run(
+            self.deployment.runtime.run_in_session(BashAction(command=input, timeout=timeout, check=rex_check))
+        )
         output = r.output
         self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
         if check and r.exit_code != 0:
@@ -203,7 +207,9 @@ class SWEEnv:
             # handling.
             last_action_string = shlex.quote(input.strip())
             input = f"export LAST_ACTION={last_action_string}"
-            r = asyncio.run(self.deployment.runtime.run_in_session(BashAction(command=input, timeout=1)))
+            r = asyncio.run(
+                self.deployment.runtime.run_in_session(BashAction(command=input, timeout=1, check="ignore"))
+            )
         return output
 
     # todo: Use the runtime for this instead

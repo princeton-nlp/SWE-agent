@@ -56,7 +56,10 @@ class RunBatchProgressManager:
             MofNCompleteColumn(),
             TaskProgressColumn(),
             TimeElapsedColumn(),
+            TextColumn("[cyan]eta:[/cyan]"),
             TimeRemainingColumn(),
+            # Wait 5 min before estimating speed
+            speed_estimate_period=60 * 5,
         )
         self._task_progress_bar = Progress(
             SpinnerColumn(),
@@ -87,7 +90,7 @@ class RunBatchProgressManager:
             t.show_header = True
             # self._exit_status_table.rows.clear()
             for status, instances in self._instances_by_exit_status.items():
-                instances_str = _shorten_str(", ".join(reversed(instances)), 40)
+                instances_str = _shorten_str(", ".join(reversed(instances)), 55)
                 t.add_row(status, str(len(instances)), instances_str)
         assert self.render_group is not None
         self.render_group.renderables[0] = t

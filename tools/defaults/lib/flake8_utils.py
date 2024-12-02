@@ -8,6 +8,17 @@ import subprocess
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+try:
+    from sweagent import TOOLS_DIR
+except ImportError:
+    pass
+else:
+    import sys
+
+    default_lib = TOOLS_DIR / "defaults" / "lib"
+    assert default_lib.is_dir()
+    sys.path.append(str(default_lib))
+
 from default_utils import registry
 
 
@@ -39,6 +50,9 @@ class Flake8Error:
             and self.col_number == other.col_number
             and self.problem == other.problem
         )
+
+    def __repr__(self):
+        return f"Flake8Error(filename={self.filename}, line_number={self.line_number}, col_number={self.col_number}, problem={self.problem})"
 
 
 def _update_previous_errors(
@@ -76,7 +90,7 @@ def _update_previous_errors(
 
 def format_flake8_output(
     input_string: str,
-    show_line_numbers: bool = False,
+    show_line_numbers: bool = True,
     *,
     previous_errors_string: str = "",
     replacement_window: Optional[Tuple[int, int]] = None,
@@ -95,6 +109,7 @@ def format_flake8_output(
         The filtered flake8 output as a string
     """
     errors = [Flake8Error.from_line(line.strip()) for line in input_string.split("\n") if line.strip()]
+    # print(f"New errors before filtering: {errors=}")
     lines = []
     if previous_errors_string:
         assert replacement_window is not None
@@ -102,13 +117,19 @@ def format_flake8_output(
         previous_errors = [
             Flake8Error.from_line(line.strip()) for line in previous_errors_string.split("\n") if line.strip()
         ]
+        # print(f"Previous errors before updating: {previous_errors=}")
         previous_errors = _update_previous_errors(previous_errors, replacement_window, replacement_n_lines)
+        # print(f"Previous errors after updating: {previous_errors=}")
         errors = [error for error in errors if error not in previous_errors]
+        # Sometimes new errors appear above the replacement window that were 'shadowed' by the previous errors
+        # they still clearly aren't caused by the edit.
+        errors = [error for error in errors if error.line_number >= replacement_window[0]]
+        # print(f"New errors after filtering: {errors=}")
     for error in errors:
         if not show_line_numbers:
             lines.append(f"- {error.problem}")
         else:
-            lines.append(f"- {error.line_number}:{error.col_number} {error.problem}")
+            lines.append(f"- line {error.line_number} col {error.col_number}: {error.problem}")
     return "\n".join(lines)
 
 
@@ -117,5 +138,6 @@ def flake8(file_path: str) -> str:
     if Path(file_path).suffix != ".py":
         return ""
     cmd = registry.get("LINT_COMMAND", "flake8 --isolated --select=F821,F822,F831,E111,E112,E113,E999,E902 {file_path}")
-    out = subprocess.run(cmd.format(file_path=file_path), shell=True, capture_output=True)
+    # don't use capture_output because it's not compatible with python3.6
+    out = subprocess.run(cmd.format(file_path=file_path), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return out.stdout.decode()

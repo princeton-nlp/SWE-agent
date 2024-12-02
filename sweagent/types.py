@@ -29,6 +29,16 @@ class StepOutput(BaseModel):
     tool_call_ids: list[str] | None = None
     """State of the environment at the end of the step"""
 
+    def to_template_format_dict(self) -> dict[str, str | int | float | bool | None]:
+        """Used for formatting (error) prompt templates"""
+        out = {}
+        for k, v in self.model_dump().items():
+            if k in ("tool_calls", "tool_call_ids", "state"):
+                continue
+            out[k] = v
+        out |= self.state
+        return out
+
 
 class TrajectoryStep(TypedDict):
     action: str
@@ -73,6 +83,8 @@ class AgentInfo(TypedDict, total=False):
     summarizer: dict
     swe_agent_hash: str
     swe_agent_version: str
+    swe_rex_version: str
+    swe_rex_hash: str
 
 
 @dataclass

@@ -80,7 +80,15 @@ class GenericAPIModelConfig(PydanticBaseModel):
     """
 
     retry: RetryConfig = RetryConfig()
-    """Retry configuration"""
+    """Retry configuration: How often to retry after a failure (e.g., from a rate limit)
+    etc.
+    """
+
+    delay: float = 0.0
+    """Delay before querying (this can help to avoid overusing the API if sharing
+    it with other people). In most other cases you probably want to rely on the
+    `retry` configuration.
+    """
 
     # pydantic
     model_config = ConfigDict(extra="forbid")
@@ -490,6 +498,7 @@ class LiteLLMModel(AbstractModel):
         return output_dict
 
     def query(self, history: History) -> dict:
+        time.sleep(self.args.delay)
         for attempt in Retrying(
             stop=stop_after_attempt(self.args.retry.retries),
             wait=wait_random_exponential(min=self.args.retry.min_wait, max=self.args.retry.max_wait),

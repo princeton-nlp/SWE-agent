@@ -4,13 +4,17 @@ tools:
       edit <start_line>:<end_line>
       <replacement_text>
       end_of_edit
+    # Note: Without function calling we should add back:
+    # The replacement text is terminated by a line with only
+    # end_of_edit on
     docstring: >
-      replaces lines <start_line> through <end_line> (inclusive) with the given text
-      in the open file. The replacement text is terminated by a line with only
-      end_of_edit on it. All of the <replacement text> will be entered, so make
-      sure your indentation is formatted properly. Python files will be checked
-      for syntax errors after the edit. If the system detects a syntax error,
-      the edit will not be executed.
+      Replaces lines <start_line> through <end_line> (inclusive) with the given text
+      in the open file.
+      All of the <replacement text> will be entered, so make
+      sure your indentation is formatted properly.
+
+      Please note that THIS COMMAND REQUIRES PROPER INDENTATION.
+      If you'd like to add the line '        print(x)' you must fully write that out, with all those spaces before the code!
     end_name: "end_of_edit"
     arguments:
       - name: start_line

@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
 
 import argparse
-from typing import Union
 
 from default_utils import FileNotOpened, WindowedFile  # type: ignore
 from flake8_utils import flake8, format_flake8_output  # type: ignore
 
-RETRY_WITH_OUTPUT_TOKEN = "###SWE-AGENT-RETRY-WITH-OUTPUT###"
-
-_LINT_ERROR_TEMPLATE = """Your proposed edit has introduced new syntax error(s).
-Please read this error message carefully and then retry editing the file.
+_LINT_ERROR_TEMPLATE = """
+Your proposed edit has introduced new syntax error(s). Please read this error message carefully and then retry editing the file.
 
 ERRORS:
 
 {errors}
-
 This is how your edit would have looked if applied
 ------------------------------------------------
 {window_applied}
@@ -29,33 +25,39 @@ Your changes have NOT been applied. Please fix your edit command and try again.
 DO NOT re-run the same failed edit command. Running it again will lead to the same error.
 """
 
+_SUCCESS_MSG = "Edit successful."
+
 
 def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("text", type=str)
-    parser.add_argument("line", type=int, nargs="?", default=None)
+    parser.add_argument("replace", type=str)
     return parser
 
 
-def main(text: str, line: Union[int, None] = None):
+def main(replace: str):
     try:
         wf = WindowedFile(exit_on_exception=False)
     except FileNotOpened:
-        print("No file opened. Use the `create` or `open` command first.")
-        print(RETRY_WITH_OUTPUT_TOKEN)
+        print("No file opened. Either `open` a file first.")
         exit(1)
 
     pre_edit_lint = flake8(wf.path)
-    insert_info = wf.insert(text, line=line - 1 if line is not None else None)
+
+    start_line, end_line = wf.line_range
+    replace_lines = len(replace.split("\n"))
+
+    wf.set_window_text(replace)
     post_edit_lint = flake8(wf.path)
 
-    # Try to filter out pre-existing errors
-    replacement_window = (insert_info.first_inserted_line, insert_info.first_inserted_line)
+    replacement_window = (
+        start_line,
+        end_line,
+    )
     new_flake8_output = format_flake8_output(
         post_edit_lint,
         previous_errors_string=pre_edit_lint,
         replacement_window=replacement_window,
-        replacement_n_lines=insert_info.n_lines_added,
+        replacement_n_lines=replace_lines,
     )
 
     if new_flake8_output:
@@ -67,10 +69,9 @@ def main(text: str, line: Union[int, None] = None):
                 errors=new_flake8_output, window_applied=with_edits, window_original=without_edits
             )
         )
-        print(RETRY_WITH_OUTPUT_TOKEN)
         exit(4)
 
-    wf.print_window()
+    print(_SUCCESS_MSG)
 
 
 if __name__ == "__main__":

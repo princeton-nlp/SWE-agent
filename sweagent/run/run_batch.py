@@ -1,5 +1,35 @@
 """
-Run on a batch of instances/issues. For example run on all of SWE-bench.
+Run on a batch of instances/issues, e.g., SWE-bench.
+
+[cyan][bold]=== BASIC OPTIONS ===[/bold][/cyan]
+
+  -h --help           Show help text and exit
+  --help_options      Print specific help text and exit
+
+[cyan][bold]=== EXAMPLES ===[/bold][/cyan]
+
+Basic usage: Run over a [bold][cyan]SWE-bench lite[/bold][/cyan][green]:
+
+sweagent run-batch \\
+    --instances.type swe_bench \\ # configure instances
+    --instances.subset lite \\
+    --instances.split dev  \\
+    --instances.split :50 \\     # first 50 instances
+    --instances.shuffle=True \\  # shuffle instances (with fixed seed)
+    --config config/default.yaml \\  # configure model
+    --agent.model.name gpt-4o
+[/green]
+
+[cyan][bold]=== LOADING INSTANCES ===[/bold][/cyan]
+
+Load instances...
+
+From a file [green]--instances.type file --instances.path /path/to/file[/green].
+From huggingface [green]--instances.type huggingface --instances.dataset_name=SWE_Bench_lite --instances.split=dev[/green].
+
+All instance specifications support the [green]filter[/green], [green]slice[/green], and [green]shuffle[/green] options.
+With [green]filter[/green], you can select specific instances.
+For example, [green]--instances.filter='instance_id_1|instance_id_2'
 """
 
 import getpass
@@ -24,7 +54,7 @@ from sweagent.agent.hooks.status import SetStatusAgentHook
 from sweagent.environment.hooks.status import SetStatusEnvironmentHook
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.run._progress import RunBatchProgressManager
-from sweagent.run.batch_instances import BatchInstance, BatchInstanceSourceConfig
+from sweagent.run.batch_instances import BatchInstance, BatchInstanceSourceConfig, SWEBenchInstances
 from sweagent.run.common import BasicCLI, save_predictions
 from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
 from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
@@ -148,7 +178,7 @@ class RunBatch:
             )
             raise ValueError(msg)
         logger.debug("The first instance is %s", f"{instances[0]!r}")
-        return cls(
+        rb = cls(
             instances=instances,
             agent_config=config.agent,
             output_dir=config.output_dir,
@@ -157,6 +187,15 @@ class RunBatch:
             num_workers=config.num_workers,
             progress_bar=config.progress_bar,
         )
+        if isinstance(config.instances, SWEBenchInstances) and config.instances.evaluate:
+            from sweagent.run.hooks.swe_bench_evaluate import SweBenchEvaluate
+
+            rb.add_hook(
+                SweBenchEvaluate(
+                    output_dir=config.output_dir, subset=config.instances.subset, split=config.instances.split
+                )
+            )
+        return rb
 
     def add_hook(self, hook: RunHook) -> None:
         hook.on_init(run=self)

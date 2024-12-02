@@ -14,7 +14,7 @@ from swerex.exceptions import BashIncorrectSyntaxError, CommandTimeoutError, Swe
 from tenacity import RetryError
 from typing_extensions import Self
 
-from sweagent import __version__, get_agent_commit_hash
+from sweagent import __version__, get_agent_commit_hash, get_rex_commit_hash, get_rex_version
 from sweagent.agent.history_processors import DefaultHistoryProcessor, HistoryProcessor
 from sweagent.agent.hooks.abstract import AbstractAgentHook, CombinedAgentHook
 from sweagent.agent.models import (
@@ -99,16 +99,19 @@ class TemplateConfig(BaseModel):
             self.next_step_no_output_template = self.next_step_template
 
     @model_validator(mode="after")
-    @classmethod
-    def validate_template_jinja_syntax(cls, data: Any) -> Any:
-        template_fields = [field for field in cls.model_fields.keys() if field.endswith("_template")]
+    def validate_template_jinja_syntax(self) -> Self:
+        template_fields = [field for field in self.model_fields.keys() if field.endswith("_template")]
         for field in template_fields:
-            if isinstance(data, dict):
-                value = data[field]
-            else:
-                value = getattr(data, field)
+            value = getattr(self, field)
             _warn_probably_wrong_jinja_syntax(value)
-        return data
+        return self
+
+    @model_validator(mode="after")
+    def warn_models_in_history(self) -> Self:
+        if self.put_demos_in_history and self.demonstration_template is not None:
+            logger = get_logger("swea-config", emoji="⚙️")
+            logger.warning("demonstration_template is ignored when put_demos_in_history is True")
+        return self
 
 
 class AgentConfig(BaseModel):
@@ -137,6 +140,16 @@ class Skipped(Exception): ...
 
 
 class Submitted(Exception): ...
+
+
+class RetryWithOutput(Exception): ...
+
+
+class RetryWithoutOutput(Exception): ...
+
+
+RETRY_WITH_OUTPUT_TOKEN = "###SWE-AGENT-RETRY-WITH-OUTPUT###"
+RETRY_WITHOUT_OUTPUT_TOKEN = "###SWE-AGENT-RETRY-WITHOUT-OUTPUT###"
 
 
 class Agent:
@@ -291,6 +304,8 @@ class Agent:
         self.info = AgentInfo()
         self.info["swe_agent_hash"] = get_agent_commit_hash()
         self.info["swe_agent_version"] = __version__
+        self.info["swe_rex_version"] = get_rex_version()
+        self.info["swe_rex_hash"] = get_rex_commit_hash()
         self.traj_path = output_dir / (self._problem_statement.id + ".traj")
         self.logger.info("Trajectory will be saved to %s", self.traj_path)
 
@@ -342,10 +357,6 @@ class Agent:
         demo_history = json.loads(Path(demonstration_path).read_text())["history"]
 
         if self.templates.put_demos_in_history:
-            if self.templates.demonstration_template is not None:
-                self.logger.warning("Demonstration template is ignored for put_demos_in_history=True")
-            # Add demonstration to history directly as separate messages
-            # TODO: check that this still works with function calling
             for entry in demo_history:
                 if entry["role"] != "system":
                     entry["is_demo"] = True
@@ -489,7 +500,9 @@ class Agent:
         assert self.traj_path is not None
         self.traj_path.write_text(json.dumps(data, indent=2))
 
-    def get_model_requery_history(self, error_template: str, *, output: str, **kwargs: str) -> list[dict[str, str]]:
+    def get_model_requery_history(
+        self, error_template: str, *, output: str, **kwargs: str | int | float | bool | None
+    ) -> list[dict[str, str]]:
         """Ask the model to correct after a hitting one of the following errors:
 
         1. Malformatted output (could not parse action)
@@ -627,6 +640,14 @@ class Agent:
         step.execution_time = time.perf_counter() - execution_t0
         self._chook.on_action_executed(step=step)
         step.state = self.tools.get_state(env=self._env)
+
+        if RETRY_WITH_OUTPUT_TOKEN in step.observation:
+            step.observation = step.observation.replace(RETRY_WITH_OUTPUT_TOKEN, "")
+            raise RetryWithOutput()
+        elif RETRY_WITHOUT_OUTPUT_TOKEN in step.observation:
+            step.observation = step.observation.replace(RETRY_WITHOUT_OUTPUT_TOKEN, "")
+            raise RetryWithoutOutput()
+
         return self.handle_submission(step)
 
     def forward(self, history: list[dict[str, str]]) -> StepOutput:
@@ -699,7 +720,7 @@ class Agent:
 
         def handle_error_with_retry(exception: Exception, template: str) -> list[dict[str, str]]:
             """Requeries the model if the error is a format/blocklist/bash syntax error."""
-            step = getattr(exception, "step", StepOutput())
+            step: StepOutput = getattr(exception, "step", StepOutput())
             self.add_step_to_trajectory(step)
             exception_message = getattr(exception, "message", "")
             if not exception_message:
@@ -709,13 +730,13 @@ class Agent:
                     pass
             return self.get_model_requery_history(
                 error_template=template,
-                **step.model_dump(),
+                **step.to_template_format_dict(),
                 **getattr(exception, "extra_info", {}),
                 exception_message=exception_message,
             )
 
-        n_fails = 0
-        while n_fails < self.max_requeries:
+        n_format_fails = 0
+        while n_format_fails < self.max_requeries:
             try:
                 return self.forward(history)
 
@@ -727,19 +748,30 @@ class Agent:
             # Errors that cause requery
 
             except FormatError as e:
-                n_fails += 1
+                n_format_fails += 1
                 history = handle_error_with_retry(exception=e, template=self.tools.config.format_error_template)
             except BlockedActionError as e:
-                n_fails += 1
+                n_format_fails += 1
                 history = handle_error_with_retry(
                     exception=e, template=self.tools.config.filter.blocklist_error_template
                 )
             except BashIncorrectSyntaxError as e:
-                n_fails += 1
+                n_format_fails += 1
                 history = handle_error_with_retry(
                     exception=e,
                     template=self.templates.shell_check_error_template,
                 )
+            except RetryWithOutput as e:
+                self.logger.warning("Requerying model with output from last step (RetryWithOutput)")
+                n_format_fails = 0
+                history = handle_error_with_retry(
+                    exception=e,
+                    template=self.templates.next_step_template,
+                )
+            except RetryWithoutOutput:
+                self.logger.warning("Requerying model (RetryWithoutOutput)")
+                n_format_fails = 0
+                # Requery with the same template as the last step
 
             # Errors that cause exit
 

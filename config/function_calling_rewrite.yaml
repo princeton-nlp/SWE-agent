@@ -9,22 +9,6 @@ agent:
 
       Please note that THE EDIT COMMAND REQUIRES PROPER INDENTATION.
 
-      For example, if you are looking at this file:
-
-      def fct():
-          print("Hello world")
-
-      and you want to edit the file to read:
-
-      def fct():
-          print("Hello")
-          print("world")
-
-      you search string should be `Hello world` and your replace string should be `"Hello"\n    print("world")`
-      (note the extra spaces before the print statement!).
-
-      You could also get the same result by search for `    print("Hello world")` and replace with `    print("Hello")\n    print("world")`.
-
       RESPONSE FORMAT:
       Your shell prompt is formatted as follows:
       (Open file: <path>)
@@ -65,7 +49,7 @@ agent:
 
       4. If the bug reproduction script requires inputting/reading a specific file, such as buggy-input.png, and you'd like to understand how to input that file, conduct a search in the existing repo code, to see whether someone else has already done that. Do this by running the command: find_file "buggy-input.png" If that doesn't work, use the linux 'find' command.
 
-      5. Always make sure to look at the currently open file and the current working directory (which appears right after the currently open file). The currently open file might be in a different directory than the working directory! Note that some commands, such as 'create', open files, so they might change the current open file.
+      5. Always make sure to look at the currently open file and the current working directory (which appears right after the currently open file). The currently open file might be in a different directory than the working directory! Note that some commands, such as 'create', open files, so they might change the current  open file.
 
       6. When editing files, it is easy to accidentally to write code with incorrect indentation or make other mistakes. Always check the code after you issue an edit to make sure that it reflects what you wanted to accomplish. If it didn't, issue another command to fix it.
 
@@ -101,8 +85,7 @@ agent:
     bundles:
       - path: tools/defaults
       - path: tools/search
-      # - path: tools/edit_linting
-      - path: tools/edit_replace
+      - path: tools/edit_rewrite
       - path: tools/submit
     enable_bash_tool: true
     parse_function:

@@ -1,18 +1,17 @@
 """[cyan][bold]Run SWE-agent on a single instance taken from github or similar.[/bold][/cyan]
 
-[cyan][bold]=== BASICOPTIONS ===[/bold][/cyan]
+[cyan][bold]=== BASIC OPTIONS ===[/bold][/cyan]
 
   -h --help           Show help text and exit
   --help_options      Print specific help text and exit
   --config CONFIG     Load additional config files. Use this option multiple times to load
                       multiple files, e.g., --config config1.yaml --config config2.yaml
-  [cyan][bold]--... Many more options[/cyan][/bold] (run `sweagent run --print_options` for a complete overview)
 
 [cyan][bold]=== EXAMPLES ===[/bold][/cyan]
 
 Basic usage: Run over a [bold][cyan]github issue[/bold][/cyan][green]:
 
-sweagent run --config config/config.yaml --agent.model.name "gpt-4o" \\
+sweagent run --config config/default.yaml --agent.model.name "gpt-4o" \\
     --env.repo.github_url=https://github.com/SWE-agent/test-repo/ \\
     --problem_statement.github_url=https://github.com/SWE-agent/test-repo/issues/1
 [/green]
@@ -22,7 +21,7 @@ You can set the image with [green]--env.docker.image[/green].
 
 Here's an example that uses [bold][cyan]modal[/bold][/cyan] instead of docker and also a [bold][cyan]local repository[/bold][/cyan]:
 
-[green]sweagent run --config config/config.yaml --agent.model.name "gpt-4o" \\
+[green]sweagent run --config config/default.yaml --agent.model.name "gpt-4o" \\
     --env.deployment.type=modal --env.repo.path /path/to/repo \\
     --problem_statement.path=path/to/problem_statement.md
 [/green]
