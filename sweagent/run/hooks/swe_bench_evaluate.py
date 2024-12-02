@@ -18,7 +18,16 @@ class SweBenchEvaluate(RunHook):
     def on_end(self) -> None:
         try:
             subprocess.check_output(
-                ["sb-cli", "submit", self._SUBSET_MAP[self.subset], self.split, self.output_dir.name]
+                [
+                    "sb-cli",
+                    "submit",
+                    self._SUBSET_MAP[self.subset],
+                    self.split,
+                    "--predictions_path",
+                    self.output_dir / "preds.json",
+                    "--run_id",
+                    self.output_dir.name,
+                ]
             )
         except subprocess.CalledProcessError as e:
             self.logger.error("Failed to submit results to SweBench eval: %s", e)
