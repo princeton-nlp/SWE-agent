@@ -36,5 +36,5 @@ def test_add_tag_to_edits(test_history: History):
     processor = TagToolCallObservations(tags={"test"}, function_names={"edit"})
     new_history = processor(test_history)
     for entry in new_history:
-        if entry.get("action", "").startswith("edit "):
+        if entry.get("action", "").startswith("edit "):  # type: ignore
             assert entry.get("tags") == ["test"], entry

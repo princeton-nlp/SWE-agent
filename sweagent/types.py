@@ -22,10 +22,10 @@ class StepOutput(BaseModel):
     observation: str = ""
     execution_time: float = 0.0
     done: bool = False
-    exit_status: str | None = None
+    exit_status: int | str | None = None
     submission: str | None = None
     state: dict[str, str] = {}
-    tool_calls: list[dict[str, str]] | None = None
+    tool_calls: list[dict[str, Any]] | None = None
     tool_call_ids: list[str] | None = None
     """State of the environment at the end of the step"""
 
