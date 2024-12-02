@@ -49,6 +49,8 @@ def save_demo(data, file, traj_path):
     data = convert_to_literal_string(data)
     yaml = YAML()
     yaml.indent(mapping=2, sequence=4, offset=2)
+    yaml.width = float("inf")
+    yaml.default_flow_style = False
     buffer = io.StringIO()
     yaml.dump(data, buffer)
     content = buffer.getvalue()
