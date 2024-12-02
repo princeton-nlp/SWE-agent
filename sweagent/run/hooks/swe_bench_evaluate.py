@@ -29,6 +29,8 @@ class SweBenchEvaluate(RunHook):
                     self.output_dir / "preds.json",
                     "--run_id",
                     self.output_dir.name,
+                    "--output_dir",
+                    self.output_dir / "sb-cli-reports",
                 ],
                 check=True,
                 stdout=sys.stdout,
