@@ -86,7 +86,7 @@ class RunBatchConfig(BaseSettings, cli_implicit_flags=False):
     """Path to a .env file to load environment variables from."""
     num_workers: int = Field(default=1)
     """Number of parallel workers to use."""
-    random_delay_multiplier: float = 0.3
+    random_delay_multiplier: float = 1
     """We will wait for a random amount of time between 0 and `random_delay_multiplier`
     times the number of workers at the start of each instance. This is to avoid any
     potential race conditions.
