@@ -18,14 +18,22 @@ from flake8_utils import flake8, format_flake8_output  # type: ignore
 
 RETRY_WITH_OUTPUT_TOKEN = "###SWE-AGENT-RETRY-WITH-OUTPUT###"
 
-_NOT_FOUND_IN_WINDOW_MSG = """Your edit was not applied (file not modified): Text {search!r} not found in displayed lines. Please modify your search string or use the goto/scroll commands
-to navigate to the corresponding location in the file first.
+_NOT_FOUND = """Your edit was not applied (file not modified): Text {search!r} not found in displayed lines (or anywhere in the file).
+Please modify your search string. Did you forget to properly handle whitespace/indentation?
+"""
+
+_NOT_FOUND_IN_WINDOW_MSG = """Your edit was not applied (file not modified): Text {search!r} not found in displayed lines.
+
+However, we found the following occurrences of your search string in the file:
+
+{occurrences}
+
+You can use the `goto` command to navigate to these locations before running the edit command again.
 """
 
 _MULTIPLE_OCCURRENCES_MSG = """Your edit was not applied (file not modified): Found more than one occurrence of {search!r} in the currently displayed lines.
 Please adapt your search string to only match _one_ occurrence.
-If you want to replace all occurrences, set replace_all=True, but please only use this if you really want to replace all occurrences
-in the file.
+If you want to replace all occurrences, set replace_all=True, but please only use this if you really want to replace all occurrences in the file.
 """
 
 _NO_CHANGES_MADE_MSG = """Your search and replace strings are the same. No changes were made. Please modify your search or replace strings."""
@@ -95,7 +103,15 @@ def main(search: str, replace: str, replace_all: bool):
             # todo: Give overview of all replaced occurrences/number of replacements
             replacement_info = wf.replace(search, replace)
     except TextNotFound:
-        print(_NOT_FOUND_IN_WINDOW_MSG.format(search=search))
+        line_no_founds = wf.find_all_occurrences(search, zero_based=False)
+        if line_no_founds:
+            print(
+                _NOT_FOUND_IN_WINDOW_MSG.format(
+                    search=search, occurrences="\n".join([f"- line {line_no}" for line_no in line_no_founds])
+                )
+            )
+        else:
+            print(_NOT_FOUND.format(search=search))
         print(RETRY_WITH_OUTPUT_TOKEN)
         exit(3)
 

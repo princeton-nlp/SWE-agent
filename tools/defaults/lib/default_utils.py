@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 
 class EnvRegistry:
@@ -257,6 +257,18 @@ class WindowedFile:
             n_replace_lines=len(replace.split("\n")),
             n_replacements=1,
         )
+
+    def find_all_occurrences(self, search: str, zero_based: bool = True) -> List[int]:
+        """Returns the line numbers of all occurrences of the search string."""
+        indices = list(_find_all(self.text, search))
+        line_numbers = []
+        for index in indices:
+            line_no = len(self.text[:index].split("\n"))
+            if zero_based:
+                line_numbers.append(line_no - 1)
+            else:
+                line_numbers.append(line_no)
+        return line_numbers
 
     def replace(self, search: str, replace: str, *, reset_first_line: str = "top") -> "ReplacementInfo":
         indices = list(_find_all(self.text, search))
