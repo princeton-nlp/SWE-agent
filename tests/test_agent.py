@@ -156,28 +156,28 @@ def test_run_step_by_step_checking_history(dummy_env: SWEEnv, default_agent: Age
     ]
     assert "asdf123" in a._problem_statement.get_problem_statement()  # type: ignore
     # system template and demo and instance template
-    assert len(a.local_history) == 3
-    system_prompt = a.local_history[0]["content"]
+    assert len(a.messages) == 3
+    system_prompt = a.messages[0]["content"]
     assert "You are an autonomous programmer" in system_prompt
-    demo = a.local_history[1]["content"]
+    demo = a.messages[1]["content"]
     print(demo)
     assert "demonstration" in demo  # demo
     assert "marshmallow" in demo  # demo
-    instance_template = a.local_history[2]["content"]
+    instance_template = a.messages[2]["content"]
     assert "the following issue within our repository" in instance_template
     assert "asdf123" in instance_template
     assert len(a.trajectory) == 0
     a.step()
     print(a.trajectory)
     assert len(a.trajectory) == 2  # we requery once because format error
-    assert len(a.local_history) == 5  # first action performed + observation
-    assert a.local_history[3]["content"].strip() == "```\nls\n```"
-    assert "file_a file_b" in a.local_history[4]["content"]
-    assert "Open file: asdf123" in a.local_history[4]["content"]
-    assert "Current directory: /root" in a.local_history[4]["content"]
+    assert len(a.messages) == 5  # first action performed + observation
+    assert a.messages[3]["content"].strip() == "```\nls\n```"
+    assert "file_a file_b" in a.messages[4]["content"]
+    assert "Open file: asdf123" in a.messages[4]["content"]
+    assert "Current directory: /root" in a.messages[4]["content"]
     a.step()
     assert len(a.trajectory) == 3
-    assert len(a.local_history) == 6
+    assert len(a.messages) == 6
     a.step()
     assert len(a.trajectory) == 4
     assert a.info["exit_status"] == "exit_cost"  # type: ignore
