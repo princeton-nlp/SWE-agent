@@ -1,59 +1,94 @@
 <p align="center">
   <a href="https://www.swe-agent.com/">
-    <img src="assets/swe-agent-banner.png" alt="swe-agent.com" style="height: 13em" />
+    <img src="assets/swe-agent-banner.png" alt="swe-agent.com" style="height: 12em" />
   </a>
 </p>
 
 <p align="center">
   <a href="https://princeton-nlp.github.io/SWE-agent/"><strong>Documentation</strong></a>&nbsp; | &nbsp;
   <a href="https://discord.gg/AVEFbBn2rH"><strong>Discord</strong></a>&nbsp; | &nbsp;
-  <a href="https://arxiv.org/abs/2405.15793"><strong>Preprint</strong></a>
+  <a href="https://arxiv.org/abs/2405.15793"><strong>Paper</strong></a>
 </p>
 
-**SWE-agent turns LMs (e.g. GPT-4o, Claude 3.5 Sonnet) into software engineering agents that can resolve issues in real GitHub repositories and more.**
 
-We accomplish our results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, view, edit and execute code files. We call this an **Agent-Computer Interface (ACI)**.
-Read more about it in our [paper](https://arxiv.org/abs/2405.15793)!
+SWE-agent is an open-source platform for deploying language model (LM) agents in isolated computer environments.
+It manages an LM of your choice (e.g. GPT-4o, Claude Sonnet 3.5, or a local LM) to autonomously perform tasks within these environments using customizable [agent-computer interfaces](https://arxiv.org/abs/2405.15793) (ACIs).
 
-SWE-agent is built and maintained by researchers from Princeton 🐯 and Stanford 🌲 University.
+You can use SWE-agent to:
+* [automatically resolve issues in your GitHub repository](background.md#swe-agent)
+* navigate the web
+* solve your own custom tasks!
 
-TODO: Create a better demo video
-![swe-agent-gui-demo](https://github.com/princeton-nlp/SWE-agent/assets/13602468/fa201621-ec31-4644-b658-c1d0feb92253)
+SWE-agent is built and maintained by researchers from Princeton University and Stanford University.
 
-Interested in SWE-agent's CTF capabilities? Check out [SWE-agent EnIGMA](https://github.com/princeton-nlp/SWE-agent/tree/enigma)!
+## Getting started!
 
-## 🚀 Get started!
+### Installation
+SWE-agent now depends on our remote execution platform [SWE-ReX](https://github.com/swe-agent/SWE-ReX) for running agent commands in the container.
+To install SWE-ReX, you'll currently need to install it from source using pip:
 
-👉 Try SWE-agent in your browser: [![Open in GitHub Codespaces](https://img.shields.io/badge/Open_in_GitHub_Codespaces-gray?logo=github)](https://codespaces.new/princeton-nlp/SWE-agent) ([more information](https://princeton-nlp.github.io/SWE-agent/installation/codespaces/))
+```bash
+git clone https://github.com/swe-agent/SWE-ReX.git swe-rex
+cd swe-rex
+pip install -e .
+```
 
-Read our [documentation](https://princeton-nlp.github.io/SWE-agent/) to learn more:
+Once SWE-ReX is installed, you can install SWE-agent using pip:
 
-* [Installation](https://princeton-nlp.github.io/SWE-agent/installation/)
-* [Command line usage](https://princeton-nlp.github.io/SWE-agent/usage/cl_tutorial/)
-* [Using the web UI](https://princeton-nlp.github.io/SWE-agent/usage/web_ui/)
-* [Benchmarking on SWE-bench](https://princeton-nlp.github.io/SWE-agent/usage/benchmarking/)
-* [Frequently Asked Questions](https://princeton-nlp.github.io/SWE-agent/faq/)
+```bash
+pip install swe-agent
+```
 
-For a more thorough walkthrough, check out [Kilian's ▶️ 1 hr Tutorial Video](https://youtu.be/d9gcXpiiDao) that breaks down the in's and out's of using SWE-agent.
+Make sure to set your API keys with
+```bash
+export OPENAI_API_KEY="..."
+export ANTHROPIC_API_KEY="..."
+```
 
-## 🏛️ About 
+### Run on a GitHub issue
+```bash
+sweagent run --config config/default_from_url.yaml \
+    --agent.model.name "gpt-4o" \
+    --env.repo.github_url https://github.com/scikit-learn/scikit-learn \
+    --problem_statement.github_url https://github.com/scikit-learn/scikit-learn/issues/30353
+```
+
+### Run with a Human Agent (useful for debugging)
+```bash
+sweagent run --config config/default.yaml \
+    --agent.model.name "human" \
+    --env.repo.github_url https://github.com/scikit-learn/scikit-learn \
+    --problem_statement.github_url https://github.com/scikit-learn/scikit-learn/issues/30353
+```
+
+### Run on SWE-bench
+```bash
+sweagent run-batch \
+    --instances.type swe_bench \
+    --instances.subset verified \
+    --instances.split test \
+    --num_workers 10 \
+    --config config/default.yaml \
+    --agent.model.name gpt-4o
+```
+
+## About
 SWE-agent is an academic project started at Princeton University by John Yang*, Carlos E. Jimenez*, Alexander Wettig, Kilian Lieret, Shunyu Yao, Karthik Narasimhan, and Ofir Press.
 Contact person: [John Yang](https://john-b-yang.github.io/), [Carlos E. Jimenez](http://www.carlosejimenez.com/), and [Kilian Lieret](https://www.lieret.net/) (Email: johnby@stanford.edu, carlosej@princeton.edu, kl5675@princeton.edu).
 
-## 💫 Contributions <a name="contributions"></a>
+## Contributions <a name="contributions"></a>
 - If you'd like to ask questions, learn about upcoming features, and participate in future development, join our [Discord community](https://discord.gg/AVEFbBn2rH)!
 - If you'd like to contribute to the codebase, we welcome [issues](https://github.com/princeton-nlp/SWE-agent/issues) and [pull requests](https://github.com/princeton-nlp/SWE-agent/pulls)!
 
-## 📝 Citation <a name="citation"></a>
+## Citation <a name="citation"></a>
 If you found this work helpful, please consider citing it using the following:
 ```bibtex
-@misc{yang2024sweagent,
-      title={SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering},
-      author={John Yang and Carlos E. Jimenez and Alexander Wettig and Kilian Lieret and Shunyu Yao and Karthik Narasimhan and Ofir Press},
-      year={2024},
-      eprint={2405.15793},
-      archivePrefix={arXiv},
-      primaryClass={cs.SE}
+@inproceedings{yang2024sweagent,
+  title={{SWE}-agent: Agent-Computer Interfaces Enable Automated Software Engineering},
+  author={John Yang and Carlos E Jimenez and Alexander Wettig and Kilian Lieret and Shunyu Yao and Karthik R Narasimhan and Ofir Press},
+  booktitle={The Thirty-eighth Annual Conference on Neural Information Processing Systems},
+  year={2024},
+  url={https://arxiv.org/abs/2405.15793}
 }
 ```
 
