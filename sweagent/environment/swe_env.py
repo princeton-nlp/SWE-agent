@@ -913,7 +913,7 @@ class SWEEnv(gym.Env):
             # something new.
             # See https://github.com/princeton-nlp/SWE-agent/issues/630
             buffer = (
-                "Unkknown error occurred when running the command. Please double check syntax "
+                "Unknown error occurred when running the command. Please double check syntax "
                 "and that you're not running an interactive command."
             )
             self.logger.warning("Couldn't get real exit code. Setting it to 999")
