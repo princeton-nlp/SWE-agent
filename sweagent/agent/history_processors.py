@@ -28,28 +28,6 @@ class DefaultHistoryProcessor(BaseModel):
         return history
 
 
-def _last_n_history(history, n):
-    if n <= 0:
-        msg = "n must be a positive integer"
-        raise ValueError(msg)
-    new_history = list()
-    observation_idxs = [
-        idx
-        for idx, entry in enumerate(history)
-        if entry["message_type"] == "observation" and not entry.get("is_demo", False)
-    ]
-    omit_content_idxs = [idx for idx in observation_idxs[1:-n]]
-    for idx, entry in enumerate(history):
-        if idx not in omit_content_idxs:
-            new_history.append(entry)
-        else:
-            data = entry.copy()
-            assert data["message_type"] == "observation", "Expected observation for dropped entry"
-            data["content"] = f'Old environment output: ({len(entry["content"].splitlines())} lines omitted)'
-            new_history.append(data)
-    return new_history
-
-
 class LastNObservations(BaseModel):
     """Keep the last n observations"""
 
@@ -61,7 +39,25 @@ class LastNObservations(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     def __call__(self, history):
-        return _last_n_history(history, self.n)
+        if self.n <= 0:
+            msg = "n must be a positive integer"
+            raise ValueError(msg)
+        new_history = list()
+        observation_idxs = [
+            idx
+            for idx, entry in enumerate(history)
+            if entry["message_type"] == "observation" and not entry.get("is_demo", False)
+        ]
+        omit_content_idxs = [idx for idx in observation_idxs[1 : -self.n]]
+        for idx, entry in enumerate(history):
+            if idx not in omit_content_idxs:
+                new_history.append(entry)
+            else:
+                data = entry.copy()
+                assert data["message_type"] == "observation", "Expected observation for dropped entry"
+                data["content"] = f'Old environment output: ({len(entry["content"].splitlines())} lines omitted)'
+                new_history.append(data)
+        return new_history
 
 
 class ClosedWindowHistoryProcessor(BaseModel):
