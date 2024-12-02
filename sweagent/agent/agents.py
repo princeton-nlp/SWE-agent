@@ -251,16 +251,16 @@ class Agent:
         self._info_by_attempt[self._i_attempt] = value
 
     @property
-    def local_history(self) -> list[dict[str, str]]:
+    def messages(self) -> list[dict[str, str]]:
         """Return the history of the agent since the last reset, processed through all history processors."""
         filtered_history = [entry for entry in self.history if entry["agent"] == self.name]  # type: ignore
 
         # Chain the history processors
-        processed_history = filtered_history
+        messages = filtered_history
         for processor in self.history_processors:
-            processed_history = processor(processed_history)
+            messages = processor(messages)
 
-        return processed_history
+        return messages
 
     # Methods
     # -------
@@ -516,7 +516,7 @@ class Agent:
 
         self.logger.warning(f"{error_template}")
 
-        return self.local_history + [
+        return self.messages + [
             {"role": "assistant", "content": output, "agent": self.name},
             {"role": "user", "content": error_template, "agent": self.name},
         ]
@@ -795,6 +795,7 @@ class Agent:
                 "thought": step.thought,
                 "execution_time": step.execution_time,
                 "state": step.state,
+                "messages": self.messages,
             },
         )
         self.trajectory.append(trajectory_step)
@@ -814,7 +815,7 @@ class Agent:
         assert self._env is not None
         self._chook.on_step_start()
 
-        step_output = self.forward_with_handling(self.local_history)
+        step_output = self.forward_with_handling(self.messages)
         self.add_step_to_history(step_output)
 
         self.info["submission"] = step_output.submission
