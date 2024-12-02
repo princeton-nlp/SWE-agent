@@ -47,6 +47,7 @@ class TrajectoryStep(TypedDict):
     state: dict[str, str]
     thought: str
     execution_time: float
+    messages: list[dict[str, Any]]
 
 
 class _HistoryItem(TypedDict):
