@@ -4,7 +4,7 @@ tools:
       edit <search> <replace> [<replace-all>]
     docstring: >
       Replace first occurrence of <search> with <replace> in the currently displayed lines.
-      If --replace-all is specified, replace all occurrences of <search> with <replace>.
+      If replace-all is True , replace all occurrences of <search> with <replace>.
 
       For example, if you are looking at this file:
 
@@ -17,16 +17,20 @@ tools:
           print("Hello")
           print("world")
 
-      you search string should be `Hello world` and your replace string should be `"Hello"\n    print("world")`
+      you can search for `Hello world` and replace with `"Hello"\n    print("world")`
       (note the extra spaces before the print statement!).
-
-      You could also get the same result by search for `    print("Hello world")` and replace with `    print("Hello")\n    print("world")`.
 
       Tips:
 
-      1. Always include proper whitespace and indentation
+      1. Always include proper whitespace/indentation
       2. When you are adding an if/with/try statement, you need to INDENT the block that follows, so make sure to include it in both your search and replace strings!
       3. If you are wrapping code in a try statement, make sure to also add an 'except' or 'finally' block.
+
+      Before every edit, please
+
+      1. Explain the code you want to edit and why it is causing the problem
+      2. Explain the edit you want to make and how it fixes the problem
+      3. Explain how the edit does not break existing functionality
     arguments:
       - name: search
         type: string

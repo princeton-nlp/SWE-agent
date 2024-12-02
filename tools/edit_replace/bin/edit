@@ -38,11 +38,21 @@ Please make your search string more specific (for example, by including more lin
 
 _NO_CHANGES_MADE_MSG = """Your search and replace strings are the same. No changes were made. Please modify your search or replace strings."""
 
-_SINGLE_EDIT_SUCCESS_MSG = """Text replaced. Please review the changes and make sure they are correct
-(correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
+_SINGLE_EDIT_SUCCESS_MSG = """Text replaced. Please review the changes and make sure they are correct:
 
-_MULTIPLE_EDITS_SUCCESS_MSG = """Replaced {n_replacements} occurrences. Please review the changes and make sure they are correct
-(correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
+1. The edited file is correctly indented
+2. The edited file does not contain duplicate lines
+3. The edit does not break existing functionality
+
+Edit the file again if necessary."""
+
+_MULTIPLE_EDITS_SUCCESS_MSG = """Replaced {n_replacements} occurrences. Please review the changes and make sure they are correct:
+
+1. The edited file is correctly indented
+2. The edited file does not contain duplicate lines
+3. The edit does not break existing functionality
+
+Edit the file again if necessary."""
 
 _LINT_ERROR_TEMPLATE = """Your proposed edit has introduced new syntax error(s). Please read this error message carefully and then retry editing the file.
 
