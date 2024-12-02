@@ -2,6 +2,7 @@ import subprocess
 from pathlib import Path
 
 from sweagent.run.hooks.abstract import RunHook
+from sweagent.utils.log import get_logger
 
 
 class SweBenchEvaluate(RunHook):
@@ -12,6 +13,12 @@ class SweBenchEvaluate(RunHook):
         self.output_dir = output_dir
         self.subset = subset
         self.split = split
+        self.logger = get_logger("SB-evaluate", emoji="😬")
 
     def on_end(self) -> None:
-        subprocess.run(["sb-cli", "submit", self._SUBSET_MAP[self.subset], self.split, self.output_dir.name])
+        try:
+            subprocess.check_output(
+                ["sb-cli", "submit", self._SUBSET_MAP[self.subset], self.split, self.output_dir.name]
+            )
+        except subprocess.CalledProcessError as e:
+            self.logger.error("Failed to submit results to SweBench eval: %s", e)

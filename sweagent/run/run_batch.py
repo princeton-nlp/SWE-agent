@@ -149,7 +149,6 @@ class RunBatch:
         self.instances = instances
         self.agent_config = agent_config
         self.output_dir = output_dir
-        self._hooks = []
         self._raise_exceptions = raise_exceptions
         self._chooks = CombinedRunHooks()
         self._redo_existing = redo_existing
@@ -199,7 +198,7 @@ class RunBatch:
 
     def add_hook(self, hook: RunHook) -> None:
         hook.on_init(run=self)
-        self._hooks.append(hook)
+        self._chooks.add_hook(hook)
 
     def main(self) -> None:
         self.logger.info("Starting run. Find output files at %s", self.output_dir)
