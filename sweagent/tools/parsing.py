@@ -243,7 +243,7 @@ class FunctionCallingParser(AbstractParseFunction, BaseModel):
     """Expects the model response to be a LiteLLM tool call."""
 
     error_message: str = dedent("""\
-    {% if error_code == "missing" %}
+    {%- if error_code == "missing" -%}
     Your last output did not use any tool calls!
     Please make sure your output includes exactly _ONE_ function call!
     You must invoke the function directly using the function call format.
@@ -251,13 +251,13 @@ class FunctionCallingParser(AbstractParseFunction, BaseModel):
     If you think you have already resolved the issue, please submit your changes by running the `submit` command.
     If you think you cannot solve the problem, please run `exit_forfeit` (if available).
     Else, please continue with a new tool call!
-    {% elif error_code == "multiple" %}
+    {%- elif error_code == "multiple" -%}
     Your last output included multiple tool calls!
     Please make sure your output includes a thought and exactly _ONE_ function call.
-    {% elif error_code == "unexpected_arg" %}
+    {%- elif error_code == "unexpected_arg" -%}
     Your action could not be parsed properly: {{exception_message}}.
     Make sure your function call doesn't include any extra arguments that are not in the allowed arguments, and only use the allowed commands.
-    {% else %}
+    {%- else -%}
     Your action could not be parsed properly: {{exception_message}}.
     {% endif %}
     """)
