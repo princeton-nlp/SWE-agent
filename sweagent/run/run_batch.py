@@ -1,5 +1,35 @@
 """
-Run on a batch of instances/issues. For example run on all of SWE-bench.
+Run on a batch of instances/issues, e.g., SWE-bench.
+
+[cyan][bold]=== BASIC OPTIONS ===[/bold][/cyan]
+
+  -h --help           Show help text and exit
+  --help_options      Print specific help text and exit
+
+[cyan][bold]=== EXAMPLES ===[/bold][/cyan]
+
+Basic usage: Run over a [bold][cyan]SWE-bench lite[/bold][/cyan][green]:
+
+sweagent run-batch \\
+    --instances.type swe_bench \\ # configure instances
+    --instances.subset lite \\
+    --instances.split dev  \\
+    --instances.split :50 \\     # first 50 instances
+    --instances.shuffle=True \\  # shuffle instances (with fixed seed)
+    --config config/default.yaml \\  # configure model
+    --agent.model.name gpt-4o
+[/green]
+
+[cyan][bold]=== LOADING INSTANCES ===[/bold][/cyan]
+
+Load instances...
+
+From a file [green]--instances.type file --instances.path /path/to/file[/green].
+From huggingface [green]--instances.type huggingface --instances.dataset_name=SWE_Bench_lite --instances.split=dev[/green].
+
+All instance specifications support the [green]filter[/green], [green]slice[/green], and [green]shuffle[/green] options.
+With [green]filter[/green], you can select specific instances.
+For example, [green]--instances.filter='instance_id_1|instance_id_2'
 """
 
 import getpass
