@@ -246,6 +246,17 @@ class ToolHandler:
 
     def _get_state(self, state_command: str, env: SWEEnv) -> dict[str, str]:
         output = env.communicate(state_command, check=True).strip()
+        if not output:
+            self.logger.warning(f"State command {state_command!r} returned empty output")
+            return {}
+        if not output.startswith("{") or not output.endswith("}"):
+            msg = f"State command {state_command!r} returned invalid output: {output!r}. Trying to recover...."
+            self.logger.warning(msg)
+            try:
+                output = output[output.index("{") : output.rindex("}") + 1]
+            except ValueError:
+                msg = f"Could not find matching braces in {output!r}. Giving up."
+                raise ValueError(msg) from None
         try:
             return json.loads(output)
         except json.JSONDecodeError as e:
