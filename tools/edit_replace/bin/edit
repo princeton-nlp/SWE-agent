@@ -18,11 +18,11 @@ from flake8_utils import flake8, format_flake8_output  # type: ignore
 
 RETRY_WITH_OUTPUT_TOKEN = "###SWE-AGENT-RETRY-WITH-OUTPUT###"
 
-_NOT_FOUND_IN_WINDOW_MSG = """Text {search!r} not found in displayed lines. Please modify your search string or use the goto/scroll commands
+_NOT_FOUND_IN_WINDOW_MSG = """Your edit was not applied (file not modified): Text {search!r} not found in displayed lines. Please modify your search string or use the goto/scroll commands
 to navigate to the corresponding location in the file first.
 """
 
-_MULTIPLE_OCCURRENCES_MSG = """Found more than one occurrence of {search!r} in the currently displayed lines.
+_MULTIPLE_OCCURRENCES_MSG = """Your edit was not applied (file not modified): Found more than one occurrence of {search!r} in the currently displayed lines.
 Please adapt your search string to only match _one_ occurrence.
 If you want to replace all occurrences, set replace_all=True, but please only use this if you really want to replace all occurrences
 in the file.
@@ -36,8 +36,7 @@ _SINGLE_EDIT_SUCCESS_MSG = """Text replaced. Please review the changes and make 
 _MULTIPLE_EDITS_SUCCESS_MSG = """Replaced {n_replacements} occurrences. Please review the changes and make sure they are correct
 (correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
 
-_LINT_ERROR_TEMPLATE = """
-Your proposed edit has introduced new syntax error(s). Please read this error message carefully and then retry editing the file.
+_LINT_ERROR_TEMPLATE = """Your proposed edit has introduced new syntax error(s). Please read this error message carefully and then retry editing the file.
 
 ERRORS:
 
