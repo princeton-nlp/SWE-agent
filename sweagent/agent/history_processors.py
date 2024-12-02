@@ -6,6 +6,8 @@ from typing import Annotated, Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from sweagent.types import History, HistoryItem
+
 
 class FormatError(Exception):
     pass
@@ -13,7 +15,7 @@ class FormatError(Exception):
 
 class AbstractHistoryProcessor(Protocol):
     @abstractmethod
-    def __call__(self, history: list[str]) -> list[str]:
+    def __call__(self, history: History) -> History:
         raise NotImplementedError
 
 
@@ -24,7 +26,7 @@ class DefaultHistoryProcessor(BaseModel):
     # pydantic config
     model_config = ConfigDict(extra="forbid")
 
-    def __call__(self, history):
+    def __call__(self, history: History) -> History:
         return history
 
 
@@ -50,7 +52,7 @@ class LastNObservations(BaseModel):
     # pydantic config
     model_config = ConfigDict(extra="forbid")
 
-    def __call__(self, history):
+    def __call__(self, history: History) -> History:
         if self.n <= 0:
             msg = "n must be a positive integer"
             raise ValueError(msg)
@@ -92,21 +94,21 @@ class TagToolCallObservations(BaseModel):
     # pydantic config
     model_config = ConfigDict(extra="forbid")
 
-    def _add_tags(self, entry: dict) -> None:
+    def _add_tags(self, entry: HistoryItem) -> None:
         tags = set(entry.get("tags", []))
-        tags.add(self.tags)
+        tags.update(self.tags)
         entry["tags"] = list(tags)
 
-    def _should_add_tags(self, entry: dict) -> bool:
+    def _should_add_tags(self, entry: HistoryItem) -> bool:
         if entry["message_type"] != "action":
             return False
-        function_calls = entry.get("function_calls", [])
+        function_calls = entry.get("tool_calls", [])
         if not function_calls:
             return False
         function_names = {call["function"]["name"] for call in function_calls}
         return bool(self.function_names & function_names)
 
-    def __call__(self, history) -> None:
+    def __call__(self, history: History) -> History:
         for entry in history:
             if self._should_add_tags(entry):
                 self._add_tags(entry)

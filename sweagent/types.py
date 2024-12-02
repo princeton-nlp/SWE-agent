@@ -50,18 +50,23 @@ class TrajectoryStep(TypedDict):
     messages: list[dict[str, Any]]
 
 
+# required fields go here
 class _HistoryItem(TypedDict):
     role: str
     content: str
+    message_type: Literal["thought", "action", "observation"]
 
 
+# see _HistoryItem for required fields
 class HistoryItem(_HistoryItem, total=False):
     agent: str
     is_demo: bool
     thought: str
     action: str | None
-    tool_calls: list[dict[str, str]] | None = None
-    tool_call_ids: list[str] | None = None
+    tool_calls: list[dict[str, str]] | None
+    tool_call_ids: list[str] | None
+    tags: list[str]
+    """HistoryProcessors can add these tags to enable special processing"""
 
 
 History = list[HistoryItem]
