@@ -69,7 +69,9 @@ agent:
 
       6. When editing files, it is easy to accidentally to write code with incorrect indentation or make other mistakes. Always check the code after you issue an edit to make sure that it reflects what you wanted to accomplish. If it didn't, issue another command to fix it.
 
-      7. Do not try to install any packages with `pip`, `conda`, or any other way. This will usually not work. If the environment is not set up correctly, try to fix the issue without executing python code or running any tests that require the package installed.
+      7. When editing files, first explain the code you want to edit and why it is causing the problem. Then explain the edit you want to make and how it fixes the problem. Explain how the edit does not break existing functionality.
+
+      8. Do not try to install any packages with `pip`, `conda`, or any other way. This will usually not work. If the environment is not set up correctly, try to fix the issue without executing python code or running any tests that require the package installed.
 
       (Open file: {{open_file}})
       (Current directory: {{working_dir}})
