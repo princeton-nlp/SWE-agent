@@ -50,7 +50,7 @@ class RunBatchProgressManager:
 
         self._instances_by_exit_status = collections.defaultdict(list)
         self._main_progress_bar = Progress(
-            SpinnerColumn(),
+            SpinnerColumn(spinner_name="dots2"),
             TextColumn("[progress.description]{task.description} (${task.fields[total_cost]})"),
             BarColumn(),
             MofNCompleteColumn(),
@@ -62,7 +62,7 @@ class RunBatchProgressManager:
             speed_estimate_period=60 * 5,
         )
         self._task_progress_bar = Progress(
-            SpinnerColumn(),
+            SpinnerColumn(spinner_name="dots2"),
             TextColumn("{task.fields[instance_id]}"),
             TextColumn("{task.fields[status]}"),
             TimeElapsedColumn(),

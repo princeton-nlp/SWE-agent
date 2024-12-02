@@ -687,7 +687,6 @@ class Agent:
         except Exception as e:
             # Attach the step object to the exception
             e.step = step  # type: ignore
-            self.logger.exception("Error in forward", exc_info=e)
             raise
 
     def forward_with_handling(self, history: list[dict[str, str]]) -> StepOutput:
@@ -718,6 +717,7 @@ class Agent:
 
         def handle_error_with_retry(exception: Exception, template: str) -> list[dict[str, str]]:
             """Requeries the model if the error is a format/blocklist/bash syntax error."""
+            self.logger.warning("Requerying model (%s)", type(exception).__name__)
             step: StepOutput = getattr(exception, "step", StepOutput())
             self.add_step_to_trajectory(step)
             exception_message = getattr(exception, "message", "")
@@ -760,14 +760,12 @@ class Agent:
                     template=self.templates.shell_check_error_template,
                 )
             except RetryWithOutput as e:
-                self.logger.warning("Requerying model with output from last step (RetryWithOutput)")
                 n_format_fails = 0
                 history = handle_error_with_retry(
                     exception=e,
                     template=self.templates.next_step_template,
                 )
             except RetryWithoutOutput:
-                self.logger.warning("Requerying model (RetryWithoutOutput)")
                 n_format_fails = 0
                 # Requery with the same template as the last step
 

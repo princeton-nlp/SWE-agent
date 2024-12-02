@@ -22,10 +22,10 @@ class StepOutput(BaseModel):
     observation: str = ""
     execution_time: float = 0.0
     done: bool = False
-    exit_status: str | None = None
+    exit_status: int | str | None = None
     submission: str | None = None
     state: dict[str, str] = {}
-    tool_calls: list[dict[str, str]] | None = None
+    tool_calls: list[dict[str, Any]] | None = None
     tool_call_ids: list[str] | None = None
     """State of the environment at the end of the step"""
 
@@ -50,18 +50,23 @@ class TrajectoryStep(TypedDict):
     messages: list[dict[str, Any]]
 
 
+# required fields go here
 class _HistoryItem(TypedDict):
     role: str
     content: str
+    message_type: Literal["thought", "action", "observation"]
 
 
+# see _HistoryItem for required fields
 class HistoryItem(_HistoryItem, total=False):
     agent: str
     is_demo: bool
     thought: str
     action: str | None
-    tool_calls: list[dict[str, str]] | None = None
-    tool_call_ids: list[str] | None = None
+    tool_calls: list[dict[str, str]] | None
+    tool_call_ids: list[str] | None
+    tags: list[str]
+    """HistoryProcessors can add these tags to enable special processing"""
 
 
 History = list[HistoryItem]
