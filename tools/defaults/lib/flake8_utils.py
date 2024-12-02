@@ -90,7 +90,7 @@ def _update_previous_errors(
 
 def format_flake8_output(
     input_string: str,
-    show_line_numbers: bool = True,
+    show_line_numbers: bool = False,
     *,
     previous_errors_string: str = "",
     replacement_window: Optional[Tuple[int, int]] = None,
