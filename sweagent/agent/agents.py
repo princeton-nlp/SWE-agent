@@ -440,8 +440,6 @@ class Agent:
                 "message_type": "action",
             },
         )
-        if step.done:
-            return
 
         if step.observation is None or step.observation.strip() == "":
             # Show no output template if observation content was empty
