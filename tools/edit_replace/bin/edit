@@ -18,12 +18,17 @@ from flake8_utils import flake8, format_flake8_output  # type: ignore
 
 RETRY_WITH_OUTPUT_TOKEN = "###SWE-AGENT-RETRY-WITH-OUTPUT###"
 
-_NOT_FOUND_IN_WINDOW_MSG = """Text {search!r} not found in displayed lines.
-Note: By default, we only replace the first occurrence in the lines that are currently visible in the editor.
-If you want to replace all occurrences in and outside of the visible lines, use the `--replace-all` flag.
+_NOT_FOUND_IN_WINDOW_MSG = """Text {search!r} not found in displayed lines. Please modify your search string or use the goto/scroll commands
+to navigate to the corresponding location in the file first.
 """
 
-_NO_CHANGES_MADE_MSG = """Your search and replace strings are the same. No changes were made."""
+_MULTIPLE_OCCURRENCES_MSG = """Found more than one occurrence of {search!r} in the currently displayed lines.
+Please adapt your search string to only match _one_ occurrence.
+If you want to replace all occurrences, set replace_all=True, but please only use this if you really want to replace all occurrences
+in the file.
+"""
+
+_NO_CHANGES_MADE_MSG = """Your search and replace strings are the same. No changes were made. Please modify your search or replace strings."""
 
 _SINGLE_EDIT_SUCCESS_MSG = """Text replaced. Please review the changes and make sure they are correct
 (correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
@@ -82,10 +87,7 @@ def main(search: str, replace: str, replace_all: bool):
         if not replace_all:
             window_text = wf.get_window_text()
             if window_text.count(search) > 1:
-                print(
-                    f"Error: Found more than one occurrence of {search} in the window while replace_all=False. "
-                    "Aborting edit."
-                )
+                print(_MULTIPLE_OCCURRENCES_MSG.format(search=search))
                 print(RETRY_WITH_OUTPUT_TOKEN)
                 exit(4)
             replacement_info = wf.replace_in_window(search, replace)
