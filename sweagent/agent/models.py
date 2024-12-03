@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import random
 import shlex
 import time
@@ -68,9 +67,8 @@ class GenericAPIModelConfig(PydanticBaseModel):
     api_key: SecretStr | None = None
     """API key to the model. We recommend using environment variables to set this instead
     or putting your environment variables in a `.env` file.
-    If value starts with `$`, we will interpret it as an environment variable.
-    You can concatenate more than one environment variable by separating them with `:`, e.g.,
-    `$key1:$key2`.
+    You can concatenate more than one key by separating them with `:::`, e.g.,
+    `key1:::key2`.
     """
     stop: list[str] = []
     """Custom stop sequences"""
@@ -106,22 +104,7 @@ class GenericAPIModelConfig(PydanticBaseModel):
     def get_api_keys(self) -> list[str]:
         if self.api_key is None:
             return []
-        v = self.api_key.get_secret_value()
-        if "$" not in v:
-            return [v]
-        individual_keys = v.split(":")
-        if not all(k.startswith("$") for k in individual_keys):
-            msg = "All keys must start with $ when concatenating keys"
-            raise ValueError(msg)
-        keys = []
-        for k in individual_keys:
-            k = k.removeprefix("$")
-            v = os.getenv(k)
-            if v is None:
-                msg = f"Environment variable {k} not set"
-                raise ValueError(msg)
-            keys.append(v)
-        return keys
+        return self.api_key.get_secret_value().split(":::")
 
     @property
     def id(self) -> str:
