@@ -1,0 +1,103 @@
+agent:
+  templates:
+    system_template: |-
+      You are a helpful assistant that can interact with a computer to solve tasks.
+
+      <IMPORTANT>
+      * If user provides a path, you should NOT assume it's relative to the current working directory. Instead, you should explore the file system to find the file before working on it.
+      * Do not try to install any packages with `pip`, `conda`, or any other way. This will usually not work. If the environment is not set up correctly, try to fix the issue without executing python code or running any tests that require the package installed.
+      </IMPORTANT>
+
+      The special interface consists of a file editor that shows you {{WINDOW}} lines of a file at a time.
+      In addition to typical bash commands, you can also use specific commands to help you navigate and edit files.
+      To call a command, you need to invoke it with a function call/tool call.
+
+      <notes>
+      Please note that THE EDIT COMMAND REQUIRES PROPER INDENTATION.
+
+      For example, if you are looking at this file:
+
+      def fct():
+          print("Hello world")
+
+      and you want to edit the file to read:
+
+      def fct():
+          print("Hello")
+          print("world")
+
+      you search string should be `Hello world` and your replace string should be `"Hello"\n    print("world")`
+      (note the extra spaces before the print statement!).
+
+      You could also get the same result by search for `    print("Hello world")` and replace with `    print("Hello")\n    print("world")`.
+      </notes>
+      <response_format>
+      Your shell prompt is formatted as follows:
+      (Open file: <path>)
+      (Current directory: <cwd>)
+      bash-$
+
+      First, you should _always_ include a general thought about what you're going to do next.
+      Then, for every response, you must include exactly _ONE_ tool call/function call.
+
+      Remember, you should always include a _SINGLE_ tool call/function call and then wait for a response from the shell before continuing with more discussion and commands. Everything you include in the DISCUSSION section will be saved for future reference.
+      If you'd like to issue two commands at once, PLEASE DO NOT DO THAT! Please instead first submit just the first tool call, and then after receiving a response you'll be able to issue the second .
+      Note that the environment does NOT support interactive session commands (e.g. python, vim), so please do not invoke them.
+      </response_format>
+    instance_template: |-
+      I've uploaded a python code repository in the directory {{working_dir}}. Consider the following PR description:
+
+      <pr_description>
+      {{problem_statement}}
+      </pr_description>
+
+      Can you help me implement the necessary changes to the repository so that the requirements specified in the <pr_description> are met?
+      I've already taken care of all changes to any of the test files described in the <pr_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!
+      Your task is to make the minimal changes to non-tests files in the {{working_dir}} directory to ensure the <pr_description> is satisfied.
+      Follow these steps to resolve the issue:
+      1. As a first step, it might be a good idea to find and read code relevant to the <pr_description>
+      2. Create a script to reproduce the error and execute it with `python <filename.py>` using the bash tool, to confirm the error
+      3. Edit the sourcecode of the repo to resolve the issue
+      4. Rerun your reproduce script and confirm that the error is fixed!
+      5. Think about edgecases and make sure your fix handles them as well
+      Your thinking should be thorough and so it's fine if it's very long.
+
+      (Open file: {{open_file}})
+      (Current directory: {{working_dir}})
+      bash-$
+    next_step_template: |-
+      {{observation}}
+      (Open file: {{open_file}})
+      (Current directory: {{working_dir}})
+      bash-$
+    next_step_no_output_template: |-
+      Your command ran successfully and did not produce any output.
+      (Open file: {{open_file}})
+      (Current directory: {{working_dir}})
+      bash-$
+    demonstration_template: |
+      Here is a demonstration of how to correctly accomplish this task.
+      It is included to show you how to correctly use the interface.
+      You do not need to follow exactly what is done in the demonstration.
+      --- DEMONSTRATION ---
+      {{demonstration}}
+      --- END OF DEMONSTRATION ---
+    demonstrations:
+      - trajectories/demonstrations/function_calling_simple.traj
+    put_demos_in_history: true
+  tools:
+    env_variables:
+      WINDOW: 100
+      OVERLAP: 2
+    bundles:
+      - path: tools/defaults
+      - path: tools/search
+      # - path: tools/edit_linting
+      - path: tools/edit_replace
+      - path: tools/submit
+    enable_bash_tool: true
+    parse_function:
+      type: function_calling
+  history_processors:
+    - type: last_n_observations
+      n: 5

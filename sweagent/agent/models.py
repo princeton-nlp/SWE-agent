@@ -90,6 +90,12 @@ class GenericAPIModelConfig(PydanticBaseModel):
     `retry` configuration.
     """
 
+    fallbacks: list[dict[str, Any]] = []
+    """List of fallbacks to try if the main model fails
+    See https://docs.litellm.ai/docs/completion/reliable_completions#fallbacks-sdk
+    for more information.
+    """
+
     # pydantic
     model_config = ConfigDict(extra="forbid")
 
@@ -480,6 +486,7 @@ class LiteLLMModel(AbstractModel):
             top_p=self.args.top_p,
             api_version=self.args.api_version,
             api_key=self.args.api_key.get_secret_value() if self.args.api_key else None,
+            fallbacks=self.args.fallbacks,
             **completion_kwargs,
             **extra_args,
         )
