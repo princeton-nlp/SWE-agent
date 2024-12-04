@@ -43,14 +43,18 @@ history:
       (Open file: )
       (Current directory: )
       bash-$
+    agent: main
+    message_type: observation
   - role: assistant
     content: Let’s start by exploring the repository structure.
+    agent: main
     tool_calls:
       - function:
           arguments: '{"command":"view","path":"/swe-agent-test-repo"}'
           name: str_replace_editor
         id: call_ggIm89M8rcBQorveMgkIrL7G
         type: function
+    message_type: action
   - role: tool
     content: |-
       Here's the files and directories up to 2 levels deep in /swe-agent-test-repo, excluding hidden items:
@@ -71,14 +75,20 @@ history:
       (Open file: )
       (Current directory: )
       bash-$
+    agent: main
+    message_type: observation
+    tool_call_ids:
+      - call_ggIm89M8rcBQorveMgkIrL7G
   - role: assistant
     content: We have several Python files in the repository. `missing_colon.py` is directly mentioned in the PR description, so let's open it.
+    agent: main
     tool_calls:
       - function:
           arguments: '{"command":"view","path":"/swe-agent-test-repo/src/testpkg/missing_colon.py"}'
           name: str_replace_editor
         id: call_QbSqph4VzA951X9eMEgsvyOm
         type: function
+    message_type: action
   - role: tool
     content: |-
       Here's the result of running `cat -n` on /swe-agent-test-repo/src/testpkg/missing_colon.py:
@@ -96,14 +106,20 @@ history:
       (Open file: )
       (Current directory: )
       bash-$
+    agent: main
+    message_type: observation
+    tool_call_ids:
+      - call_QbSqph4VzA951X9eMEgsvyOm
   - role: assistant
     content: We can see that the file contains a missing colon. Let's fix it by replacing the line with the correct version.
+    agent: main
     tool_calls:
       - function:
           arguments: '{"command":"str_replace","path":"/swe-agent-test-repo/src/testpkg/missing_colon.py","old_str":"def division(a: float, b: float) -> float","new_str":"def division(a: float, b: float) -> float:"}'
           name: str_replace_editor
         id: call_QgE1MNhZQ2W66DgwRZGXEo1D
         type: function
+    message_type: action
   - role: tool
     content: |-
       The file /swe-agent-test-repo/src/testpkg/missing_colon.py has been edited. Here's the result of running `cat -n` on a snippet of /swe-agent-test-repo/src/testpkg/missing_colon.py:
@@ -119,16 +135,22 @@ history:
       (Open file: )
       (Current directory: )
       bash-$
+    agent: main
+    message_type: observation
+    tool_call_ids:
+      - call_QgE1MNhZQ2W66DgwRZGXEo1D
   - role: assistant
     content: The missing colon has been fixed. The change should not break any existing functionality. Let's submit the changes.
+    agent: main
     tool_calls:
       - function:
           arguments: '{}'
           name: submit
         id: call_zyAyd9wbLeSeRaFXrKwlQYwI
         type: function
+    message_type: action
   - role: tool
-    content: |-
+    content: |2-
 
       diff --git a/src/testpkg/missing_colon.py b/src/testpkg/missing_colon.py
       index 20edef5..5857437 100755
@@ -147,6 +169,10 @@ history:
       (Open file: )
       (Current directory: )
       bash-$
+    agent: main
+    message_type: observation
+    tool_call_ids:
+      - call_zyAyd9wbLeSeRaFXrKwlQYwI
 replay_config:
   env:
     deployment:

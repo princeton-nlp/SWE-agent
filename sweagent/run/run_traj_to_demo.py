@@ -66,9 +66,11 @@ def convert_traj_to_action_demo(traj_path: Path, output_file: Path, include_user
     replay_config = traj["replay_config"]
     history = traj["history"]
 
+    copy_fields = {"content", "role", "tool_calls", "agent", "message_type", "tool_call_ids"}
+
     admissible_roles = {"assistant", "user", "tool"} if include_user else {"assistant"}
     filtered_history = [
-        {k: v for k, v in step.items() if k in {"content", "role", "tool_calls"}}
+        {k: v for k, v in step.items() if k in copy_fields}
         for step in history
         if step["role"] in admissible_roles
         and step.get("agent", "main") in {"main", "primary"}
