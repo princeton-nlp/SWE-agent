@@ -1,3 +1,4 @@
+# This template is heavily inspired by anthropic and openhands
 agent:
   templates:
     system_template: |-
@@ -91,9 +92,7 @@ agent:
       OVERLAP: 2
     bundles:
       - path: tools/defaults
-      - path: tools/search
-      # - path: tools/edit_linting
-      - path: tools/edit_replace
+      - path: tools/edit_anthropic
       - path: tools/submit
     enable_bash_tool: true
     parse_function:

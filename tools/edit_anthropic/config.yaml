@@ -1,0 +1,40 @@
+tools:
+  str_replace_editor:
+    signature: |
+      str_replace_editor <command> <path> [<file_text>] [<view_range>] [<old_str>] [<new_str>] [<insert_line>]
+    docstring: >
+      Create, view, or edit a file.
+    arguments:
+      - name: command
+        type: string
+        description: "command to run: view, create, str_replace, insert, undo_edit"
+        required: true
+      - name: path
+        type: string
+        description: "path to file"
+        required: true
+      - name: file_text
+        type: string
+        description: "Text to insert when evoking `create` (required for `create`)"
+        required: false
+        argument_format: "--file_text {value}"
+      - name: view_range
+        type: list
+        description: "Range of lines to display when evoking `view`. If not provided, the entire file is displayed."
+        required: false
+        argument_format: "--view_range {value}"
+      - name: old_str
+        type: string
+        description: "String to replace when evoking `str_replace`"
+        required: false
+        argument_format: "--old_str {value}"
+      - name: new_str
+        type: string
+        description: "Replacement string when evoking `str_replace`"
+        required: false
+        argument_format: "--new_str {value}"
+      - name: insert_line
+        type: integer
+        description: "Required for `insert`: Line number to insert text after."
+        required: false
+        argument_format: "--insert_line {value}"
