@@ -8,7 +8,9 @@ from __future__ import annotations
 import io
 import json
 from argparse import ArgumentParser
+from copy import deepcopy
 from pathlib import Path
+from typing import Any
 
 from ruamel.yaml import YAML
 from ruamel.yaml.scalarstring import LiteralScalarString as LSS
@@ -27,25 +29,19 @@ DEMO_COMMENT = """# This is a demo file generated from trajectory file:
 #         You can add or remove actions to modify the replay behavior."""
 
 
-def _convert_to_literal_string(d: str | dict | list) -> str | dict | list:
-    """Convert any multi-line strings in nested data object to LiteralScalarString"""
+def _convert_to_literal_string(d: Any) -> Any:
+    """Convert any multi-line strings in nested data object to LiteralScalarString.
+    This will then use the `|-` syntax of yaml.
+    """
+    d = deepcopy(d)
     if isinstance(d, dict):
         for key, value in d.items():
-            if isinstance(value, str) and "\n" in value:
-                d[key] = LSS(value.replace("\r\n", "\n").replace("\r", "\n"))
-            elif isinstance(value, dict):
-                _convert_to_literal_string(value)
+            d[key] = _convert_to_literal_string(value)
     elif isinstance(d, list):
         for i, item in enumerate(d):
-            if isinstance(item, str) and "\n" in item:
-                d[i] = LSS(item.replace("\r\n", "\n").replace("\r", "\n"))
-            elif isinstance(item, dict):
-                _convert_to_literal_string(item)
+            d[i] = _convert_to_literal_string(item)
     elif isinstance(d, str) and "\n" in d:
         d = LSS(d.replace("\r\n", "\n").replace("\r", "\n"))
-    else:
-        msg = f"Unsupported type: {type(d)}"
-        raise ValueError(msg)
     return d
 
 
