@@ -91,7 +91,6 @@ agent:
       WINDOW: 100
       OVERLAP: 2
     bundles:
-      - path: tools/defaults
       - path: tools/edit_anthropic
       - path: tools/submit
     enable_bash_tool: true
