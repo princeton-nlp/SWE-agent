@@ -1,6 +1,6 @@
 """Convert a trajectory file to a yaml file for editing of demos.
 You can then load the yaml file with `run_replay.py` to replay the actions in an environment to get
-output data.
+environment output.
 """
 
 from __future__ import annotations
@@ -64,12 +64,15 @@ def convert_traj_to_action_demo(traj_path: Path, output_file: Path, include_user
     with open(traj_path) as file:
         traj = json.load(file)
     replay_config = traj["replay_config"]
+    history = traj["history"]
 
     admissible_roles = {"assistant", "user", "tool"} if include_user else {"assistant"}
     filtered_history = [
         {k: v for k, v in step.items() if k in {"content", "role", "tool_calls"}}
-        for step in traj["history"]
-        if step["role"] in admissible_roles and step.get("agent", "main") in {"main", "primary"}
+        for step in history
+        if step["role"] in admissible_roles
+        and step.get("agent", "main") in {"main", "primary"}
+        and not step.get("is_demo")
     ]
 
     output_data = {"history": filtered_history, "replay_config": replay_config}
