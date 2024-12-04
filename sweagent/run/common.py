@@ -82,31 +82,27 @@ class ConfigHelper:
             # It's a pydantic config class
             full_name = self._get_type_name(item, full=True)
             name = self._get_type_name(item)
-            out = f"{name}\n"
+            out = f"[green]{name}[/green]\n"
             if description:
                 out += f"    {description}\n"
-            out += f"    Run --help_option {full_name} for more info"
+            out += f"    Run [green]--help_option {full_name}[/green] for more info"
             return out
         if isinstance(item, UnionType):
             name = self._get_type_name(item)
             out = ""
             if description:
                 out += f"    {description}\n"
-            out += "    This config item can be one of the following things:\n"
+            out += "    This config item can be one of the following things (run [green]--help_option <name>[/green] for more info):\n"
             things = str(item).split("|")
             for thing in things:
-                out += f"    {thing.strip()}\n"
+                out += f"    [green]{thing.strip()}[/green]\n"
             return out.strip()
         return self._get_type_name(item)
 
     def get_help(self, config_type: type[BaseSettings]) -> str:
         lines = []
         for name, field_info in config_type.model_fields.items():
-            line = name
-            # print(field_info)
-            if field_info.is_required:
-                line += " (required)"
-            line += ": "
+            line = f"[green][bold]{name}[/bold][/green]: "
             line += self._get_value_help_string(field_info.annotation, field_info.description)
             lines.append(line)
         return "\n\n".join(lines)
