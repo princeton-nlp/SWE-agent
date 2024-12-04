@@ -245,6 +245,7 @@ class ToolHandler:
     # -------------
 
     def _get_state(self, state_command: str, env: SWEEnv) -> dict[str, str]:
+        """Execute state command in the environment and parse the output as a json object."""
         output = env.communicate(state_command, check=True).strip()
         if not output:
             self.logger.warning(f"State command {state_command!r} returned empty output")
@@ -258,10 +259,14 @@ class ToolHandler:
                 msg = f"Could not find matching braces in {output!r}. Giving up."
                 raise ValueError(msg) from None
         try:
-            return json.loads(output)
+            state = json.loads(output)
         except json.JSONDecodeError as e:
             msg = f"State {output!r} is not valid json. This is an internal error, please report it."
             raise ValueError(msg) from e
+        if not isinstance(state, dict):
+            msg = f"State commands must return a dictionary. Got {state!r} instead."
+            raise ValueError(msg)
+        return state
 
     def get_state(self, env: SWEEnv) -> dict[str, str]:
         """Execute state commands from all bundles and combine their results.
@@ -270,9 +275,20 @@ class ToolHandler:
         if self.mock_state is not None:
             return self.mock_state
 
+        def _warn_if_overwrite_state(new_dict: dict[str, str]) -> None:
+            """Issue a warning message if we're overwriting state vars."""
+            for key, value in new_dict.items():
+                if key in combined_state and combined_state[key] != value:
+                    msg = (
+                        f"State command {key} returned different values in "
+                        f"different bundles: {combined_state[key]} and {value}."
+                    )
+                    self.logger.warning(msg)
+
         combined_state = {}
         for state_command in self.config.state_commands:
             state = self._get_state(state_command, env)
+            _warn_if_overwrite_state(state)
             combined_state.update(state)
         self.logger.debug(f"Retrieved state from environment: {combined_state}")
         return combined_state
