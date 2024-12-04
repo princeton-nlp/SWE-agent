@@ -40,3 +40,4 @@ tools:
         description: "Required for `insert`: Line number to insert text after."
         required: false
         argument_format: "--insert_line {value}"
+state_command: "_state_anthropic"

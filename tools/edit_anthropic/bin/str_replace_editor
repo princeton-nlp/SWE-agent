@@ -2,17 +2,17 @@
 
 """This is an adaptation of the Anthropic Text Editor tool from
 https://github.com/anthropics/anthropic-quickstarts/blob/main/computer-use-demo/computer_use_demo/tools/edit.py
-However, we made it python 3.6 compatible.
+However, we made it python 3.6 compatible and stateless (all state is saved in a json file)
 """
 
 import argparse
+import json
+import os
 import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import List, Optional, Any
-import json
-import os
+from typing import Any, List, Optional
 
 TRUNCATED_MESSAGE: str = "<response clipped><NOTE>To save on context only part of this file has been shown to you. You should retry this tool after you have searched inside the file with `grep -n` in order to find the line numbers of what you are looking for.</NOTE>"
 MAX_RESPONSE_LEN: int = 16000
