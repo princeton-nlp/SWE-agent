@@ -60,6 +60,7 @@ class Argument(BaseModel):
 
     name: str
     type: str
+    items: dict[str, str] | None = None
     description: str
     required: bool
     enum: list[str] | None = None
@@ -138,6 +139,9 @@ class Command(BaseModel):
         if self.arguments:
             for arg in self.arguments:
                 properties[arg.name] = {"type": arg.type, "description": arg.description}
+
+                if arg.items:
+                    properties[arg.name]["items"] = arg.items
 
                 if arg.required:
                     required.append(arg.name)

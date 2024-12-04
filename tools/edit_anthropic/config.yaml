@@ -19,7 +19,9 @@ tools:
         required: false
         argument_format: "--file_text {value}"
       - name: view_range
-        type: list
+        type: array
+        items:
+          type: integer
         description: "Range of lines to display when evoking `view`. If not provided, the entire file is displayed."
         required: false
         argument_format: "--view_range {value}"
