@@ -88,8 +88,9 @@ class RunBatchProgressManager:
         t.show_header = False
         with self._lock:
             t.show_header = True
-            # self._exit_status_table.rows.clear()
-            for status, instances in self._instances_by_exit_status.items():
+            # Sort by number of instances in descending order
+            sorted_items = sorted(self._instances_by_exit_status.items(), key=lambda x: len(x[1]), reverse=True)
+            for status, instances in sorted_items:
                 instances_str = _shorten_str(", ".join(reversed(instances)), 55)
                 t.add_row(status, str(len(instances)), instances_str)
         assert self.render_group is not None
