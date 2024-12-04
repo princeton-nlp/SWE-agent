@@ -193,7 +193,7 @@ class ToolHandler:
     def reset(self, env: SWEEnv) -> None:
         self.logger.info("Resetting tools")
         env.set_env_variables(self.config.env_variables)
-        env.communicate(" && ".join(self._reset_commands), check=True, timeout=self.config.install_timeout)
+        env.communicate(" && ".join(self._reset_commands), check="raise", timeout=self.config.install_timeout)
 
     async def _upload_bundles(self, env: SWEEnv) -> None:
         await asyncio.gather(
@@ -222,7 +222,7 @@ class ToolHandler:
     def _install_commands(self, env: SWEEnv) -> None:
         """Make sure all commands are available in the container"""
         env.set_env_variables(self.config.env_variables)
-        cwd = env.communicate("pwd", check=True).strip()
+        cwd = env.communicate("pwd", check="raise").strip()
         asyncio.run(self._upload_bundles(env))
         for bundle in self.config.bundles:
             cmds = [
@@ -234,11 +234,11 @@ class ToolHandler:
             cmds.append(f"chmod +x /root/tools/{bundle.path.name}/bin/*")
             env.communicate(
                 " && ".join(cmds),
-                check=True,
+                check="raise",
                 timeout=self.config.install_timeout,
             )
-        env.communicate(f"cd {cwd}", check=True)
-        path = env.communicate("echo $PATH", check=True).strip()
+        env.communicate(f"cd {cwd}", check="raise")
+        path = env.communicate("echo $PATH", check="raise").strip()
         asyncio.run(self._check_available_commands(env, {"PATH": path}))
 
     # Getting state
@@ -246,7 +246,8 @@ class ToolHandler:
 
     def _get_state(self, state_command: str, env: SWEEnv) -> dict[str, str]:
         """Execute state command in the environment and parse the output as a json object."""
-        output = env.communicate(state_command, check=True).strip()
+        # Enough to warn, because we're gonna load the output anyway, so that probably catches all real errors
+        output = env.communicate(state_command, check="warn").strip()
         if not output:
             self.logger.warning(f"State command {state_command!r} returned empty output")
             return {}

@@ -627,7 +627,7 @@ class Agent:
                 input=run_action,
                 timeout=self.tools.config.execution_timeout,
                 set_last_action=True,
-                check=self._always_require_zero_exit_code,
+                check="raise" if self._always_require_zero_exit_code else "ignore",
             )
         except CommandTimeoutError:
             try:

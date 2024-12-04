@@ -2,7 +2,7 @@ import asyncio
 import logging
 import shlex
 from pathlib import PurePath
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field
 from swerex.deployment.abstract import AbstractDeployment
@@ -93,14 +93,14 @@ class SWEEnv:
         self._init_deployment()
         self.reset()
         for command in self._post_startup_commands:
-            self.communicate(command, check=True)
+            self.communicate(command, check="raise")
 
     def _copy_repo(self) -> None:
         """Clone/copy repository/codebase in container"""
         if self.repo is None:
             return
 
-        folders = self.communicate(input="ls", check=True).split("\n")
+        folders = self.communicate(input="ls", check="raise").split("\n")
         if self.repo.repo_name in folders:
             return
 
@@ -118,7 +118,7 @@ class SWEEnv:
             info: additional information (e.g. debugging information)
         """
         info = {}
-        self.communicate(input="cd /", check=True)
+        self.communicate(input="cd /", check="raise")
         self._copy_repo()
         self._reset_repository()
         self._chook.on_environment_startup()
@@ -138,7 +138,7 @@ class SWEEnv:
             ]
             self.communicate(
                 input=" && ".join(startup_commands),
-                check=True,
+                check="raise",
                 error_msg="Failed to clean repository",
                 # Sometimes this is slow because it rebuilds some index
                 timeout=120,
@@ -173,7 +173,7 @@ class SWEEnv:
         timeout: int | float = 25,
         *,
         set_last_action: bool = False,
-        check: bool = False,
+        check: Literal["warn", "ignore", "raise"] = "ignore",
         error_msg: str = "Command failed",
     ) -> str:
         """Executes a command in the running shell. The details of this are handled by
@@ -183,7 +183,8 @@ class SWEEnv:
             input: input to send to container
             timeout_duration: duration to wait for output
             set_last_action: whether to set the LAST_ACTION environment variable
-            check: whether to raise an error if the exit code is non-zero
+            check: `ignore`: do not extract exit code (more stable), `warn`: extract exit code and log error if
+                exit code is non-zero, `raise`: raise error if exit code is non-zero
             error_msg: error message to raise if the command fails
 
         Returns:
@@ -196,11 +197,13 @@ class SWEEnv:
         )
         output = r.output
         self.logger.log(logging.TRACE, "Output:\n%s", output)  # type: ignore
-        if check and r.exit_code != 0:
+        if check != "ignore" and r.exit_code != 0:
             self.logger.error(f"{error_msg}:\n{output}")
-            self.close()
             msg = f"Command {input!r} failed ({r.exit_code=}): {error_msg}"
-            raise RuntimeError(msg)
+            self.logger.error(msg)
+            if check == "raise":
+                self.close()
+                raise RuntimeError(msg)
         # todo: What do we do with this?
         if set_last_action:
             # Cannot merge this with last command, because of multiline command
@@ -233,4 +236,4 @@ class SWEEnv:
         """Set environment variables in the environment."""
         _env_setters = [f"export {k}={v}" for k, v in env_variables.items()]
         command = " && ".join(_env_setters)
-        self.communicate(command, check=True)
+        self.communicate(command, check="raise")
