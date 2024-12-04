@@ -22,14 +22,11 @@ sweagent run-batch \\
 
 [cyan][bold]=== LOADING INSTANCES ===[/bold][/cyan]
 
-Load instances...
-
-From a file [green]--instances.type file --instances.path /path/to/file[/green].
-From huggingface [green]--instances.type huggingface --instances.dataset_name=SWE_Bench_lite --instances.split=dev[/green].
+[cyan][bold]From a file[/bold][/cyan] [green]--instances.type file --instances.path /path/to/file[/green].
+[cyan][bold]From huggingface[/bold][/cyan] [green]--instances.type huggingface --instances.dataset_name=SWE_Bench_lite --instances.split=dev[/green].
 
 All instance specifications support the [green]filter[/green], [green]slice[/green], and [green]shuffle[/green] options.
-With [green]filter[/green], you can select specific instances.
-For example, [green]--instances.filter='instance_id_1|instance_id_2'
+With [green]filter[/green], you can select specific instances, e.g., [green]--instances.filter='instance_id_1|instance_id_2'[/green].
 """
 
 import getpass
@@ -55,7 +52,7 @@ from sweagent.environment.hooks.status import SetStatusEnvironmentHook
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.run._progress import RunBatchProgressManager
 from sweagent.run.batch_instances import BatchInstance, BatchInstanceSourceConfig, SWEBenchInstances
-from sweagent.run.common import BasicCLI, save_predictions
+from sweagent.run.common import BasicCLI, ConfigHelper, save_predictions
 from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
 from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
 from sweagent.run.merge_predictions import merge_predictions
@@ -375,7 +372,10 @@ def run_from_config(config: RunBatchConfig):
 def run_from_cli(args: list[str] | None = None):
     if args is None:
         args = sys.argv[1:]
-    run_from_config(BasicCLI(RunBatchConfig).get_config(args))  # type: ignore
+    help_text = (  # type: ignore
+        __doc__ + "\n[cyan][bold]=== ALL THE OPTIONS ===[/bold][/cyan]\n\n" + ConfigHelper().get_help(RunBatchConfig)
+    )
+    run_from_config(BasicCLI(RunBatchConfig, help_text=help_text).get_config(args))  # type: ignore
 
 
 if __name__ == "__main__":
