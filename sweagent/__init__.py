@@ -6,7 +6,7 @@ from git import Repo
 
 __version__ = "0.7.0"
 
-from logging import CRITICAL, WARNING, getLogger
+from logging import WARNING, getLogger
 from pathlib import Path
 
 import swerex.utils.log as log_swerex
@@ -19,7 +19,7 @@ log_swerex.get_logger = partial(get_logger, emoji="🦖")
 # See https://github.com/princeton-nlp/SWE-agent/issues/585
 getLogger("datasets").setLevel(WARNING)
 getLogger("numexpr.utils").setLevel(WARNING)
-getLogger("LiteLLM").setLevel(CRITICAL)
+getLogger("LiteLLM").setLevel(WARNING)
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 assert PACKAGE_DIR.is_dir()

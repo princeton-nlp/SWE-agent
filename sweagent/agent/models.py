@@ -35,6 +35,9 @@ except ImportError:
 logger = get_logger("swea-lm", emoji="🤖")
 
 
+litellm.suppress_debug_info = True
+
+
 class RetryConfig(PydanticBaseModel):
     """This configuration object specifies how many times to retry a failed LM API call."""
 
@@ -550,7 +553,16 @@ class LiteLLMModel(AbstractModel):
         ):
             with attempt:
                 if attempt.retry_state.attempt_number > 1:
-                    logger.warning(f"Retrying LM query: {attempt.retry_state}")
+                    exception_info = ""
+                    if attempt.retry_state.outcome is not None and attempt.retry_state.outcome.exception() is not None:
+                        exception = attempt.retry_state.outcome.exception()
+                        exception_info = f" due to {exception.__class__.__name__}: {str(exception)}"
+
+                    logger.warning(
+                        f"Retrying LM query: attempt {attempt.retry_state.attempt_number} "
+                        f"(slept for {attempt.retry_state.idle_for:.2f}s)"
+                        f"{exception_info}"
+                    )
                 messages = self._history_to_messages(history)
                 result = self._query(messages)
         return result
