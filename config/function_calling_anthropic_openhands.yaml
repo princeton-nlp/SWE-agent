@@ -74,7 +74,7 @@ agent:
       (Current directory: {{working_dir}})
       bash-$
     demonstrations:
-      - trajectories/demonstrations/function_calling_simple.traj
+      - trajectories/demonstrations/str_replace_anthropic_demo.yaml
     put_demos_in_history: true
   tools:
     bundles:
