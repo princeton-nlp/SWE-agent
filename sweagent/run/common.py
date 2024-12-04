@@ -58,8 +58,7 @@ one after the other and reporting the failures for each of them.
 
 _SETTING_ERROR_HINTS = """
 [red][bold]Hints:[/bold][/red]
-- Run `sweagent <subcommand> --print_options` for a complete overview of all available options.
-- Run `sweagent <subcommand> --help` for examples
+Run `sweagent <subcommand> --help` for usage examples.
 
 [red][bold]Common mistakes:[/bold][/red]
 - You used dashes instead of underscores (wrong: `--num-workers`, correct: `--num_workers`).
