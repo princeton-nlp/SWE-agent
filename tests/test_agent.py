@@ -49,7 +49,7 @@ def function_calling_agent_config():
 
 @pytest.fixture
 def default_agent_config():
-    config = yaml.safe_load((CONFIG_DIR / "default.yaml").read_text())
+    config = yaml.safe_load((CONFIG_DIR / "default_no_fcalls.yaml").read_text())
     config["agent"]["model"] = {"name": "instant_empty_submit"}
     print(yaml.dump(config))
     return AgentConfig.model_validate(config["agent"])

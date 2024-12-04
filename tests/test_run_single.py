@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from sweagent import TOOLS_DIR
+from sweagent import CONFIG_DIR, TOOLS_DIR
 from sweagent.agent.agents import AgentConfig
 from sweagent.agent.models import InstantEmptySubmitModelConfig
 from sweagent.environment.swe_env import EnvironmentConfig
@@ -106,6 +106,8 @@ def test_run_ies_repo_ps_matrix(
         str(tmpdir),
         *ps_args,
         *repo_args,
+        "--config",
+        str(CONFIG_DIR / "default_no_fcalls.yaml"),
     ]
     print(args)
     rs_config = BasicCLI(RunSingleConfig).get_config(args)
