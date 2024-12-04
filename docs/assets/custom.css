@@ -1,11 +1,9 @@
-.enigma {
-  background: linear-gradient(to right, #ec412b, #ec008c);
-  -webkit-text-fill-color: transparent;
-  -webkit-background-clip: text;
-  font-weight: bold;
-  font-style: italic;
+@media (prefers-color-scheme: light) {
+  body {
+    background-color: #fff7ec !important;
+  }
 }
 
 .clickable-banner {
-  color: white !important;
+  color: #fff7ec !important;
 }

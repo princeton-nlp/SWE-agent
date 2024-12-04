@@ -1,11 +1,15 @@
-# Turn LMs into SWE agents (and more)!
+---
+title: SWE-agent
+---
 
-![SWE-agent banner](assets/readme_assets/swe-agent-banner.png)
+<div style="text-align: center;">
+    <img src="assets/readme_assets/swe-agent-banner.png" alt="SWE-agent banner" style="height: 12em;">
+</div>
 
-SWE-agent turns LMs (e.g. GPT-4) into agents that can
-[🐛 fix issues in real GitHub repositories](background#swe-agent),
-[⛳️ solve coding challenges](usage/coding_challenges.md), and
-[🔥 crack offensive cybersecurity challenges](background#enigma) (<span class="enigma">EnIGMA</span> mode).
+SWE-agent is an open-source platform for deploying language model (LM) agents in isolated computer environments.
+It manages an LM of your choice (e.g. GPT-4o, Claude Sonnet 3.5, or a local LM) to autonomously perform tasks within these environments using customizable [agent-computer interfaces](https://arxiv.org/abs/2405.15793) (ACIs).
+
+Use SWE-agent to: [fix issues in real GitHub repositories](background#swe-agent), perform tasks on the web, and solve your own custom tasks!
 
 <div class="grid cards" markdown>
 
@@ -22,18 +26,9 @@ SWE-agent turns LMs (e.g. GPT-4) into agents that can
 
     ---
 
-    Three different ways to get started, including running installation-free in your browser.
+    Installing SWE-agent.
 
     [:octicons-arrow-right-24: Get started](installation/index.md)
-
-
--   :material-play:{ .lg .middle } __Usage__
-
-    ---
-
-    Learn how to make the most out of SWE-agent.
-
-    [:octicons-arrow-right-24: Tutorials, tips and tricks](usage/index.md)
 
 
 -   :material-cog:{ .lg .middle } __Configuration__
@@ -52,15 +47,6 @@ SWE-agent turns LMs (e.g. GPT-4) into agents that can
     Dig into SWE-agent's code and build your own agent!
 
     [:octicons-arrow-right-24: Development information](reference/index.md)
-
-
--   :material-hat-fedora:{ .lg .middle } __EnIGMA__
-
-    ---
-
-    <span class="enigma">EnIGMA</span> turns SWE-agent into an offensive cybersecurity expert.
-
-    [:octicons-arrow-right-24: Learn more](background/index.md#enigma)
 
 
 -   :material-newspaper:{ .lg .middle } __Changelog__

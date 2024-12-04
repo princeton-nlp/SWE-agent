@@ -1,7 +1,6 @@
 site_name: SWE-agent documentation
 theme:
   name: material
-  custom_dir: docs/overrides
   icon:
     repo: fontawesome/brands/github
     annotation: material/chevron-right-circle
@@ -34,6 +33,8 @@ theme:
     - header.autohide
     - announce.dismiss
     - content.code.annotate
+    - navigation.tabs
+    - navigation.tabs.sticky
 markdown_extensions:
   - admonition
   - pymdownx.details
@@ -51,40 +52,25 @@ markdown_extensions:
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 nav:
   - Home: index.md
-  - Project Overview:
-    - "background/index.md"
-    - "Agent-Computer Interface": "background/aci.md"
-    - "Interactive Agent Tools": "background/iat.md"
-    - "Architecture": "background/architecture.md"
-  - Installation:
-    - "installation/index.md"
-    - "Use in-browser": "installation/codespaces.md"
-    - "Install from source": "installation/source.md"
-    - "Run with docker": "installation/docker.md"
+  - Getting Started:
+    - "Installation": "installation/index.md"
     - "API keys": "installation/keys.md"
-    - "Installation tips": "installation/tips.md"
-    - "Changelog": "installation/changelog.md"
-  - Usage:
+  - User Guide:
     - "usage/index.md"
     - "Command line usage": "usage/cl_tutorial.md"
-    - "EnIGMA usage": "usage/enigma.md"
     - "Solving coding challenges": "usage/coding_challenges.md"
-    - "Using the web UI": "usage/web_ui.md"
     - "Trajectories": "usage/trajectories.md"
     - "Trajectory inspector": "usage/inspector.md"
-    - "FAQ": "usage/usage_faq.md"
     - "Benchmarking": "usage/benchmarking.md"
-  - Configuration:
     - "Config files": "config/config.md"
-    - "Command definitions": "config/commands.md"
     - "Demonstrations": "config/demonstrations.md"
-    - "Environment variables": "config/env.md"
-    - "Docker images": "config/docker.md"
-    - "Summarizers": "config/summarizers.md"
+    - "FAQ": "usage/usage_faq.md"
   - Development:
     - "Contribution guide": "dev/contribute.md"
     - "Formatting conflicts": "dev/formatting_conflicts.md"
-  - Reference:
+    - "FAQ": "faq.md"
+    - "Changelog": "dev/changelog.md"
+  - API Reference:
     - "reference/index.md"
     - "Problem statements": "reference/problem_statements.md"
     - "Repository": "reference/repo.md"
@@ -93,7 +79,6 @@ nav:
     - "Environment config": "reference/env_config.md"
     - "Agent class": "reference/agent.md"
     - "Environment class": "reference/env.md"
-  - "FAQ": "faq.md"
 plugins:
    - glightbox
    - search

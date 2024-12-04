@@ -8,9 +8,9 @@ This page documents the configuration objects used to specify the behavior of a 
     options:
         heading_level: 3
 
-## Human-in-the-loop models
+## Manual models for testing
 
-The following two models allow you to test new commands by prompting you for actions.
+The following two models allow you to test your environment by prompting you for actions.
 This can also be very useful to create your first [demonstrations](../config/demonstrations.md).
 
 ::: sweagent.agent.models.HumanModel
@@ -21,7 +21,7 @@ This can also be very useful to create your first [demonstrations](../config/dem
     options:
         heading_level: 3
 
-## Testing models
+## Replay model for testing and demonstrations
 
 ::: sweagent.agent.models.ReplayModel
     options:
