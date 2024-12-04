@@ -255,7 +255,11 @@ class HumanModel(AbstractModel):
 
     def _query(self, history: History, action_prompt: str = "> ") -> dict:
         """Logic for handling user input to pass to SWEEnv"""
-        action = input(action_prompt)
+        try:
+            action = input(action_prompt)
+        except KeyboardInterrupt:
+            print("^C (exit with ^D)")
+            return self._query(history, action_prompt)
         self._save_readline_history()
         command_name = action.split()[0] if action.strip() else ""
 
@@ -264,7 +268,11 @@ class HumanModel(AbstractModel):
             buffer = [action]
             end_keyword = self.multi_line_command_endings[command_name]
             while True:
-                action = input("... ")
+                try:
+                    action = input("... ")
+                except KeyboardInterrupt:
+                    print("^C (exit with ^D)")
+                    return self._query(history, action_prompt)
                 buffer.append(action)
                 if action.rstrip() == end_keyword:
                     # Continue reading input until terminating keyword inputted
@@ -273,7 +281,11 @@ class HumanModel(AbstractModel):
         elif action.strip() == "start_multiline_command":  # do arbitrary multi-line input
             buffer = []
             while True:
-                action = input("... ")
+                try:
+                    action = input("... ")
+                except KeyboardInterrupt:
+                    print("^C (exit with ^D)")
+                    return self._query(history, action_prompt)
                 if action.rstrip() == "end_multiline_command":
                     break
                 buffer.append(action)
