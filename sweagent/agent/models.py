@@ -549,6 +549,8 @@ class LiteLLMModel(AbstractModel):
             ),
         ):
             with attempt:
+                if attempt.retry_state.attempt_number > 1:
+                    logger.warning(f"Retrying LM query: {attempt.retry_state}")
                 messages = self._history_to_messages(history)
                 result = self._query(messages)
         return result
