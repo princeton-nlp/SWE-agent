@@ -67,14 +67,19 @@ Run `sweagent <subcommand> --help` for usage examples.
 
 
 class ConfigHelper:
+    """Produce easy-to-read help text from pydantic setting objects."""
+
     def _get_type_name(self, item: Any, full: bool = False):
+        """Given a config type, return a string that is either the full name or just the class name."""
         full_name = str(item).removeprefix("<class '").removesuffix("'>")
         if full:
             return full_name
         return full_name.split(".")[-1]
 
     def _get_value_help_string(self, item: Any, description: str | None):
+        """Given an item, document it"""
         if hasattr(item, "model_fields"):
+            # It's a pydantic config class
             full_name = self._get_type_name(item, full=True)
             name = self._get_type_name(item)
             out = f"{name}\n"
@@ -83,7 +88,11 @@ class ConfigHelper:
             out += f"    Run --help_option {full_name} for more info"
             return out
         if isinstance(item, UnionType):
-            out = "This config item can be one of the following things:\n"
+            name = self._get_type_name(item)
+            out = ""
+            if description:
+                out += f"    {description}\n"
+            out += "    This config item can be one of the following things:\n"
             things = str(item).split("|")
             for thing in things:
                 out += f"    {thing.strip()}\n"
