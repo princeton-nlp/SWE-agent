@@ -207,7 +207,7 @@ def run_from_cli(args: list[str] | None = None):
     help_text = (  # type: ignore
         __doc__ + "\n[cyan][bold]=== ALL THE OPTIONS ===[/bold][/cyan]\n\n" + ConfigHelper().get_help(RunReplayConfig)
     )
-    run_from_config(BasicCLI(RunReplayConfig, help_text=help_text).get_config(args))  # type: ignore
+    run_from_config(BasicCLI(RunReplayConfig, help_text=help_text, default_settings=False).get_config(args))  # type: ignore
 
 
 if __name__ == "__main__":
