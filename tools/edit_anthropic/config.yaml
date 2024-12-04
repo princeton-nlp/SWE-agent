@@ -34,7 +34,12 @@ tools:
         type: array
         items:
           type: integer
-        description: "Range of lines to display when evoking `view`. If not provided, the entire file is displayed."
+        description: >
+          Optional parameter of `view` command.
+          If none is given, the full file is shown.
+          If provided, the file will be shown in the indicated line number range, e.g. [11, 12] will show lines 11 and 12.
+          Indexing at 1 to start.
+          Setting `[start_line, -1]` shows all lines from `start_line` to the end of the file.
         required: false
         argument_format: "--view_range {value}"
       - name: old_str

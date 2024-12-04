@@ -338,7 +338,7 @@ def main():
     parser.add_argument("command", type=str)
     parser.add_argument("path", type=str)
     parser.add_argument("--file_text", type=str)
-    parser.add_argument("--view_range", type=str)
+    parser.add_argument("--view_range", type=int, nargs=2)
     parser.add_argument("--old_str", type=str)
     parser.add_argument("--new_str", type=str)
     parser.add_argument("--insert_line", type=int)
