@@ -86,7 +86,7 @@ class EditTool:
 
     @property
     def _file_history(self):
-        return defaultdict(list, json.loads(REGISTRY["file_history"]))
+        return defaultdict(list, json.loads(REGISTRY.get("file_history", "{}")))
 
     @_file_history.setter
     def _file_history(self, value: dict):
