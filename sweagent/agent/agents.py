@@ -7,6 +7,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
+import yaml
 from jinja2 import Template
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from simple_parsing.helpers.fields import field
@@ -354,9 +355,14 @@ class Agent:
 
         # Load history
         self.logger.info(f"DEMONSTRATION: {demonstration_path}")
-        demo_history = json.loads(Path(demonstration_path).read_text())["history"]
+        _demo_text = Path(demonstration_path).read_text()
+        if demonstration_path.suffix == ".yaml":
+            demo_history = yaml.safe_load(_demo_text)["history"]
+        else:
+            demo_history = json.loads(_demo_text)["history"]
 
         if self.templates.put_demos_in_history:
+            # Add demonstrations to history step-by-step
             for entry in demo_history:
                 if entry["role"] != "system":
                     entry["is_demo"] = True
