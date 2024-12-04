@@ -687,7 +687,7 @@ class Agent:
             if output.get("tool_calls") is not None:
                 step.tool_call_ids = [call["id"] for call in output["tool_calls"]]
                 step.tool_calls = output["tool_calls"]
-            self.logger.info(f"💭 THOUGHT\n{step.thought}\n🎬 ACTION\n{step.action.strip()}")
+            self.logger.info(f"💭 THOUGHT\n{step.thought}\n\n🎬 ACTION\n{step.action.strip()}")
             self._chook.on_actions_generated(step=step)
             return self.handle_action(step)
         except Exception as e:
@@ -849,6 +849,8 @@ class Agent:
         assert self._env is not None
         self._chook.on_step_start()
 
+        n_step = len(self.trajectory) + 1
+        self.logger.info("=" * 25 + f" STEP {n_step} " + "=" * 25)
         step_output = self.forward_with_handling(self.messages)
         self.add_step_to_history(step_output)
 
