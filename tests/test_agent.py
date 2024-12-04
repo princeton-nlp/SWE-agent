@@ -152,7 +152,9 @@ def test_run_step_by_step_checking_history(dummy_env: SWEEnv, default_agent: Age
     a.setup(dummy_env, TextProblemStatement(text="asdf123"))
     dummy_env.deployment.runtime.run_in_session_outputs = [  # type: ignore
         BashObservation(output="file_a file_b"),
+        BashObservation(output=""),  # set last action
         BashObservation(output="asdf"),
+        BashObservation(output=""),
     ]
     assert "asdf123" in a._problem_statement.get_problem_statement()  # type: ignore
     # system template and demo and instance template
@@ -160,25 +162,26 @@ def test_run_step_by_step_checking_history(dummy_env: SWEEnv, default_agent: Age
     system_prompt = a.messages[0]["content"]
     assert "You are an autonomous programmer" in system_prompt
     demo = a.messages[1]["content"]
-    print(demo)
+    # print(demo)
     assert "demonstration" in demo  # demo
     assert "marshmallow" in demo  # demo
     instance_template = a.messages[2]["content"]
     assert "the following issue within our repository" in instance_template
     assert "asdf123" in instance_template
     assert len(a.trajectory) == 0
-    a.step()
-    print(a.trajectory)
+    print(a.step())
     assert len(a.trajectory) == 2  # we requery once because format error
     assert len(a.messages) == 5  # first action performed + observation
+    print(yaml.dump(a.messages, indent=2))
     assert a.messages[3]["content"].strip() == "```\nls\n```"
     assert "file_a file_b" in a.messages[4]["content"]
     assert "Open file: asdf123" in a.messages[4]["content"]
     assert "Current directory: /root" in a.messages[4]["content"]
-    a.step()
+    print(a.step())
+    print(yaml.dump(a.messages, indent=2))
     assert len(a.trajectory) == 3
-    assert len(a.messages) == 6
-    a.step()
+    assert len(a.messages) == 7
+    print(a.step())
     assert len(a.trajectory) == 4
     assert a.info["exit_status"] == "exit_cost"  # type: ignore
 
