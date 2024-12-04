@@ -1,4 +1,25 @@
-"""Run on a single instance taken from github or similar."""
+"""[cyan][bold]Replay a trajectory file.[/bold][/cyan]
+
+[cyan][bold]=== DESCRIPTION ===[/bold][/cyan]
+
+We will take all actions in the trajectory and execute them in an environment.
+
+This has two main use cases:
+
+1. Create a demo from a yaml file containing actions (can also be created from a trajectory file with [green]sweagent run traj-to-demo[/green]).
+   [green]run-replay[/green] will execute the actions to get the environment output and produce a full trajectory to be used as a demo.
+2. Debugging and testing of tools and environment behavior.
+
+[cyan][bold]=== EXAMPLES ===[/bold][/cyan]
+
+Replay a trajectory file:
+
+[green]sweagent run replay --traj_path mytraj.traj[/green]
+
+Replay a demo file:
+
+[green]sweagent run replay --traj_path mydemo.demo.yaml[/green]
+"""
 
 import json
 import sys
@@ -16,7 +37,7 @@ from typing_extensions import Self
 from sweagent.agent.agents import Agent
 from sweagent.agent.models import ReplayModelConfig
 from sweagent.environment.swe_env import SWEEnv
-from sweagent.run.common import BasicCLI
+from sweagent.run.common import BasicCLI, ConfigHelper
 from sweagent.run.run_single import RunSingle, RunSingleConfig
 from sweagent.utils.config import load_environment_variables
 from sweagent.utils.log import get_logger
@@ -183,7 +204,10 @@ def run_from_config(config: RunReplayConfig):
 def run_from_cli(args: list[str] | None = None):
     if args is None:
         args = sys.argv[1:]
-    run_from_config(BasicCLI(RunReplayConfig, default_settings=False).get_config(args))  # type: ignore
+    help_text = (  # type: ignore
+        __doc__ + "\n[cyan][bold]=== ALL THE OPTIONS ===[/bold][/cyan]\n\n" + ConfigHelper().get_help(RunReplayConfig)
+    )
+    run_from_config(BasicCLI(RunReplayConfig, help_text=help_text).get_config(args))  # type: ignore
 
 
 if __name__ == "__main__":
