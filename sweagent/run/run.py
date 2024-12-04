@@ -1,9 +1,34 @@
-"""Main command line interface for SWE-agent.
-Specify one of the subcommands.
+"""[cyan][bold]Main command line interface for SWE-agent.[/bold][/cyan]
+
+[cyan][bold]=== USAGE ===[/bold][/cyan]
+
+[green]sweagent <command> [options][/green]
+
+Display usage instructions for a specific command:
+
+[green]sweagent <command> [bold]--help[/bold][/green]
+
+[cyan][bold]=== SUBCOMMANDS TO RUN SWE-AGENT ===[/bold][/cyan]
+
+[bold][green]run[/green][/bold]: Run swe-agent on a single problem statement, for example a github issue.
+[bold][green]run-batch[/green][/bold]: Run swe-agent on a batch of problem statements, e.g., on SWE-Bench.
+
+[cyan][bold]=== MISC SUBCOMMANDS ===[/bold][/cyan]
+
+[bold][green]merge-preds[/green][/bold]: Merge multiple prediction files into a single file. In most cases
+    [green]run-batch[/green] will already do this, but you can use this to merge predictions
+    from multiple directories.
+[bold][green]inspector[/green][/bold]: Open trajectories in a web-based viewer.
+[bold][green]run-replay[/green][/bold]: Replay a trajectory file or a demo file.
+    This can be useful to fill in environment output when creating demonstrations.
+[bold][green]traj-to-demo[/green][/bold]: Convert a trajectory file to an easy to edit demo file.
+[bold][green]run-api[/green][/bold]: Run swe-agent as a backend for a GUI
 """
 
 import argparse
 import sys
+
+import rich
 
 
 def get_cli():
@@ -27,7 +52,7 @@ def main(args: list[str] | None = None):
     if show_help:
         if not command:
             # Show main help
-            cli.print_help()
+            rich.print(__doc__)
             sys.exit(0)
         else:
             # Add to remaining_args
