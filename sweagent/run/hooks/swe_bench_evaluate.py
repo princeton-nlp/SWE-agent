@@ -25,7 +25,7 @@ class SweBenchEvaluate(RunHook):
         self.last_evaluation_time = time()
         self.evaluation_interval = continuous_submission_every
 
-    def _get_sb_call(self, preds_path: Path, prefix: str = "", overwrite: bool = False) -> list[str]:
+    def _get_sb_call(self, preds_path: Path, submit_only: bool = False) -> list[str]:
         args = [
             "sb-cli",
             "submit",
@@ -36,10 +36,10 @@ class SweBenchEvaluate(RunHook):
             "--run_id",
             self.output_dir.name,
             "--output_dir",
-            str(self.output_dir / f"{prefix}sb-cli-reports"),
+            str(self.output_dir / "sb-cli-reports"),
         ]
-        if overwrite:
-            args.append("--overwrite")
+        if submit_only:
+            args.extend(["--wait_for_evaluation", "0", "--gen_report", "0", "--verify_submission", "0"])
         return args
 
     def on_instance_completed(self, *, result: AgentRunResult):
@@ -55,7 +55,7 @@ class SweBenchEvaluate(RunHook):
             self.last_evaluation_time = current_time
 
         subprocess.Popen(
-            self._get_sb_call(preds_path=self.output_dir / "tmppreds.json", prefix="tmp-", overwrite=True),
+            self._get_sb_call(preds_path=self.output_dir / "tmppreds.json", submit_only=True),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
