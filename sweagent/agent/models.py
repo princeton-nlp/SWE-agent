@@ -87,9 +87,8 @@ class GenericAPIModelConfig(PydanticBaseModel):
     """
 
     delay: float = 0.0
-    """Delay before querying (this can help to avoid overusing the API if sharing
-    it with other people). In most other cases you probably want to rely on the
-    `retry` configuration. Actual delay is random between 0 and `delay`.
+    """Minimum delay before querying (this can help to avoid overusing the API if sharing
+    it with other people).
     """
 
     fallbacks: list[dict[str, Any]] = []
@@ -157,6 +156,9 @@ class GlobalStats(PydanticBaseModel):
 
     total_cost: float = 0
     """Cumulative cost for all instances so far"""
+
+    last_query_timestamp: float = 0
+    """Timestamp of the last query. Currently only used with API models."""
 
 
 GLOBAL_STATS = GlobalStats()
@@ -535,7 +537,11 @@ class LiteLLMModel(AbstractModel):
         return output_dict
 
     def query(self, history: History) -> dict:
-        time.sleep(random.uniform(0, self.args.delay))
+        elapsed_time = time.time() - GLOBAL_STATS.last_query_timestamp
+        if elapsed_time < self.args.delay:
+            time.sleep(self.args.delay - elapsed_time)
+        with GLOBAL_STATS_LOCK:
+            GLOBAL_STATS.last_query_timestamp = time.time()
         for attempt in Retrying(
             stop=stop_after_attempt(self.args.retry.retries),
             wait=wait_random_exponential(min=self.args.retry.min_wait, max=self.args.retry.max_wait),
