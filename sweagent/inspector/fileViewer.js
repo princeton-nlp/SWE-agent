@@ -42,6 +42,7 @@ const roleMap = {
   default: "Default",
   system: "System",
   demo: "Demonstration",
+  model_patch: "Model Patch",
 };
 
 function getRoleText(role) {
@@ -110,11 +111,16 @@ function viewFile(fileName) {
                                 </strong>
                             </div>
                             <div class="content-container">
-                                <pre>${contentText}</pre>
+                                <pre><code class="language-python">${contentText}</code></pre>
                             </div>
                             <div class="shadow"></div>
                         `;
             container.appendChild(historyItem);
+
+            // Highlight the code after adding it to the DOM
+            historyItem.querySelectorAll("pre code").forEach((block) => {
+              hljs.highlightElement(block);
+            });
           }, delay);
 
           delay += delayIncrement; // Increment delay for the next message
