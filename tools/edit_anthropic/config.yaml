@@ -29,7 +29,7 @@ tools:
         type: string
         description: "Text to insert when evoking `create` (required for `create`)"
         required: false
-        argument_format: "--file_text {value}"
+        argument_format: "--file_text {{value}}"
       - name: view_range
         type: array
         items:
@@ -41,20 +41,20 @@ tools:
           Indexing at 1 to start.
           Setting `[start_line, -1]` shows all lines from `start_line` to the end of the file.
         required: false
-        argument_format: "--view_range {value}"
+        argument_format: "--view_range {{value|join(' ')}}"
       - name: old_str
         type: string
         description: "String to replace when evoking `str_replace`"
         required: false
-        argument_format: "--old_str {value}"
+        argument_format: "--old_str {{value}}"
       - name: new_str
         type: string
         description: "Replacement string when evoking `str_replace`"
         required: false
-        argument_format: "--new_str {value}"
+        argument_format: "--new_str {{value}}"
       - name: insert_line
         type: integer
         description: "Required for `insert`: Line number to insert text after."
         required: false
-        argument_format: "--insert_line {value}"
+        argument_format: "--insert_line {{value}}"
 state_command: "_state_anthropic"

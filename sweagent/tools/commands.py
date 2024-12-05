@@ -22,7 +22,9 @@ import re
 import string
 from functools import cached_property
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, field_validator, model_validator
+
+from sweagent.utils.jinja_warnings import _warn_probably_wrong_jinja_syntax
 
 ARGUMENT_NAME_PATTERN = r"[a-zA-Z_][a-zA-Z0-9_-]+"
 
@@ -64,8 +66,13 @@ class Argument(BaseModel):
     description: str
     required: bool
     enum: list[str] | None = None
-    argument_format: str = "{value}"
-    """How to invoke the argument in the command"""
+    argument_format: str = "{{value}}"
+    """How to invoke the argument in the command. Make sure to use jinja syntax ({{value}}) instead of {value})."""
+
+    @field_validator("argument_format")
+    def validate_argument_format(cls, value: str) -> str:
+        _warn_probably_wrong_jinja_syntax(value)
+        return value
 
 
 class Command(BaseModel):

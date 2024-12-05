@@ -8,6 +8,7 @@ from shlex import quote
 from textwrap import dedent
 from typing import Any, Literal
 
+from jinja2 import Template
 from pydantic import BaseModel
 
 from sweagent.tools.commands import Command
@@ -291,7 +292,7 @@ class FunctionCallingParser(AbstractParseFunction, BaseModel):
             msg = f"Unexpected argument(s): {', '.join(extra_args)}"
             raise FunctionCallingFormatError(msg, "unexpected_arg")
         formatted_args = {
-            arg.name: arg.argument_format.format(
+            arg.name: Template(arg.argument_format).render(
                 value=quote(values[arg.name]) if _should_quote(values[arg.name], command) else values[arg.name]
             )
             if arg.name in values
@@ -389,7 +390,7 @@ class JsonParser(AbstractParseFunction, BaseModel):
                         value = data_command["arguments"][arg.name]
                         if _should_quote(value, command):
                             value = quote(value)
-                        formatted_args[arg.name] = arg.argument_format.format(value=value)
+                        formatted_args[arg.name] = Template(arg.argument_format).render(value=value)
                     elif strict and arg.required:
                         msg = f"Required argument '{arg.name}' missing for command '{command.name}'"
                         raise FormatError(msg)

@@ -37,20 +37,9 @@ from sweagent.tools.parsing import (
 from sweagent.tools.tools import ToolConfig, ToolHandler
 from sweagent.types import AgentInfo, AgentRunResult, History, StepOutput, Trajectory, TrajectoryStep
 from sweagent.utils.config import _convert_paths_to_abspath, _strip_abspath_from_dict
+from sweagent.utils.jinja_warnings import _warn_probably_wrong_jinja_syntax
 from sweagent.utils.log import get_logger
 from sweagent.utils.patch_formatter import PatchFormatter
-
-
-def _warn_probably_wrong_jinja_syntax(template: str | None) -> None:
-    if template is None:
-        return
-    if "{" not in template:
-        return
-    for s in ["{%", "{ %", "{{"]:
-        if s in template:
-            return
-    logger = get_logger("swea-config", emoji="⚙️")
-    logger.warning("Probably wrong Jinja syntax in template: %s. Make sure to use {{var}} instead of {var}.", template)
 
 
 class TemplateConfig(BaseModel):
