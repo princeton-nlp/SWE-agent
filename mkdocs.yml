@@ -79,6 +79,7 @@ nav:
     - "Environment config": "reference/env_config.md"
     - "Agent class": "reference/agent.md"
     - "Environment class": "reference/env.md"
+    - "Exceptions": "reference/exceptions.md"
 plugins:
    - glightbox
    - search

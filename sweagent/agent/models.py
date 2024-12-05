@@ -22,7 +22,13 @@ from tenacity import (
 )
 
 from sweagent import REPO_ROOT
-from sweagent.tools.parsing import FunctionCallingFormatError
+from sweagent.exceptions import (
+    ContextWindowExceededError,
+    CostLimitExceededError,
+    FunctionCallingFormatError,
+    InstanceCostLimitExceededError,
+    TotalCostLimitExceededError,
+)
 from sweagent.tools.tools import ToolConfig
 from sweagent.types import History, HistoryItem
 from sweagent.utils.log import get_logger
@@ -182,22 +188,6 @@ class InstanceStats(PydanticBaseModel):
         return InstanceStats(
             **{field: getattr(self, field) + getattr(other, field) for field in self.model_fields.keys()},
         )
-
-
-class ContextWindowExceededError(Exception):
-    """Raised when the context window of a LM is exceeded"""
-
-
-class CostLimitExceededError(Exception):
-    """Raised when we exceed a cost limit"""
-
-
-class InstanceCostLimitExceededError(CostLimitExceededError):
-    """Raised when we exceed the cost limit set for one task instance"""
-
-
-class TotalCostLimitExceededError(CostLimitExceededError):
-    """Raised when we exceed the total cost limit"""
 
 
 class AbstractModel(ABC):

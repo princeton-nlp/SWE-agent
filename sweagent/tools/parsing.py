@@ -6,34 +6,14 @@ import textwrap
 from abc import ABC, abstractmethod
 from shlex import quote
 from textwrap import dedent
-from typing import Any, Literal
+from typing import Literal
 
 from jinja2 import Template
 from pydantic import BaseModel
 
+from sweagent.exceptions import FormatError, FunctionCallingFormatError
 from sweagent.tools.commands import Command
 from sweagent.tools.utils import _should_quote
-
-
-class FormatError(Exception):
-    pass
-
-
-class FunctionCallingFormatError(FormatError):
-    """Format error exception used by the function
-    calling parser."""
-
-    def __init__(
-        self,
-        message: str,
-        error_code: Literal[
-            "missing", "multiple", "incorrect_args", "invalid_json", "invalid_command", "missing_arg", "unexpected_arg"
-        ],
-        **extra_info: Any,
-    ):
-        super().__init__(message + f" [error_code={error_code}]")
-        self.message = message
-        self.extra_info = {"error_code": error_code, **extra_info}
 
 
 class AbstractParseFunction(ABC):

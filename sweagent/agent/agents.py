@@ -20,8 +20,6 @@ from sweagent.agent.history_processors import DefaultHistoryProcessor, HistoryPr
 from sweagent.agent.hooks.abstract import AbstractAgentHook, CombinedAgentHook
 from sweagent.agent.models import (
     AbstractModel,
-    ContextWindowExceededError,
-    CostLimitExceededError,
     HumanModel,
     HumanThoughtModel,
     InstanceStats,
@@ -30,8 +28,8 @@ from sweagent.agent.models import (
 )
 from sweagent.environment.config.problem_statement import ProblemStatement, ProblemStatementConfig
 from sweagent.environment.swe_env import SWEEnv
+from sweagent.exceptions import ContextWindowExceededError, CostLimitExceededError, FormatError
 from sweagent.tools.parsing import (
-    FormatError,
     ThoughtActionParser,
 )
 from sweagent.tools.tools import ToolConfig, ToolHandler
@@ -122,20 +120,14 @@ class AgentConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class BlockedActionError(Exception):
+class _BlockedActionError(Exception):
     """Raised when the agent's action is blocked"""
 
 
-class Skipped(Exception): ...
+class _RetryWithOutput(Exception): ...
 
 
-class Submitted(Exception): ...
-
-
-class RetryWithOutput(Exception): ...
-
-
-class RetryWithoutOutput(Exception): ...
+class _RetryWithoutOutput(Exception): ...
 
 
 RETRY_WITH_OUTPUT_TOKEN = "###SWE-AGENT-RETRY-WITH-OUTPUT###"
@@ -596,7 +588,7 @@ class Agent:
             action_execution_output: action execution output
         """
         if self.tools.should_block_action(step.action):
-            raise BlockedActionError()
+            raise _BlockedActionError()
 
         if step.action.strip() == "exit":
             self.logger.info("Exiting agent")
@@ -636,10 +628,10 @@ class Agent:
 
         if RETRY_WITH_OUTPUT_TOKEN in step.observation:
             step.observation = step.observation.replace(RETRY_WITH_OUTPUT_TOKEN, "")
-            raise RetryWithOutput()
+            raise _RetryWithOutput()
         elif RETRY_WITHOUT_OUTPUT_TOKEN in step.observation:
             step.observation = step.observation.replace(RETRY_WITHOUT_OUTPUT_TOKEN, "")
-            raise RetryWithoutOutput()
+            raise _RetryWithoutOutput()
 
         return self.handle_submission(step)
 
@@ -743,7 +735,7 @@ class Agent:
             except FormatError as e:
                 n_format_fails += 1
                 history = handle_error_with_retry(exception=e, template=self.tools.config.format_error_template)
-            except BlockedActionError as e:
+            except _BlockedActionError as e:
                 n_format_fails += 1
                 history = handle_error_with_retry(
                     exception=e, template=self.tools.config.filter.blocklist_error_template
@@ -754,13 +746,13 @@ class Agent:
                     exception=e,
                     template=self.templates.shell_check_error_template,
                 )
-            except RetryWithOutput as e:
+            except _RetryWithOutput as e:
                 n_format_fails = 0
                 history = handle_error_with_retry(
                     exception=e,
                     template=self.templates.next_step_template,
                 )
-            except RetryWithoutOutput:
+            except _RetryWithoutOutput:
                 n_format_fails = 0
                 # Requery with the same template as the last step
 
