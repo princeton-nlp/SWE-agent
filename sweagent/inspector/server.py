@@ -62,6 +62,7 @@ def append_results(traj_path: Path, instance_id: str, content, results, results_
         data = json.loads(traj_path.read_text())
         info = data.get("info", {})
         model_stats = info.get("model_stats", {})
+    exit_status = info.get("exit_status", "N/A")
     instance_cost = model_stats.get("instance_cost", None)
     instance_cost = f"{instance_cost:.2f}" if instance_cost is not None else "N/A"
     tokens_sent = model_stats.get("tokens_sent", None)
@@ -71,6 +72,7 @@ def append_results(traj_path: Path, instance_id: str, content, results, results_
     api_calls = model_stats.get("api_calls", None)
     api_calls = f"{api_calls:,}" if api_calls is not None else "N/A"
     stats.append("**** Run Stats ****")
+    stats.append(f"Exit Status: {exit_status}")
     stats.append(f"Instance Cost: ${instance_cost}")
     stats.append(f"Tokens Sent: {tokens_sent}")
     stats.append(f"Tokens Received: {tokens_received}")
@@ -179,17 +181,20 @@ def load_results(results_path: Path) -> dict[str, Any] | None:
     return results
 
 
-# TODO: shouldn't reload results fore very status
 def get_status(traj_path) -> str:
     """Return results emoji for single trajectory"""
     results = load_results(Path(traj_path).parent / "results.json")
+    info = json.loads(Path(traj_path).read_text()).get("info", {})
+    n_steps = info.get("model_stats", {}).get("api_calls", "N/A")
+    exit_status = info.get("exit_status", "N/A")
+    exit_status_str = f" ({exit_status} after {n_steps} steps)"
     instance_id = Path(traj_path).stem
     if results is None:
-        return "❓"
+        return f"❓ {exit_status_str}"
     elif instance_id in results["resolved_ids"]:
         return "✅"
     else:
-        return "❌"
+        return f"❌ {exit_status_str}"
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -305,7 +310,11 @@ def main(data_path, directory, port):
 
 def get_parser():
     parser = ArgumentParser()
-    parser.add_argument("--data_path", type=str, help="Path to dataset that was used for the trajectories")
+    parser.add_argument(
+        "--data_path",
+        type=str,
+        help="Path to dataset that was used for the trajectories. Necessary to display gold patches.",
+    )
     parser.add_argument("--directory", type=str, help="Directory to serve", default=os.getcwd(), nargs="?")
     parser.add_argument("--port", type=int, help="Port to serve", default=8000)
     return parser
