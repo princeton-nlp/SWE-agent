@@ -32,9 +32,6 @@ try:
 except ImportError:
     readline = None
 
-logger = get_logger("swea-lm", emoji="🤖")
-
-
 litellm.suppress_debug_info = True
 
 
@@ -241,13 +238,14 @@ class HumanModel(AbstractModel):
         }
         self._readline_histfile = REPO_ROOT / ".swe-agent-human-history"
         self._load_readline_history()
+        self.logger = get_logger("swea-lm", emoji="🤖")
 
     def _load_readline_history(self) -> None:
         """Load autocomplete history from file"""
         if readline is None:
             return
         if self._readline_histfile.is_file():
-            logger.debug(f"Loading readline history from {self._readline_histfile}")
+            self.logger.debug(f"Loading readline history from {self._readline_histfile}")
             readline.read_history_file(self._readline_histfile)
 
     def _save_readline_history(self) -> None:
@@ -341,6 +339,7 @@ class ReplayModel(AbstractModel):
         self._action_idx = 0
         self.use_function_calling = tools.use_function_calling
         self.submit_command = tools.submit_command
+        self.logger = get_logger("swea-lm", emoji="🤖")
 
     def _next_replay(self) -> None:
         """Called after last action"""
@@ -355,7 +354,7 @@ class ReplayModel(AbstractModel):
             action = actions[self._action_idx]
         except IndexError:
             # log error
-            logger.error("Reached end of replay trajectory without submitting. Submitting now.")
+            self.logger.error("Reached end of replay trajectory without submitting. Submitting now.")
             if self.use_function_calling:
                 action = {
                     "message": f"Calling `{self.submit_command}` to submit.",
@@ -450,6 +449,7 @@ class LiteLLMModel(AbstractModel):
         self.model_max_input_tokens = litellm.model_cost.get(self.args.name, {}).get("max_input_tokens")
         self.model_max_output_tokens = litellm.model_cost.get(self.args.name, {}).get("max_output_tokens")
         self.lm_provider = litellm.model_cost[self.args.name]["litellm_provider"]
+        self.logger = get_logger("swea-lm", emoji="🤖")
 
     def _update_stats(self, *, input_tokens: int, output_tokens: int, cost: float) -> None:
         with GLOBAL_STATS_LOCK:
@@ -460,13 +460,13 @@ class LiteLLMModel(AbstractModel):
         self.stats.api_calls += 1
 
         # Log updated cost values to std. err
-        logger.debug(
+        self.logger.debug(
             f"input_tokens={input_tokens:,}, "
             f"output_tokens={output_tokens:,}, "
             f"instance_cost={self.stats.instance_cost:.2f}, "
             f"cost={cost:.2f}",
         )
-        logger.debug(
+        self.logger.debug(
             f"total_tokens_sent={self.stats.tokens_sent:,}, "
             f"total_tokens_received={self.stats.tokens_received:,}, "
             f"total_cost={GLOBAL_STATS.total_cost:.2f}, "
@@ -475,12 +475,14 @@ class LiteLLMModel(AbstractModel):
 
         # Check whether total cost or instance cost limits have been exceeded
         if 0 < self.args.total_cost_limit <= GLOBAL_STATS.total_cost:
-            logger.warning(f"Cost {GLOBAL_STATS.total_cost:.2f} exceeds limit {self.args.total_cost_limit:.2f}")
+            self.logger.warning(f"Cost {GLOBAL_STATS.total_cost:.2f} exceeds limit {self.args.total_cost_limit:.2f}")
             msg = "Total cost limit exceeded"
             raise TotalCostLimitExceededError(msg)
 
         if 0 < self.args.per_instance_cost_limit <= self.stats.instance_cost:
-            logger.warning(f"Cost {self.stats.instance_cost:.2f} exceeds limit {self.args.per_instance_cost_limit:.2f}")
+            self.logger.warning(
+                f"Cost {self.stats.instance_cost:.2f} exceeds limit {self.args.per_instance_cost_limit:.2f}"
+            )
             msg = "Instance cost limit exceeded"
             raise InstanceCostLimitExceededError(msg)
 
@@ -493,7 +495,7 @@ class LiteLLMModel(AbstractModel):
     def _query(self, messages: list[dict[str, str]]) -> dict:
         input_tokens: int = litellm.utils.token_counter(messages=messages, model=self.args.name)
         if self.model_max_input_tokens is None:
-            logger.warning(f"No max input tokens found for model {self.args.name!r}")
+            self.logger.warning(f"No max input tokens found for model {self.args.name!r}")
         elif input_tokens > self.model_max_input_tokens:
             msg = f"Input tokens {input_tokens} exceed max tokens {self.model_max_input_tokens}"
             raise ContextWindowExceededError(msg)
@@ -557,7 +559,7 @@ class LiteLLMModel(AbstractModel):
                         exception = attempt.retry_state.outcome.exception()
                         exception_info = f" due to {exception.__class__.__name__}: {str(exception)}"
 
-                    logger.warning(
+                    self.logger.warning(
                         f"Retrying LM query: attempt {attempt.retry_state.attempt_number} "
                         f"(slept for {attempt.retry_state.idle_for:.2f}s)"
                         f"{exception_info}"
