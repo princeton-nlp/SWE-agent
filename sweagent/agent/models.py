@@ -546,7 +546,6 @@ class LiteLLMModel(AbstractModel):
                     litellm.exceptions.NotFoundError,
                     litellm.exceptions.PermissionDeniedError,
                     litellm.exceptions.ContextWindowExceededError,
-                    litellm.exceptions.ContentPolicyViolationError,
                     litellm.exceptions.APIError,
                 )
             ),
