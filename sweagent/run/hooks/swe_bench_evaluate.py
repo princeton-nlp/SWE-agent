@@ -23,8 +23,8 @@ class SweBenchEvaluate(RunHook):
         self.n_completed = 0
         self.merge_lock = Lock()
 
-    def _get_sb_call(self, preds_path: Path, prefix: str = "") -> list[str]:
-        return [
+    def _get_sb_call(self, preds_path: Path, prefix: str = "", overwrite: bool = False) -> list[str]:
+        args = [
             "sb-cli",
             "submit",
             self._SUBSET_MAP[self.subset],
@@ -36,6 +36,9 @@ class SweBenchEvaluate(RunHook):
             "--output_dir",
             str(self.output_dir / f"{prefix}sb-cli-reports"),
         ]
+        if overwrite:
+            args.append("--overwrite")
+        return args
 
     def on_instance_completed(self, *, result: AgentRunResult):
         self.n_completed += 1
@@ -45,9 +48,11 @@ class SweBenchEvaluate(RunHook):
             return
         with self.merge_lock:
             merge_predictions([self.output_dir], self.output_dir / "tmppreds.json")
-            subprocess.Popen(
-                self._get_sb_call(preds_path=self.output_dir / "tmppreds.json", prefix="-tmp"),
-            )
+        subprocess.Popen(
+            self._get_sb_call(preds_path=self.output_dir / "tmppreds.json", prefix="-tmp", overwrite=True),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
     def on_end(self) -> None:
         self.logger.info("Submitting results to SWE-Bench")
