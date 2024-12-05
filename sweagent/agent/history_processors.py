@@ -9,10 +9,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from sweagent.types import History, HistoryItem
 
 
-class FormatError(Exception):
-    pass
-
-
 class AbstractHistoryProcessor(Protocol):
     @abstractmethod
     def __call__(self, history: History) -> History:
