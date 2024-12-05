@@ -8,6 +8,9 @@
     <div class="container">
         <h1>Trajectory File Viewer</h1>
         <ul id="fileList"></ul>
+        <label style="margin-right: 20px;">
+            <input type="checkbox" id="showDemos" onchange="refreshCurrentFile()"> Show demonstrations
+        </label>
         <h2>Conversation History</h2>
         <pre id="fileContent">No file selected.</pre>
         <div class="button-container">

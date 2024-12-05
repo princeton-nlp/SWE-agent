@@ -49,11 +49,14 @@ function getRoleText(role) {
 }
 
 function viewFile(fileName) {
+  currentFileName = fileName; // Store the current file name
   // Clear any pending message loading from previous files
   timeoutIds.forEach((timeoutId) => clearTimeout(timeoutId));
   timeoutIds = []; // Reset the list of timeout IDs
 
   const baseUrl = getBaseUrl();
+  const showDemos = document.getElementById("showDemos").checked;
+
   fetch(`${baseUrl}/trajectory/${fileName}`)
     .then((response) => {
       if (!response.ok) {
@@ -78,6 +81,7 @@ function viewFile(fileName) {
             if (item.tool_calls && item.tool_calls.length > 0) {
               contentText = `${item.thought}\n\`\`\`\n${item.action}\n\`\`\``;
             }
+            // Skip demo items if checkbox is unchecked
             let roleClass =
               item.agent && item.agent !== "primary"
                 ? "subroutine"
@@ -88,10 +92,16 @@ function viewFile(fileName) {
             const historyItem = document.createElement("div");
             historyItem.className = `history-item ${roleClass} fade-in`;
             historyItem.id = elementId;
+            let isDemo = false;
             if (contentText.includes("--- DEMONSTRATION ---")) {
               item.role = "demo";
+              isDemo = true;
             } else if ("is_demo" in item && item.is_demo === true) {
               item.role += "[demo]";
+              isDemo = true;
+            }
+            if (!showDemos && isDemo) {
+              return;
             }
             historyItem.innerHTML = `
                             <div class="role-bar ${roleClass}">
