@@ -1,40 +1,68 @@
+import shutil
 import subprocess
 import sys
 from pathlib import Path
+from threading import Lock
 
 from sweagent.run.hooks.abstract import RunHook
+from sweagent.run.merge_predictions import merge_predictions
+from sweagent.types import AgentRunResult
 from sweagent.utils.log import get_logger
 
 
 class SweBenchEvaluate(RunHook):
     _SUBSET_MAP = {"lite": "swe-bench_lite"}
 
-    def __init__(self, output_dir: Path, subset: str, split: str) -> None:
+    def __init__(self, output_dir: Path, subset: str, split: str, continuous_submission_every: int = 0) -> None:
         super().__init__()
         self.output_dir = output_dir
         self.subset = subset
         self.split = split
+        self.continuous_submission_every = continuous_submission_every
         self.logger = get_logger("SB-evaluate", emoji="😬")
+        self.n_completed = 0
+        self.merge_lock = Lock()
+
+    def _get_sb_call(self, preds_path: Path, prefix: str = "") -> list[str]:
+        return [
+            "sb-cli",
+            "submit",
+            self._SUBSET_MAP[self.subset],
+            self.split,
+            "--predictions_path",
+            str(preds_path),
+            "--run_id",
+            self.output_dir.name,
+            "--output_dir",
+            str(self.output_dir / f"{prefix}sb-cli-reports"),
+        ]
+
+    def on_instance_completed(self, *, result: AgentRunResult):
+        self.n_completed += 1
+        if self.continuous_submission_every == 0:
+            return
+        if self.n_completed % self.continuous_submission_every != self.continuous_submission_every - 1:
+            return
+        with self.merge_lock:
+            merge_predictions([self.output_dir], self.output_dir / "tmppreds.json")
+            subprocess.Popen(
+                self._get_sb_call(preds_path=self.output_dir / "tmppreds.json", prefix="-tmp"),
+            )
 
     def on_end(self) -> None:
         self.logger.info("Submitting results to SWE-Bench")
         try:
             subprocess.run(
-                [
-                    "sb-cli",
-                    "submit",
-                    self._SUBSET_MAP[self.subset],
-                    self.split,
-                    "--predictions_path",
-                    self.output_dir / "preds.json",
-                    "--run_id",
-                    self.output_dir.name,
-                    "--output_dir",
-                    self.output_dir / "sb-cli-reports",
-                ],
+                self._get_sb_call(preds_path=self.output_dir / "preds.json"),
                 check=True,
                 stdout=sys.stdout,
                 stderr=sys.stderr,
             )
         except subprocess.CalledProcessError as e:
             self.logger.error("Failed to submit results to SweBench eval: %s", e)
+        else:
+            # remove temporary predictions if they exist
+            if (self.output_dir / "tmppreds.json").exists():
+                (self.output_dir / "tmppreds.json").unlink()
+            if (self.output_dir / "tmp-sb-cli-reports").exists():
+                shutil.rmtree(self.output_dir / "tmp-sb-cli-reports")
