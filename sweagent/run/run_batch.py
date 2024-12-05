@@ -188,7 +188,10 @@ class RunBatch:
 
             rb.add_hook(
                 SweBenchEvaluate(
-                    output_dir=config.output_dir, subset=config.instances.subset, split=config.instances.split
+                    output_dir=config.output_dir,
+                    subset=config.instances.subset,
+                    split=config.instances.split,
+                    continuous_submission_every=30,
                 )
             )
         return rb
