@@ -164,9 +164,8 @@ function fetchDirectoryInfo() {
     .then((data) => {
       if (data.directory) {
         trajectoryDirectory = data.directory; // Store the directory
-        document.title = `Trajectory Viewer: ${data.directory}`;
-        document.querySelector("h1").textContent =
-          `Trajectory Viewer: ${data.directory}`;
+        document.getElementById("directoryInfo").textContent =
+          `Directory: ${data.directory}`;
       }
     })
     .catch((error) => console.error("Error fetching directory info:", error));

@@ -138,6 +138,27 @@ def append_results(traj_path: Path, instance_id: str, content, results, results_
     return content
 
 
+def get_action_summary(content):
+    out = ""
+    i = 0
+    for item in content["history"]:
+        if item["role"] != "assistant":
+            continue
+        if item.get("is_demo"):
+            continue
+        i += 1
+        try:
+            action = item["action"]
+        except KeyError:
+            print(f"No action for step {i}")
+            print(item)
+            raise
+        if len(action) > 70:
+            action = action[:67] + "..."
+        out += f"Step {i}: {action}\n"
+    return out
+
+
 def load_content(file_name, gold_patches, test_patches) -> dict[str, Any]:
     with open(file_name) as infile:
         content = json.load(infile)
@@ -153,6 +174,7 @@ def load_content(file_name, gold_patches, test_patches) -> dict[str, Any]:
     content = append_exit(content)  # accommodate new and old format
     content = append_patch(Path(file_name).stem, content, gold_patches, "Gold")
     content = append_patch(Path(file_name).stem, content, test_patches, "Test")
+    content["history"].insert(0, {"role": "Action Summary", "content": get_action_summary(content)})
     return append_results(
         Path(file_name),
         Path(file_name).stem,
