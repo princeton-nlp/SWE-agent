@@ -3,6 +3,7 @@ import subprocess
 import sys
 from pathlib import Path
 from threading import Lock
+from time import time
 
 from sweagent.run.hooks.abstract import RunHook
 from sweagent.run.merge_predictions import merge_predictions
@@ -20,8 +21,9 @@ class SweBenchEvaluate(RunHook):
         self.split = split
         self.continuous_submission_every = continuous_submission_every
         self.logger = get_logger("SB-evaluate", emoji="😬")
-        self.n_completed = 0
         self.merge_lock = Lock()
+        self.last_evaluation_time = time()
+        self.evaluation_interval = continuous_submission_every
 
     def _get_sb_call(self, preds_path: Path, prefix: str = "", overwrite: bool = False) -> list[str]:
         args = [
@@ -41,15 +43,19 @@ class SweBenchEvaluate(RunHook):
         return args
 
     def on_instance_completed(self, *, result: AgentRunResult):
-        self.n_completed += 1
-        if self.continuous_submission_every == 0:
+        if self.evaluation_interval == 0:
             return
-        if self.n_completed % self.continuous_submission_every != self.continuous_submission_every - 1:
+
+        current_time = time()
+        if current_time - self.last_evaluation_time < self.evaluation_interval:
             return
+
         with self.merge_lock:
             merge_predictions([self.output_dir], self.output_dir / "tmppreds.json")
+            self.last_evaluation_time = current_time
+
         subprocess.Popen(
-            self._get_sb_call(preds_path=self.output_dir / "tmppreds.json", prefix="-tmp", overwrite=True),
+            self._get_sb_call(preds_path=self.output_dir / "tmppreds.json", prefix="tmp-", overwrite=True),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
