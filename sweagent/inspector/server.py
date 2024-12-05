@@ -13,55 +13,50 @@ import yaml
 
 
 def append_exit(content):
-    last_entry = content["history"][-1]
-    if last_entry["role"] == "system":
-        return content
-
     exit_status = content.get("info", {}).get("exit_status", None)
-
     if exit_status is None:
         return content
 
     if exit_status.startswith("submitted"):
         if "submission" in content["info"]:
-            submission = content["info"]["submission"]
-            content["history"].append(
+            content["trajectory"].append(
                 {
-                    "role": "model_patch",
-                    "content": submission,
-                },
+                    "thought": "Submitting solution",
+                    "action": "Model Submission",
+                    "response": "Submitting solution",
+                    "observation": content["info"]["submission"],
+                    "messages": [{"role": "system", "content": f"Submission generated - {exit_status}"}],
+                }
             )
-        # else submission should be in history already
         else:
             msg = "No submission in history or info"
             raise ValueError(msg)
-    # elif content.get("info", {}).get("exit_status", None) is not None:
-    #     content["history"].append({
-    #         "role": "system",
-    #         "content": f"Exited - {content['info']['exit_status']}",
-    #     })
     return content
 
 
 def append_patch(instance_id, content, patches, patch_type):
     if content.get("info", {}).get("exit_status", None) is not None:
         if instance_id in patches:
-            content["history"].append(
+            content["trajectory"].append(
                 {
-                    "role": f"{patch_type} Patch",
-                    "content": patches[instance_id],
-                },
+                    "thought": f"Showing {patch_type} patch",
+                    "response": f"Showing {patch_type} patch",
+                    "action": f"{patch_type} Patch",
+                    "observation": patches[instance_id],
+                }
             )
     return content
 
 
-def append_results(traj_path: Path, instance_id: str, content, results, results_file, scorecards, scorecards_file):
+def append_results(traj_path: Path, instance_id: str, content, results, results_file):
     stats: list[str] = []
     model_stats = {}
     if traj_path.exists():
         data = json.loads(traj_path.read_text())
         info = data.get("info", {})
         model_stats = info.get("model_stats", {})
+
+    # Build stats section
     exit_status = info.get("exit_status", "N/A")
     instance_cost = model_stats.get("instance_cost", None)
     instance_cost = f"{instance_cost:.2f}" if instance_cost is not None else "N/A"
@@ -71,12 +66,15 @@ def append_results(traj_path: Path, instance_id: str, content, results, results_
     tokens_received = f"{tokens_received:,}" if tokens_received is not None else "N/A"
     api_calls = model_stats.get("api_calls", None)
     api_calls = f"{api_calls:,}" if api_calls is not None else "N/A"
+
     stats.append("**** Run Stats ****")
     stats.append(f"Exit Status: {exit_status}")
     stats.append(f"Instance Cost: ${instance_cost}")
     stats.append(f"Tokens Sent: {tokens_sent}")
     stats.append(f"Tokens Received: {tokens_received}")
     stats.append(f"API Calls: {api_calls}\n")
+
+    # Build status section
     status = []
     if results is None:
         status.append("Evaluation results not found")
@@ -86,55 +84,39 @@ def append_results(traj_path: Path, instance_id: str, content, results, results_
         is_resolved = instance_id in results["resolved_ids"]
 
         status.append("**** Statuses ****")
-        status.append(
-            f"  {'✅' if is_completed else '❌'} Completed (The agent successfully ran)",
-        )
-        status.append(
-            f"  {'✅' if is_submitted else '❌'} Submitted (The agent successfully submitted a pull request)",
-        )
+        status.append(f"  {'✅' if is_completed else '❌'} Completed (The agent successfully ran)")
+        status.append(f"  {'✅' if is_submitted else '❌'} Submitted (The agent successfully submitted a pull request)")
         status.append(
             f"  {'✅' if is_resolved else '❌'} Resolved (The pull request {'' if is_resolved else 'has not '}"
-            "successfully resolved the issue during eval)",
+            "successfully resolved the issue during eval)"
         )
     else:
         status.append("Results format not recognized")
-
-    if scorecards is not None:
-        scorecard = [x for x in scorecards if x["instance_id"] == instance_id][0]
-        if (
-            "test_results" in scorecard
-            and "failure" in scorecard["test_results"]
-            and (
-                len(scorecard["test_results"]["failure"]["FAIL_TO_PASS"]) > 0
-                or len(scorecard["test_results"]["failure"]["PASS_TO_PASS"]) > 0
-            )
-        ):
-            tests_failing = [f"  - {x}" for x in scorecard["test_results"]["failure"]["FAIL_TO_PASS"]] + [
-                f"  - {x}" for x in scorecard["test_results"]["failure"]["PASS_TO_PASS"]
-            ]
-            status.extend(["", "**** Test Results ****", "🧪 Tests Failed"] + tests_failing[:7])
-            if len(tests_failing) > 7:
-                status.append(f"  ... and {len(tests_failing) - 7} more")
-            status.append("")
 
     if status == []:
         status.append("Instance not found in results")
     else:
         status.append("---------------------------")
         status.append(
-            "Note that the evaluation results here may not be accurate or up to date, since they are computed separately from the agent run itself.",
+            "Note that the evaluation results here may not be accurate or up to date, since they are computed separately from the agent run itself."
         )
         status.append(f"Check {results_file} for the most accurate evaluation results.")
         status.append("")
         status.append(f"Instance ID: {instance_id}")
-        # status.append("Based on results:")
-        # status.append(json.dumps(results, indent=4))
+
+    # Add evaluation report as first and last items in trajectory
     eval_report = {
-        "role": "Evaluation Report",
-        "content": "\n".join([*stats, *status]),
+        "thought": "Evaluation Report",
+        "action": "Showing evaluation results",
+        "response": "Showing evaluation results",
+        "observation": "\n".join([*stats, *status]),
+        "messages": [{"role": "system", "content": "Showing evaluation results and statistics"}],
     }
-    content["history"].insert(0, eval_report)
-    content["history"].append(eval_report)
+
+    if not content.get("trajectory"):
+        content["trajectory"] = []
+    content["trajectory"].insert(0, eval_report)
+    content["trajectory"].append(eval_report)
     return content
 
 
@@ -144,13 +126,7 @@ def load_content(file_name, gold_patches, test_patches) -> dict[str, Any]:
     results_file = Path(file_name).parent / "results.json"
     results = load_results(results_file)
 
-    scorecards_file = Path(file_name).parent / "scorecards.json"
-    scorecards = None
-    if scorecards_file.exists():
-        with open(scorecards_file) as infile:
-            scorecards = json.load(infile)
-
-    content = append_exit(content)  # accommodate new and old format
+    content = append_exit(content)
     content = append_patch(Path(file_name).stem, content, gold_patches, "Gold")
     content = append_patch(Path(file_name).stem, content, test_patches, "Test")
     return append_results(
@@ -159,8 +135,6 @@ def load_content(file_name, gold_patches, test_patches) -> dict[str, Any]:
         content,
         results,
         results_file,
-        scorecards,
-        scorecards_file,
     )
 
 
@@ -323,6 +297,8 @@ def get_parser():
 def run_from_cli(args: list[str] | None = None):
     # Hack to make sure all the templates and all are found
     parsed_args = get_parser().parse_args(args)
+    # convert directory, relative to the absolute path
+    parsed_args.directory = str(Path(parsed_args.directory).resolve().absolute())
     os.chdir(Path(__file__).parent)
     main(**vars(parsed_args))
 

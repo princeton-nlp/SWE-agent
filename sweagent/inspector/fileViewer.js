@@ -1,20 +1,17 @@
-let currentFileName = null; // Store the current file name
-let trajectoryDirectory = ""; // Global variable to store the directory
-let timeoutIds = []; // Store timeout IDs for pending operations
+let currentFileName = null;
+let trajectoryDirectory = "";
+let timeoutIds = [];
 
 function getBaseUrl() {
   const protocol = window.location.protocol;
   const host = window.location.hostname;
   const port = window.location.port;
-
-  // Use the default port if the port number is empty (for standard HTTP/HTTPS)
   const defaultPort =
     protocol === "http:" && !port
       ? "80"
       : protocol === "https:" && !port
         ? "443"
         : port;
-
   return `${protocol}//${host}:${defaultPort}`;
 }
 
@@ -34,26 +31,96 @@ function fetchFiles() {
     });
 }
 
-// translate item.role to what we show the user
-const roleMap = {
-  user: "Environment",
-  assistant: "SWE-Agent",
-  subroutine: "SWE-Agent subroutine",
-  default: "Default",
-  system: "System",
-  demo: "Demonstration",
-  model_patch: "Model Patch",
-};
+function createTrajectoryItem(item, index) {
+  const elementId = `trajectoryItem${index}`;
+  const hasMessages = item.messages && item.messages.length > 0;
 
-function getRoleText(role) {
-  return roleMap[role] || role;
+  const escapeHtml = (text) => {
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
+
+  const messagesContent = hasMessages
+    ? item.messages
+        .map((msg, msgIndex) => {
+          let content = `----Item ${msgIndex}-----\n`;
+          content += `role: ${msg.role}\n`;
+          content += `content: |\n${escapeHtml(msg.content)}\n`;
+
+          if (msg.tool_calls && msg.tool_calls.length > 0) {
+            msg.tool_calls.forEach((tool, idx) => {
+              content += `- tool call ${idx + 1}:\n`;
+              if (tool.function) {
+                content += `    - name: ${tool.function.name}\n`;
+                // Handle arguments based on type
+                let args = tool.function.arguments;
+                try {
+                  if (typeof args === "string") {
+                    args = JSON.parse(args);
+                  }
+                  content += `    - arguments: ${JSON.stringify(args, null, 2).replace(/\n/g, "\n    ")}\n`;
+                } catch (e) {
+                  content += `    - arguments: ${escapeHtml(String(args))}\n`;
+                }
+              }
+              content += `    - id: ${tool.id}\n`;
+            });
+          }
+
+          if (msg.is_demo) {
+            return `<span class="demo-message">${content}</span>`;
+          }
+          return content;
+        })
+        .join("\n")
+    : "";
+
+  return `
+        <div class="trajectory-item fade-in" id="${elementId}">
+            <div class="trajectory-main">
+                <div class="response-section" data-title="Response">
+                    <div class="content-wrapper">
+                        <pre><code class="language-python">Response:
+${escapeHtml(item.response)}
+
+Action:
+${escapeHtml(item.action)}</code></pre>
+                    </div>
+                </div>
+                <div class="observation-section" data-title="Environment Observation">
+                    <div class="content-wrapper">
+                        <pre><code class="language-python">${escapeHtml(item.observation)}</code></pre>
+                    </div>
+                </div>
+                ${
+                  item.execution_time
+                    ? `<div class="execution-time">Execution time: ${item.execution_time}s</div>`
+                    : ""
+                }
+            </div>
+            ${
+              hasMessages
+                ? `
+                <div class="messages-section" data-title="Messages">
+                    <div class="content-wrapper">
+                        <pre>${messagesContent}</pre>
+                    </div>
+                </div>
+            `
+                : ""
+            }
+        </div>
+    `;
 }
 
 function viewFile(fileName) {
-  currentFileName = fileName; // Store the current file name
-  // Clear any pending message loading from previous files
+  currentFileName = fileName;
   timeoutIds.forEach((timeoutId) => clearTimeout(timeoutId));
-  timeoutIds = []; // Reset the list of timeout IDs
+  timeoutIds = [];
 
   const baseUrl = getBaseUrl();
   const showDemos = document.getElementById("showDemos").checked;
@@ -67,67 +134,20 @@ function viewFile(fileName) {
     })
     .then((content) => {
       const container = document.getElementById("fileContent");
-      container.innerHTML = ""; // Clear existing content
+      container.innerHTML = "";
 
-      if (content.history && Array.isArray(content.history)) {
-        let delay = 200; // Initial delay
-        const delayIncrement = 50; // Delay between each message, in milliseconds
+      if (content.trajectory && Array.isArray(content.trajectory)) {
+        content.trajectory.forEach((item, index) => {
+          container.innerHTML += createTrajectoryItem(item, index);
 
-        // Step through the history and add each message to the container
-        content.history.forEach((item, index) => {
-          const timeoutId = setTimeout(() => {
-            let contentText = item.content
-              ? item.content.replace(/</g, "&lt;").replace(/>/g, "&gt;")
-              : "";
-            if (item.tool_calls && item.tool_calls.length > 0) {
-              contentText = `${item.thought}\n\`\`\`\n${item.action}\n\`\`\``;
-            }
-            // Skip demo items if checkbox is unchecked
-            let roleClass =
-              item.agent && item.agent !== "primary"
-                ? "subroutine"
-                : item.role
-                  ? item.role.toLowerCase().replaceAll(" ", "-")
-                  : "default";
-            const elementId = "historyItem" + index;
-            const historyItem = document.createElement("div");
-            historyItem.className = `history-item ${roleClass} fade-in`;
-            historyItem.id = elementId;
-            let isDemo = false;
-            if (contentText.includes("--- DEMONSTRATION ---")) {
-              item.role = "demo";
-              isDemo = true;
-            } else if ("is_demo" in item && item.is_demo === true) {
-              item.role += "[demo]";
-              isDemo = true;
-            }
-            if (!showDemos && isDemo) {
-              return;
-            }
-            historyItem.innerHTML = `
-                            <div class="role-bar ${roleClass}">
-                                <strong>
-                                    <span>${getRoleText(item.role)}</span>
-                                </strong>
-                            </div>
-                            <div class="content-container">
-                                <pre><code class="language-python">${contentText}</code></pre>
-                            </div>
-                            <div class="shadow"></div>
-                        `;
-            container.appendChild(historyItem);
-
-            // Highlight the code after adding it to the DOM
-            historyItem.querySelectorAll("pre code").forEach((block) => {
-              hljs.highlightElement(block);
-            });
-          }, delay);
-
-          delay += delayIncrement; // Increment delay for the next message
-          timeoutIds.push(timeoutId); // Store the timeout ID
+          // Highlight code blocks after adding them
+          const newItem = document.getElementById(`trajectoryItem${index}`);
+          newItem.querySelectorAll("pre code").forEach((block) => {
+            hljs.highlightElement(block);
+          });
         });
       } else {
-        container.textContent = "No history content found.";
+        container.textContent = "No trajectory content found.";
       }
     })
     .catch((error) => {
@@ -136,7 +156,7 @@ function viewFile(fileName) {
         "Error loading content. " + error;
     });
 
-  // Highlight the selected file in the list
+  // Highlight selected file
   document.querySelectorAll("#fileList li").forEach((li) => {
     li.classList.remove("selected");
     if (li.textContent.split(" ")[0] === fileName) {
@@ -149,8 +169,7 @@ function refreshCurrentFile() {
   if (currentFileName) {
     const currentScrollPosition =
       document.documentElement.scrollTop || document.body.scrollTop;
-    viewFile(currentFileName.split(" ")[0]); // Reload the current file
-    // Restore the scroll position after the content is loaded
+    viewFile(currentFileName.split(" ")[0]);
     setTimeout(() => {
       window.scrollTo(0, currentScrollPosition);
     }, 100);
@@ -163,7 +182,7 @@ function fetchDirectoryInfo() {
     .then((response) => response.json())
     .then((data) => {
       if (data.directory) {
-        trajectoryDirectory = data.directory; // Store the directory
+        trajectoryDirectory = data.directory;
         document.title = `Trajectory Viewer: ${data.directory}`;
         document.querySelector("h1").textContent =
           `Trajectory Viewer: ${data.directory}`;
