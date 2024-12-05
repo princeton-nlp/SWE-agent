@@ -246,7 +246,7 @@ def test_function_calling(dummy_env: SWEEnv, function_calling_agent: Agent, tmp_
     }
     a.model = PredeterminedTestModel([valid_response])  # type: ignore
     a.setup(dummy_env, EmptyProblemStatement())
-    dummy_env.deployment.runtime.run_in_session_outputs = [
+    dummy_env.deployment.runtime.run_in_session_outputs = [  # type: ignore
         BashObservation(output="file1 file2"),
         BashObservation(output="file1 file2"),  # TODO, there's actually a bug in swe-rex, requiring two observations
     ]  # type: ignore

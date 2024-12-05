@@ -125,8 +125,8 @@ def append_results(traj_path: Path, instance_id: str, content, results, results_
         status.append(f"Check {results_file} for the most accurate evaluation results.")
         status.append("")
         status.append(f"Instance ID: {instance_id}")
-        status.append("Based on results:")
-        status.append(json.dumps(results, indent=4))
+        # status.append("Based on results:")
+        # status.append(json.dumps(results, indent=4))
     eval_report = {
         "role": "Evaluation Report",
         "content": "\n".join([*stats, *status]),
