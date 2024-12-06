@@ -39,7 +39,7 @@ class ModelArguments(FrozenSerializable):
     # Total cost limit
     total_cost_limit: float = 0.0
     # Sampling temperature
-    temperature: float = 1.0
+    temperature: float = 0.0
     # Sampling top-p
     top_p: float = 1.0
     # Path to replay file when using the replay model
