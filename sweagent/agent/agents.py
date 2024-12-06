@@ -860,6 +860,7 @@ class Agent:
             env: The environment to run the agent on.
             traj_dir: Directory to save the trajectory to
         """
+        output_dir.mkdir(parents=True, exist_ok=True)
         self.setup(env=env, problem_statement=problem_statement, output_dir=output_dir)
 
         # Run action/observation loop

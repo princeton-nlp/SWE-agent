@@ -312,7 +312,7 @@ class RunBatch:
             result = agent.run(
                 problem_statement=instance.problem_statement,
                 env=env,
-                output_dir=Path(self.output_dir),
+                output_dir=Path(self.output_dir) / instance.problem_statement.id,
             )
         except Exception:
             # The actual handling is happening in `run_instance`, but we need to make sure that
