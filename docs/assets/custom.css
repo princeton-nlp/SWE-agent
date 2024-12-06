@@ -1,7 +1,9 @@
-@media (prefers-color-scheme: light) {
-  body {
-    background-color: #fff7ec !important;
-  }
+[data-md-color-scheme="default"] {
+  --md-default-bg-color: #fff7ec;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-default-fg-color: #fff7ec;
 }
 
 .clickable-banner {
