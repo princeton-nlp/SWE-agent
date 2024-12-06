@@ -206,12 +206,15 @@ class Agent:
     # ----------
 
     @property
-    def replay_config(self) -> dict | None:
+    def replay_config(self) -> BaseModel | None:
         return self._replay_config
 
     @replay_config.setter
-    def replay_config(self, value: BaseModel | None):
-        self._replay_config = _strip_abspath_from_dict(value.model_dump(mode="json")) if value else None
+    def replay_config(self, value: BaseModel):
+        # Do import here to avoid circular dependency
+        from sweagent.run.run_single import RunSingleConfig
+
+        self._replay_config = RunSingleConfig.model_validate(_strip_abspath_from_dict(value.model_dump()))
 
     @property
     def history(self) -> History:
@@ -474,7 +477,9 @@ class Agent:
                     "info": self._info_by_attempt[attempt_idx],
                 }
             )
-            attempt_data["replay_config"] = self.replay_config
+            attempt_data["replay_config"] = (
+                self.replay_config.model_dump_json() if self.replay_config is not None else None
+            )
             attempt_data["environment"] = self._env.name
             return attempt_data
 
