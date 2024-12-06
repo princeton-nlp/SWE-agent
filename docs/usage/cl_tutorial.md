@@ -253,10 +253,6 @@ This time, `pip install -e .` is called before SWE-agent gets to work, installin
 
 REMOVED OUTDATED
 
-## Speeding up SWE-agent <a name="speedup"></a>
-
-Do we have anything to mention here? (mostly removed outdated stuff)
-
 ## Taking actions
 
 * As mentioned [above](#specifying-the-repository), you can use `--apply_patch_locally` to have SWE-agent apply successful solution attempts to local files.
