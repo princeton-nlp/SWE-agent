@@ -90,16 +90,22 @@ nav:
     - "Environment utils": "reference/env_utils.md"
   - "FAQ": "faq.md"
 plugins:
-   - glightbox
-   - search
-   - include-markdown
-   - mkdocstrings:
+  - glightbox
+  - search
+  - include-markdown
+  - mkdocstrings:
       default_handler: python
       handlers:
         python:
           paths: [sweagent]
+  - mike:
+      canonical_version: latest
+      version_selector: true
 repo_url: https://github.com/princeton-nlp/SWE-agent
 repo_name: princeton-nlp/SWE-agent
 edit_uri: edit/main/docs/
 extra_css:
   - assets/custom.css
+extra:
+  version:
+    provider: mike

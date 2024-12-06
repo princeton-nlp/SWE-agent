@@ -40,4 +40,4 @@ jobs:
         run: mkdocs build
       - name: Build + Deploy Documentation
         if: github.ref == 'refs/heads/main'
-        run: mkdocs gh-deploy --force
+        run: mike deploy --push 0.7 latest
