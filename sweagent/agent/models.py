@@ -64,7 +64,7 @@ class GenericAPIModelConfig(PydanticBaseModel):
         description="Cost limit for every instance (task).",
     )
     total_cost_limit: float = Field(default=0.0, description="Total cost limit.")
-    temperature: float = 1.0
+    temperature: float = 0.0
     """Sampling temperature"""
     top_p: float | None = 1.0
     """Sampling top-p"""
