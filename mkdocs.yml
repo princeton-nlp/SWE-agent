@@ -51,32 +51,34 @@ markdown_extensions:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 nav:
-  - Home: index.md
   - Getting Started:
+    - index.md
     - "Installation": "installation/index.md"
+    - "Tutorials":
+      - "Command line basics": "usage/cl_tutorial.md"
+      - "Solving coding challenges": "usage/coding_challenges.md"
     - "API keys": "installation/keys.md"
+    - "FAQ": "usage/usage_faq.md"
   - User Guide:
     - "usage/index.md"
-    - "Command line usage": "usage/cl_tutorial.md"
-    - "Solving coding challenges": "usage/coding_challenges.md"
     - "Trajectories": "usage/trajectories.md"
     - "Trajectory inspector": "usage/inspector.md"
     - "Benchmarking": "usage/benchmarking.md"
     - "Config files": "config/config.md"
     - "Demonstrations": "config/demonstrations.md"
-    - "FAQ": "usage/usage_faq.md"
-  - Development:
-    - "Contribution guide": "dev/contribute.md"
-    - "Formatting conflicts": "dev/formatting_conflicts.md"
-    - "FAQ": "faq.md"
-    - "Changelog": "dev/changelog.md"
+    - Development:
+      - "Architecture": "background/architecture.md"
+      - "Contribution guide": "dev/contribute.md"
+      - "Formatting conflicts": "dev/formatting_conflicts.md"
+      - "Changelog": "dev/changelog.md"
   - API Reference:
     - "reference/index.md"
-    - "Problem statements": "reference/problem_statements.md"
-    - "Repository": "reference/repo.md"
-    - "Model config": "reference/model_config.md"
-    - "Agent config": "reference/agent_config.md"
-    - "Environment config": "reference/env_config.md"
+    - Configuration objects:
+      - "Problem statements": "reference/problem_statements.md"
+      - "Repository": "reference/repo.md"
+      - "Model config": "reference/model_config.md"
+      - "Agent config": "reference/agent_config.md"
+      - "Environment config": "reference/env_config.md"
     - "Agent class": "reference/agent.md"
     - "Environment class": "reference/env.md"
     - "Exceptions": "reference/exceptions.md"
