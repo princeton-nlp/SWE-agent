@@ -11,7 +11,7 @@ import yaml
 from jinja2 import Template
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from simple_parsing.helpers.fields import field
-from swerex.exceptions import BashIncorrectSyntaxError, CommandTimeoutError, SweRexception
+from swerex.exceptions import BashIncorrectSyntaxError, CommandTimeoutError, SwerexException
 from tenacity import RetryError
 from typing_extensions import Self
 
@@ -774,7 +774,7 @@ class Agent:
                     "exit_api",
                     f"Exit due to retry error: {e}",
                 )
-            except SweRexception as e:
+            except SwerexException as e:
                 self.logger.exception(f"Exiting due to environment error: {e}", exc_info=True)
                 return handle_error_with_autosubmission(
                     "exit_environment_error",

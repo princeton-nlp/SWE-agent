@@ -1,6 +1,6 @@
 import pytest
 import yaml
-from swerex.exceptions import SweRexception
+from swerex.exceptions import SwerexException
 from swerex.runtime.abstract import Action, BashObservation, Observation
 from swerex.runtime.dummy import DummyRuntime
 
@@ -130,7 +130,7 @@ def test_exit_blocklist(dummy_env: SWEEnv, test_agent: Agent, tmp_path):
 class RuntimeRaisesFirst(DummyRuntime):
     async def run_in_session(self, action: Action) -> Observation:
         if action.action_type == "bash" and action.command == "raise":
-            raise SweRexception()
+            raise SwerexException()
         return await super().run_in_session(action)
 
 
