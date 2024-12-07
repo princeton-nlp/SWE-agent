@@ -1,0 +1,37 @@
+[data-md-color-scheme="default"] {
+  --md-default-bg-color: #fff7ec;
+  --md-primary-fg-color: #000000;
+  --md-typeset-a-color: #0099ff;
+  --md-code-bg-color: #e7e7e7;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #000000;
+  --md-default-fg-color: #fff7ec;
+  --md-default-bg-color: #111111;
+}
+
+.clickable-banner {
+  color: #000000;
+}
+
+.md-main__inner.md-grid,
+.md-grid {
+  max-width: 64rem;
+}
+
+@media screen and (min-width: 1220px) {
+  .md-main__inner.md-grid,
+  .md-grid {
+    max-width: 64rem;
+  }
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3 {
+  font-weight: 400;
+  color: var(
+    --md-primary-fg-color-dark
+  ); /* this actually works for both light and dark themes */
+}
