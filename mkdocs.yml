@@ -96,6 +96,8 @@ nav:
     - Agent config:
       - "Agent config": "reference/agent_config.md"
       - "Model config": "reference/model_config.md"
+      - "Templates": "reference/template_config.md"
+      - "History processors": "reference/history_processor_config.md"
     - "Environment config": "reference/env_config.md"
     - Classes:
       - "Agent class": "reference/agent.md"

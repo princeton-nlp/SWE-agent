@@ -14,7 +14,7 @@ One of three templates can be shown per turn:
   * If the model's next two responses are both malformed, the episode terminates.
 
 !!! tip "All options"
-    See the [template reference](../reference/agent_config.md#sweagent.agent.agents.TemplateConfig) for all options.
+    See the [template reference](../reference/template_config.md) for all options.
 
 {% include-markdown "../_footer.md" %}
 
