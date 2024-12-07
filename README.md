@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://princeton-nlp.github.io/SWE-agent/"><strong>Documentation</strong></a>&nbsp; | &nbsp;
+  <a href="https://swe-agent.com"><strong>Documentation</strong></a>&nbsp; | &nbsp;
   <a href="https://discord.gg/AVEFbBn2rH"><strong>Discord</strong></a>&nbsp; | &nbsp;
   <a href="https://arxiv.org/abs/2405.15793"><strong>Paper</strong></a>&nbsp; | &nbsp;
   <a href="https://arxiv.org/abs/2409.16165"><strong>EnIGMA preprint</strong></a>
@@ -33,15 +33,15 @@ SWE-agent is built and maintained by researchers from Princeton University.
 
 ## 🚀 Get started!
 
-👉 Try SWE-agent in your browser: [![Open in GitHub Codespaces](https://img.shields.io/badge/Open_in_GitHub_Codespaces-gray?logo=github)](https://codespaces.new/princeton-nlp/SWE-agent) ([more information](https://princeton-nlp.github.io/SWE-agent/installation/codespaces/))
+👉 Try SWE-agent in your browser: [![Open in GitHub Codespaces](https://img.shields.io/badge/Open_in_GitHub_Codespaces-gray?logo=github)](https://codespaces.new/princeton-nlp/SWE-agent) ([more information](https://swe-agent.com/latest/installation/codespaces/))
 
 Read our [documentation][docs] to learn more:
 
-* [Installation](https://princeton-nlp.github.io/SWE-agent/installation/)
-* [Command line usage](https://princeton-nlp.github.io/SWE-agent/usage/cl_tutorial/)
-* [Using the web UI](https://princeton-nlp.github.io/SWE-agent/usage/web_ui/)
-* [Benchmarking on SWE-bench](https://princeton-nlp.github.io/SWE-agent/usage/benchmarking/)
-* [Frequently Asked Questions](https://princeton-nlp.github.io/SWE-agent/faq/)
+* [Installation](https://swe-agent.com/latest/installation/)
+* [Command line usage](https://swe-agent.com/latest/usage/cl_tutorial/)
+* [Using the web UI](https://swe-agent.com/latest/usage/web_ui/)
+* [Benchmarking on SWE-bench](https://swe-agent.com/latest/usage/benchmarking/)
+* [Frequently Asked Questions](https://swe-agent.com/latest/faq/)
 
 Our most recent lecture touches on the project's motivation,
 showcases our research findings and provides a hands-on tutorial on how to install,
@@ -51,14 +51,14 @@ use, and configure SWE-agent:
 <a href="https://youtu.be/d9gcXpiiDao"><img src="assets/wb_stream_youtube.png" style="width: 600px"/></a>
 </div>
 
-[docs]: https://princeton-nlp.github.io/SWE-agent/
+[docs]: https://swe-agent.com
 
 ## 🕵️ SWE-agent for offensive cybersecurity (EnIGMA) <a name="enigma"></a>
 <img src="https://github.com/user-attachments/assets/5128cc06-7a28-4a37-b950-e4e58bc00823" height="80px"></img>
 
 [SWE-agent: EnIGMA][enigma] is a mode for solving offensive cybersecurity (capture the flag) challenges.
 EnIGMA achieves state-of-the-art results on multiple cybersecurity benchmarks (see [leaderboard](https://enigma-agent.com/#results)).
-The EnIGMA project introduced multiple features that are available in all modes of SWE-agent, such as the [debugger and server connection tools](https://princeton-nlp.github.io/SWE-agent/background/iat/) and a [summarizer](https://princeton-nlp.github.io/SWE-agent/config/summarizers/) to handle long outputs.
+The EnIGMA project introduced multiple features that are available in all modes of SWE-agent, such as the [debugger and server connection tools](https://swe-agent.com/0.7/background/iat/) and a [summarizer](https://swe-agent.com/0.7/config/summarizers/) to handle long outputs.
 
 <img src="https://github.com/user-attachments/assets/a3bdcc06-9193-4368-b612-c7cf94a9482c" height="200px"></img>
 
