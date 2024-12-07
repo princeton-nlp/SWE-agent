@@ -23,16 +23,13 @@ Installation from source is the preferred way to set up SWE-agent on your machin
 
 [nodejs-install]: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
 
-!!! tip "Docker issues"
-    If you run into docker issues, see the [installation tips section](tips.md) for more help.
-
-!!! tip "Updating"
-    SWE-agent is still in active development. Features and enhancement are added often.
+!!! tip "Installation tips"
+    * If you run into docker issues, see the [installation tips section](tips.md) for more help.
+    * SWE-agent is still in active development. Features and enhancement are added often.
     To make sure you are on the latest version, periodically run `git pull`
     (there is no need to redo the `pip install`).
-
-!!! note "Development setup"
-    Want to modify SWE-agent? Great! There are a few extra steps and tips:
+    * SWE-agent EnIGMA is currently only compatible with `v0.7` of SWE-agent. Please run `git switch v0.7` after step 1 to switch to the correct version.
+    * Want to modify SWE-agent? Great! There are a few extra steps and tips:
     Please check our [contribution guide](../dev/contribute.md).
 
 [conda]: https://docs.conda.io/en/latest/
