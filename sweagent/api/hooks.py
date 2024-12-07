@@ -6,13 +6,13 @@ import sys
 from flask_socketio import SocketIO
 
 from sweagent import PACKAGE_DIR
-from sweagent.agent.agents import AgentHook
+from sweagent.agent.hooks.abstract import AbstractAgentHook
 from sweagent.api.utils import strip_ansi_sequences
-from sweagent.environment.swe_env import EnvHook
+from sweagent.environment.hooks.abstract import EnvHook
 
 # baaaaaaad
 sys.path.append(str(PACKAGE_DIR.parent))
-from run import MainHook
+from sweagent.run.hooks.abstract import RunHook
 
 
 class StreamToSocketIO(io.StringIO):
@@ -95,7 +95,7 @@ class WebUpdate:
         self._emit("finish_run", {})
 
 
-class MainUpdateHook(MainHook):
+class MainUpdateHook(RunHook):
     def __init__(self, wu: WebUpdate):
         """This hooks into the Main class to update the web interface"""
         self._wu = wu
@@ -117,7 +117,7 @@ class MainUpdateHook(MainHook):
             self._wu.up_agent(msg, type_="success")
 
 
-class AgentUpdateHook(AgentHook):
+class AgentUpdateHook(AbstractAgentHook):
     def __init__(self, wu: WebUpdate):
         """This hooks into the Agent class to update the web interface"""
         self._wu = wu

@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+
+import argparse
+
+from windowed_file import FileNotOpened, WindowedFile  # type: ignore
+from flake8_utils import flake8, format_flake8_output  # type: ignore
+
+_LINT_ERROR_TEMPLATE = """
+Your proposed edit has introduced new syntax error(s). Please read this error message carefully and then retry editing the file.
+
+ERRORS:
+
+{errors}
+This is how your edit would have looked if applied
+------------------------------------------------
+{window_applied}
+------------------------------------------------
+
+This is the original code before your edit
+------------------------------------------------
+{window_original}
+------------------------------------------------
+
+Your changes have NOT been applied. Please fix your edit command and try again.
+DO NOT re-run the same failed edit command. Running it again will lead to the same error.
+"""
+
+_SUCCESS_MSG = "Edit successful."
+
+
+def get_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("replace", type=str)
+    return parser
+
+
+def main(replace: str):
+    try:
+        wf = WindowedFile(exit_on_exception=False)
+    except FileNotOpened:
+        print("No file opened. Either `open` a file first.")
+        exit(1)
+
+    pre_edit_lint = flake8(wf.path)
+
+    start_line, end_line = wf.line_range
+    replace_lines = len(replace.split("\n"))
+
+    wf.set_window_text(replace)
+    post_edit_lint = flake8(wf.path)
+
+    replacement_window = (
+        start_line,
+        end_line,
+    )
+    new_flake8_output = format_flake8_output(
+        post_edit_lint,
+        previous_errors_string=pre_edit_lint,
+        replacement_window=replacement_window,
+        replacement_n_lines=replace_lines,
+    )
+
+    if new_flake8_output:
+        with_edits = wf.get_window_text(line_numbers=True, status_line=True, pre_post_line=True)
+        wf.undo_edit()
+        without_edits = wf.get_window_text(line_numbers=True, status_line=True, pre_post_line=True)
+        print(
+            _LINT_ERROR_TEMPLATE.format(
+                errors=new_flake8_output, window_applied=with_edits, window_original=without_edits
+            )
+        )
+        exit(4)
+
+    print(_SUCCESS_MSG)
+
+
+if __name__ == "__main__":
+    main(**vars(get_parser().parse_args()))

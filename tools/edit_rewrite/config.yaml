@@ -1,0 +1,11 @@
+tools:
+  edit:
+    signature: |
+      edit <text>
+    docstring: >
+      Replace the currently displayed lines with <text>.
+    arguments:
+      - name: text
+        type: string
+        description: "the text to replace the currently displayed lines with"
+        required: true

@@ -1,8 +1,10 @@
 # Agent Computer Interface (ACI)
 
-We accomplish our results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, view, edit and execute code files. We call this an **Agent-Computer Interface** (ACI) and build the SWE-agent repository to make it easy to iterate on ACI design for repository-level coding agents.
+SWE-agent is built on the idea of an **Agent-Computer Interface** (ACI).
+An ACI is essentially an a set of tools and interaction format that allows an agent to interact with a computer-based environment, to perform tasks, such as software engineering.
+The SWE-agent repository is built to make it easy to invent new ACIs for agents to solve various tasks.
 
-Just like how typical language models requires good prompt engineering, **good ACI design leads to much better results when using agents**. As we show in our [paper](https://arxiv.org/abs/2405.15793), a baseline agent without a well-tuned ACI does much worse than SWE-agent.
+Just like how typical language models requires good prompt engineering, **good ACI design leads to much better results when using agents**. As we show in the SWE-agent [paper](https://arxiv.org/abs/2405.15793), a baseline agent without a well-tuned ACI does much worse than SWE-agent.
 
 SWE-agent contains features that we discovered to be immensely helpful during the agent-computer interface design process:
 
@@ -12,4 +14,3 @@ SWE-agent contains features that we discovered to be immensely helpful during th
 4. When commands have an empty output we return a message saying "Your command ran successfully and did not produce any output."
 
 Read our paper for more details [here](https://arxiv.org/abs/2405.15793).
-A recent extension of our ACI are [Interactive Agent Tools](iat.md).

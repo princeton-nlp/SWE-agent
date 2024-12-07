@@ -9,10 +9,10 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
+from swerex.deployment.config import DockerDeploymentConfig, DummyDeploymentConfig
 
-import docker
-import docker.errors
-from sweagent.environment.swe_env import EnvironmentArguments, SWEEnv
+from sweagent.environment.repo import LocalRepoConfig
+from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
 
 # this is a hack and should be removed when we have a better solution
 _this_dir = Path(__file__).resolve().parent
@@ -76,32 +76,33 @@ def test_trajectory(test_trajectory_path):
 @pytest.fixture(scope="module")
 def test_env_args(
     tmpdir_factory,
-) -> Generator[EnvironmentArguments]:
+) -> Generator[EnvironmentConfig]:
     """This will use a persistent container"""
     local_repo_path = tmpdir_factory.getbasetemp() / "test-repo"
     clone_cmd = ["git", "clone", "https://github.com/swe-agent/test-repo", str(local_repo_path)]
     subprocess.run(clone_cmd, check=True)
-    data_path = local_repo_path / "problem_statements" / "1.md"
-    test_env_args = EnvironmentArguments(
-        data_path=str(data_path),
-        repo_path=str(local_repo_path),
-        image_name="sweagent/swe-agent:latest",
-        container_name="test-container-this-is-a-random-string",
-        verbose=True,
+    test_env_args = EnvironmentConfig(
+        deployment=DockerDeploymentConfig(image="python:3.11"),
+        repo=LocalRepoConfig(path=Path(local_repo_path)),
     )
     yield test_env_args
-    # Cleanup (after session ends)
-    client = docker.from_env()
-    # fixme (?): What happens if user changed container_name?
-    try:
-        assert test_env_args.container_name is not None  # mypy
-        container = client.containers.get(test_env_args.container_name)
-        container.remove(force=True)
-    except docker.errors.NotFound:
-        # Can happen if this fixture never runs because we only do a partial
-        # test run
-        pass
     shutil.rmtree(local_repo_path)
+
+
+@pytest.fixture
+def dummy_env_args() -> EnvironmentConfig:
+    return EnvironmentConfig(
+        deployment=DummyDeploymentConfig(),
+        repo=None,
+    )
+
+
+@pytest.fixture
+def dummy_env(dummy_env_args) -> Generator[SWEEnv, None, None]:
+    env = SWEEnv.from_config(dummy_env_args)
+    env.start()
+    yield env
+    env.close()
 
 
 @contextmanager
@@ -110,8 +111,28 @@ def swe_env_context(env_args):
     so that we can reuse it.
     """
 
-    env = SWEEnv(env_args)
+    env = SWEEnv.from_config(env_args)
+    env.start()
     try:
         yield env
     finally:
         env.close()
+
+
+@pytest.fixture
+def swe_agent_test_repo_clone(tmp_path):
+    local_repo_path = tmp_path / "test-repo"
+    clone_cmd = ["git", "clone", "https://github.com/swe-agent/test-repo", local_repo_path]
+    subprocess.run(clone_cmd, check=True)
+    return local_repo_path
+
+
+@pytest.fixture
+def swe_agent_test_repo_traj(test_trajectories_path) -> Path:
+    p = (
+        test_trajectories_path
+        / "gpt4__swe-agent-test-repo__default_from_url__t-0.00__p-0.95__c-3.00__install-1"
+        / "6e44b9__sweagenttestrepo-1c2844.traj"
+    )
+    assert p.is_file()
+    return p

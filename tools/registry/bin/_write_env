@@ -1,0 +1,10 @@
+#!/usr/bin/env python
+
+import sys
+
+from registry import registry  # type: ignore
+
+if __name__ == "__main__":
+    var_name = sys.argv[1]
+    var_value = sys.argv[2] if len(sys.argv) > 2 else ""
+    registry[var_name] = var_value

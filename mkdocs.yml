@@ -1,25 +1,25 @@
 site_name: SWE-agent documentation
 theme:
   name: material
-  custom_dir: docs/overrides
   icon:
     repo: fontawesome/brands/github
+    annotation: material/chevron-right-circle
   logo: assets/swe-agent.svg
-  favicon: assets/swe-agent.svg
+  favicon: assets/favicon.ico
   palette:
     - media: "(prefers-color-scheme)"
       toggle:
         icon: material/brightness-auto
         name: Switch to light mode
     - scheme: default
-      primary: black
+      # primary: black  # override in custom.css
       accent: deep orange
       media: "(prefers-color-scheme: light)"
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
     - scheme: slate
-      primary: black
+      # primary: black  # override in custom.css
       accent: deep orange
       media: "(prefers-color-scheme: dark)"
       toggle:
@@ -34,9 +34,14 @@ theme:
     - content.footnote.tooltips
     - header.autohide
     - announce.dismiss
+    - content.code.annotate
+    - navigation.tabs
+    - navigation.tabs.sticky
 markdown_extensions:
   - admonition
   - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.superfences
   - pymdownx.magiclink
   - footnotes
@@ -48,47 +53,58 @@ markdown_extensions:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 nav:
-  - Home: index.md
-  - Project Overview:
-    - "background/index.md"
-    - "Agent-Computer Interface": "background/aci.md"
-    - "Interactive Agent Tools": "background/iat.md"
-    - "Architecture": "background/architecture.md"
-  - Installation:
-    - "installation/index.md"
-    - "Use in-browser": "installation/codespaces.md"
-    - "Install from source": "installation/source.md"
-    - "Run with docker": "installation/docker.md"
-    - "API keys": "installation/keys.md"
-    - "Installation tips": "installation/tips.md"
-    - "Changelog": "installation/changelog.md"
-  - Usage:
+  - Getting Started:
+    - index.md
+    - "Installation":
+      - "installation/index.md"
+      - "From source": "installation/source.md"
+      - "In browser": "installation/codespaces.md"
+      - "Models and keys": "installation/keys.md"
+      - "Troubleshooting": "installation/tips.md"
+    - "Tutorials":
+      - "Hello world": "usage/hello_world.md"
+      - "Command line basics": "usage/cl_tutorial.md"
+      - "Solving coding challenges": "usage/coding_challenges.md"
+      - "Trajectory inspector": "usage/inspector.md"
+      - "Batch mode": "usage/batch_mode.md"
+      - "Benchmarking": "usage/benchmarking.md"
+    - "FAQ": "faq.md"
+  - User Guides:
     - "usage/index.md"
-    - "Command line usage": "usage/cl_tutorial.md"
-    - "EnIGMA usage": "usage/enigma.md"
-    - "Solving coding challenges": "usage/coding_challenges.md"
-    - "Using the web UI": "usage/web_ui.md"
-    - "Trajectories": "usage/trajectories.md"
-    - "Trajectory inspector": "usage/inspector.md"
-    - "FAQ": "usage/usage_faq.md"
-    - "Benchmarking": "usage/benchmarking.md"
-  - Configuration:
-    - "Config files": "config/config.md"
-    - "Command definitions": "config/commands.md"
-    - "Demonstrations": "config/demonstrations.md"
-    - "Environment variables": "config/env.md"
-    - "Docker images": "config/docker.md"
-    - "Summarizers": "config/summarizers.md"
-  - Development:
-    - "Contribution guide": "dev/contribute.md"
-    - "Formatting conflicts": "dev/formatting_conflicts.md"
-  - Reference:
+    - Project overview:
+      - "index": "background/index.md"
+      - "Architecture": "background/architecture.md"
+      - "Agent tools": "background/aci.md"
+      # - "Interactive agent tools": "background/iat.md"
+    - "Output files": "usage/trajectories.md"
+    - Configuration:
+      - "index": "config/index.md"
+      - "Config files": "config/config.md"
+      - "Templates": "config/templates.md"
+      - "Demonstrations": "config/demonstrations.md"
+    - Development:
+      - "Contribution guide": "dev/contribute.md"
+      - "Formatting conflicts": "dev/formatting_conflicts.md"
+      - "Changelog": "dev/changelog.md"
+  - API Reference:
     - "reference/index.md"
-    - "Agent": "reference/agent.md"
-    - "Models": "reference/models.md"
-    - "Environment": "reference/env.md"
-    - "Environment utils": "reference/env_utils.md"
-  - "FAQ": "faq.md"
+    - Run config:
+      - "Run single": "reference/run_single_config.md"
+      - "Run batch": "reference/run_batch_config.md"
+    - Instance config:
+      - "Problem statements": "reference/problem_statements.md"
+      - "Repository": "reference/repo.md"
+      - "Batch instances": "reference/batch_instances.md"
+    - Agent config:
+      - "Agent config": "reference/agent_config.md"
+      - "Model config": "reference/model_config.md"
+      - "Templates": "reference/template_config.md"
+      - "History processors": "reference/history_processor_config.md"
+    - "Environment config": "reference/env_config.md"
+    - Classes:
+      - "Agent class": "reference/agent.md"
+      - "Environment class": "reference/env.md"
+      - "Exceptions": "reference/exceptions.md"
 plugins:
   - glightbox
   - search
@@ -98,14 +114,30 @@ plugins:
       handlers:
         python:
           paths: [sweagent]
-  - mike:
-      canonical_version: latest
-      version_selector: true
+          options:
+            merge_init_into_class: true
+            summary: false
+            show_root_heading: true
+            heading_level: 2
+            docstring_style: google
+            show_if_no_docstring: true
+            show_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            separate_signature: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            extensions:
+              - griffe_pydantic:
+                  schema: false
+            filters:
+              - "!^_"
+              - "!^model_config"
+              - "!^model_post_init"
 repo_url: https://github.com/princeton-nlp/SWE-agent
 repo_name: princeton-nlp/SWE-agent
 edit_uri: edit/main/docs/
 extra_css:
   - assets/custom.css
-extra:
-  version:
-    provider: mike
+  - assets/mkdocstrings.css
+  - assets/image_theme.css

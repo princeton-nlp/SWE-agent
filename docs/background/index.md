@@ -1,8 +1,6 @@
-# Learn more about the project.
+# Project overview
 
-This section of the documentation talks about the architecture and research goals of [SWE-agent](#swe-agent) and [EnIGMA](#enigma).
-
-Just want to run SWE-agent or EnIGMA? Skip ahead to our [installation notes](../installation/index.md).
+This section of the documentation talks about the architecture and research goals of [SWE-agent](#swe-agent).
 
 ## SWE-agent <a name="swe-agent"></a>
 
@@ -26,14 +24,19 @@ A longer lecture touching on the project's motivation, research findings, as wel
 For in-depth information, read our [paper](https://arxiv.org/abs/2405.15793). If you found this work helpful, please consider using the following citation:
 
 ```bibtex
-@misc{yang2024sweagent,
-      title={SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering},
-      author={John Yang and Carlos E. Jimenez and Alexander Wettig and Kilian Lieret and Shunyu Yao and Karthik Narasimhan and Ofir Press},
-      year={2024},
+@inproceedings{yang2024sweagent,
+  title={{SWE}-agent: Agent-Computer Interfaces Enable Automated Software Engineering},
+  author={John Yang and Carlos E Jimenez and Alexander Wettig and Kilian Lieret and Shunyu Yao and Karthik R Narasimhan and Ofir Press},
+  booktitle={The Thirty-eighth Annual Conference on Neural Information Processing Systems},
+  year={2024},
+  url={https://arxiv.org/abs/2405.15793}
 }
 ```
 
 ## SWE-agent <span class="enigma">EnIGMA</span> <a name="enigma"></a>
+
+!!! warning "Compatibility"
+    SWE-agent <span class="enigma">EnIGMA</span> is currently only available for SWE-agent v0.7.0.
 
 SWE-agent <span class="enigma">EnIGMA</span> adds advanced **offensive cybersecurity capabilities**.
 

@@ -1,0 +1,45 @@
+#!/root/miniconda3/bin/python
+
+import argparse
+import warnings
+
+# tree_sitter is throwing a FutureWarning
+warnings.simplefilter("ignore", category=FutureWarning)
+from tree_sitter_languages import get_language, get_parser
+
+parser = argparse.ArgumentParser(
+    description="Print the contents of a Python file, skipping lengthy function and method definitions."
+)
+parser.add_argument("file_path", type=str, help="The path to the file to be read")
+args = parser.parse_args()
+
+# We assume that all input files are Python.
+parser = get_parser("python")
+language = get_language("python")
+file_contents = open(args.file_path).read()
+
+# We assume that files are utf8 encoded.
+tree = parser.parse(bytes(file_contents, "utf8"))
+
+# See https://tree-sitter.github.io/tree-sitter/using-parsers#pattern-matching-with-queries.
+query = language.query("""
+(function_definition
+  body: (_) @body)
+""")
+
+# TODO: consider special casing docstrings such that they are not elided. This
+# could be accomplished by checking whether `body.text.decode('utf8')` starts
+# with `"""` or `'''`.
+elide_line_ranges = [
+    (node.start_point[0], node.end_point[0])
+    for node, _ in query.captures(tree.root_node)
+    # Only elide if it's sufficiently long
+    if node.end_point[0] - node.start_point[0] >= 5
+]
+# Note that tree-sitter line numbers are 0-indexed, but we display 1-indexed.
+elide_lines = {line for start, end in elide_line_ranges for line in range(start, end + 1)}
+elide_messages = [(start, f"... eliding lines {start+1}-{end+1} ...") for start, end in elide_line_ranges]
+for i, line in sorted(
+    elide_messages + [(i, line) for i, line in enumerate(file_contents.splitlines()) if i not in elide_lines]
+):
+    print(f"{i+1:6d} {line}")

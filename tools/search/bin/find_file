@@ -1,0 +1,31 @@
+main() {
+    if [ $# -eq 1 ]; then
+        local file_name="$1"
+        local dir="./"
+    elif [ $# -eq 2 ]; then
+        local file_name="$1"
+        if [ -d "$2" ]; then
+            local dir="$2"
+        else
+            echo "Directory $2 not found"
+            return
+        fi
+    else
+        echo "Usage: find_file <file_name> [<dir>]"
+        return
+    fi
+
+    dir=$(realpath "$dir")
+    local matches=$(find "$dir" -type f -name "$file_name")
+    # if no matches, return
+    if [ -z "$matches" ]; then
+        echo "No matches found for \"$file_name\" in $dir"
+        return
+    fi
+    # Calculate total number of matches
+    local num_matches=$(echo "$matches" | wc -l | awk '{$1=$1; print $0}')
+    echo "Found $num_matches matches for \"$file_name\" in $dir:"
+    echo "$matches" | awk '{print $0}'
+}
+
+main "$@"

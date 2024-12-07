@@ -1,873 +1,259 @@
 from __future__ import annotations
 
-import copy
 import json
-import logging
-from collections import defaultdict
-from dataclasses import dataclass, fields
+import random
+import shlex
+import time
+from abc import ABC, abstractmethod
 from pathlib import Path
+from threading import Lock
+from typing import Annotated, Any, Literal
 
-import together
-from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic, AnthropicBedrock
-from groq import Groq
-from openai import AzureOpenAI, BadRequestError, OpenAI
-from simple_parsing.helpers.serialization.serializable import FrozenSerializable, Serializable
+import litellm
+import litellm.types.utils
+from pydantic import BaseModel as PydanticBaseModel
+from pydantic import ConfigDict, Field, SecretStr
+from swerex.exceptions import SwerexException
 from tenacity import (
-    retry,
+    Retrying,
     retry_if_not_exception_type,
     stop_after_attempt,
     wait_random_exponential,
 )
 
-from sweagent.agent.commands import Command
-from sweagent.utils.config import keys_config
+from sweagent import REPO_ROOT
+from sweagent.exceptions import (
+    ContextWindowExceededError,
+    CostLimitExceededError,
+    FunctionCallingFormatError,
+    InstanceCostLimitExceededError,
+    TotalCostLimitExceededError,
+)
+from sweagent.tools.tools import ToolConfig
+from sweagent.types import History, HistoryItem
 from sweagent.utils.log import get_logger
 
-logger = get_logger("api_models")
+try:
+    import readline  # noqa: F401
+except ImportError:
+    readline = None
 
-_MAX_RETRIES = int(keys_config.get("SWE_AGENT_MODEL_MAX_RETRIES", 10))
+litellm.suppress_debug_info = True
 
 
-@dataclass(frozen=True)
-class ModelArguments(FrozenSerializable):
-    """Arguments configuring the model and its behavior."""
+class RetryConfig(PydanticBaseModel):
+    """This configuration object specifies how many times to retry a failed LM API call."""
 
-    # Name of the model to use
-    model_name: str
-    # Cost limit for every instance (task)
-    per_instance_cost_limit: float = 0.0
-    # Total cost limit
-    total_cost_limit: float = 0.0
-    # Sampling temperature
+    retries: int = 5
+    """Number of retries"""
+    min_wait: float = 1
+    """Minimum wait time between retries (random exponential wait)"""
+    max_wait: float = 15
+    """Maximum wait time between retries (random exponential wait)"""
+
+
+class GenericAPIModelConfig(PydanticBaseModel):
+    """This configuration object specifies a LM like GPT4 or similar.
+    The model will be served with the help of the `litellm` library.
+    """
+
+    name: str = Field(description="Name of the model.")
+
+    per_instance_cost_limit: float = Field(
+        default=3.0,
+        description="Cost limit for every instance (task).",
+    )
+    total_cost_limit: float = Field(default=0.0, description="Total cost limit.")
     temperature: float = 0.0
-    # Sampling top-p
-    top_p: float = 1.0
-    # Path to replay file when using the replay model
-    replay_path: str | None = None
-    # Host URL when using Ollama model
-    host_url: str = "localhost:11434"
+    """Sampling temperature"""
+    top_p: float | None = 1.0
+    """Sampling top-p"""
+    api_base: str | None = None
+    api_version: str | None = None
+    api_key: SecretStr | None = None
+    """API key to the model. We recommend using environment variables to set this instead
+    or putting your environment variables in a `.env` file.
+    You can concatenate more than one key by separating them with `:::`, e.g.,
+    `key1:::key2`.
+    """
+    stop: list[str] = []
+    """Custom stop sequences"""
+
+    completion_kwargs: dict[str, Any] = {}
+    """Additional kwargs to pass to `litellm.completion`"""
+
+    convert_system_to_user: bool = False
+    """Whether to convert system messages to user messages. This is useful for
+    models that do not support system messages like o1.
+    """
+
+    retry: RetryConfig = RetryConfig()
+    """Retry configuration: How often to retry after a failure (e.g., from a rate limit)
+    etc.
+    """
+
+    delay: float = 0.0
+    """Minimum delay before querying (this can help to avoid overusing the API if sharing
+    it with other people).
+    """
+
+    fallbacks: list[dict[str, Any]] = []
+    """List of fallbacks to try if the main model fails
+    See https://docs.litellm.ai/docs/completion/reliable_completions#fallbacks-sdk
+    for more information.
+    """
+
+    # pydantic
+    model_config = ConfigDict(extra="forbid")
+
+    def get_api_keys(self) -> list[str]:
+        if self.api_key is None:
+            return []
+        return self.api_key.get_secret_value().split(":::")
+
+    @property
+    def id(self) -> str:
+        return f"{self.name}__t-{self.temperature:.2f}__p-{self.top_p:.2f}__c-{self.per_instance_cost_limit:.2f}"
 
 
-@dataclass
-class APIStats(Serializable):
+class ReplayModelConfig(GenericAPIModelConfig):
+    replay_path: Path = Field(description="Path to replay file when using the replay model.")
+
+    name: Literal["replay"] = Field(default="replay", description="Model name.")
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class InstantEmptySubmitModelConfig(GenericAPIModelConfig):
+    """Model that immediately submits an empty patch"""
+
+    name: Literal["instant_empty_submit"] = Field(default="instant_empty_submit", description="Model name.")
+
+    delay: float = 0.0
+    """Delay before answering"""
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class HumanModelConfig(GenericAPIModelConfig):
+    name: Literal["human"] = Field(default="human", description="Model name.")
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class HumanThoughtModelConfig(HumanModelConfig):
+    name: Literal["human_thought"] = Field(default="human_thought", description="Model name.")
+
+    model_config = ConfigDict(extra="forbid")
+
+
+ModelConfig = Annotated[
+    GenericAPIModelConfig
+    | ReplayModelConfig
+    | InstantEmptySubmitModelConfig
+    | HumanModelConfig
+    | HumanThoughtModelConfig,
+    Field(union_mode="left_to_right"),
+]
+
+
+class GlobalStats(PydanticBaseModel):
+    """This class tracks usage numbers (costs etc.) across all instances."""
+
     total_cost: float = 0
+    """Cumulative cost for all instances so far"""
+
+    last_query_timestamp: float = 0
+    """Timestamp of the last query. Currently only used with API models."""
+
+
+GLOBAL_STATS = GlobalStats()
+"""This object tracks usage numbers (costs etc.) across all instances.
+Please use the `GLOBAL_STATS_LOCK` lock when accessing this object to avoid race conditions.
+"""
+
+GLOBAL_STATS_LOCK = Lock()
+"""Lock for accessing `GLOBAL_STATS` without race conditions"""
+
+
+class InstanceStats(PydanticBaseModel):
+    """This object tracks usage numbers (costs etc.) for a single instance."""
+
     instance_cost: float = 0
     tokens_sent: int = 0
     tokens_received: int = 0
     api_calls: int = 0
 
-    def __add__(self, other):
-        if not isinstance(other, APIStats):
-            msg = "Can only add APIStats with APIStats"
-            raise TypeError(msg)
-
-        return APIStats(
-            **{field.name: getattr(self, field.name) + getattr(other, field.name) for field in fields(self)},
-        )
-
-    def replace(self, other):
-        if not isinstance(other, APIStats):
-            msg = "Can only replace APIStats with APIStats"
-            raise TypeError(msg)
-
-        return APIStats(**{field.name: getattr(other, field.name) for field in fields(self)})
-
-
-class ContextWindowExceededError(Exception):
-    pass
-
-
-class CostLimitExceededError(Exception):
-    pass
-
-
-class BaseModel:
-    MODELS = {}
-    SHORTCUTS = {}
-
-    def __init__(self, args: ModelArguments, commands: list[Command]):
-        self.args = args
-        self.commands = commands
-        self.model_metadata = {}
-        self.stats = APIStats()
-
-        # Map `model_name` to API-compatible name `api_model`
-        self.api_model = (
-            self.SHORTCUTS[self.args.model_name] if self.args.model_name in self.SHORTCUTS else self.args.model_name
-        )
-
-        # Map model name to metadata (cost, context info)
-        MODELS = {
-            **{dest: self.MODELS[src] for dest, src in self.SHORTCUTS.items()},
-            **self.MODELS,
-        }
-        if args.model_name in MODELS:
-            self.model_metadata = MODELS[args.model_name]
-        elif args.model_name.startswith("ft:"):
-            ft_model = args.model_name.split(":")[1]
-            self.model_metadata = MODELS[ft_model]
-        elif args.model_name.startswith("ollama:"):
-            self.api_model = args.model_name.split("ollama:", 1)[1]
-            self.model_metadata = self.MODELS[self.api_model]
-        elif args.model_name.startswith("azure:"):
-            azure_model = args.model_name.split("azure:", 1)[1]
-            self.model_metadata = MODELS[azure_model]
-        elif args.model_name.startswith("bedrock:"):
-            self.api_model = args.model_name.split("bedrock:", 1)[1]
-            self.model_metadata = MODELS[self.api_model]
-        elif args.model_name.startswith("groq:"):
-            self.api_model = args.model_name.split("groq:", 1)[1]
-            self.model_metadata = MODELS[self.api_model]
-        else:
-            msg = f"Unregistered model ({args.model_name}). Add model name to MODELS metadata to {self.__class__}"
-            raise ValueError(msg)
-
-    def reset_stats(self, other: APIStats | None = None):
-        if other is None:
-            self.stats = APIStats(total_cost=self.stats.total_cost)
-            logger.info("Resetting model stats")
-        else:
-            # Make sure to copy the stats to avoid modifying the original
-            self.stats = copy.deepcopy(other)
-
-    def update_stats(self, input_tokens: int, output_tokens: int) -> float:
-        """
-        Calculates the cost of a response from the openai API.
-
-        Args:
-        input_tokens (int): The number of tokens in the prompt.
-        output_tokens (int): The number of tokens in the response.
-
-        Returns:
-        float: The cost of the response.
-        """
-        # Calculate cost and update cost related fields
-        cost = (
-            self.model_metadata["cost_per_input_token"] * input_tokens
-            + self.model_metadata["cost_per_output_token"] * output_tokens
-        )
-        self.stats.total_cost += cost
-        self.stats.instance_cost += cost
-        self.stats.tokens_sent += input_tokens
-        self.stats.tokens_received += output_tokens
-        self.stats.api_calls += 1
-
-        # Log updated cost values to std. err
-        logger.debug(
-            f"input_tokens={input_tokens:,}, "
-            f"output_tokens={output_tokens:,}, "
-            f"instance_cost={self.stats.instance_cost:.2f}, "
-            f"cost={cost:.2f}",
-        )
-        logger.debug(
-            f"total_tokens_sent={self.stats.tokens_sent:,}, "
-            f"total_tokens_received={self.stats.tokens_received:,}, "
-            f"total_cost={self.stats.total_cost:.2f}, "
-            f"total_api_calls={self.stats.api_calls:,}",
-        )
-
-        # Check whether total cost or instance cost limits have been exceeded
-        if 0 < self.args.total_cost_limit <= self.stats.total_cost:
-            logger.warning(f"Cost {self.stats.total_cost:.2f} exceeds limit {self.args.total_cost_limit:.2f}")
-            msg = "Total cost limit exceeded"
-            raise CostLimitExceededError(msg)
-
-        if 0 < self.args.per_instance_cost_limit <= self.stats.instance_cost:
-            logger.warning(f"Cost {self.stats.instance_cost:.2f} exceeds limit {self.args.per_instance_cost_limit:.2f}")
-            msg = "Instance cost limit exceeded"
-            raise CostLimitExceededError(msg)
-        return cost
-
-    def query(self, history: list[dict[str, str]]) -> str:
-        msg = "Use a subclass of BaseModel"
-        raise NotImplementedError(msg)
-
-
-class OpenAIModel(BaseModel):
-    MODELS = {
-        "gpt-3.5-turbo-0125": {
-            "max_context": 16_385,
-            "cost_per_input_token": 5e-07,
-            "cost_per_output_token": 1.5e-06,
-        },
-        "gpt-3.5-turbo-1106": {
-            "max_context": 16_385,
-            "cost_per_input_token": 1.5e-06,
-            "cost_per_output_token": 2e-06,
-        },
-        "gpt-3.5-turbo-16k-0613": {
-            "max_context": 16_385,
-            "cost_per_input_token": 1.5e-06,
-            "cost_per_output_token": 2e-06,
-        },
-        "gpt-4-32k-0613": {
-            "max_context": 32_768,
-            "cost_per_input_token": 6e-05,
-            "cost_per_output_token": 0.00012,
-        },
-        "gpt-4-0613": {
-            "max_context": 8_192,
-            "cost_per_input_token": 3e-05,
-            "cost_per_output_token": 6e-05,
-        },
-        "gpt-4-1106-preview": {
-            "max_context": 128_000,
-            "cost_per_input_token": 1e-05,
-            "cost_per_output_token": 3e-05,
-        },
-        "gpt-4-0125-preview": {
-            "max_context": 128_000,
-            "cost_per_input_token": 1e-05,
-            "cost_per_output_token": 3e-05,
-        },
-        "gpt-4-turbo-2024-04-09": {
-            "max_context": 128_000,
-            "cost_per_input_token": 1e-05,
-            "cost_per_output_token": 3e-05,
-        },
-        "gpt-4o-2024-05-13": {
-            "max_context": 128_000,
-            "cost_per_input_token": 5e-06,
-            "cost_per_output_token": 15e-06,
-        },
-        "gpt-4o-mini-2024-07-18": {
-            "max_context": 128_000,
-            "cost_per_input_token": 1.5e-07,
-            "cost_per_output_token": 6e-07,
-        },
-        "o1-preview-2024-09-12": {
-            "max_context": 128_000,
-            "cost_per_input_token": 15e-06,
-            "cost_per_output_token": 60e-06,
-        },
-        "o1-mini-2024-09-12": {
-            "max_context": 128_000,
-            "cost_per_input_token": 3e-6,
-            "cost_per_output_token": 12e-6,
-        },
-    }
-
-    SHORTCUTS = {
-        "gpt3": "gpt-3.5-turbo-1106",
-        "gpt3-legacy": "gpt-3.5-turbo-16k-0613",
-        "gpt4": "gpt-4-1106-preview",
-        "gpt4-legacy": "gpt-4-0613",
-        "gpt4-0125": "gpt-4-0125-preview",
-        "gpt3-0125": "gpt-3.5-turbo-0125",
-        "gpt4-turbo": "gpt-4-turbo-2024-04-09",
-        "gpt4o": "gpt-4o-2024-05-13",
-        "gpt-4o-mini": "gpt-4o-mini-2024-07-18",
-        "gpt4omini": "gpt-4o-mini-2024-07-18",
-        "o1": "o1-preview-2024-09-12",
-        "o1-mini": "o1-mini-2024-09-12",
-    }
-
-    def __init__(self, args: ModelArguments, commands: list[Command]):
-        super().__init__(args, commands)
-
-        logging.getLogger("openai").setLevel(logging.WARNING)
-        logging.getLogger("httpx").setLevel(logging.WARNING)
-
-        self._setup_client()
-
-    def _setup_client(self):
-        if self.args.model_name.startswith("azure"):
-            logger.warning(
-                "The --model CLI argument is ignored when using the Azure GPT endpoint. "
-                "The model is determined by the AZURE_OPENAI_DEPLOYMENT key/"
-                "environment variable (this might change in the future).",
-            )
-            self.api_model = keys_config["AZURE_OPENAI_DEPLOYMENT"]
-            self.client = AzureOpenAI(
-                api_key=keys_config["AZURE_OPENAI_API_KEY"],
-                azure_endpoint=keys_config["AZURE_OPENAI_ENDPOINT"],
-                api_version=keys_config.get("AZURE_OPENAI_API_VERSION", "2024-02-01"),
-            )
-        else:
-            api_base_url: str | None = keys_config.get("OPENAI_API_BASE_URL", None)
-            self.client = OpenAI(api_key=keys_config["OPENAI_API_KEY"], base_url=api_base_url)
-
-    def history_to_messages(
-        self,
-        history: list[dict[str, str]],
-        is_demonstration: bool = False,
-    ) -> str | list[dict[str, str]]:
-        """
-        Create `messages` by filtering out all keys except for role/content per `history` turn
-        """
-        # Remove system messages if it is a demonstration
-        if is_demonstration:
-            history = [entry for entry in history if entry["role"] != "system"]
-            return "\n".join([entry["content"] for entry in history])
-        # Return history components with just role, content fields
-        return [{k: v for k, v in entry.items() if k in ["role", "content"]} for entry in history]
-
-    @retry(
-        wait=wait_random_exponential(min=1, max=15),
-        reraise=True,
-        stop=stop_after_attempt(_MAX_RETRIES),
-        retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
-    )
-    def query(self, history: list[dict[str, str]]) -> str:
-        """
-        Query the OpenAI API with the given `history` and return the response.
-        """
-        try:
-            # Perform OpenAI API call
-            response = self.client.chat.completions.create(
-                messages=self.history_to_messages(history),
-                model=self.api_model,
-                temperature=self.args.temperature,
-                top_p=self.args.top_p,
-            )
-        except BadRequestError as e:
-            logger.exception("BadRequestError")
-            if "context window" in str(e) or getattr(e, "error", {}).get("code") == "context_length_exceeded":
-                msg = f"Context window ({self.model_metadata['max_context']} tokens) exceeded"
-                raise ContextWindowExceededError(msg) from e
-            else:
-                raise e
-        # Calculate + update costs, return response
-        input_tokens = response.usage.prompt_tokens
-        output_tokens = response.usage.completion_tokens
-        self.update_stats(input_tokens, output_tokens)
-        return response.choices[0].message.content
-
-
-class DeepSeekModel(OpenAIModel):
-    MODELS = {
-        "deepseek-coder": {
-            "max_context": 32_000,
-            "cost_per_input_token": 1.4e-07,
-            "cost_per_output_token": 2.8e-07,
-        },
-    }
-    SHORTCUTS = {}
-
-    def _setup_client(self) -> None:
-        api_base_url: str = keys_config["DEEPSEEK_API_BASE_URL"]
-        self.client = OpenAI(api_key=keys_config["DEEPSEEK_API_KEY"], base_url=api_base_url)
-
-
-class GroqModel(OpenAIModel):
-    MODELS = {
-        "llama3-8b-8192": {
-            "max_context": 8192,
-            "cost_per_input_token": 5e-08,
-            "cost_per_output_token": 8e-08,
-        },
-        "llama3-70b-8192": {
-            "max_context": 8192,
-            "cost_per_input_token": 5.9e-07,
-            "cost_per_output_token": 7.9e-07,
-        },
-        "llama-guard-3-8b": {
-            "max_context": 8192,
-            "cost_per_input_token": 0,
-            "cost_per_output_token": 0,
-        },
-        "llama-3.1-8b-instant": {
-            "max_context": 131_072,
-            "cost_per_input_token": 0,
-            "cost_per_output_token": 0,
-        },
-        "llama-3.1-70b-versatile": {
-            "max_context": 131_072,
-            "cost_per_input_token": 0,
-            "cost_per_output_token": 0,
-        },
-        "gemma2-9b-it": {
-            "max_context": 8192,
-            "cost_per_input_token": 2e-07,
-            "cost_per_output_token": 2e-07,
-        },
-        "gemma-7b-it": {
-            "max_context": 8192,
-            "cost_per_input_token": 5e-08,
-            "cost_per_output_token": 5e-08,
-        },
-        "mixtral-8x7b-32768": {
-            "max_context": 32_768,
-            "cost_per_input_token": 2.4e-07,
-            "cost_per_output_token": 2.8e-07,
-        },
-    }
-
-    SHORTCUTS = {
-        "groq/llama8": "llama3-8b-8192",
-        "groq/llama70": "llama3-70b-8192",
-        "groq/llamaguard8": "llama-guard-3-8b",
-        "groq/llamainstant8": "llama-3.1-8b-instant",
-        "groq/llamaversatile70": "llama-3.1-70b-versatile",
-        "groq/gemma9it": "gemma2-9b-it",
-        "groq/gemma7it": "gemma-7b-it",
-        "groq/mixtral8x7": "mixtral-8x7b-32768",
-    }
-
-    def _setup_client(self) -> None:
-        self.client = Groq(
-            api_key=keys_config["GROQ_API_KEY"],
+    def __add__(self, other: InstanceStats) -> InstanceStats:
+        return InstanceStats(
+            **{field: getattr(self, field) + getattr(other, field) for field in self.model_fields.keys()},
         )
 
 
-class AnthropicModel(BaseModel):
-    MODELS = {
-        "claude-instant": {
-            "max_context": 100_000,
-            "cost_per_input_token": 1.63e-06,
-            "cost_per_output_token": 5.51e-06,
-        },
-        "claude-2.0": {
-            "max_context": 100_000,
-            "cost_per_input_token": 1.102e-05,
-            "cost_per_output_token": 3.268e-05,
-        },
-        "claude-2.1": {
-            "max_context": 100_000,
-            "cost_per_input_token": 1.102e-05,
-            "cost_per_output_token": 3.268e-05,
-        },
-        "claude-3-opus-20240229": {
-            "max_context": 200_000,
-            "max_tokens": 4096,  # Max tokens to generate for Claude 3 models
-            "cost_per_input_token": 1.5e-05,
-            "cost_per_output_token": 7.5e-05,
-        },
-        "claude-3-sonnet-20240229": {
-            "max_context": 200_000,
-            "max_tokens": 4096,
-            "cost_per_input_token": 3e-06,
-            "cost_per_output_token": 1.5e-05,
-        },
-        "claude-3-5-sonnet-20240620": {
-            "max_context": 200_000,
-            "max_tokens": 4096,
-            "cost_per_input_token": 3e-06,
-            "cost_per_output_token": 1.5e-05,
-        },
-        "claude-3-haiku-20240307": {
-            "max_context": 200_000,
-            "max_tokens": 4096,
-            "cost_per_input_token": 2.5e-07,
-            "cost_per_output_token": 1.25e-06,
-        },
-    }
+class AbstractModel(ABC):
+    def __init__(self, config: PydanticBaseModel, tools: ToolConfig):
+        self.config: PydanticBaseModel
+        self.stats: InstanceStats
 
-    SHORTCUTS = {
-        "claude-2": "claude-2.1",
-        "claude-opus": "claude-3-opus-20240229",
-        "claude-sonnet": "claude-3-sonnet-20240229",
-        "claude-haiku": "claude-3-haiku-20240307",
-        "claude-sonnet-3.5": "claude-3-5-sonnet-20240620",
-    }
+    def reset_stats(self):
+        self.stats = InstanceStats()
 
-    def __init__(self, args: ModelArguments, commands: list[Command]):
-        super().__init__(args, commands)
-
-        # Set Anthropic key
-        self.api = Anthropic(api_key=keys_config["ANTHROPIC_API_KEY"])
-
-    def history_to_messages(
-        self,
-        history: list[dict[str, str]],
-        is_demonstration: bool = False,
-    ) -> str | list[dict[str, str]]:
-        """
-        Create `prompt` by filtering out all keys except for role/content per `history` turn
-        Reference: https://docs.anthropic.com/claude/reference/complete_post
-        """
-        return anthropic_history_to_messages(self, history, is_demonstration)
-
-    @retry(
-        wait=wait_random_exponential(min=1, max=15),
-        reraise=True,
-        stop=stop_after_attempt(_MAX_RETRIES),
-        retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
-    )
-    def query(self, history: list[dict[str, str]]) -> str:
-        """
-        Query the Anthropic API with the given `history` and return the response.
-        """
-        return anthropic_query(self, history)
+    @abstractmethod
+    def query(self, history: History, action_prompt: str = "> ") -> dict: ...
 
 
-class BedrockModel(BaseModel):
-    MODELS = {
-        "anthropic.claude-instant-v1": {
-            "max_context": 100_000,
-            "max_tokens_to_sample": 4096,
-            "cost_per_input_token": 8e-07,
-            "cost_per_output_token": 2.4e-06,
-        },
-        "anthropic.claude-v2": {
-            "max_context": 100_000,
-            "max_tokens_to_sample": 4096,
-            "cost_per_input_token": 8e-06,
-            "cost_per_output_token": 2.4e-05,
-        },
-        "anthropic.claude-v2:1": {
-            "max_context": 100_000,
-            "max_tokens": 4096,
-            "cost_per_input_token": 8e-06,
-            "cost_per_output_token": 2.4e-05,
-        },
-        "anthropic.claude-3-opus-20240229-v1:0": {
-            "max_context": 200_000,
-            "max_tokens": 4096,
-            "cost_per_input_token": 1.5e-05,
-            "cost_per_output_token": 7.5e-05,
-        },
-        "anthropic.claude-3-sonnet-20240229-v1:0": {
-            "max_context": 200_000,
-            "max_tokens": 4096,
-            "cost_per_input_token": 3e-06,
-            "cost_per_output_token": 1.5e-05,
-        },
-        "anthropic.claude-3-haiku-20240307-v1:0": {
-            "max_context": 200_000,
-            "max_tokens": 4096,
-            "cost_per_input_token": 2.5e-07,
-            "cost_per_output_token": 1.25e-06,
-        },
-    }
-
-    def __init__(self, args: ModelArguments, commands: list[Command]):
-        super().__init__(args, commands)
-
-        # Extract provider from model ID
-        # https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html
-        self.model_provider = self.api_model.split(".")[0]
-        if self.model_provider == "anthropic":
-            # Note: this assumes AWS credentials are already configured.
-            # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html
-            self.api = AnthropicBedrock()
-        elif self.model_provider in ["ai21", "amazon", "cohere", "meta", "mistral"]:
-            msg = f"{self.api_model} is not supported!"
-            raise NotImplementedError(msg)
-        else:
-            msg = f"Provider {self.model_provider} is not supported by Amazon Bedrock!"
-            raise ValueError(msg)
-
-    def history_to_messages(
-        self,
-        history: list[dict[str, str]],
-        is_demonstration: bool = False,
-    ) -> str | list[dict[str, str]]:
-        """
-        Create `prompt` from the history of messages
-        """
-        if self.model_provider == "anthropic":
-            return anthropic_history_to_messages(self, history, is_demonstration)
-        else:
-            msg = f"{self.api_model} is not supported!"
-            raise NotImplementedError(msg)
-
-    @retry(
-        wait=wait_random_exponential(min=1, max=15),
-        reraise=True,
-        stop=stop_after_attempt(_MAX_RETRIES),
-        retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
-    )
-    def query(self, history: list[dict[str, str]]) -> str:
-        """
-        Query Amazon Bedrock with the given `history` and return the response.
-        """
-        if self.model_provider == "anthropic":
-            return anthropic_query(self, history)
-        else:
-            msg = f"{self.api_model} is not supported!"
-            raise NotImplementedError(msg)
+def _handle_raise_commands(action: str) -> None:
+    if action == "raise_runtime":
+        raise SwerexException()
+    elif action == "raise_cost":
+        raise CostLimitExceededError()
+    elif action == "raise_context":
+        raise ContextWindowExceededError()
+    elif action.startswith("raise_function_calling"):
+        parts = shlex.split(action)
+        error_code = parts[1]
+        if len(parts) == 3:
+            error_message = parts[2]
+        assert len(parts) < 4
+        raise FunctionCallingFormatError(error_message, error_code)  # type: ignore
 
 
-def anthropic_history_to_messages(
-    model: AnthropicModel | BedrockModel,
-    history: list[dict[str, str]],
-    is_demonstration: bool = False,
-) -> str | list[dict[str, str]]:
-    """
-    Create `prompt` by filtering out all keys except for role/content per `history` turn
-    Reference: https://docs.anthropic.com/claude/reference/complete_post
-    """
-    # Preserve behavior for older models
-    if model.api_model in ["claude-instant", "claude-2.0"] or (
-        isinstance(model, BedrockModel) and model.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]
-    ):
-        # Remove system messages if it is a demonstration
-        if is_demonstration:
-            history = [entry for entry in history if entry["role"] != "system"]
-        # Map history to Claude format
-        prompt = "\n\n"
-        for entry in history:
-            if entry["role"] in {"user", "system"}:
-                prompt += f'{HUMAN_PROMPT} {entry["content"]}\n\n'
-            elif entry["role"] == "assistant":
-                prompt += f'{AI_PROMPT} {entry["content"]}\n\n'
-        prompt += AI_PROMPT
-        return prompt
-
-    # Remove system messages if it is a demonstration
-    if is_demonstration:
-        history = [entry for entry in history if entry["role"] != "system"]
-        return "\n".join([entry["content"] for entry in history])
-
-    # Return history components with just role, content fields (no system message)
-    messages = [
-        {k: v for k, v in entry.items() if k in ["role", "content"]} for entry in history if entry["role"] != "system"
-    ]
-    compiled_messages = []  # Combine messages from the same role
-    last_role = None
-    for message in reversed(messages):
-        if last_role == message["role"]:
-            compiled_messages[-1]["content"] = message["content"] + "\n" + compiled_messages[-1]["content"]
-        else:
-            compiled_messages.append(message)
-        last_role = message["role"]
-    compiled_messages = list(reversed(compiled_messages))
-    # Replace any empty content values with a "(No output)"
-    for message in compiled_messages:
-        if message["content"].strip() == "":
-            message["content"] = "(No output)"
-    return compiled_messages
-
-
-def anthropic_query(model: AnthropicModel | BedrockModel, history: list[dict[str, str]]) -> str:
-    """
-    Query the Anthropic API with the given `history` and return the response.
-    """
-    # Preserve behavior for older models
-    if model.api_model in ["claude-instant", "claude-2.0", "claude-2.1"] or (
-        isinstance(model, BedrockModel) and model.api_model in ["anthropic.claude-instant-v1", "anthropic.claude-v2"]
-    ):
-        # Perform Anthropic API call
-        prompt = anthropic_history_to_messages(model, history)
-        if isinstance(model, BedrockModel):
-            # Use a dummy Anthropic client since count_tokens
-            # is not available in AnthropicBedrock
-            # https://github.com/anthropics/anthropic-sdk-python/issues/353
-            input_tokens = Anthropic().count_tokens(prompt)
-        else:
-            input_tokens = model.api.count_tokens(prompt)
-        completion = model.api.completions.create(
-            model=model.api_model,
-            prompt=prompt,
-            max_tokens_to_sample=model.model_metadata["max_context"] - input_tokens
-            if isinstance(model, Anthropic)
-            else model.model_metadata["max_tokens_to_sample"],
-            temperature=model.args.temperature,
-            top_p=model.args.top_p,
-        )
-        # Calculate + update costs, return response
-        response = completion.completion
-        if isinstance(model, BedrockModel):
-            output_tokens = Anthropic().count_tokens(response)
-        else:
-            output_tokens = model.api.count_tokens(response)
-        model.update_stats(input_tokens, output_tokens)
-        return response
-
-    # Get system message(s)
-    system_message = "\n".join([entry["content"] for entry in history if entry["role"] == "system"])
-    messages = anthropic_history_to_messages(model, history)
-
-    # Perform Anthropic API call
-    response = model.api.messages.create(
-        messages=messages,
-        max_tokens=model.model_metadata["max_tokens"],
-        model=model.api_model,
-        temperature=model.args.temperature,
-        top_p=model.args.top_p,
-        system=system_message,
-    )
-
-    # Calculate + update costs, return response
-    model.update_stats(response.usage.input_tokens, response.usage.output_tokens)
-    return "\n".join([x.text for x in response.content])
-
-
-class OllamaModel(BaseModel):
-    MODELS = defaultdict(
-        lambda: {
-            "max_context": 128_000,
-            "cost_per_input_token": 0,
-            "cost_per_output_token": 0,
-        },
-    )
-
-    def __init__(self, args: ModelArguments, commands: list[Command]):
-        super().__init__(args, commands)
-        from ollama import Client
-
-        self.client = Client(host=args.host_url)
-
-    def history_to_messages(
-        self,
-        history: list[dict[str, str]],
-        is_demonstration: bool = False,
-    ) -> str | list[dict[str, str]]:
-        """
-        Create `messages` by filtering out all keys except for role/content per `history` turn
-        """
-        # Remove system messages if it is a demonstration
-        if is_demonstration:
-            history = [entry for entry in history if entry["role"] != "system"]
-            return "\n".join([entry["content"] for entry in history])
-        # Return history components with just role, content fields
-        return [{k: v for k, v in entry.items() if k in ["role", "content"]} for entry in history]
-
-    @retry(
-        wait=wait_random_exponential(min=1, max=15),
-        reraise=True,
-        stop=stop_after_attempt(_MAX_RETRIES),
-        retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
-    )
-    def query(self, history: list[dict[str, str]]) -> str:
-        """
-        Query the Ollama API with the given `history` and return the response.
-        """
-        response = self.client.chat(
-            model=self.api_model,
-            messages=self.history_to_messages(history),
-            options={
-                "temperature": self.args.temperature,
-                "top_p": self.args.top_p,
-            },
-        )
-        # Calculate + update costs, return response
-        if "prompt_eval_count" in response:
-            input_tokens = response["prompt_eval_count"]
-        else:
-            logger.warning(
-                "Prompt eval count not found in response. Using 0. "
-                "This might be because the prompt has been cached. "
-                "See https://github.com/princeton-nlp/SWE-agent/issues/44 "
-                "and https://github.com/ollama/ollama/issues/3427.",
-            )
-            input_tokens = 0
-        output_tokens = response["eval_count"]
-        self.update_stats(input_tokens, output_tokens)
-        return response["message"]["content"]
-
-
-class TogetherModel(BaseModel):
-    # Check https://docs.together.ai/docs/inference-models for model names, context
-    # Check https://www.together.ai/pricing for pricing
-    MODELS = {
-        "meta-llama/Llama-2-13b-chat-hf": {
-            "max_context": 4096,
-            "cost_per_input_token": 2.25e-07,
-            "cost_per_output_token": 2.25e-07,
-        },
-        "meta-llama/Llama-2-70b-chat-hf": {
-            "max_context": 4096,
-            "cost_per_input_token": 9e-07,
-            "cost_per_output_token": 9e-07,
-        },
-        "mistralai/Mistral-7B-Instruct-v0.2": {
-            "max_context": 32768,
-            "cost_per_input_token": 2e-07,
-            "cost_per_output_token": 2e-07,
-        },
-        "togethercomputer/RedPajama-INCITE-7B-Chat": {
-            "max_context": 2048,
-            "cost_per_input_token": 2e-07,
-            "cost_per_output_token": 2e-07,
-        },
-        "mistralai/Mixtral-8x7B-Instruct-v0.1": {
-            "max_context": 32768,
-            "cost_per_input_token": 6e-07,
-            "cost_per_output_token": 6e-07,
-        },
-    }
-
-    SHORTCUTS = {
-        "llama13b": "meta-llama/Llama-2-13b-chat-hf",
-        "llama70b": "meta-llama/Llama-2-70b-chat-hf",
-        "mistral7b": "mistralai/Mistral-7B-Instruct-v0.2",
-        "mixtral8x7b": "mistralai/Mixtral-8x7B-Instruct-v0.1",
-        "redpajama7b": "togethercomputer/RedPajama-INCITE-7B-Chat",
-    }
-
-    def __init__(self, args: ModelArguments, commands: list[Command]):
-        super().__init__(args, commands)
-        assert together.version >= "1.1.0", "Please upgrade to Together SDK v1.1.0 or later."
-
-        # Set Together key
-        together.api_key = keys_config["TOGETHER_API_KEY"]
-
-    def history_to_messages(self, history: list[dict[str, str]], is_demonstration: bool = False) -> str:
-        """
-        Create `prompt` by filtering out all keys except for role/content per `history` turn
-        """
-        # Remove system messages if it is a demonstration
-        if is_demonstration:
-            history = [entry for entry in history if entry["role"] != "system"]
-        # Map history to TogetherAI format
-        mapping = {"user": "human", "assistant": "bot", "system": "bot"}
-        prompt = [f'<{mapping[d["role"]]}>: {d["content"]}' for d in history]
-        prompt = "\n".join(prompt)
-        return f"{prompt}\n<bot>:"
-
-    @retry(
-        wait=wait_random_exponential(min=1, max=15),
-        reraise=True,
-        stop=stop_after_attempt(_MAX_RETRIES),
-        retry=retry_if_not_exception_type((CostLimitExceededError, RuntimeError)),
-    )
-    def query(self, history: list[dict[str, str]]) -> str:
-        """
-        Query the Together API with the given `history` and return the response.
-        """
-        # Perform Together API call
-        prompt = self.history_to_messages(history)
-        # Anthropic's count_tokens is convenient because it caches and utilizes huggingface/tokenizers, so we will use.
-        max_tokens_to_sample = self.model_metadata["max_context"] - Anthropic().count_tokens(prompt)
-        completion = together.Complete.create(
-            model=self.api_model,
-            prompt=prompt,
-            max_tokens=max_tokens_to_sample,
-            stop=["<human>"],
-            temperature=self.args.temperature,
-            top_p=self.args.top_p,
-        )
-        # Calculate + update costs, return response
-        response = completion["choices"][0]["text"].split("<human>")[0]
-        input_tokens = completion["usage"]["prompt_tokens"]
-        output_tokens = completion["usage"]["completion_tokens"]
-        self.update_stats(input_tokens, output_tokens)
-        return response
-
-
-class HumanModel(BaseModel):
-    MODELS = {"human": {}}
-
-    def __init__(self, args: ModelArguments, commands: list[Command]):
-        super().__init__(args, commands)
+class HumanModel(AbstractModel):
+    def __init__(self, config: HumanModelConfig, tools: ToolConfig):
+        """Model that allows for human-in-the-loop"""
+        self.config = config
+        self.stats = InstanceStats()
 
         # Determine which commands require multi-line input
         self.multi_line_command_endings = {
-            command.name: command.end_name for command in commands if command.end_name is not None
+            command.name: command.end_name for command in tools.commands if command.end_name is not None
         }
+        self._readline_histfile = REPO_ROOT / ".swe-agent-human-history"
+        self._load_readline_history()
+        self.logger = get_logger("swea-lm", emoji="🤖")
 
-    def history_to_messages(
-        self,
-        history: list[dict[str, str]],
-        is_demonstration: bool = False,
-    ) -> str | list[dict[str, str]]:
-        """
-        Create `messages` by filtering out all keys except for role/content per `history` turn
-        """
-        # Remove system messages if it is a demonstration
-        if is_demonstration:
-            history = [entry for entry in history if entry["role"] != "system"]
-            return "\n".join([entry["content"] for entry in history])
-        # Return history components with just role, content fields
-        return [{k: v for k, v in entry.items() if k in ["role", "content"]} for entry in history]
+    def _load_readline_history(self) -> None:
+        """Load autocomplete history from file"""
+        if readline is None:
+            return
+        if self._readline_histfile.is_file():
+            self.logger.debug(f"Loading readline history from {self._readline_histfile}")
+            readline.read_history_file(self._readline_histfile)
 
-    def query(self, history: list[dict[str, str]], action_prompt: str = "> ") -> str:
-        """
-        Logic for handling user input to pass to SWEEnv
-        """
-        action = input(action_prompt)
+    def _save_readline_history(self) -> None:
+        """Save autocomplete history to file"""
+        if readline is None:
+            return
+        readline.write_history_file(self._readline_histfile)
+
+    def _query(self, history: History, action_prompt: str = "> ") -> dict:
+        """Logic for handling user input to pass to SWEEnv"""
+        try:
+            action = input(action_prompt)
+        except KeyboardInterrupt:
+            print("^C (exit with ^D)")
+            return self._query(history, action_prompt)
+        self._save_readline_history()
         command_name = action.split()[0] if action.strip() else ""
 
         # Special handling for multi-line input actions (i.e. edit)
@@ -875,7 +261,11 @@ class HumanModel(BaseModel):
             buffer = [action]
             end_keyword = self.multi_line_command_endings[command_name]
             while True:
-                action = input("... ")
+                try:
+                    action = input("... ")
+                except KeyboardInterrupt:
+                    print("^C (exit with ^D)")
+                    return self._query(history, action_prompt)
                 buffer.append(action)
                 if action.rstrip() == end_keyword:
                     # Continue reading input until terminating keyword inputted
@@ -884,21 +274,29 @@ class HumanModel(BaseModel):
         elif action.strip() == "start_multiline_command":  # do arbitrary multi-line input
             buffer = []
             while True:
-                action = input("... ")
+                try:
+                    action = input("... ")
+                except KeyboardInterrupt:
+                    print("^C (exit with ^D)")
+                    return self._query(history, action_prompt)
                 if action.rstrip() == "end_multiline_command":
                     break
                 buffer.append(action)
             action = "\n".join(buffer)
+        else:
+            # Input has escaped things like \n, so we need to unescape it
+            action = action.encode("utf8").decode("unicode_escape")
+        _handle_raise_commands(action)
         return action
+
+    def query(self, history: History, action_prompt: str = "> ") -> dict:
+        """Wrapper to separate action prompt from formatting"""
+        return {"message": self._query(history, action_prompt)}
 
 
 class HumanThoughtModel(HumanModel):
-    MODELS = {"human_thought": {}}
-
-    def query(self, history: list[dict[str, str]]) -> str:
-        """
-        Logic for handling user input (both thought + action) to pass to SWEEnv
-        """
+    def query(self, history: History) -> dict:
+        """Logic for handling user input (both thought + action) to pass to SWEEnv"""
         thought_all = ""
         thought = input("Thought (end w/ END_THOUGHT): ")
         while True:
@@ -909,119 +307,319 @@ class HumanThoughtModel(HumanModel):
             thought_all += thought
             thought = input("... ")
 
-        action = super().query(history, action_prompt="Action: ")
+        action = super()._query(history, action_prompt="Action: ")
 
-        return f"{thought_all}\n```\n{action}\n```"
+        return {"message": f"{thought_all}\n```\n{action}\n```"}
 
 
-class ReplayModel(BaseModel):
-    MODELS = {"replay": {}}
+class ReplayModel(AbstractModel):
+    def __init__(self, config: ReplayModelConfig, tools: ToolConfig):
+        """Model used for replaying a trajectory (i.e., taking all the actions for the `.traj` file
+        and re-issuing them.
+        """
+        self.config = config
+        self.stats = InstanceStats()
 
-    def __init__(self, args: ModelArguments, commands: list[Command]):
-        super().__init__(args, commands)
+        if not self.config.replay_path.exists():
+            msg = f"Replay file {self.config.replay_path} not found"
+            raise FileNotFoundError(msg)
 
-        if self.args.replay_path is None or not Path(self.args.replay_path).exists():
-            msg = "--replay_path must point to a file that exists to run a replay policy"
-            raise ValueError(msg)
-
-        self.replays = [
-            list(json.loads(x).values())[0] for x in Path(self.args.replay_path).read_text().splitlines(keepends=True)
+        self._replays = [
+            list(json.loads(x).values())[0] for x in Path(self.config.replay_path).read_text().splitlines(keepends=True)
         ]
-        self.replay_idx = 0
-        self.action_idx = 0
+        self._replay_idx = 0
+        self._action_idx = 0
+        self.use_function_calling = tools.use_function_calling
+        self.submit_command = tools.submit_command
+        self.logger = get_logger("swea-lm", emoji="🤖")
 
     def _next_replay(self) -> None:
         """Called after last action"""
-        self.replay_idx += 1
-        self.action_idx = 0
-
-    def query(self, history: list[dict[str, str]]) -> str:
-        """
-        Logic for tracking which replay action to pass to SWEEnv
-        """
-        actions = self.replays[self.replay_idx]
-        try:
-            action = actions[self.action_idx]
-        except IndexError:
-            msg = (
-                "This seems to be an incomplete trajectory. "
-                "We reached the end of it, but `submit` was not called. "
-                "Calling it now."
-            )
-            logger.warning(msg)
-            action = "```\nsubmit\n```"
-
-        self.action_idx += 1
-
-        # Assuming `submit` is always last action of replay trajectory
-        if action == "submit":
-            self._next_replay()
-
-        return action
-
-
-class InstantEmptySubmitTestModel(BaseModel):
-    MODELS = {
-        "instant_empty_submit": {
-            "max_context": 100_000,
-            "max_tokens_to_sample": 4096,
-            "cost_per_input_token": 0,
-            "cost_per_output_token": 0,
-        }
-    }
-
-    def __init__(self, args: ModelArguments, commands: list[Command]):
-        """This model immediately submits. Useful for testing purposes"""
-        super().__init__(args, commands)
+        self._replay_idx += 1
         self._action_idx = 0
 
-    def query(self, history: list[dict[str, str]]) -> str:
+    def query(self, history: History) -> dict:
+        """Logic for tracking which replay action to pass to SWEEnv"""
+        self.stats.api_calls += 1
+        actions = self._replays[self._replay_idx]
+        try:
+            action = actions[self._action_idx]
+        except IndexError:
+            # log error
+            self.logger.error("Reached end of replay trajectory without submitting. Submitting now.")
+            if self.use_function_calling:
+                action = {
+                    "message": f"Calling `{self.submit_command}` to submit.",
+                    "tool_calls": [
+                        {
+                            "type": "function",
+                            "id": "call_submit",
+                            "function": {
+                                "name": self.submit_command,
+                                "arguments": "{}",
+                            },
+                        }
+                    ],
+                }
+            else:
+                action = f"```\n{self.submit_command}\n```"
+
+        self._action_idx += 1
+
+        # Assuming `submit` is always last action of replay trajectory
+        if isinstance(action, str) and action == "submit":
+            self._next_replay()
+            return {"message": action}
+
+        # Handle both dict and string actions
+        if isinstance(action, dict):
+            return action
+        return {"message": action}
+
+
+class PredeterminedTestModel(AbstractModel):
+    def __init__(self, outputs: list[dict | str]):
+        """Model that outputs a predetermined sequence of messages. Useful for testing."""
+        self._outputs = outputs
+        self._idx = -1
+        self.stats = InstanceStats()
+
+    def query(self, *args, **kwargs) -> dict:
+        self._idx += 1
+        output = self._outputs[self._idx]
+        if isinstance(output, str):
+            _handle_raise_commands(output)
+            return {"message": output}
+        if not isinstance(output, dict):
+            msg = f"Output must be string or dict, got {type(output)}"
+            raise ValueError(msg)
+        result = {"message": output["message"]}
+        if "tool_calls" in output:
+            result["tool_calls"] = output["tool_calls"]
+        return result
+
+
+class InstantEmptySubmitTestModel(AbstractModel):
+    def __init__(self, args: InstantEmptySubmitModelConfig, tools: ToolConfig):
+        """This model immediately submits. Useful for testing purposes"""
+        super().__init__(args, tools)
+        self.config: InstantEmptySubmitModelConfig = args
+        self.stats = InstanceStats()
+        self._action_idx = 0
+
+    def query(self, history: list[dict[str, str]]) -> dict:
+        time.sleep(random.uniform(0, self.config.delay))
         # Need to at least do _something_ to submit
         if self._action_idx == 0:
             self._action_idx = 1
-            action = "DISCUSSION\nLet's reproduce the bug by creating a `reproduce.py` file.\n\n```\ncreate reproduce.py\n```\n"
+            action = (
+                "DISCUSSION\n"
+                "Let's reproduce the bug by creating a `reproduce.py` file.\n\n"
+                "```\n"
+                "create reproduce.py\n"
+                "```\n"
+            )
         elif self._action_idx == 1:
             self._action_idx = 0
-            action = "DISCUSSION\nThe task should be resolved, so let's submit the patch.\n\n```\nsubmit\n```\n"
-        self.update_stats(0, 0)
-        return action
+            action = (
+                "DISCUSSION\n" "The task should be resolved, so let's submit the patch.\n\n" "```\n" "submit\n" "```\n"
+            )
+        self.stats.api_calls += 1
+        return {"message": action}
 
 
-def get_model(args: ModelArguments, commands: list[Command] | None = None):
-    """
-    Returns correct model object given arguments and commands
-    """
-    if commands is None:
-        commands = []
-    if args.model_name == "instant_empty_submit":
-        return InstantEmptySubmitTestModel(args, commands)
-    if args.model_name == "human":
-        return HumanModel(args, commands)
-    if args.model_name == "human_thought":
-        return HumanThoughtModel(args, commands)
-    if args.model_name == "replay":
-        return ReplayModel(args, commands)
-    elif (
-        args.model_name.startswith("gpt")
-        or args.model_name.startswith("ft:gpt")
-        or args.model_name.startswith("azure:gpt")
-        or args.model_name in OpenAIModel.SHORTCUTS
+class LiteLLMModel(AbstractModel):
+    def __init__(self, args: GenericAPIModelConfig, tools: ToolConfig):
+        """Model served by the `litellm` library."""
+        self.args = args
+        self.stats = InstanceStats()
+        self.tools = tools
+        if tools.use_function_calling:
+            if not litellm.utils.supports_function_calling(model=self.args.name):
+                msg = f"Model {self.args.name} does not support function calling"
+                raise ValueError(msg)
+        self.model_max_input_tokens = litellm.model_cost.get(self.args.name, {}).get("max_input_tokens")
+        self.model_max_output_tokens = litellm.model_cost.get(self.args.name, {}).get("max_output_tokens")
+        self.lm_provider = litellm.model_cost[self.args.name]["litellm_provider"]
+        self.logger = get_logger("swea-lm", emoji="🤖")
+
+    def _update_stats(self, *, input_tokens: int, output_tokens: int, cost: float) -> None:
+        with GLOBAL_STATS_LOCK:
+            GLOBAL_STATS.total_cost += cost
+        self.stats.instance_cost += cost
+        self.stats.tokens_sent += input_tokens
+        self.stats.tokens_received += output_tokens
+        self.stats.api_calls += 1
+
+        # Log updated cost values to std. err
+        self.logger.debug(
+            f"input_tokens={input_tokens:,}, "
+            f"output_tokens={output_tokens:,}, "
+            f"instance_cost={self.stats.instance_cost:.2f}, "
+            f"cost={cost:.2f}",
+        )
+        self.logger.debug(
+            f"total_tokens_sent={self.stats.tokens_sent:,}, "
+            f"total_tokens_received={self.stats.tokens_received:,}, "
+            f"total_cost={GLOBAL_STATS.total_cost:.2f}, "
+            f"total_api_calls={self.stats.api_calls:,}",
+        )
+
+        # Check whether total cost or instance cost limits have been exceeded
+        if 0 < self.args.total_cost_limit <= GLOBAL_STATS.total_cost:
+            self.logger.warning(f"Cost {GLOBAL_STATS.total_cost:.2f} exceeds limit {self.args.total_cost_limit:.2f}")
+            msg = "Total cost limit exceeded"
+            raise TotalCostLimitExceededError(msg)
+
+        if 0 < self.args.per_instance_cost_limit <= self.stats.instance_cost:
+            self.logger.warning(
+                f"Cost {self.stats.instance_cost:.2f} exceeds limit {self.args.per_instance_cost_limit:.2f}"
+            )
+            msg = "Instance cost limit exceeded"
+            raise InstanceCostLimitExceededError(msg)
+
+    def _get_api_key(self) -> str | None:
+        api_keys = self.args.get_api_keys()
+        if not api_keys:
+            return None
+        return random.choice(api_keys)
+
+    def _query(self, messages: list[dict[str, str]]) -> dict:
+        input_tokens: int = litellm.utils.token_counter(messages=messages, model=self.args.name)
+        if self.model_max_input_tokens is None:
+            self.logger.warning(f"No max input tokens found for model {self.args.name!r}")
+        elif input_tokens > self.model_max_input_tokens:
+            msg = f"Input tokens {input_tokens} exceed max tokens {self.model_max_input_tokens}"
+            raise ContextWindowExceededError(msg)
+        extra_args = {}
+        if self.args.api_base:
+            # Not assigned a default value in litellm, so only pass this if it's set
+            extra_args["api_base"] = self.args.api_base
+        if self.tools.use_function_calling:
+            extra_args["tools"] = self.tools.tools
+        # We need to always set max_tokens for anthropic models
+        completion_kwargs = self.args.completion_kwargs
+        if self.lm_provider == "anthropic":
+            completion_kwargs["max_tokens"] = self.model_max_output_tokens
+        response: litellm.types.utils.ModelResponse = litellm.completion(  # type: ignore
+            model=self.args.name,
+            messages=messages,
+            temperature=self.args.temperature,
+            top_p=self.args.top_p,
+            api_version=self.args.api_version,
+            api_key=self._get_api_key(),
+            fallbacks=self.args.fallbacks,
+            **completion_kwargs,
+            **extra_args,
+        )
+        choices: litellm.types.utils.Choices = response.choices  # type: ignore
+        output = choices[0].message.content or ""
+        output_dict = {"message": output}
+        cost = litellm.cost_calculator.completion_cost(response)
+        output_tokens = litellm.utils.token_counter(text=output, model=self.args.name)
+        self._update_stats(input_tokens=input_tokens, output_tokens=output_tokens, cost=cost)
+        if self.tools.use_function_calling:
+            if response.choices[0].message.tool_calls:  # type: ignore
+                tool_calls = [call.to_dict() for call in response.choices[0].message.tool_calls]  # type: ignore
+            else:
+                tool_calls = []
+            output_dict["tool_calls"] = tool_calls
+        return output_dict
+
+    def query(self, history: History) -> dict:
+        elapsed_time = time.time() - GLOBAL_STATS.last_query_timestamp
+        if elapsed_time < self.args.delay:
+            time.sleep(self.args.delay - elapsed_time)
+        with GLOBAL_STATS_LOCK:
+            GLOBAL_STATS.last_query_timestamp = time.time()
+        for attempt in Retrying(
+            stop=stop_after_attempt(self.args.retry.retries),
+            wait=wait_random_exponential(min=self.args.retry.min_wait, max=self.args.retry.max_wait),
+            reraise=True,
+            retry=retry_if_not_exception_type(
+                (
+                    CostLimitExceededError,
+                    RuntimeError,
+                    litellm.exceptions.UnsupportedParamsError,
+                    litellm.exceptions.NotFoundError,
+                    litellm.exceptions.PermissionDeniedError,
+                    litellm.exceptions.ContextWindowExceededError,
+                    litellm.exceptions.APIError,
+                )
+            ),
+        ):
+            with attempt:
+                if attempt.retry_state.attempt_number > 1:
+                    exception_info = ""
+                    if attempt.retry_state.outcome is not None and attempt.retry_state.outcome.exception() is not None:
+                        exception = attempt.retry_state.outcome.exception()
+                        exception_info = f" due to {exception.__class__.__name__}: {str(exception)}"
+
+                    self.logger.warning(
+                        f"Retrying LM query: attempt {attempt.retry_state.attempt_number} "
+                        f"(slept for {attempt.retry_state.idle_for:.2f}s)"
+                        f"{exception_info}"
+                    )
+                messages = self._history_to_messages(history)
+                result = self._query(messages)
+        return result
+
+    def _history_to_messages(
+        self,
+        history: History,
+    ) -> list[dict[str, str]]:
+        def get_role(history_item: HistoryItem) -> str:
+            if history_item["role"] == "system":
+                return "user" if self.args.convert_system_to_user else "system"
+            return history_item["role"]
+
+        messages = []
+        for history_item in history:
+            role = get_role(history_item)
+            if role == "tool":
+                messages.append(
+                    {
+                        "role": role,
+                        "content": history_item["content"],
+                        # Only one tool call per observations
+                        "tool_call_id": history_item["tool_call_ids"][0],  # type: ignore
+                    }
+                )
+            elif "tool_calls" in history_item:
+                messages.append(
+                    {"role": role, "content": history_item["content"], "tool_calls": history_item["tool_calls"]}
+                )
+            else:
+                messages.append({"role": role, "content": history_item["content"]})
+        return messages
+
+
+def get_model(args: ModelConfig, tools: ToolConfig) -> AbstractModel:
+    """Returns correct model object given arguments and commands"""
+    # Convert GenericAPIModelConfig to specific model config if needed
+    if isinstance(args, GenericAPIModelConfig) and not isinstance(
+        args, HumanModelConfig | HumanThoughtModelConfig | ReplayModelConfig | InstantEmptySubmitModelConfig
     ):
-        return OpenAIModel(args, commands)
-    elif args.model_name.startswith("claude"):
-        return AnthropicModel(args, commands)
-    elif args.model_name.startswith("bedrock"):
-        return BedrockModel(args, commands)
-    elif args.model_name.startswith("ollama"):
-        return OllamaModel(args, commands)
-    elif args.model_name.startswith("deepseek"):
-        return DeepSeekModel(args, commands)
-    elif args.model_name in TogetherModel.SHORTCUTS:
-        return TogetherModel(args, commands)
-    elif args.model_name in GroqModel.SHORTCUTS:
-        return GroqModel(args, commands)
-    elif args.model_name == "instant_empty_submit":
-        return InstantEmptySubmitTestModel(args, commands)
-    else:
-        msg = f"Invalid model name: {args.model_name}"
-        raise ValueError(msg)
+        if args.name == "human":
+            args = HumanModelConfig(**args.model_dump())
+        elif args.name == "human_thought":
+            args = HumanThoughtModelConfig(**args.model_dump())
+        elif args.name == "replay":
+            args = ReplayModelConfig(**args.model_dump())
+        elif args.name == "instant_empty_submit":
+            args = InstantEmptySubmitModelConfig(**args.model_dump())
+
+    if args.name == "human":
+        assert isinstance(args, HumanModelConfig), f"Expected {HumanModelConfig}, got {args}"
+        return HumanModel(args, tools)
+    if args.name == "human_thought":
+        assert isinstance(args, HumanThoughtModelConfig), f"Expected {HumanThoughtModelConfig}, got {args}"
+        return HumanThoughtModel(args, tools)
+    if args.name == "replay":
+        assert isinstance(args, ReplayModelConfig), f"Expected {ReplayModelConfig}, got {args}"
+        return ReplayModel(args, tools)
+    elif args.name == "instant_empty_submit":
+        assert isinstance(args, InstantEmptySubmitModelConfig), f"Expected {InstantEmptySubmitModelConfig}, got {args}"
+        return InstantEmptySubmitTestModel(args, tools)
+    assert isinstance(args, GenericAPIModelConfig), f"Expected {GenericAPIModelConfig}, got {args}"
+    return LiteLLMModel(args, tools)

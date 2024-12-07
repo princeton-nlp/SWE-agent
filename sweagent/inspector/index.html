@@ -1,0 +1,25 @@
+<html>
+<head>
+    <title>Trajectory Viewer</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    <script src="fileViewer.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Trajectory File Viewer</h1>
+        <h3 id="directoryInfo"></h3>
+        <ul id="fileList"></ul>
+        <label style="margin-right: 20px;">
+            <input type="checkbox" id="showDemos" onchange="refreshCurrentFile()"> Show demonstrations
+        </label>
+        <h2>Conversation History</h2>
+        <div id="fileContent" class="trajectory-container">No file selected.</div>
+        <div class="button-container">
+            <button id="refreshButton" onclick="refreshCurrentFile()">Refresh Current File</button>
+        </div>
+    </div>
+</body>
+</html>

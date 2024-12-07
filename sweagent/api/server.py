@@ -1,18 +1,7 @@
 from __future__ import annotations
 
-try:
-    import flask  # noqa
-except ImportError as e:
-    msg = (
-        "Flask not found. You probably haven't installed the dependencies for SWE-agent. "
-        "Please go to the root of the repository and run `pip install -e .`"
-    )
-    raise RuntimeError(msg) from e
-import atexit
-import copy
 import json
 import sys
-import tempfile
 import time
 import traceback
 from contextlib import redirect_stderr, redirect_stdout
@@ -20,21 +9,21 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+import flask  # noqa
 import yaml
 from flask import Flask, make_response, render_template, request, session
 from flask_cors import CORS
 from flask_socketio import SocketIO
 
 from sweagent import CONFIG_DIR, PACKAGE_DIR
-from sweagent.agent.agents import AgentArguments
-from sweagent.agent.models import ModelArguments
+from sweagent.agent.problem_statement import problem_statement_from_simplified_input
 from sweagent.api.hooks import AgentUpdateHook, EnvUpdateHook, MainUpdateHook, WebUpdate
 from sweagent.api.utils import AttrDict, ThreadWithExc
-from sweagent.environment.swe_env import EnvironmentArguments
+from sweagent.environment.repo import repo_from_simplified_input
 
 # baaaaaaad
 sys.path.append(str(PACKAGE_DIR.parent))
-from run import ActionsArguments, Main, ScriptArguments
+from sweagent.run.run_single import RunSingle, RunSingleConfig
 
 app = Flask(__name__, template_folder=Path(__file__).parent)
 CORS(app)
@@ -58,7 +47,7 @@ def ensure_session_id_set():
 
 
 class MainThread(ThreadWithExc):
-    def __init__(self, settings: ScriptArguments, wu: WebUpdate):
+    def __init__(self, settings: RunSingleConfig, wu: WebUpdate):
         super().__init__()
         self._wu = wu
         self._settings = settings
@@ -68,11 +57,11 @@ class MainThread(ThreadWithExc):
         with redirect_stdout(self._wu.log_stream):
             with redirect_stderr(self._wu.log_stream):
                 try:
-                    main = Main(self._settings)
+                    main = RunSingle.from_config(self._settings)
                     main.add_hook(MainUpdateHook(self._wu))
                     main.agent.add_hook(AgentUpdateHook(self._wu))
                     main.env.add_hook(EnvUpdateHook(self._wu))
-                    main.main()
+                    main.run()
                 except Exception as e:
                     short_msg = str(e)
                     max_len = 350
@@ -103,19 +92,6 @@ def handle_connect():
     print("Client connected")
 
 
-def write_env_yaml(data) -> str:
-    data: Any = AttrDict(copy.deepcopy(dict(data)))
-    if not data.install_command_active:
-        data.install = ""
-    del data.install_command_active
-    data.pip_packages = [p.strip() for p in data.pip_packages.split("\n") if p.strip()]
-    path = Path(tempfile.NamedTemporaryFile(delete=False, suffix=".yml").name)
-    # Make sure that the file is deleted when the program exits
-    atexit.register(path.unlink)
-    path.write_text(yaml.dump(dict(data)))
-    return str(path)
-
-
 @app.route("/run", methods=["GET", "OPTIONS"])
 def run():
     session_id = ensure_session_id_set()
@@ -135,47 +111,33 @@ def run():
     print(run.environment)
     print(run.environment.base_commit)
     model_name: str = run.agent.model.model_name
-    environment_setup = ""
-    environment_input_type = run.environment.environment_setup.input_type
-    if environment_input_type == "manual":
-        environment_setup = str(write_env_yaml(run.environment.environment_setup.manual))
-    elif environment_input_type == "script_path":
-        environment_setup = run.environment.environment_setup.script_path["script_path"]
-    else:
-        msg = f"Unknown input type: {environment_input_type}"
-        raise ValueError(msg)
-    if not environment_setup.strip():
-        environment_setup = None
     test_run: bool = run.extra.test_run
     if test_run:
         model_name = "instant_empty_submit"
-    defaults = ScriptArguments(
-        suffix="",
-        environment=EnvironmentArguments(
-            image_name="sweagent/swe-agent:latest",
-            data_path=run.environment.data_path,
-            base_commit=run.environment.base_commit,
-            split="dev",
-            verbose=True,
-            install_environment=True,
-            repo_path=run.environment.repo_path,
-            environment_setup=environment_setup,
-        ),
-        skip_existing=False,
-        agent=AgentArguments(
-            model=ModelArguments(
-                model_name=model_name,
-                total_cost_limit=0.0,
-                per_instance_cost_limit=3.0,
-                temperature=0.0,
-                top_p=0.95,
-            ),
-            config_file=CONFIG_DIR / "default_from_url.yaml",
-        ),
-        actions=ActionsArguments(open_pr=False, skip_if_commits_reference_issue=True),
-        raise_exceptions=True,
+    default_config = yaml.safe_load(Path(CONFIG_DIR / "default_from_url.yaml").read_text())
+    config = {
+        **default_config,
+        "agent": {
+            "model": {
+                "model_name": model_name,
+            },
+        },
+        "environment": {
+            "image_name": run.environment.image_name,
+            "script": run.environment.script,
+        },
+    }
+    config["problem_statement"] = problem_statement_from_simplified_input(
+        input=run.problem_statement.input,
+        type=run.problem_statement.type,
     )
-    thread = MainThread(defaults, wu)
+    config["environment"]["repo"] = repo_from_simplified_input(
+        input=run.environment.repo_path,
+        base_commit=run.environment.base_commit,
+        type="auto",
+    )
+    config = RunSingleConfig.model_validate(**config)
+    thread = MainThread(config, wu)
     THREADS[session_id] = thread
     thread.start()
     return "Commands are being executed", 202
@@ -204,6 +166,10 @@ def _build_cors_preflight_response():
     return response
 
 
-if __name__ == "__main__":
+def run_from_cli(args: list[str] | None = None):
     app.debug = True
     socketio.run(app, port=8000, debug=True, allow_unsafe_werkzeug=True)
+
+
+if __name__ == "__main__":
+    run_from_cli()

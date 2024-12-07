@@ -4,20 +4,48 @@ import os
 from pathlib import Path
 from typing import Any
 
-import config as config_file
+from dotenv import load_dotenv
+
 from sweagent import REPO_ROOT
 from sweagent.utils.log import get_logger
 
-logger = get_logger("config")
+logger = get_logger("swea-config", emoji="🔧")
 
 
-def convert_path_to_abspath(path: Path | str) -> Path:
+def _convert_path_relative_to_repo_root(path: Path | str, root: Path | None = None) -> Path | str:
+    original_type = type(path)
+    path = Path(path).resolve()
+    root = Path(root or os.getenv("SWE_AGENT_CONFIG_ROOT", REPO_ROOT))
+    relative_path = path.relative_to(root) if root in path.parents else path
+    return relative_path if original_type is Path else str(relative_path)
+
+
+def _could_be_a_path(v: Any) -> bool:
+    try:
+        return Path(v).exists()
+    except Exception:
+        return False
+
+
+def _strip_abspath_from_dict(value: dict | list | str, root: Path | None = None) -> dict | list | str:
+    root = Path(root or os.getenv("SWE_AGENT_CONFIG_ROOT", REPO_ROOT))
+    if isinstance(value, dict):
+        return {k: _strip_abspath_from_dict(v, root) for k, v in value.items()}
+    elif isinstance(value, list):
+        return [_strip_abspath_from_dict(v, root) for v in value]
+    elif isinstance(value, str) and _could_be_a_path(value):
+        return _convert_path_relative_to_repo_root(value, root)
+    else:
+        return value
+
+
+def _convert_path_to_abspath(path: Path | str) -> Path:
     """If path is not absolute, convert it to an absolute path
     using the SWE_AGENT_CONFIG_ROOT environment variable (if set) or
     REPO_ROOT as base.
     """
     path = Path(path)
-    root = Path(keys_config.get("SWE_AGENT_CONFIG_ROOT", REPO_ROOT))
+    root = Path(os.getenv("SWE_AGENT_CONFIG_ROOT", REPO_ROOT))
     assert root.is_dir()
     if not path.is_absolute():
         path = root / path
@@ -25,61 +53,28 @@ def convert_path_to_abspath(path: Path | str) -> Path:
     return path.resolve()
 
 
-def convert_paths_to_abspath(paths: list[Path | str]) -> list[Path]:
-    return [convert_path_to_abspath(p) for p in paths]
+def _convert_paths_to_abspath(paths: list[Path] | list[str]) -> list[Path]:
+    return [_convert_path_to_abspath(p) for p in paths]
 
 
-class Config:
-    def __init__(self, *, keys_cfg_path: Path | None = None):
-        """This wrapper class is used to load keys from environment variables or keys.cfg file.
-        Whenever both are presents, the environment variable is used.
-        """
-        if keys_cfg_path is None:
-            # Defer import to avoid circular import
-            from sweagent import PACKAGE_DIR
-
-            keys_cfg_path = PACKAGE_DIR.parent / "keys.cfg"
-        self._keys_cfg = None
-        if keys_cfg_path.exists():
-            try:
-                self._keys_cfg = config_file.Config(str(keys_cfg_path))
-            except Exception as e:
-                msg = f"Error loading keys.cfg from {keys_cfg_path}. Please check the file."
-                raise RuntimeError(msg) from e
+def load_environment_variables(path: Path | None = None):
+    """Load environment variables from a .env file.
+    If path is not provided, we first look for a .env file in the current working
+    directory and then in the repository root.
+    """
+    if path is None:
+        cwd_path = Path.cwd() / ".env"
+        repo_path = REPO_ROOT / ".env"
+        if cwd_path.exists():
+            path = cwd_path
+        elif repo_path.exists():
+            path = REPO_ROOT / ".env"
         else:
-            logger.error(f"keys.cfg not found in {PACKAGE_DIR}")
-
-    def get(self, key: str, default=None, choices: list[Any] | None = None) -> Any:
-        """Get a key from environment variables or keys.cfg.
-
-        Args:
-            key: The key to retrieve.
-            default: The default value to return if the key is not found.
-            choices: If provided, the value must be one of the choices.
-        """
-
-        def check_choices(value):
-            if choices is not None and value not in choices:
-                msg = f"Value {value} for key {key} not in {choices}"
-                raise ValueError(msg)
-            return value
-
-        if key in os.environ:
-            return check_choices(os.environ[key])
-        if self._keys_cfg is not None and key in self._keys_cfg:
-            return check_choices(self._keys_cfg[key])
-        return check_choices(default)
-
-    def __getitem__(self, key: str) -> Any:
-        if key in os.environ:
-            return os.environ[key]
-        if self._keys_cfg is not None and key in self._keys_cfg:
-            return self._keys_cfg[key]
-        msg = f"Key {key} not found in environment variables or keys.cfg (if existing)"
-        raise KeyError(msg)
-
-    def __contains__(self, key: str) -> bool:
-        return key in os.environ or (self._keys_cfg is not None and key in self._keys_cfg)
-
-
-keys_config = Config()
+            logger.debug("No .env file found")
+            return
+    if not path.is_file():
+        msg = f"No .env file found at {path}"
+        raise FileNotFoundError(msg)
+    anything_loaded = load_dotenv(dotenv_path=path)
+    if anything_loaded:
+        logger.info(f"Loaded environment variables from {path}")

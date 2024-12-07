@@ -1,0 +1,31 @@
+tools:
+  edit:
+    signature: |
+      edit <start_line>:<end_line>
+      <replacement_text>
+      end_of_edit
+    # Note: Without function calling we should add back:
+    # The replacement text is terminated by a line with only
+    # end_of_edit on
+    docstring: >
+      Replaces lines <start_line> through <end_line> (inclusive) with the given text
+      in the open file.
+      All of the <replacement text> will be entered, so make
+      sure your indentation is formatted properly.
+
+      Please note that THIS COMMAND REQUIRES PROPER INDENTATION.
+      If you'd like to add the line '        print(x)' you must fully write that out, with all those spaces before the code!
+    end_name: "end_of_edit"
+    arguments:
+      - name: start_line
+        type: integer
+        description: "the line number to start the edit at"
+        required: true
+      - name: end_line
+        type: integer
+        description: "the line number to end the edit at (inclusive)"
+        required: true
+      - name: replacement_text
+        type: string
+        description: "the text to replace the current selection with"
+        required: true

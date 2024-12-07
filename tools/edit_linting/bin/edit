@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+
+import argparse
+import sys
+from typing import Tuple, Union
+
+try:
+    from sweagent import TOOLS_DIR
+except ImportError:
+    pass
+else:
+    default_lib = TOOLS_DIR / "defaults" / "lib"
+    assert default_lib.is_dir()
+    sys.path.append(str(default_lib))
+    sys.path.append(str(TOOLS_DIR / "registry" / "lib"))
+
+from windowed_file import FileNotOpened, WindowedFile  # type: ignore
+from flake8_utils import flake8, format_flake8_output  # type: ignore
+
+_USAGE_MSG = """Usage: edit <start_line>:<end_line>
+<replacement_text>
+end_of_edit"""
+
+_EDIT_SUCCESS_MSG = """File updated. Please review the changes and make sure they are correct
+(correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
+
+_LINT_ERROR_TEMPLATE = """Your proposed edit has introduced new syntax error(s). Please read this error message carefully and then retry editing the file.
+
+ERRORS:
+{errors}
+
+This is how your edit would have looked if applied
+------------------------------------------------
+{window_applied}
+------------------------------------------------
+
+This is the original code before your edit
+------------------------------------------------
+{window_original}
+------------------------------------------------
+
+Your changes have NOT been applied. Please fix your edit command and try again.
+DO NOT re-run the same failed edit command. Running it again will lead to the same error."""
+
+
+def get_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("line_range", help="Line range in format start:end")
+    parser.add_argument("replacement_text", help="Text to insert", nargs="?")
+    return parser
+
+
+def parse_line_range(line_range: str) -> Tuple[int, int]:
+    try:
+        start, end = map(int, line_range.split(":"))
+        return start - 1, end - 1
+    except ValueError:
+        print(_USAGE_MSG)
+        exit(1)
+
+
+def main(line_range: str, replacement_text: Union[str, None] = None):
+    # Handle file opening
+    try:
+        wf = WindowedFile(exit_on_exception=False)
+    except FileNotOpened:
+        print("No file opened. Use the `open` command first.")
+        exit(1)
+
+    # Parse line range
+    start_line, end_line = parse_line_range(line_range)
+
+    if replacement_text is None:
+        # Read replacement text from stdin (e.g., when sent via bash heredoc)
+        # if not provided as argument
+        replacement_lines = []
+        while True:
+            try:
+                line = input()
+                if line == "end_of_edit":
+                    break
+                replacement_lines.append(line)
+            except EOFError:
+                break
+        replacement_text = "\n".join(replacement_lines)
+    else:
+        if replacement_text.endswith("\n"):
+            replacement_text = replacement_text[:-1]
+
+    if replacement_text is None:
+        print(_USAGE_MSG)
+        exit(1)
+
+    # Get pre-edit linting errors
+    pre_edit_lint = flake8(wf.path)
+
+    # Perform the edit
+    wf.set_window_text(replacement_text, line_range=(start_line, end_line))
+
+    # Check for new linting errors
+    post_edit_lint = flake8(wf.path)
+    new_flake8_output = format_flake8_output(
+        post_edit_lint,
+        previous_errors_string=pre_edit_lint,
+        replacement_window=(start_line, end_line),
+        replacement_n_lines=len(replacement_text.splitlines()),
+    )
+
+    if new_flake8_output:
+        # Show error and revert changes
+        with_edits = wf.get_window_text(line_numbers=True, status_line=True, pre_post_line=True)
+        wf.undo_edit()
+        without_edits = wf.get_window_text(line_numbers=True, status_line=True, pre_post_line=True)
+        print(
+            _LINT_ERROR_TEMPLATE.format(
+                errors=new_flake8_output, window_applied=with_edits, window_original=without_edits
+            )
+        )
+        exit(1)
+
+    # Success - update window position and show result
+    wf.goto(start_line, mode="top")
+    print(_EDIT_SUCCESS_MSG)
+    wf.print_window()
+
+
+if __name__ == "__main__":
+    main(**vars(get_parser().parse_args()))

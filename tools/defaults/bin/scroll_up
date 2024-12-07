@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+
+from windowed_file import WindowedFile  # type: ignore
+
+
+def main():
+    wf = WindowedFile()
+    wf.scroll(-wf.window)
+    wf.print_window()
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,375 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+}
+h1,
+h2 {
+  color: #d4d4d4;
+}
+#fileList {
+  list-style-type: none;
+  padding: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+  margin: 0;
+  background-color: #252526;
+  border: 3px solid #1697e2;
+  border-radius: 10px;
+}
+#fileList li {
+  cursor: pointer;
+  padding: 10px;
+  background-color: #2d2d2d;
+  margin-bottom: 5px;
+  border: 2px solid #454545;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+  color: #d4d4d4;
+}
+#fileList li:hover {
+  background-color: #3e3e3e;
+}
+#fileList li.selected {
+  border-color: #fabb00;
+}
+#fileContent {
+  background-color: #1e1e1e;
+  border: 1px solid #454545;
+  padding: 10px;
+  margin-top: 20px;
+  white-space: pre-wrap;
+  color: #d4d4d4;
+}
+.button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#refreshButton {
+  padding: 4px 10px;
+  min-width: 80px;
+  border: none;
+  font: inherit;
+  color: #373030;
+  border-radius: 10px;
+  outline: none;
+  text-decoration: none;
+  cursor: default;
+  font-weight: 400;
+  background: #fff;
+  box-shadow:
+    0px 0px 1px #0000004d,
+    0px 1px 1px #00000066;
+}
+#refreshButton:hover {
+  /* hover MUST come before active */
+  background: linear-gradient(#0000004d, #00000066);
+  color: #fff;
+  position: relative;
+}
+#refreshButton:active {
+  background: linear-gradient(#4faefc, #006bff);
+  color: #fff;
+  position: relative;
+}
+.history-item {
+  border: 3px solid black;
+  border-radius: 5px;
+  padding: 0px;
+  /* padding-bottom: 5%; */
+  margin-bottom: 15px;
+  overflow-x: hidden;
+  white-space: normal;
+  /* overflow-x: auto; Enables horizontal scrolling */
+  /* white-space: nowrap; Keeps content in a single line */
+  max-height: 450px; /* Adjust as needed for 25 lines */
+  overflow: hidden;
+  position: relative;
+}
+.shadow {
+  height: 30px; /* Height of the shadow */
+  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.4));
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none; /* Ensures the shadow doesn't interfere with interaction */
+  display: none; /* Initially hidden */
+}
+.has-shadow .shadow {
+  display: block;
+}
+.content-container {
+  max-height: 400px; /* Adjust as needed */
+  overflow-y: auto;
+  position: relative;
+  padding: 10px;
+}
+.content-container pre {
+  white-space: pre-wrap; /* Wrap lines and preserve whitespace */
+  overflow-wrap: break-word; /* Handle long words */
+}
+.container {
+  max-width: 1000px;
+  margin: 0 auto; /* Centers the container */
+  padding: 20px; /* Optional: for some inner spacing */
+}
+.history-item.user {
+  border-color: #1697e2;
+}
+.history-item.tool {
+  border-color: #1483c3;
+}
+.history-item.system {
+  border-color: #004b80;
+}
+.history-item.subroutine {
+  border-color: #006b00;
+}
+.history-item.gold-patch {
+  border-color: #fabb00;
+}
+.history-item.assistant {
+  border-color: rgb(0, 0, 0);
+}
+.history-item.test-patch {
+  border-color: #7373d9;
+}
+.history-item.evaluation-report {
+  border-color: #35614b;
+}
+
+/* filepath-tree stuff */
+.filepath {
+  display: flex;
+  flex-direction: column; /* Changes layout to one part per line */
+  align-items: flex-start; /* Aligns parts to the start of the container */
+  font-size: 16px;
+  gap: 10px;
+  padding: 5px;
+  background-color: #2d2d2d;
+}
+.part {
+  border: 1px solid #454545;
+  white-space: nowrap; /* Prevents wrapping within parts */
+  padding: 5px;
+  background-color: #3e3e3e;
+  border-radius: 5px;
+  color: #d4d4d4;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 1s ease-out;
+}
+
+.trajectory-container {
+  position: relative;
+  width: 100%;
+}
+
+.trajectory-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0px;
+  border: 3px solid #1697e2;
+  border-radius: 5px;
+  position: relative;
+  background: #2d2d2d;
+  min-height: fit-content; /* Added to ensure proper expansion */
+  height: auto; /* Added to ensure proper expansion */
+  overflow: visible; /* Changed from hidden/auto to visible */
+}
+
+.trajectory-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.response-section,
+.observation-section,
+.messages-section {
+  padding: 0 4px;
+  position: relative;
+  min-height: 30px;
+  height: 400px;
+  max-height: min-content;
+  display: flex;
+  flex-direction: column;
+  resize: vertical;
+  overflow: hidden;
+  width: calc(100% - 16px);
+}
+
+.response-section {
+  background-color: #252526;
+  border-bottom: 1px solid #454545;
+  color: #d4d4d4;
+}
+
+.observation-section {
+  background-color: #2d2d2d;
+  color: #d4d4d4;
+}
+
+/* Add section headers */
+.response-section::before,
+.observation-section::before,
+.messages-section::before {
+  content: attr(data-title);
+  font-weight: bold;
+  padding: 8px 12px; /* Keep this comfortable padding */
+  background: rgba(255, 255, 255, 0.05);
+  margin: 0 0 8px 0; /* Add some bottom margin to separate from content */
+  border-bottom: 1px solid #454545;
+  position: sticky;
+  top: 0;
+  width: 100%;
+  box-sizing: border-box;
+  color: #d4d4d4;
+}
+
+/* Scrollable content containers */
+.content-wrapper {
+  overflow-y: auto;
+  flex: 1;
+  padding: 0;
+  margin: 0;
+  display: flex; /* Add flex display */
+  flex-direction: column; /* Stack children vertically */
+}
+
+.content-wrapper pre {
+  margin: 0;
+  padding: 0;
+  flex: 1; /* Allow pre to fill the space */
+  display: flex; /* Make pre a flex container */
+  flex-direction: column; /* Stack children vertically */
+}
+
+.content-wrapper pre code {
+  margin: 0;
+  padding: 0;
+  flex: 1; /* Allow code to fill the space */
+}
+
+.messages-section {
+  padding: 4px;
+  position: relative;
+  min-height: 30px;
+  height: 30px;
+  max-height: min-content; /* Only expand to fit content */
+  background: #252526;
+  border-top: 1px solid #454545;
+  display: flex;
+  flex-direction: column;
+  resize: vertical;
+  overflow: hidden;
+  width: calc(100% - 16px);
+  color: #d4d4d4;
+}
+
+.messages-section::before {
+  content: attr(data-title);
+  font-weight: bold;
+  padding: 8px 12px; /* Increased padding around title text */
+  background: rgba(255, 255, 255, 0.05);
+  margin: -8px -8px 5px -8px; /* Reduced bottom margin */
+  border-bottom: 1px solid #454545;
+  position: sticky;
+  top: -8px;
+  width: calc(100% + 16px);
+  box-sizing: border-box;
+  color: #d4d4d4;
+}
+
+.messages-toggle {
+  display: none;
+}
+
+.execution-time {
+  font-size: 0.8em;
+  color: #666;
+  text-align: right;
+  padding: 5px;
+  border-top: 1px solid #ddd;
+}
+
+/* Add a visual indicator for resizable areas */
+.response-section:hover,
+.observation-section:hover,
+.messages-section.expanded:hover {
+  outline: 1px dashed #999;
+}
+
+.demo-message {
+  color: #2ecc71;
+  font-weight: bold;
+}
+
+/* Syntax highlighting overrides for dark theme */
+.hljs {
+  background: #1e1e1e !important;
+  color: #d4d4d4 !important;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in,
+.hljs-name,
+.hljs-tag {
+  color: #569cd6 !important; /* Blue */
+}
+
+.hljs-string,
+.hljs-title,
+.hljs-section,
+.hljs-attribute,
+.hljs-literal,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type {
+  color: #ce9178 !important; /* Orange/Pink */
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: #6a9955 !important; /* Green */
+}
+
+.hljs-number,
+.hljs-regexp,
+.hljs-symbol,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-link,
+.hljs-selector-attr,
+.hljs-selector-pseudo {
+  color: #b5cea8 !important; /* Light green */
+}
+
+label {
+  color: #d4d4d4; /* Matches the theme's text color */
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}

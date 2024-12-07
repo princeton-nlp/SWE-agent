@@ -385,8 +385,7 @@ agent:
       ```
       command(s) that you're going to run
       ```
-    history_processor: {}
-    history_processor_args: {}
+    history_processors: []
     instance_template: "We're currently solving the following issue within our repository.\
       \ Here's the issue text:\nISSUE:\n{issue}\n\nINSTRUCTIONS:\nNow, you're going\
       \ to solve this issue on your own. Your terminal session has started and you're\
@@ -444,21 +443,6 @@ agent:
     parse_command: {}
     parse_function: {}
     put_demos_in_history: false
-    state_command:
-      arguments: null
-      code: |
-        state() {
-          local working_dir="$PWD";
-          if [ -z $CURRENT_FILE ]; then
-              echo '{"open_file": "n/a", "working_dir": "'$working_dir'"}';
-          else
-              echo '{"open_file": "'$(realpath $CURRENT_FILE)'", "working_dir": "'$working_dir'"}';
-          fi
-        };
-      docstring: null
-      end_name: null
-      name: state
-      signature: null
     strategy_template: null
     submit_command: submit
     subroutine_types: []

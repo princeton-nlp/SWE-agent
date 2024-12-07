@@ -1,0 +1,21 @@
+env:
+  deployment:
+    image: python:3.11
+agent:
+  tools:
+    env_variables:
+      WINDOW: 100
+      OVERLAP: 2
+    bundles:
+      - path: tools/registry
+      - path: tools/defaults
+      - path: tools/search
+      - path: tools/edit_linting
+      - path: tools/submit
+    parse_function:
+      type: thought_action
+  history_processors:
+    - type: last_n_observations
+      n: 5
+  model:
+    name: human

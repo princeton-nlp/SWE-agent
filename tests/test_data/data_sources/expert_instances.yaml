@@ -1,0 +1,16 @@
+- env:
+    deployment:
+      type: docker
+      image: python:3.11
+  problem_statement:
+    type: text
+    text: "A simple test problem"
+    id: "simple_test_problem"
+- env:
+    deployment:
+      type: docker
+      image: python:3.11
+  problem_statement:
+    type: text
+    text: "A simple test problem 2"
+    id: "simple_test_problem_2"

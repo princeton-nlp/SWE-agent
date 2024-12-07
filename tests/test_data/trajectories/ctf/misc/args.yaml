@@ -851,8 +851,7 @@ agent:
       ```
       command(s) that you're going to run
       ```
-    history_processor: {}
-    history_processor_args: {}
+    history_processors: []
     instance_template: |-
       We're currently solving the following CTF challenge. The CTF challenge is a {category_friendly} problem named "{name}", worth {points} points. The description is:
       {description}

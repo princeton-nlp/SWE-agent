@@ -1,3 +1,15 @@
+keys.yaml
+.swe-agent-human-history
+.vscode/**
+cov.xml
+trajectories/**
+!trajectories/demonstrations/**
+data/**
+*.env
+!tools/*
+
+# -------- automatically generated files --------
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -14,7 +26,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+/lib/
 lib64/
 parts/
 sdist/
@@ -184,12 +196,6 @@ website/frontend/build
 
 # demo yamls (for editing)
 *.demo.yaml
-
-# trajectory files
-trajectories/**
-!trajectories/demonstrations/**
-data/**
-.vscode/**
 
 # PyCharm
 .idea/

@@ -1,4 +1,4 @@
-# More installation tips
+# Installation troubleshooting
 
 ## Docker issues <a name="docker"></a>
 
@@ -11,7 +11,8 @@ docker run hello-world
 If you get an error like
 
 ```
-docker: permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Head "http://%2Fvar%2Frun%2Fdocker.sock/_ping": dial unix /var/run/docker.sock: connect: permission denied.
+docker: permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock:
+Head "http://%2Fvar%2Frun%2Fdocker.sock/_ping": dial unix /var/run/docker.sock: connect: permission denied.
 ```
 
 * Make sure that you allow the use of the Docker socket. In Docker desktop, click *Settings* > *Advanced* > *Allow the default Docker socket to be used (requires password)*.

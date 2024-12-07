@@ -12,15 +12,16 @@ build-backend = "setuptools.build_meta"  # If not defined, then legacy behavior 
 
 [project]
 name = "sweagent"
-dynamic = ["version", "dependencies"]
+dynamic = ["version"]
 description = "The official SWE-agent package - an open source Agent Computer Interface for running language models as software engineers."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {file = "LICENSE"}
 keywords = ["nlp", "agents", "code"]
 authors = [
-  {name = "Carlos E. Jimenez", email = "carlosej@princeton.edu" },
-  {name = "John Yang", email = "byjohnyang@gmail.com" }
+    {name = "Carlos E. Jimenez", email = "carlosej@princeton.edu" },
+    {name = "John Yang", email = "byjohnyang@gmail.com" },
+    {name = "Kilian Lieret", email = "kilian.lieret@posteo.de" },
 ]
 
 # Classifiers help users find your project by categorizing it.
@@ -36,6 +37,30 @@ classifiers = [
   "Programming Language :: Python :: 3 :: Only",
 ]
 
+dependencies = [
+    "datasets",
+    "numpy",
+    "pandas",
+    "rich",
+    "ruamel.yaml",
+    "tenacity",
+    "unidiff",
+    "simple-parsing",
+    "rich-argparse",
+    "flask",
+    "flask-cors",
+    "flask-socketio",
+    "pydantic",
+    "python-dotenv",
+    "pydantic_settings",
+    "litellm",
+    "GitPython",
+    "ghapi",
+]
+
+[project.scripts]
+sweagent = "sweagent.run.run:main"
+
 [project.optional-dependencies]
 dev = [
     "mike",
@@ -47,6 +72,7 @@ dev = [
     "pytest-cov",
     "pipx",
     "pre-commit",
+    "pytest-xdist",
 ]
 
 [tool.setuptools]
@@ -54,7 +80,6 @@ include-package-data = true
 
 [tool.setuptools.dynamic]
 version = {attr = "sweagent.__version__"}
-dependencies = {file = ["requirements.txt"]}
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -76,6 +101,7 @@ testpaths = [
     "tests"
 ]
 xfail_strict = true
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
@@ -115,7 +141,7 @@ exclude = [
 line-length = 120
 indent-width = 4
 
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
@@ -228,4 +254,4 @@ ACI = "ACI"
 aci = "aci"
 
 [tool.ruff.lint.isort]
-required-imports = ["from __future__ import annotations"]
+# required-imports = ["from __future__ import annotations"]
