@@ -11,7 +11,7 @@ import yaml
 from jinja2 import Template
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from simple_parsing.helpers.fields import field
-from swerex.exceptions import BashIncorrectSyntaxError, CommandTimeoutError, SweRexception
+from swerex.exceptions import BashIncorrectSyntaxError, CommandTimeoutError, SwerexException
 from tenacity import RetryError
 from typing_extensions import Self
 
@@ -206,12 +206,15 @@ class Agent:
     # ----------
 
     @property
-    def replay_config(self) -> dict | None:
+    def replay_config(self) -> BaseModel | None:
         return self._replay_config
 
     @replay_config.setter
-    def replay_config(self, value: BaseModel | None):
-        self._replay_config = _strip_abspath_from_dict(value.model_dump(mode="json")) if value else None
+    def replay_config(self, value: BaseModel):
+        # Do import here to avoid circular dependency
+        from sweagent.run.run_single import RunSingleConfig
+
+        self._replay_config = RunSingleConfig.model_validate(_strip_abspath_from_dict(value.model_dump()))
 
     @property
     def history(self) -> History:
@@ -474,7 +477,9 @@ class Agent:
                     "info": self._info_by_attempt[attempt_idx],
                 }
             )
-            attempt_data["replay_config"] = self.replay_config
+            attempt_data["replay_config"] = (
+                self.replay_config.model_dump_json() if self.replay_config is not None else None
+            )
             attempt_data["environment"] = self._env.name
             return attempt_data
 
@@ -774,7 +779,7 @@ class Agent:
                     "exit_api",
                     f"Exit due to retry error: {e}",
                 )
-            except SweRexception as e:
+            except SwerexException as e:
                 self.logger.exception(f"Exiting due to environment error: {e}", exc_info=True)
                 return handle_error_with_autosubmission(
                     "exit_environment_error",
@@ -860,6 +865,7 @@ class Agent:
             env: The environment to run the agent on.
             traj_dir: Directory to save the trajectory to
         """
+        output_dir.mkdir(parents=True, exist_ok=True)
         self.setup(env=env, problem_statement=problem_statement, output_dir=output_dir)
 
         # Run action/observation loop

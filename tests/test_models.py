@@ -11,7 +11,7 @@ from sweagent.types import History
 def test_litellm_mock():
     model = get_model(
         GenericAPIModelConfig(
-            name="o1-preview",
+            name="gpt-4o",
             completion_kwargs={"mock_response": "Hello, world!"},
             api_key=SecretStr("dummy_key"),
             top_p=None,
@@ -20,4 +20,4 @@ def test_litellm_mock():
             parse_function=Identity(),
         ),
     )
-    assert model.query(History([{"role": "user", "content": "Hello, world!"}])) == {"message": "Hello, world!"}
+    assert model.query(History([{"role": "user", "content": "Hello, world!"}])) == {"message": "Hello, world!"}  # type: ignore

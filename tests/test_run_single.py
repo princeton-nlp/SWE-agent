@@ -36,6 +36,7 @@ def agent_config_with_commands():
         Bundle(path=TOOLS_DIR / "defaults"),
         Bundle(path=TOOLS_DIR / "submit"),
     ]
+    ac.tools.env_variables = {"WINDOW": 100}
     assert (TOOLS_DIR / "submit").exists()
     # Make sure dependent properties are set
     ac.tools.model_post_init(None)
@@ -45,6 +46,7 @@ def agent_config_with_commands():
 @pytest.mark.slow
 def test_hidden_tools(tmpdir):
     ac = AgentConfig(model=InstantEmptySubmitModelConfig())
+    ac.tools.env_variables = {"WINDOW": 100}
     ac.tools.bundles = [
         Bundle(path=TOOLS_DIR / "defaults", hidden_tools=["scroll_up"]),
         Bundle(path=TOOLS_DIR / "submit"),
@@ -117,5 +119,5 @@ def test_run_ies_repo_ps_matrix(
         # Test that we can run run.py also independently from repo dir
         rs.run()
     for fmt in output_formats:
-        assert len(list(Path(tmpdir).glob(f"*.{fmt}"))) == 1
+        assert len(list(Path(tmpdir).rglob(f"*.{fmt}"))) == 1
         print(fmt, list(Path(tmpdir).iterdir()))

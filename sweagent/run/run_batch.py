@@ -41,6 +41,7 @@ from contextlib import ExitStack
 from pathlib import Path
 from typing import Self
 
+import yaml
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from rich.live import Live
@@ -162,6 +163,7 @@ class RunBatch:
         load_environment_variables(config.env_var_path)
         config.set_default_output_dir()
         config.output_dir.mkdir(parents=True, exist_ok=True)
+        (config.output_dir / "run_batch.config.yaml").write_text(yaml.dump(config.model_dump_json(), indent=2))
         logger = get_logger("run", emoji="🏃")
         logger.debug("Loading instances from %s", f"{config.instances!r}")
         instances = config.instances.get_instance_configs()
@@ -287,12 +289,17 @@ class RunBatch:
             self._remove_instance_log_file_handlers(instance.problem_statement.id)
 
     def _run_instance(self, instance: BatchInstance) -> AgentRunResult:
+        output_dir = Path(self.output_dir) / instance.problem_statement.id
+        output_dir.mkdir(parents=True, exist_ok=True)
         self.agent_config.name = f"{instance.problem_statement.id}"
         agent = Agent.from_config(self.agent_config)
         single_run_replay_config = RunSingleConfig(
             agent=self.agent_config,
             problem_statement=instance.problem_statement,
             env=instance.env,
+        )
+        (output_dir / f"{instance.problem_statement.id}.config.yaml").write_text(
+            yaml.dump(single_run_replay_config.model_dump_json(), indent=2)
         )
         agent.replay_config = single_run_replay_config
         agent.add_hook(SetStatusAgentHook(instance.problem_statement.id, self._progress_manager.update_instance_status))
@@ -312,7 +319,7 @@ class RunBatch:
             result = agent.run(
                 problem_statement=instance.problem_statement,
                 env=env,
-                output_dir=Path(self.output_dir),
+                output_dir=output_dir,
             )
         except Exception:
             # The actual handling is happening in `run_instance`, but we need to make sure that

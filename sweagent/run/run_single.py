@@ -32,6 +32,7 @@ import sys
 from pathlib import Path
 from typing import Self
 
+import yaml
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings
 
@@ -158,10 +159,14 @@ class RunSingle:
         self.env.start()
         self.logger.info("Running agent")
         self._chooks.on_instance_start(index=0, env=self.env, problem_statement=self.problem_statement)
+        output_dir = self.output_dir / self.problem_statement.id
+        output_dir.mkdir(parents=True, exist_ok=True)
+        if self.agent.replay_config is not None:
+            (output_dir / "config.yaml").write_text(yaml.dump(self.agent.replay_config.model_dump_json(), indent=2))
         result = self.agent.run(
             problem_statement=self.problem_statement,
             env=self.env,
-            output_dir=Path(self.output_dir),
+            output_dir=output_dir,
         )
         self._chooks.on_instance_completed(result=result)
         self.logger.info("Done")
