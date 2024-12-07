@@ -10,7 +10,7 @@ Installation from source is the preferred way to set up SWE-agent on your machin
 2. If you plan on using the web-based GUI: Install [`nodejs`][nodejs-install].
 3. Clone the repository, for example with
     ```bash
-    git clone https://github.com/princeton-nlp/SWE-agent.git
+    git clone -b v0.7 https://github.com/princeton-nlp/SWE-agent.git
     ```
 4. Run
     ```
