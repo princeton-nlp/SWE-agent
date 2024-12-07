@@ -62,11 +62,9 @@ Here are a few more files that are generated with `sweagent run-batch`:
 !!! tip "Viewing trajectories"
     We provide a [trajectory viewer](inspector.md) for an easy viewing of trajectories.
 
-## How an Experiment Folder is Generated
-
 !!! tip
     * Evaluation is not completed by `run.py`, it is a separate step (see [benchmarking](benchmarking.md))
-    * `all_preds.jsonl` can be referenced directly into SWE-bench to run evaluation (see [benchmarking](benchmarking.md))
+    * `preds.json` can be referenced directly into SWE-bench to run evaluation (see [benchmarking](benchmarking.md))
     * Trajectories can be turned into custom demonstrations for SWE-agent ([more information](../config/demonstrations.md)).
 
 {% include-markdown "../_footer.md" %}

@@ -107,8 +107,7 @@ class SWEEnv:
         self._chook.on_copy_repo_started(repo=self.repo)
         self.repo.copy(self.deployment)
 
-    # todo: Get rid of return type here?
-    def reset(self) -> tuple[str | None, dict]:
+    def reset(self):
         """Reset the environment to a clean state.
         Gets called by `start`, but can also be called independently to reset the
         environment to a clean state before a new attempt.
@@ -117,12 +116,10 @@ class SWEEnv:
             observation: output from container
             info: additional information (e.g. debugging information)
         """
-        info = {}
         self.communicate(input="cd /", check="raise")
         self._copy_repo()
         self._reset_repository()
         self._chook.on_environment_startup()
-        return None, info
 
     def _reset_repository(self) -> None:
         """Clean repository of any modifications + Checkout base commit"""

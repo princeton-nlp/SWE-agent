@@ -53,11 +53,15 @@ markdown_extensions:
 nav:
   - Getting Started:
     - index.md
-    - "Installation": "installation/index.md"
+    - "Installation":
+      - "installation/index.md"
+      - "In browser": "installation/codespaces.md"
+      - "From source": "installation/source.md"
+      - "API keys": "installation/keys.md"
+      - "Troubleshooting": "installation/tips.md"
     - "Tutorials":
       - "Command line basics": "usage/cl_tutorial.md"
       - "Solving coding challenges": "usage/coding_challenges.md"
-    - "API keys": "installation/keys.md"
     - "FAQ": "usage/usage_faq.md"
   - User Guide:
     - "usage/index.md"

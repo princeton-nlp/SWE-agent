@@ -56,12 +56,12 @@ Now, we can let SWE-agent solve the problem:
 
 ```bash
 python run.py \
-    --data_path problem.md \
-    --repo_path /path/to/empty \
-    --config_file config/coding_challenge.yaml \
-    --model gpt4 \
-    --per_instance_cost_limit 3.0 \
-    --apply_patch_locally
+    --config config/coding_challenge.yaml \
+    --problem_statement.path=problem.md \
+    --repo.path=/path/to/empty \
+    --agent.model.name=gpt4 \
+    --agent.model.per_instance_cost_limit 3.0 \
+    --action.apply_patch_locally=True
 ```
 
 <details>

@@ -14,5 +14,4 @@ We're open to merge simple fixes to make the [development setup](installation/so
 
 > Which LMs do you support?
 
-Currently our model support is limited, mostly focused on GPT-4 and Claude 3. SWE-agent will not perform well with small or local models.
-[More information on models](usage/usage_faq.md).
+See [models](installation/keys.md).

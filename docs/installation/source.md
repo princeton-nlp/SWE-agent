@@ -2,27 +2,24 @@
 
 Installation from source is the preferred way to set up SWE-agent on your machine.
 
-!!! warning "Issues on Windows"
-    Expect some issues with Windows (we're working on them).
-    In the meantime, [use Docker](docker.md).
-
-1. Install Docker ([follow the docs](https://github.com/docker/docker-install) or use the [get-docker.sh script for linux](https://github.com/docker/docker-install)), then start Docker locally. Problems? See [docker issues](tips.md#docker).
-2. If you plan on using the web-based GUI: Install [`nodejs`][nodejs-install].
-3. Clone the repository, for example with
+1. Clone the repository, for example with
     ```bash
     git clone https://github.com/princeton-nlp/SWE-agent.git
     ```
-4. Run
+2. Run
     ```
     python -m pip install --upgrade pip && pip install --editable .
     ```
     at the repository root (as with any python setup, it's recommended to use [conda][] or [virtual environments][] to manage dependencies).
-5. Run
-    ```bash
-    docker pull sweagent/swe-agent:latest
-    ```
-    Errors? See [docker issues](tips.md#docker). Alternatively, you can run `./setup.sh` to create your own `swe-agent` docker image.
-6. Set up your LM API keys as explained [here](keys.md).
+3. Set up your language model of choice as explained [here](keys.md).
+
+**Optional:**
+
+1. The default backend for SWE-agent is docker, so we recommend to install Docker
+   ([follow the docs](https://github.com/docker/docker-install) or use the [get-docker.sh script for linux](https://github.com/docker/docker-install)),
+   then start Docker locally. Problems? See [docker issues](tips.md#docker).
+   If you do not want to use docker, you can still use SWE-agent with code evaluation in the cloud.
+2. If you plan on using the web-based GUI: Install [`nodejs`][nodejs-install].
 
 [nodejs-install]: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
 

@@ -21,13 +21,13 @@
     [:octicons-arrow-right-24: Get started](source.md)
 
 
--   :material-docker:{ .lg .middle } __Run in docker__
+-   :material-docker:{ .lg .middle } __Coming soon: Run in docker__
 
     ---
 
     Pull a docker container and directly run SWE-agent. This is our fallback solution if the local installation does not work for you.
 
-    [:octicons-arrow-right-24: Get started](docker.md)
+    :octicons-arrow-right-24: Coming soon
 
 -   :material-newspaper:{ .lg .middle } __Changelog__
 
