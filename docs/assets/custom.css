@@ -14,16 +14,18 @@
   color: #000000;
 }
 
-.md-typeset {
-  font-size: 0.9rem;
+.md-main__inner.md-grid {
+  max-width: 76vw;
 }
 
 .md-grid {
-  max-width: 85vw;
+  max-width: 76vw;
 }
 
-.md-typeset h1 {
-  font-weight: 600;
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3 {
+  font-weight: 400;
   color: var(
     --md-primary-fg-color-dark
   ); /* this actually works for both light and dark themes */
