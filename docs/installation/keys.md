@@ -22,3 +22,19 @@ See the following links for tutorials on obtaining [Anthropic](https://docs.anth
 
 !!! tip "Models"
     Some more information about the available models in our [usage FAQ](../usage/usage_faq.md).
+
+### Models for testing
+
+We also provide models for testing SWE-agent without spending any credits
+
+* `HumanModel` and `HumanThoughtModel` will prompt for input from the user that stands in for the output of the LM. This can be used to create new [demonstrations](../config/demonstrations.md#manual).
+* `ReplayModel` takes a trajectory as input and "replays it"
+* `InstantEmptySubmitTestModel` will create an empty `reproduce.py` and then submit
+
+### Debugging
+
+* If you get `Error code: 404`, please check your configured keys, in particular
+  whether you set `OPENAI_API_BASE_URL` correctly (if you're not using it, the
+  line should be deleted or commented out).
+  Also see [this issue](https://github.com/princeton-nlp/SWE-agent/issues/467)
+  for reference.

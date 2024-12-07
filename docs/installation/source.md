@@ -30,8 +30,6 @@ Installation from source is the preferred way to set up SWE-agent on your machin
     SWE-agent is still in active development. Features and enhancement are added often.
     To make sure you are on the latest version, periodically run `git pull`
     (there is no need to redo the `pip install`).
-    You might also want to run `docker pull sweagent/swe-agent:latest` or `./setup.sh` periodically
-    (though changes to the container are more rare).
 
 !!! note "Development setup"
     Want to modify SWE-agent? Great! There are a few extra steps and tips:

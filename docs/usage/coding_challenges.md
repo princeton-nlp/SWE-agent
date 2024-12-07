@@ -1,14 +1,14 @@
 # Using SWE-agent for coding challenges
 
-!!! tip "Command line tutorial"
-    We also provide a more general [command line tutorial](cl_tutorial.md), which covers
-    many more advanced features of SWE-agent, but focuses on its use for software engineering
-    problems.
+!!! abstract "Overview"
+    It is easy to use SWE-agent to do more than just software engineering.
+    For example, you can tell SWE-agent to work on leetcode or humaneval-style problems.
 
-It is easy to use SWE-agent to do more than just software engineering.
-For example, you can tell SWE-agent to work on leetcode or humaneval-style problems.
+    Required reading:
+    Please first skim [hello world](hello_world.md) and [command line basics](cl_tutorial.md) to get familiar with the basics of SWE-agent.
 
-For this, put the problem you want to solve in a markdown file `problem.md`, for example:
+
+Let's start with a new problem statement. For this, put the problem you want to solve in a markdown file `problem.md`, for example:
 
 <details>
 <summary>Example leetcode challenge</summary>

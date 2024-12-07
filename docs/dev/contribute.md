@@ -64,7 +64,7 @@ pytest -n auto
 If you are using VSCode, you might want to add the following two files:
 
 <details>
-<summary>`.vscode/launch.json`</summary>
+<summary><code>.vscode/launch.json</code></summary>
 
 ```json
 --8<-- "docs/dev/vscode_launch.json"
@@ -72,7 +72,7 @@ If you are using VSCode, you might want to add the following two files:
 </details>
 
 <details>
-<summary>`.vscode/settings.json`</summary>
+<summary><code>.vscode/settings.json</code></summary>
 
 ```json
 --8<-- "docs/dev/vscode_settings.json"

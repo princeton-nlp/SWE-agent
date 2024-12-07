@@ -57,21 +57,27 @@ nav:
       - "installation/index.md"
       - "In browser": "installation/codespaces.md"
       - "From source": "installation/source.md"
-      - "API keys": "installation/keys.md"
+      - "Models and keys": "installation/keys.md"
       - "Troubleshooting": "installation/tips.md"
     - "Tutorials":
+      - "Hello world": "usage/hello_world.md"
       - "Command line basics": "usage/cl_tutorial.md"
       - "Solving coding challenges": "usage/coding_challenges.md"
+      - "Trajectory inspector": "usage/inspector.md"
+      - "Benchmarking": "usage/benchmarking.md"
     - "FAQ": "usage/usage_faq.md"
-  - User Guide:
+  - User Guides:
     - "usage/index.md"
-    - "Trajectories": "usage/trajectories.md"
-    - "Trajectory inspector": "usage/inspector.md"
-    - "Benchmarking": "usage/benchmarking.md"
-    - "Config files": "config/config.md"
-    - "Demonstrations": "config/demonstrations.md"
-    - Development:
+    - Project overview:
+      - "index": "background/index.md"
       - "Architecture": "background/architecture.md"
+      - "Agent tools": "background/aci.md"
+      - "Interactive agent tools": "background/iat.md"
+    - "Output files": "usage/trajectories.md"
+    - "Configuration":
+      - "Config files": "config/config.md"
+      - "Demonstrations": "config/demonstrations.md"
+    - Development:
       - "Contribution guide": "dev/contribute.md"
       - "Formatting conflicts": "dev/formatting_conflicts.md"
       - "Changelog": "dev/changelog.md"
