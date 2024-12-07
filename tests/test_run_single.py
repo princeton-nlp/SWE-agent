@@ -33,6 +33,7 @@ def test_run_single_raises_exception():
 def agent_config_with_commands():
     ac = AgentConfig(model=InstantEmptySubmitModelConfig())
     ac.tools.bundles = [
+        Bundle(path=TOOLS_DIR / "registry"),
         Bundle(path=TOOLS_DIR / "defaults"),
         Bundle(path=TOOLS_DIR / "submit"),
     ]
@@ -48,6 +49,7 @@ def test_hidden_tools(tmpdir):
     ac = AgentConfig(model=InstantEmptySubmitModelConfig())
     ac.tools.env_variables = {"WINDOW": 100}
     ac.tools.bundles = [
+        Bundle(path=TOOLS_DIR / "registry"),
         Bundle(path=TOOLS_DIR / "defaults", hidden_tools=["scroll_up"]),
         Bundle(path=TOOLS_DIR / "submit"),
     ]

@@ -12,6 +12,7 @@ else:
     default_lib = TOOLS_DIR / "defaults" / "lib"
     assert default_lib.is_dir()
     sys.path.append(str(default_lib))
+    sys.path.append(str(TOOLS_DIR / "registry" / "lib"))
 
 from windowed_file import FileNotOpened, WindowedFile  # type: ignore
 from flake8_utils import flake8, format_flake8_output  # type: ignore

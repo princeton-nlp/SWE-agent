@@ -261,6 +261,10 @@
         },
         "bundles": [
           {
+            "path": "tools/registry",
+            "hidden_tools": []
+          },
+          {
             "path": "tools/defaults",
             "hidden_tools": []
           },

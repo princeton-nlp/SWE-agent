@@ -10,9 +10,9 @@ from tests.utils import make_python_tool_importable
 DEFAULT_TOOLS_DIR = TOOLS_DIR / "defaults"
 DEFAULT_TOOLS_BIN = DEFAULT_TOOLS_DIR / "bin"
 
-make_python_tool_importable(DEFAULT_TOOLS_DIR / "lib/default_utils.py", "default_utils")
-import default_utils  # type: ignore
-from windowed_file import WindowedFile  # type: ignore
+make_python_tool_importable(DEFAULT_TOOLS_DIR / "lib/windowed_file.py", "windowed_file")
+import windowed_file  # type: ignore
+from windowed_file import TextNotFound, WindowedFile  # type: ignore
 
 
 def test_env_file_override(with_tmp_env_file):
@@ -59,7 +59,7 @@ def test_windowed_file(windowed_file):
     wfile.print_window()
     # Line 50 is now the 2nd line of the new window
     assert wfile.line_range == (47, 56)
-    with pytest.raises(default_utils.TextNotFound):
+    with pytest.raises(TextNotFound):
         wfile.replace_in_window("asdf", "Hello, world!")
 
 

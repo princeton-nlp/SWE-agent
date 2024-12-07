@@ -18,6 +18,7 @@ else:
     default_lib = TOOLS_DIR / "defaults" / "lib"
     assert default_lib.is_dir()
     sys.path.append(str(default_lib))
+    sys.path.append(str(TOOLS_DIR / "registry" / "lib"))
 
 from registry import registry
 

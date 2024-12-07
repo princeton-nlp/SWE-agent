@@ -2,6 +2,16 @@ import json
 import os
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
+
+try:
+    from sweagent import TOOLS_DIR
+except ImportError:
+    pass
+else:
+    import sys
+
+    sys.path.append(str(TOOLS_DIR / "registry" / "lib"))
+
 from registry import registry
 
 
