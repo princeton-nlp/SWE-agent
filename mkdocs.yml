@@ -1,4 +1,5 @@
 site_name: SWE-agent documentation
+site_url: https://swe-agent.com
 theme:
   name: material
   icon:
@@ -109,6 +110,9 @@ plugins:
   - glightbox
   - search
   - include-markdown
+  - mike:
+      canonical_version: latest
+      version_selector: true
   - mkdocstrings:
       default_handler: python
       handlers:
@@ -141,3 +145,6 @@ extra_css:
   - assets/custom.css
   - assets/mkdocstrings.css
   - assets/image_theme.css
+extra:
+  version:
+    provider: mike
