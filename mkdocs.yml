@@ -5,6 +5,7 @@ theme:
     repo: fontawesome/brands/github
     annotation: material/chevron-right-circle
   logo: assets/swe-agent.svg
+  favicon: assets/favicon.ico
   palette:
     - media: "(prefers-color-scheme)"
       toggle:
