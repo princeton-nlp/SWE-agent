@@ -19,36 +19,42 @@ In this tutorial, we will focus on the `run` subcommand.
 Let's start with an absolutely trivial example and solve an issue about a simple syntax error ([`swe-agent/test-repo #1`](https://github.com/SWE-agent/test-repo/issues/1))
 
 ```bash
-python run.py \
-  --agent.model.name=gpt4 \
-  --agent.model.per_instance_cost_limit=2.00 \  # (1)!
+sweagent run \
+  --agent.model.name=claude-3-5-sonnet-20241022 \  # (1)!
+  --agent.model.per_instance_cost_limit=2.00 \  # (2)!
   --env.repo.github_url=https://github.com/SWE-agent/test-repo \
   --problem_statement.github_url=https://github.com/SWE-agent/test-repo/issues/1
 ```
 
-1. This limits the inference cost per instance to $2. The default is $3.
+1. We recommend either `Claude 3.5 Sonnet` or `GPT-4o` for this tutorial.
+2. This limits the inference cost per instance to $2. The default is $3.
 
 !!! tip "Annotations"
     Notice the :material-chevron-right-circle: icon in the right margin in the code snippet? Click on it to display more information
     about the line.
 
-The example above uses the `gpt4` model from OpenAI. In order to use it, you need to add your OpenAI API key to the environment:
+The example above uses the `Claude 3.5 Sonnet` model from Anthropic. Alternatively, you can use `GPT-4o` (from OpenAI).
+In order to use it, you need to add your keys to the environment:
 
 ```bash
+export ANTHROPIC_API_KEY=<your key>
 export OPENAI_API_KEY=<your key>
 ```
 
-alternatively, you can create a `.env` file in your working directory and put the key in there.
-More information about environment: TODO
+alternatively, you can create a `.env` file in your working directory and put your keys in there like so:
 
+```bash
+ANTHROPIC_API_KEY=<your key>
+OPENAI_API_KEY=<your key>
+```
 
-TODO: Update output
+We should support all models that you can think of. Read more about configuring them [here](../installation/keys.md).
 
 <details>
 <summary>Output</summary>
 
-```json
---8<-- "docs/usage/cl_tutorial_cmd_1_output.log"
+```
+--8<-- "docs/usage/hello_world_output.txt"
 ```
 </details>
 
