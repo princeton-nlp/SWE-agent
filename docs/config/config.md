@@ -7,7 +7,7 @@ This page contains details describing how to write your own configurations to co
 
 A configuration is represented in one or more `.yaml` files, specified by the `--config` flag in the [command line interface](../usage/cl_tutorial.md), allowing you to...
 
-* Define the **commands** that agents may use to traverse + modify a codebase (see [here](commands.md) for more details)
+* Define the **commands** that agents may use to traverse + modify a codebase (see [here](tools.md) for more details)
 * Write **prompts** that are deterministically/conditionally shown to the agent over the course of a single trajectory.
 * Control the **input/output interface** that sits between the agent and `SWEEnv`.
 
