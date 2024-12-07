@@ -180,7 +180,7 @@ The repository can be specified in a few different ways:
 --env.repo.path=/path/to/repo
 ```
 
-Again, those are [union types](union-types). See here for all the options:
+Again, those are [union types](#union-types). See here for all the options:
 
 * [`GithubRepoConfig`](../reference/repo.md#sweagent.environment.repo.GithubRepoConfig): Pull a repository from GitHub.
 * [`LocalRepoConfig`](../reference/repo.md#sweagent.environment.repo.LocalRepoConfig): Copies a repository from your local filesystem to the docker container.
