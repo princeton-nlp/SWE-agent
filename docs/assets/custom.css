@@ -2,6 +2,7 @@
   --md-default-bg-color: #fff7ec;
   --md-primary-fg-color: #000000;
   --md-typeset-a-color: #0099ff;
+  --md-code-bg-color: #e7e7e7;
 }
 
 [data-md-color-scheme="slate"] {
