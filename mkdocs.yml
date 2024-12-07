@@ -134,3 +134,4 @@ edit_uri: edit/main/docs/
 extra_css:
   - assets/custom.css
   - assets/mkdocstrings.css
+  - assets/image_theme.css

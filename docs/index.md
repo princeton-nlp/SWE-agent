@@ -3,7 +3,8 @@ title: "Getting Started"
 ---
 
 <div style="text-align: center;">
-    <img src="assets/readme_assets/swe-agent-banner.png" alt="SWE-agent banner" style="height: 12em;">
+    <img class="light-mode-only" src="assets/readme_assets/swe-agent-banner-light.svg" alt="SWE-agent banner" style="height: 10em;">
+    <img class="dark-mode-only" src="assets/readme_assets/swe-agent-banner-dark.svg" alt="SWE-agent banner" style="height: 10em;">
 </div>
 
 SWE-agent is an open-source platform for deploying language model (LM) agents in isolated computer environments.
