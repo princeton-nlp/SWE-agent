@@ -42,10 +42,13 @@ jobs:
       - name: Install dependencies
         run: |
             uv pip install --python ${Python_ROOT_DIR} '.[dev]'
+      - name: Check available files
+        run: |
+          find .
       - name: Run pytest
         uses: sjvrijn/pytest-last-failed@v2
         with:
-          pytest-args: '--cov -n auto'
+          pytest-args: '--cov -n auto -s'
       - name: Upload logs & trajectories
         uses: actions/upload-artifact@v4
         if: always()

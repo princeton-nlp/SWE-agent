@@ -22,17 +22,17 @@ getLogger("numexpr.utils").setLevel(WARNING)
 getLogger("LiteLLM").setLevel(WARNING)
 
 PACKAGE_DIR = Path(__file__).resolve().parent
-assert PACKAGE_DIR.is_dir()
+assert PACKAGE_DIR.is_dir(), PACKAGE_DIR
 REPO_ROOT = PACKAGE_DIR.parent
-assert REPO_ROOT.is_dir()
+assert REPO_ROOT.is_dir(), REPO_ROOT
 CONFIG_DIR = PACKAGE_DIR.parent / "config"
-assert CONFIG_DIR.is_dir()
+assert CONFIG_DIR.is_dir(), CONFIG_DIR
 
 TOOLS_DIR = PACKAGE_DIR.parent / "tools"
-assert TOOLS_DIR.is_dir()
+assert TOOLS_DIR.is_dir(), TOOLS_DIR
 
 TRAJECTORY_DIR = PACKAGE_DIR.parent / "trajectories"
-assert TRAJECTORY_DIR.is_dir()
+assert TRAJECTORY_DIR.is_dir(), TRAJECTORY_DIR
 
 
 def get_agent_commit_hash() -> str:
