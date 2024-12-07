@@ -272,7 +272,7 @@ class SWEBenchInstances(BaseModel, AbstractInstanceSource):
     shuffle: bool = False
     """Shuffle the instances (before filtering and slicing)."""
 
-    evaluate: bool = True
+    evaluate: bool = False
     """Run sb-cli to evaluate"""
 
     def _get_huggingface_name(self) -> str:
