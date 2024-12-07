@@ -36,8 +36,11 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
       - run: uv pip install --python ${Python_ROOT_DIR} '.[dev]'
       - name: Build Documentation
-        if: github.ref != 'refs/heads/main'
+        if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/v0.7'
         run: mkdocs build
+      - name: Deploy on 0.7
+        if: github.ref == 'refs/heads/v0.7'
+        run: mike deploy --push 0.7
       - name: Build + Deploy Documentation
         if: github.ref == 'refs/heads/main'
-        run: mike deploy --push 0.7 latest
+        run: mike deploy --push 1.0 latest
