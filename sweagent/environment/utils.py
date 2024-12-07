@@ -460,6 +460,8 @@ def _get_non_persistent_container(
     startup_cmd = [
         "docker",
         "run",
+        "--platform",
+        "linux/amd64",
         "-i",
         "--rm",
         *[item for mount in container_mounts for item in ("-v", f"{Path(mount).absolute()}:/{Path(mount).name}")],
