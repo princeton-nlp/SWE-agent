@@ -15,12 +15,16 @@
   color: #000000;
 }
 
-.md-main__inner.md-grid {
-  max-width: 76vw;
+.md-main__inner.md-grid,
+.md-grid {
+  max-width: 64rem;
 }
 
-.md-grid {
-  max-width: 76vw;
+@media screen and (min-width: 1220px) {
+  .md-main__inner.md-grid,
+  .md-grid {
+    max-width: 64rem;
+  }
 }
 
 .md-typeset h1,
