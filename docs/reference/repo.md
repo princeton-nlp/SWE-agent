@@ -2,7 +2,7 @@
 
 We currently support the following repository types:
 
-* A pre-existing repository (`PreExistingRepo`)
+* A pre-existing repository (`PreExistingRepoConfig`)
 * A local repository (`LocalRepoConfig`)
 * A GitHub repository (`GithubRepoConfig`)
 
@@ -23,7 +23,7 @@ For example:
 
 All of these classes are defined in `sweagent.environment.config.repo`.
 
-::: sweagent.environment.config.repo.PreExistingRepo
+::: sweagent.environment.config.repo.PreExistingRepoConfig
     options:
         show_root_full_path: false
         show_bases: false
