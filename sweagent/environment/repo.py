@@ -3,10 +3,9 @@ import os
 from pathlib import Path
 from typing import Any, Literal, Protocol
 
-import pydantic
 from git import InvalidGitRepositoryError
 from git import Repo as GitRepo
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from swerex.deployment.abstract import AbstractDeployment
 from swerex.runtime.abstract import Command, UploadRequest
 from typing_extensions import Self
@@ -45,6 +44,8 @@ class PreExistingRepoConfig(BaseModel):
     type: Literal["preexisting"] = "preexisting"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
+    model_config = ConfigDict(extra="forbid")
+
     def copy(self, deployment: AbstractDeployment):
         """Does nothing."""
         pass
@@ -62,12 +63,15 @@ class LocalRepoConfig(BaseModel):
     type: Literal["local"] = "local"
     """Discriminator for (de)serialization/CLI. Do not change."""
 
+    model_config = ConfigDict(extra="forbid")
+
     @property
     def repo_name(self) -> str:
         """Set automatically based on the repository name. Cannot be set."""
         return Path(self.path).resolve().name.replace(" ", "-").replace("'", "")
 
-    @pydantic.model_validator(mode="after")
+    # Let's not make this a model validator, because it leads to cryptic errors.
+    # Let's just check during copy instead.
     def check_valid_repo(self) -> Self:
         try:
             repo = GitRepo(self.path, search_parent_directories=True)
@@ -80,6 +84,7 @@ class LocalRepoConfig(BaseModel):
         return self
 
     def copy(self, deployment: AbstractDeployment):
+        self.check_valid_repo()
         asyncio.run(
             deployment.runtime.upload(UploadRequest(source_path=str(self.path), target_path=f"/{self.repo_name}"))
         )
@@ -90,7 +95,7 @@ class LocalRepoConfig(BaseModel):
 
 
 class GithubRepoConfig(BaseModel):
-    github_url: str = ""
+    github_url: str
 
     base_commit: str = Field(default="HEAD")
     """The commit to reset the repository to. The default is HEAD,
@@ -104,6 +109,8 @@ class GithubRepoConfig(BaseModel):
 
     type: Literal["github"] = "github"
     """Discriminator for (de)serialization/CLI. Do not change."""
+
+    model_config = ConfigDict(extra="forbid")
 
     def model_post_init(self, __context: Any) -> None:
         if self.github_url.count("/") == 1:

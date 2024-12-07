@@ -75,23 +75,23 @@ agent:
       --- END OF DEMONSTRATION ---
     demonstrations:
       - trajectories/demonstrations/human_thought__swe-bench-HumanEvalFix-python__lcb__t-0.00__p-0.95__c-4.00__install-0/humanevalfix-python-0.traj
-tools:
-  env_variables:
-    WINDOW: 100
-    OVERLAP: 2
-    CURRENT_LINE: 0
-    CURRENT_FILE: ""
-    SEARCH_RESULTS: ()
-    SEARCH_FILES: ()
-    SEARCH_INDEX: 0
-  bundles:
-    - path: tools/registry
-    - path: tools/defaults
-    - path: tools/search
-    - path: tools/edit_replace
-    - path: tools/submit
-  parse_function:
-    type: thought_action
-history_processors:
-  - type: last_n_observations
-    n: 5
+  tools:
+    env_variables:
+      WINDOW: 100
+      OVERLAP: 2
+      CURRENT_LINE: 0
+      CURRENT_FILE: ""
+      SEARCH_RESULTS: ()
+      SEARCH_FILES: ()
+      SEARCH_INDEX: 0
+    bundles:
+      - path: tools/registry
+      - path: tools/defaults
+      - path: tools/search
+      - path: tools/edit_replace
+      - path: tools/submit
+    parse_function:
+      type: thought_action
+  history_processors:
+    - type: last_n_observations
+      n: 5
