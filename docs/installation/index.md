@@ -2,14 +2,6 @@
 
 <div class="grid cards" markdown>
 
--   :material-github:{ .lg .middle } __All in browser__
-
-    ---
-
-    Run SWE-agent using GitHub codespaces in an in-browser VSCode environment.
-    Best for a quick first peek.
-
-    [:octicons-arrow-right-24: Get started](codespaces.md)
 
 -   :material-cog:{ .lg .middle } __Install from source__
 
@@ -19,6 +11,16 @@
     This is the default option.
 
     [:octicons-arrow-right-24: Get started](source.md)
+
+
+-   :material-github:{ .lg .middle } __All in browser__
+
+    ---
+
+    Run SWE-agent using GitHub codespaces in an in-browser VSCode environment.
+    Best for a quick first peek.
+
+    [:octicons-arrow-right-24: Get started](codespaces.md)
 
 
 -   :material-docker:{ .lg .middle } __Coming soon: Run in docker__

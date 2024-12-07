@@ -56,8 +56,8 @@ nav:
     - index.md
     - "Installation":
       - "installation/index.md"
-      - "In browser": "installation/codespaces.md"
       - "From source": "installation/source.md"
+      - "In browser": "installation/codespaces.md"
       - "Models and keys": "installation/keys.md"
       - "Troubleshooting": "installation/tips.md"
     - "Tutorials":
