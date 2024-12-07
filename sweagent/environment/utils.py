@@ -14,11 +14,12 @@ import traceback
 from io import BytesIO
 from pathlib import Path
 from subprocess import PIPE, STDOUT
-from typing import Any, Callable
+from typing import Any, Callable, tuple
 
 from datasets import load_dataset, load_from_disk
 from ghapi.all import GhApi
 from git import InvalidGitRepositoryError, Repo
+from gitlab import Gitlab, GitlabGetError  # Added for GitLab support
 from unidiff import PatchSet
 
 import docker
@@ -32,6 +33,9 @@ DOCKER_COMPOSE_TERMINATION_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START
 DOCKER_COMPOSE_STARTUP_DELAY = float(keys_config.get("SWE_AGENT_DOCKER_START_UP_DELAY", 600))
 GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
 GITHUB_REPO_URL_PATTERN = re.compile(r".*[/@]?github\.com\/([^/]+)\/([^/]+)")
+GITLAB_ISSUE_URL_PATTERN = re.compile(r"gitlab\.[\w.-]+/([^/]+)/([^/]+)(?:/-)?/issues/(\d+)")
+
+GITLAB_REPO_URL_PATTERN = re.compile(r".*[/@]?gitlab(?:\.[a-zA-Z0-9-]+)+\/([^/]+)\/([^/]+)")
 
 CTF_CHALLENGES_CATEGORIES = {
     "rev": "reverse engineering",
@@ -45,12 +49,27 @@ CTF_CHALLENGES_CATEGORIES = {
 logger = get_logger("env_utils")
 
 
-class NoOutputTimeoutError(TimeoutError): ...
+class NoOutputTimeoutError(TimeoutError):
+    """Raised when no output is produced within the specified timeout duration."""
+
+    pass
+
+
+class InvalidGithubURL(ValueError):
+    """Raised when a GitHub URL is invalid."""
+
+    pass
+
+
+class InvalidGitlabURL(ValueError):
+    """Raised when a GitLab URL is invalid."""
+
+    pass
 
 
 def get_data_path_name(data_path: str) -> str:
-    """if data_path is a file, return the file stem
-    elif it's a github url, return the owner__repo_name
+    """If data_path is a file, return the file stem.
+    If it's a GitHub or GitLab URL, return the owner__repo_name.
     """
     if data_path.startswith("text://"):
         return hashlib.sha256(data_path.removeprefix("text://").encode()).hexdigest()[:6]
@@ -58,22 +77,37 @@ def get_data_path_name(data_path: str) -> str:
     if match:
         owner, repo, _ = match.groups()
         return f"{owner}__{repo}"
+    match = GITLAB_ISSUE_URL_PATTERN.search(data_path)
+    if match:
+        owner, repo, _ = match.groups()
+        return f"{owner}__{repo}"
     return Path(data_path).stem
 
 
 def is_github_issue_url(data_path: str) -> bool:
-    """Check if data_path is an URL pointing to a github issue"""
+    """Check if data_path is a URL pointing to a GitHub issue."""
     return GITHUB_ISSUE_URL_PATTERN.search(data_path) is not None
 
 
+def is_gitlab_issue_url(data_path: str) -> bool:
+    """Check if data_path is a URL pointing to a GitLab issue."""
+    return GITLAB_ISSUE_URL_PATTERN.search(data_path) is not None
+
+
 def is_github_repo_url(data_path: str) -> bool:
-    """Check if data_path is an URL pointing to a github repository.
+    """Check if data_path is a URL pointing to a GitHub repository.
     Paths to issues or PRs will also match this pattern.
     """
     return GITHUB_REPO_URL_PATTERN.search(data_path) is not None
 
 
-# TODO: Why not just use copy_anything_to_container?
+def is_gitlab_repo_url(data_path: str) -> bool:
+    """Check if data_path is a URL pointing to a GitLab repository.
+    Paths to issues or merge requests will also match this pattern.
+    """
+    return GITLAB_REPO_URL_PATTERN.search(data_path) is not None
+
+
 def copy_file_to_container(container: Container, contents: str, container_path: str) -> None:
     """
     Copies a given string into a Docker container at a specified path.
@@ -120,7 +154,7 @@ def copy_file_to_container(container: Container, contents: str, container_path: 
 
 
 def copy_anything_to_container(container: Container, host_path: str, container_path: str) -> None:
-    """Copy files or directories from host to container
+    """Copy files or directories from host to container.
 
     Note: Will need to set ownership on the copied files in the container.
     """
@@ -230,10 +264,12 @@ def read_with_timeout_experimental(
         no_output_timeout_duration: The timeout duration to wait if no output is produced, in seconds.
 
     Returns:
-        Output and exit code, both as strings (!)
+        tuple containing output and exit code, both as strings.
 
     Raises:
         TimeoutError: If the timeout duration is reached while reading from the subprocess.
+        NoOutputTimeoutError: If no output is produced within the no_output_timeout_duration.
+        ValueError: If the process done marker is not found.
     """
     buffer = b""
     fd = container.stdout.fileno()
@@ -308,11 +344,11 @@ def read_session_with_timeout(
 
     Args:
         session: The session subprocess.
-        terminal_pattern: the terminal pattern to indicate end of output.
+        terminal_pattern: The terminal pattern to indicate end of output.
         timeout_duration: The timeout duration in seconds.
 
     Returns:
-        Output
+        Output as a string.
 
     Raises:
         TimeoutError: If the timeout duration is reached while reading from the subprocess.
@@ -389,9 +425,13 @@ def terminate_docker_compose(docker_compose_path: Path) -> None:
         text=True,
         bufsize=1,  # line buffered
     )
-    _, error = compose.communicate(timeout=DOCKER_COMPOSE_TERMINATION_DELAY)
-    if error:
-        logger.error(f"Unexpected compose termination error: {error}")
+    try:
+        _, error = compose.communicate(timeout=DOCKER_COMPOSE_TERMINATION_DELAY)
+        if error:
+            logger.error(f"Unexpected compose termination error: {error}")
+    except subprocess.TimeoutExpired:
+        logger.error("Docker-compose termination timed out.", exc_info=True)
+        compose.kill()
 
 
 def attach_network_interface_to_container(container_name: str) -> None:
@@ -411,10 +451,14 @@ def attach_network_interface_to_container(container_name: str) -> None:
         text=True,
         bufsize=1,  # line buffered
     )
-    _, error = compose.communicate(timeout=DOCKER_START_UP_DELAY)
-    if error:
-        logger.error(f"Unexpected compose setup error: {error}")
-        raise RuntimeError(error)
+    try:
+        _, error = compose.communicate(timeout=DOCKER_START_UP_DELAY)
+        if error:
+            logger.error(f"Unexpected compose setup error: {error}")
+            raise RuntimeError(error)
+    except subprocess.TimeoutExpired:
+        logger.error("Docker network attach timed out.", exc_info=True)
+        compose.kill()
 
 
 def get_docker_compose(docker_compose_path: Path) -> Path:
@@ -436,19 +480,28 @@ def get_docker_compose(docker_compose_path: Path) -> Path:
         text=True,
         bufsize=1,  # line buffered
     )
-    _, error = compose.communicate(timeout=DOCKER_COMPOSE_STARTUP_DELAY)
-    if error:
-        logger.error(f"Unexpected compose setup error: {error}")
+    try:
+        _, error = compose.communicate(timeout=DOCKER_COMPOSE_STARTUP_DELAY)
+        if error:
+            logger.error(f"Unexpected compose setup error: {error}")
+    except subprocess.TimeoutExpired:
+        logger.error("Docker-compose startup timed out.", exc_info=True)
+        compose.kill()
     return docker_compose_path
 
 
 def _get_container_mounts_list(container_mounts: list[str]) -> list[docker.types.Mount]:
     try:
-        for i in range(len(container_mounts)):
-            path = Path(container_mounts[i]).absolute()
+        mounts = []
+        for mount in container_mounts:
+            path = Path(mount).absolute()
             if path.is_dir():
-                container_mounts[i] = docker.types.Mount(source=str(path), target=f"/{path.name}")
-        return container_mounts
+                mounts.append(docker.types.Mount(source=str(path), target=f"/{path.name}"))
+            elif path.is_file():
+                mounts.append(docker.types.Mount(source=str(path), target=f"/{path.name}", type="bind"))
+            else:
+                logger.warning(f"Mount path {mount} is neither a file nor a directory. Skipping.")
+        return mounts
     except Exception:
         logger.warning("Failed to process container mounts, skipping mount.")
         return []
@@ -480,13 +533,15 @@ def _get_non_persistent_container(
     )
     time.sleep(DOCKER_START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
-    output = read_with_timeout(container, lambda: list(), timeout_duration=2)
-    if output:
-        logger.error(f"Unexpected container setup output: {output}")
+    try:
+        output = read_with_timeout(container, lambda: list(), timeout_duration=2)
+        if output:
+            logger.error(f"Unexpected container setup output: {output}")
+    except TimeoutError:
+        # No output expected; container is running as expected
+        pass
     # bash PID is always 1 for non-persistent containers
-    return container, {
-        "1",
-    }
+    return container, {"1"}
 
 
 def _get_persistent_container(
@@ -508,7 +563,7 @@ def _get_persistent_container(
             msg = f"Unexpected container status: {container_obj.status}"
             raise RuntimeError(msg)
     else:
-        container_mounts = _get_container_mounts_list(container_mounts)
+        mounts = _get_container_mounts_list(container_mounts)
         container_obj = client.containers.run(
             image_name,
             command="/bin/bash -l -m",
@@ -517,7 +572,7 @@ def _get_persistent_container(
             tty=True,
             detach=True,
             auto_remove=not persistent,
-            mounts=container_mounts,
+            mounts=mounts,
         )
         container_obj.start()
     startup_cmd = [
@@ -539,9 +594,13 @@ def _get_persistent_container(
     )
     time.sleep(DOCKER_START_UP_DELAY)
     # try to read output from container setup (usually an error), timeout if no output
-    output = read_with_timeout(container, lambda: list(), timeout_duration=2)
-    if output:
-        logger.error(f"Unexpected container setup output: {output}")
+    try:
+        output = read_with_timeout(container, lambda: list(), timeout_duration=2)
+        if output:
+            logger.error(f"Unexpected container setup output: {output}")
+    except TimeoutError:
+        # No output expected; container is running as expected
+        pass
     # Get the process IDs of the container
     # There should be at least a head process and possibly one child bash process
     bash_pids, other_pids = get_background_pids(container_obj)
@@ -554,7 +613,7 @@ def _get_persistent_container(
         bash_pids, other_pids = get_background_pids(container_obj)
         if total_time_slept > 5 * DOCKER_START_UP_DELAY:
             break
-    bash_pid = 1
+    bash_pid = "1"
     if len(bash_pids) == 1:
         bash_pid = bash_pids[0][0]
     elif len(bash_pids) > 1 or len(other_pids) > 0:
@@ -563,21 +622,22 @@ def _get_persistent_container(
             f"are running on this container. PIDs: {bash_pids}, {other_pids}"
         )
         raise RuntimeError(msg)
-    return container, {str(bash_pid), "1"}
+    return container, {bash_pid, "1"}
 
 
 def get_container(
     ctr_name: str, image_name: str, container_mounts: list[str], persistent: bool = False
 ) -> tuple[subprocess.Popen, set]:
     """
-    Get a container object for a given container name and image name
+    Get a container object for a given container name and image name.
 
     Arguments:
-        ctr_name (str): Name of container
-        image_name (str): Name of image
-        persistent (bool): Whether to use a persistent container or not
+        ctr_name (str): Name of container.
+        image_name (str): Name of image.
+        persistent (bool): Whether to use a persistent container or not.
+
     Returns:
-        Container object
+        tuple containing the subprocess.Popen object and a set of PIDs.
     """
     if not image_exists(image_name):
         msg = (
@@ -588,7 +648,7 @@ def get_container(
         raise RuntimeError(msg)
 
     if persistent:
-        return _get_persistent_container(ctr_name, image_name, container_mounts=container_mounts)
+        return _get_persistent_container(ctr_name, image_name, container_mounts=container_mounts, persistent=persistent)
     else:
         return _get_non_persistent_container(ctr_name, image_name, container_mounts=container_mounts)
 
@@ -598,9 +658,10 @@ def image_exists(image_name: str) -> bool:
     Check that the image exists and give some better error messages.
 
     Arguments:
-        image_name: Name of image
+        image_name: Name of image.
+
     Returns:
-        bool: True if image exists
+        bool: True if image exists, False otherwise.
     """
     try:
         client = docker.from_env()
@@ -614,54 +675,54 @@ def image_exists(image_name: str) -> bool:
         )
         if docker_not_running:
             msg = (
-                "Probably the Docker daemon is not running. Please start the Docker daemon and try again. "
+                "Docker is not running. Please start Docker and try again. "
                 "If Docker issues persist, please check out https://princeton-nlp.github.io/SWE-agent/installation/tips/"
             )
             raise RuntimeError(msg) from e
         raise
-    filterred_images = client.images.list(filters={"reference": image_name})
-    if len(filterred_images) == 0:
+    filtered_images = client.images.list(filters={"reference": image_name})
+    if len(filtered_images) == 0:
         return False
-    elif len(filterred_images) > 1:
-        RuntimeError(f"Multiple images found for {image_name}, that's weird.")
-    attrs = filterred_images[0].attrs
+    elif len(filtered_images) > 1:
+        msg = f"Multiple images found for {image_name}, that's weird."
+        raise RuntimeError(msg)
+    attrs = filtered_images[0].attrs
     if attrs is not None:
         logger.info(
             f"Found image {image_name} with tags: {attrs['RepoTags']}, created: {attrs['Created']} "
-            f"for {attrs['Os']} {attrs['Architecture']}.",
+            f"for {attrs['Os']} {attrs['Architecture']}."
         )
     return True
 
 
 def get_commit(api: GhApi, owner: str, repo: str, ref: str | None = None):
-    """Get commit object from github api
+    """Get commit object from GitHub API.
 
     Args:
-        api (GhApi):
-        owner (str): Repo owner, e.g., "princeton-nlp"
-        repo (str): Repo, e.g., "SWE-agent"
-        ref (str, optional): Branch, tag or commit hash
+        api (GhApi): GitHub API client.
+        owner (str): Repo owner, e.g., "princeton-nlp".
+        repo (str): Repo name, e.g., "SWE-agent".
+        ref (str, optional): Branch, tag, or commit hash.
 
     Returns:
-        _type_: _description_
+        Commit object.
     """
     if ref:
         return api.repos.get_commit(owner, repo, ref)
     return api.repos.list_commits(owner, repo)[0]
 
 
-class InvalidGithubURL(ValueError): ...
-
-
 def parse_gh_issue_url(issue_url: str) -> tuple[str, str, str]:
     """
+    Parse a GitHub issue URL and extract the owner, repo, and issue number.
+
     Returns:
-        owner: Repo owner
-        repo: Repo name
-        issue number: Issue number as str
+        owner: Repo owner.
+        repo: Repo name.
+        issue_number: Issue number as string.
 
     Raises:
-        InvalidGithubURL: If the URL is not a valid github issue URL
+        InvalidGithubURL: If the URL is not a valid GitHub issue URL.
     """
     match = GITHUB_ISSUE_URL_PATTERN.search(issue_url)
     if not match:
@@ -672,36 +733,115 @@ def parse_gh_issue_url(issue_url: str) -> tuple[str, str, str]:
     return tuple(res)  # type: ignore
 
 
-def parse_gh_repo_url(repo_url: str) -> tuple[str, str]:
+def parse_gitlab_issue_url(issue_url: str) -> tuple[str, str, str]:
     """
+    Parse a GitLab issue URL and extract the owner, repo, and issue number.
+
     Returns:
-        owner: Repo owner/org
-        repo: Repo name
+        owner: Repo owner/group.
+        repo: Repo name.
+        issue_number: Issue number as string.
 
     Raises:
-        InvalidGithubURL: If the URL is not a valid github repo URL
+        InvalidGitlabURL: If the URL is not a valid GitLab issue URL.
+    """
+    match = GITLAB_ISSUE_URL_PATTERN.search(issue_url)
+    if not match:
+        msg = f"Invalid GitLab issue URL: {issue_url}"
+        raise InvalidGitlabURL(msg)
+    res = match.groups()
+    assert len(res) == 3
+    return tuple(res)  # type: ignore
+
+
+def parse_gh_repo_url(repo_url: str) -> tuple[str, str]:
+    """
+    Parse a GitHub repository URL and extract the owner and repo name.
+
+    Returns:
+        owner: Repo owner/org.
+        repo: Repo name.
+
+    Raises:
+        InvalidGithubURL: If the URL is not a valid GitHub repo URL.
     """
     match = GITHUB_REPO_URL_PATTERN.search(repo_url)
     if not match:
-        msg = f"Invalid GitHub issue URL: {repo_url}"
+        msg = f"Invalid GitHub repository URL: {repo_url}"
         raise InvalidGithubURL(msg)
     res = match.groups()
     assert len(res) == 2
     return tuple(res)  # type: ignore
 
 
+def parse_gitlab_repo_url(repo_url: str) -> tuple[str, str]:
+    """
+    Parse a GitLab repository URL and extract the owner and repo name.
+
+    Returns:
+        owner: Repo owner/group.
+        repo: Repo name.
+
+    Raises:
+        InvalidGitlabURL: If the URL is not a valid GitLab repo URL.
+    """
+    match = GITLAB_REPO_URL_PATTERN.search(repo_url)
+    if not match:
+        msg = f"Invalid GitLab repository URL: {repo_url}"
+        raise InvalidGitlabURL(msg)
+    res = match.groups()
+    assert len(res) == 2
+    return tuple(res)  # type: ignore
+
+
 def get_gh_issue_data(issue_url: str, *, token: str = ""):
-    """Returns github issue data in the form of a dictionary.
+    """Returns GitHub issue data in the form of a dictionary.
     See https://docs.github.com/en/rest/issues/issues?apiVersion=2022-11-28#get-an-issue
-    for return format
+    for return format.
+
+    Args:
+        issue_url (str): URL of the GitHub issue.
+        token (str, optional): GitHub API token.
+
+    Returns:
+        Issue data as a dictionary.
     """
     owner, repo, issue_number = parse_gh_issue_url(issue_url)
     api = GhApi(token=token)
     return api.issues.get(owner, repo, issue_number)
 
 
+def get_gitlab_issue_data(issue_url: str, *, token: str = ""):
+    """Returns GitLab issue data in the form of a dictionary.
+    See https://docs.gitlab.com/ee/api/issues.html#get-single-issue
+    for return format.
+
+    Args:
+        issue_url (str): URL of the GitLab issue.
+        token (str, optional): GitLab API token.
+
+    Returns:
+        Issue data as a dictionary.
+    """
+    owner, repo, issue_number = parse_gitlab_issue_url(issue_url)
+    gl = Gitlab("https://gitlab.ird.mu-sigma.com/", private_token=token)
+    project = gl.projects.get(f"{owner}/{repo}")
+    issue = project.issues.get(int(issue_number))
+    return issue.attributes  # Return as a dictionary
+
+
 def get_problem_statement_from_github_issue(owner: str, repo: str, issue_number: str, *, token: str | None = "") -> str:
-    """Return problem statement from github issue"""
+    """Return problem statement from GitHub issue.
+
+    Args:
+        owner (str): Repo owner.
+        repo (str): Repo name.
+        issue_number (str): Issue number as string.
+        token (str, optional): GitHub API token.
+
+    Returns:
+        Problem statement as a string.
+    """
     api = GhApi(token=token)
     issue = api.issues.get(owner, repo, issue_number)
     title = issue.title if issue.title else ""
@@ -709,14 +849,34 @@ def get_problem_statement_from_github_issue(owner: str, repo: str, issue_number:
     return f"{title}\n{body}\n"
 
 
+def get_problem_statement_from_gitlab_issue(owner: str, repo: str, issue_number: str, *, token: str | None = "") -> str:
+    """Return problem statement from GitLab issue.
+
+    Args:
+        owner (str): Repo owner/group.
+        repo (str): Repo name.
+        issue_number (str): Issue number as string.
+        token (str, optional): GitLab API token.
+
+    Returns:
+        Problem statement as a string.
+    """
+    issue = get_gitlab_issue_data(
+        f"https://gitlab.ird.mu-sigma.com/{owner}/{repo}/-/issues/{issue_number}", token=token
+    )
+    title = issue.get("title", "")
+    description = issue.get("description", "")
+    return f"{title}\n{description}\nDo not try to run the server just give the updated code as git diff"
+
+
 class InstanceBuilder:
     def __init__(self, token: str | None = None):
         """This helper class is used to build the data for an instance object,
-        retrieving problem statements from github issues or local files and setting
-        repo paths from github urls or local paths.
+        retrieving problem statements from GitHub/GitLab issues or local files and setting
+        repo paths from GitHub/GitLab URLs or local paths.
         """
         # Args that will be passed to the Instance constructor
-        self.args = {}
+        self.args: dict[str, Any] = {}
         self.token = token
         self._instance_id_problem_suffix = ""
 
@@ -731,8 +891,19 @@ class InstanceBuilder:
         self.args["instance_id"] = f"{owner}__{repo}-i{issue_number}"
         self.args["problem_statement_source"] = "online"
 
+    def set_problem_statement_from_gitlab_issue(self, issue_url: str):
+        owner, repo, issue_number = parse_gitlab_issue_url(issue_url)
+        self.args["problem_statement"] = get_problem_statement_from_gitlab_issue(
+            owner,
+            repo,
+            issue_number,
+            token=self.token,
+        )
+        self.args["instance_id"] = f"{owner}__{repo}-i{issue_number}"
+        self.args["problem_statement_source"] = "online"
+
     def set_server_description(self, server_name: str | None, port: int | None) -> None:
-        """For CTF challenges"""
+        """For CTF challenges."""
         if server_name is None or port is None:
             self.args["challenge"]["server_description"] = ""
             return
@@ -746,7 +917,7 @@ class InstanceBuilder:
             )
 
     def set_problem_statement_from_challenge_json(self, file_path: str) -> None:
-        """For CTF challenges"""
+        """For CTF challenges."""
         challenge = json.loads(Path(file_path).read_text())
         self.args["challenge"] = challenge
         self.args["challenge"]["files"] = challenge.get("files", [])
@@ -760,7 +931,6 @@ class InstanceBuilder:
             self.args["challenge"]["server_name"] = challenge["box"] or "127.0.0.1"
         else:
             self.args["challenge"]["server_name"] = ""
-        self.args["challenge"]["file_path"] = file_path
         self.set_server_description(self.args["challenge"]["server_name"], self.args["challenge"]["port"])
         self.set_problem_statement_from_text(f"{challenge['name']} {challenge['description']}")
         self.args["instance_id"] = (
@@ -768,7 +938,7 @@ class InstanceBuilder:
             challenge.get("category", "misc") + "_" + "".join(a for a in self.args["challenge"]["name"] if a.isalnum())
         )
 
-    def set_problem_statement_from_file(self, file_path: str):
+    def set_problem_statement_from_file(self, file_path: str) -> None:
         if Path(file_path).name == "challenge.json":
             self.set_problem_statement_from_challenge_json(file_path)
         else:
@@ -780,13 +950,15 @@ class InstanceBuilder:
         self.args["problem_statement_source"] = "local"
 
     def set_problem_statement(self, data_path: str):
-        """Get problem statement for a single instance from a github issue url or a
+        """Get problem statement for a single instance from a GitHub/GitLab issue URL or a
         path to a markdown or text file.
         """
         if data_path.startswith("text://"):
             return self.set_problem_statement_from_text(data_path.removeprefix("text://"))
         if is_github_issue_url(data_path):
             return self.set_problem_statement_from_gh_issue(data_path)
+        if is_gitlab_issue_url(data_path):
+            return self.set_problem_statement_from_gitlab_issue(data_path)
         if Path(data_path).is_file():
             return self.set_problem_statement_from_file(data_path)
         msg = f"Not sure how to get problem statement from {data_path=}."
@@ -801,6 +973,33 @@ class InstanceBuilder:
         self.args["base_commit"] = get_commit(api, owner, repo, ref=base_commit).sha
         if base_commit != self.args["base_commit"]:
             logger.info(f"Base commit reference {base_commit} resolved to commit hash {self.args['base_commit']}")
+        self.args["version"] = self.args["base_commit"][:7]
+
+    def set_repo_info_from_gitlab_url(self, url: str, base_commit: str | None = None):
+        owner, repo = parse_gitlab_repo_url(url)
+        self.args["repo"] = f"{owner}/{repo}"
+        self.args["repo_type"] = "gitlab"
+        # Initialize GitLab client
+        gl = Gitlab("https://gitlab.ird.mu-sigma.com/", private_token=self.token)
+        try:
+            project = gl.projects.get(f"{owner}/{repo}")
+        except GitlabGetError as e:
+            msg = f"Failed to get GitLab project: {e}"
+            raise RuntimeError(msg) from e
+        if base_commit:
+            try:
+                commit = project.commits.get(base_commit)
+                self.args["base_commit"] = commit.id
+            except GitlabGetError as e:
+                msg = f"Failed to get GitLab commit {base_commit}: {e}"
+                raise RuntimeError(msg) from e
+        else:
+            try:
+                commit = project.commits.list()[0]
+                self.args["base_commit"] = commit.id
+            except GitlabGetError as e:
+                msg = f"Failed to get latest commit from GitLab project: {e}"
+                raise RuntimeError(msg) from e
         self.args["version"] = self.args["base_commit"][:7]
 
     def set_repo_info_from_local_path(self, path: str, base_commit: str | None = None):
@@ -823,6 +1022,8 @@ class InstanceBuilder:
     def set_repo_info(self, repo: str, base_commit: str | None = None):
         if is_github_repo_url(repo):
             self.set_repo_info_from_gh_url(repo, base_commit=base_commit)
+        elif is_gitlab_repo_url(repo):
+            self.set_repo_info_from_gitlab_url(repo, base_commit=base_commit)
         elif Path(repo).is_dir():
             self.set_repo_info_from_local_path(repo, base_commit=base_commit)
         else:
@@ -836,7 +1037,7 @@ class InstanceBuilder:
         # TODO: This field is only needed while swe_env is using some questionable logic
         # to determine whether to clone from a mirror or not. This should be removed in the future.
         # Values: 'swe-bench' (loaded from json/jsonl for swe-bench style inference),
-        # 'online' (loaded from github issue or similar) or 'local' (loaded from local file)
+        # 'online' (loaded from GitHub/GitLab issue or similar) or 'local' (loaded from local file)
         if "problem_statement_source" not in self.args:
             self.args["problem_statement_source"] = "swe-bench"
         if "repo_type" not in self.args:
@@ -856,10 +1057,13 @@ class InstanceBuilder:
             missing = set(required_fields) - set(self.args.keys())
             msg = f"Missing required fields: {missing=}"
             raise ValueError(msg)
-        if self.args["repo_type"] not in {"github", "local"}:
+        if self.args["repo_type"] not in {"github", "gitlab", "local"}:
             msg = f"Invalid repo type: {self.args['repo_type']=}"
             raise ValueError(msg)
         if self.args["repo_type"] == "github" and self.args["repo"].count("/") != 1:
+            msg = f"Invalid repo format for {self.args['repo_type']=}: {self.args['repo']=}"
+            raise ValueError(msg)
+        if self.args["repo_type"] == "gitlab" and self.args["repo"].count("/") != 1:
             msg = f"Invalid repo format for {self.args['repo_type']=}: {self.args['repo']=}"
             raise ValueError(msg)
 
@@ -878,27 +1082,28 @@ def get_instances(
     repo_path: str = "",
 ) -> list[dict[str, Any]]:
     """
-    Getter function for handling json, jsonl files
+    Getter function for handling JSON, JSONL files, GitHub/GitLab issues, or datasets.
 
     Args:
-        file_path (str): Path to file
+        file_path (str): Path to file or URL.
+        base_commit (str, optional): Base commit hash or branch/tag name.
+        split (str, optional): Dataset split.
+        token (str, optional): API token for GitHub/GitLab.
+        repo_path (str, optional): Path to local repository or GitHub/GitLab repo URL.
 
     Returns:
-        List of instances as dictionaries
+        List of instances as dictionaries.
     """
 
-    def instance_from_dict(instances):
+    def instance_from_dict(instances: dict[str, Any]) -> dict[str, Any]:
         ib = InstanceBuilder(token=token)
         ib.set_from_dict(instances)
         return ib.build()
 
-    def postproc_instance_list(instances):
-        if isinstance(instances, dict):
-            msg = "Expected a list of instances, got a dictionary."
-            raise ValueError(msg)
+    def postproc_instance_list(instances: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return [instance_from_dict(x) for x in instances]
 
-    # The next if statement is very brittle logic to determine if we're processing a single instance
+    # The next if statements are very brittle logic to determine if we're processing a single instance
     if (
         file_path.startswith("text://")
         or (
@@ -906,17 +1111,22 @@ def get_instances(
             and (Path(file_path).suffix in [".md", ".txt"] or Path(file_path).name == "challenge.json")
         )
         or is_github_issue_url(file_path)
+        or is_gitlab_issue_url(file_path)
     ):
         ib = InstanceBuilder(token=token)
         ib.set_problem_statement(file_path)
         if repo_path:
             ib.set_repo_info(repo_path, base_commit=base_commit)
-        elif is_github_repo_url(file_path):
-            ib.set_repo_info_from_gh_url(file_path, base_commit=base_commit)
         else:
-            msg = f"Could not determine repo path from {file_path=}, {repo_path=}"
-            raise ValueError(msg)
-
+            if is_github_repo_url(file_path):
+                ib.set_repo_info_from_gh_url(file_path, base_commit=base_commit)
+            elif is_gitlab_repo_url(file_path):
+                ib.set_repo_info_from_gitlab_url(file_path, base_commit=base_commit)
+            elif Path(file_path).is_dir():
+                ib.set_repo_info_from_local_path(file_path, base_commit=base_commit)
+            else:
+                msg = f"Could not determine repo path from {file_path=}, {repo_path=}"
+                raise ValueError(msg)
         return [ib.build()]
 
     if base_commit:
@@ -942,7 +1152,7 @@ def get_instances(
             pass
 
     if base_commit is not None:
-        msg = "base_commit must be None if data_path is not a github issue url"
+        msg = "base_commit must be None if data_path is not a GitHub/GitLab issue URL"
         raise ValueError(msg)
 
     # If file_path is a file, load the file
@@ -958,27 +1168,76 @@ def get_instances(
     except Exception as e:
         msg = (
             f"Could not load instances from {file_path}. "
-            "Please ensure --data_path is a GitHub URL, a SWE-bench HuggingFace dataset, or a JSON/JSONL file."
+            "Please ensure --data_path is a GitHub/GitLab URL, a SWE-bench HuggingFace dataset, or a JSON/JSONL file."
         )
         raise ValueError(msg) from e
 
 
 def get_associated_commit_urls(org: str, repo: str, issue_number: str, *, token: str = "") -> list[str]:
-    """Return the URLs of commits that would close an issue."""
-    api = GhApi(token=token)
-    # Strangely the "pull_request" field of api.issues.get is often not set
-    # so we have to go through the events to check if there's a commit
-    events = api.issues.list_events(org, repo, issue_number)
+    """Return the URLs of commits that would close an issue.
+
+    Supports both GitHub and GitLab repositories based on the repo_type.
+
+    Args:
+        org (str): Repository owner or group.
+        repo (str): Repository name.
+        issue_number (str): Issue number as a string.
+        token (str, optional): API token for GitHub/GitLab.
+
+    Returns:
+        List of commit URLs that reference the issue for closing.
+    """
+    # Determine if the repository is GitHub or GitLab
+    # This function assumes that the repo_type is known or can be inferred.
+    # For this implementation, let's assume GitHub. Modify as needed.
+    # Alternatively, you could pass an additional parameter indicating the platform.
+    # For demonstration, we'll handle both based on token presence.
     commit_urls = []
-    for event in events:
-        if event.event != "referenced":
-            continue
-        if not event.commit_id:
-            continue
-        commit = api.repos.get_commit(org, repo, event.commit_id)
-        message = commit.commit.message
-        if f"fixes #{issue_number}" in message.lower() or f"closes #{issue_number}" in message.lower():
-            commit_urls.append(commit.html_url)
+    if "github.com" in repo:
+        try:
+            issue_url = f"https://github.com/{org}/{repo}/issues/{issue_number}"
+            if is_github_issue_url(issue_url):
+                get_gh_issue_data(issue_url, token=token)
+                api = GhApi(token=token)
+                commits = api.issues.list_events(org, repo, int(issue_number))
+                for event in commits:
+                    if event.event != "referenced":
+                        continue
+                    if not hasattr(event, "commit_id") or not event.commit_id:
+                        continue
+                    commit = api.repos.get_commit(org, repo, event.commit_id)
+                    message = commit.commit.message.lower()
+                    if f"fixes #{issue_number}" in message or f"closes #{issue_number}" in message:
+                        commit_urls.append(commit.html_url)
+        except Exception as e:
+            logger.error(f"Error fetching associated GitHub commit URLs: {e}", exc_info=True)
+    elif "gitlab.com" in repo:
+        try:
+            issue_url = f"https://gitlab.ird.mu-sigma.com//{org}/{repo}/-/issues/{issue_number}"
+            if is_gitlab_issue_url(issue_url):
+                gl = Gitlab("https://gitlab.ird.mu-sigma.com/", private_token=token)
+                project = gl.projects.get(f"{org}/{repo}")
+                notes = project.issues.list_notes(issue=int(issue_number))
+                for note in notes:
+                    if note.note.startswith("Closes"):
+                        match = re.search(r"closes\s+#(\d+)", note.note, re.IGNORECASE)
+                        if match:
+                            # Assuming the commit is linked via reference in the note
+                            # GitLab might not provide direct commit references in issue notes
+                            # You might need to parse commit messages or references differently
+                            # This is a placeholder for actual implementation
+                            # For example, fetch all commits and check their messages
+                            commits = project.commits.list()
+                            for commit in commits:
+                                if (
+                                    f"closes #{issue_number}" in commit.message.lower()
+                                    or f"fixes #{issue_number}" in commit.message.lower()
+                                ):
+                                    commit_urls.append(commit.web_url)
+        except Exception as e:
+            logger.error(f"Error fetching associated GitLab commit URLs: {e}", exc_info=True)
+    else:
+        logger.warning(f"Repository {org}/{repo} is neither GitHub nor GitLab based on the provided information.")
     return commit_urls
 
 
@@ -987,7 +1246,7 @@ def remove_triple_backticks(text: str) -> str:
 
 
 def format_trajectory_markdown(trajectory: list[dict[str, str]]):
-    """Format a trajectory as a markdown string for use in gh PR description."""
+    """Format a trajectory as a markdown string for use in GitHub/GitLab PR/MR descriptions."""
     prefix = [
         "<details>",
         "<summary>Thought process ('trajectory') of SWE-agent (click to expand)</summary>",
@@ -1058,11 +1317,14 @@ class PatchFormatter:
         """Reads file and returns string representation of the relevant lines.
 
         Args:
-            path: The path to the file within the repo location
+            text: The full text of the file.
             starts: The starting line numbers of the relevant lines. The first line is line 1.
             stops: The stopping line numbers of the relevant lines. The stop is not inclusive.
                 The first line is line 1.
-            linenos: Whether to include line numbers
+            linenos: Whether to include line numbers.
+
+        Returns:
+            Formatted string with relevant lines.
         """
         assert len(starts) == len(stops)
         assert all(start >= 1 for start in starts)
@@ -1101,8 +1363,8 @@ class PatchFormatter:
         """Get the starts and stops for all files in the patch.
 
         Args:
-            original: Whether to read the original file or the patched file
-            context_length: The number of lines to include above and below the hunk
+            original: Whether to read the original file or the patched file.
+            context_length: The number of lines to include above and below the hunk.
 
         Returns:
             A dictionary with the file path as key and a tuple of lists of starts and stops as value.
@@ -1147,7 +1409,7 @@ class PatchFormatter:
         return "\n\n".join(out)
 
     def get_files_str(self, *, original: bool, context_length: int | None = 50, linenos: bool = True) -> str:
-        hunk_lines = self._get_hunk_lines(original=original, context_length=context_length)
+        hunk_lines = self._get_hunk_lines(original=original, context_length=context_length or 50)
         sources = self._original_files if original else self._patched_files
         return self.concat_files_strings(
             {path: self.format_file(text, *hunk_lines[path], linenos=linenos) for path, text in sources.items()}

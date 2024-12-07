@@ -13,12 +13,13 @@ import time
 import traceback
 from dataclasses import dataclass, field
 from pathlib import Path, PurePath
-from typing import Any
+from typing import Any, tuple
 
 import gymnasium as gym
 import yaml
 from ghapi.all import GhApi
 from git import Repo
+from gitlab import Gitlab, GitlabGetError  # Added for GitLab support
 from simple_parsing.helpers.serialization.serializable import FrozenSerializable
 from swebench.harness.constants import MAP_REPO_VERSION_TO_SPECS
 from swebench.harness.utils import get_environment_yml, get_requirements
@@ -38,6 +39,7 @@ from sweagent.environment.utils import (
     PROCESS_DONE_MARKER_END,
     PROCESS_DONE_MARKER_START,
     InvalidGithubURL,
+    InvalidGitlabURL,  # Added for GitLab support
     NoOutputTimeoutError,
     PatchFormatter,
     attach_network_interface_to_container,
@@ -47,9 +49,11 @@ from sweagent.environment.utils import (
     get_container,
     get_docker_compose,
     get_gh_issue_data,
+    get_gitlab_issue_data,  # Added for GitLab support
     get_instances,
     image_exists,
     parse_gh_issue_url,
+    parse_gitlab_issue_url,  # Added for GitLab support
     read_with_timeout,
     read_with_timeout_experimental,
     terminate_docker_compose,
@@ -70,7 +74,7 @@ class EnvironmentArguments(FrozenSerializable):
     """Configure data sources and setup instructions for the environment in which we solve the tasks."""
 
     # Source of issue statement/problem statement. To run over a batch of issues: Path to a data file
-    # (`json`, `jsonl`) or directory. To run over single issue: github issue url or path to markdown file
+    # (`json`, `jsonl`) or directory. To run over single issue: github or gitlab issue url or path to markdown file
     # with problem statement or problem statement as text prefixed with `text://`.
     data_path: str
     # Name of the docker image to use for the environment. Defaults to sweagent/swe-agent:latest
@@ -90,7 +94,7 @@ class EnvironmentArguments(FrozenSerializable):
     timeout: int | None = None
     # Enable environment logger.
     verbose: bool = False
-    # Do not use attempt to use a repository mirror from https://github.com/swe-bench.
+    # Do not use attempt to use a repository mirror from https://github.com/swe-bench or https://gitlab.ird.mu-sigma.com//swe-bench.
     no_mirror: bool = False
     # Cache task images to speed up task initialization. This means that the environment will be saved as a
     # docker image for every repository, base commit, and setup combination. This uses quite a bit of disk space
@@ -102,7 +106,7 @@ class EnvironmentArguments(FrozenSerializable):
     # or a shell script (with sh extension).
     # See https://princeton-nlp.github.io/SWE-agent/usage/cl_tutorial#environment-setup
     environment_setup: str | None = None
-    # Only used when running on single issue. Path to local repository or github repository.
+    # Only used when running on single issue. Path to local repository or github/gitlab repository.
     repo_path: str = ""
     # Interactive command configuration
     interactive_sessions_config: dict[str, InteractiveSessionConfig] = field(
@@ -140,7 +144,7 @@ class EnvHook:
         """Gets called when the repository is being cloned to the container
 
         Args:
-            repo_type: Type of repository. Either 'local' or 'github'
+            repo_type: Type of repository. Either 'local', 'github', or 'gitlab'
             repo_path: Path to the repository
         """
 
@@ -185,6 +189,7 @@ class SWEEnv(gym.Env):
             self.logger.exception("Failed to get commit hash for this repo: %s", str(e))
 
         self._github_token: str = keys_config.get("GITHUB_TOKEN", "")  # type: ignore
+        self._gitlab_token: str = keys_config.get("GITHUB_TOKEN", "")  # type: ignore
 
         # Load Task Instances
         self.data_path = self.args.data_path
@@ -273,47 +278,91 @@ class SWEEnv(gym.Env):
                 error_msg="Failed to change permissions on copied repository",
             )
             return self._repo_name
-        assert self.record["repo_type"] == "github"
-        token_prefix = ""
-        if self._github_token:
-            token_prefix = f"{self._github_token}@"
-        # fixme: This if statement is brittle and should probably be replaced with better logic
-        if not self.args.no_mirror and self.record["problem_statement_source"] == "swe-bench":
-            self.logger.info(f"{self._repo_name} not found in container, cloning...")
-            clone_url = f"https://{token_prefix}github.com/swe-bench/{self._repo_name}.git"
+        elif self.record["repo_type"] == "github":
+            token_prefix = ""
+            if self._github_token:
+                token_prefix = f"{self._github_token}@"
+            # fixme: This if statement is brittle and should probably be replaced with better logic
+            if not self.args.no_mirror and self.record["problem_statement_source"] == "swe-bench":
+                self.logger.info(f"{self._repo_name} not found in container, cloning...")
+                clone_url = f"https://{token_prefix}github.com/swe-bench/{self._repo_name}.git"
+            else:
+                self.logger.info("Trying to clone from non-mirror...")
+                clone_url = f"https://{token_prefix}github.com/{self.record['repo']}.git"
+            clone_method = keys_config.get("SWE_AGENT_CLONE_METHOD", default="shallow", choices=["shallow", "full"])
+            if len(self.data) > 1 or self.persistent:
+                msg = "Falling back to full cloning method due to multiple instances or persistent container"
+                clone_method = "full"
+                self.logger.debug(msg)
+            if clone_method == "full":
+                self.communicate_with_handling(
+                    input=f"git clone {clone_url} {self._repo_name}",
+                    error_msg="Failed to clone repository from conservative method",
+                    timeout_duration=LONG_TIMEOUT,
+                    redact_command_trace=True,
+                )
+            else:
+                base_commit = self.record["base_commit"]
+                self.communicate_with_handling(
+                    input="&&".join(
+                        (
+                            f"mkdir {self._repo_name}",
+                            f"cd {self._repo_name}",
+                            "git init",
+                            f"git remote add origin {clone_url}",
+                            f"git fetch --depth 1 origin {base_commit}",
+                            "git checkout FETCH_HEAD",
+                            "cd ..",
+                        )
+                    ),
+                    error_msg="Failed to clone repository with fast method",
+                    timeout_duration=LONG_TIMEOUT,
+                )
+            return self._repo_name
+        elif self.record["repo_type"] == "gitlab":
+            token_prefix = ""
+            if self._gitlab_token:
+                token_prefix = f"{self._gitlab_token}@"
+            # Similar logic as GitHub
+            if not self.args.no_mirror and self.record["problem_statement_source"] == "swe-bench":
+                self.logger.info(f"{self._repo_name} not found in container, cloning from mirror...")
+                clone_url = f"https://{token_prefix}gitlab.com/swe-bench/{self._repo_name}.git"
+            else:
+                self.logger.info("Trying to clone GitLab repository from non-mirror...")
+                clone_url = f"https://oauth2:{token_prefix}gitlab.ird.mu-sigma.com/{self.record['repo']}.git"
+            clone_method = keys_config.get("SWE_AGENT_CLONE_METHOD", default="shallow", choices=["shallow", "full"])
+            if len(self.data) > 1 or self.persistent:
+                msg = "Falling back to full cloning method due to multiple instances or persistent container"
+                clone_method = "full"
+                self.logger.debug(msg)
+            if clone_method == "full":
+                self.communicate_with_handling(
+                    input=f"git clone {clone_url} {self._repo_name}",
+                    error_msg="Failed to clone GitLab repository from conservative method",
+                    timeout_duration=LONG_TIMEOUT,
+                    redact_command_trace=True,
+                )
+            else:
+                base_commit = self.record["base_commit"]
+                self.communicate_with_handling(
+                    input="&&".join(
+                        (
+                            f"mkdir {self._repo_name}",
+                            f"cd {self._repo_name}",
+                            "git init",
+                            f"git remote add origin {clone_url}",
+                            f"git fetch --depth 1 origin {base_commit}",
+                            "git checkout FETCH_HEAD",
+                            "cd ..",
+                        )
+                    ),
+                    error_msg="Failed to clone GitLab repository with fast method",
+                    timeout_duration=LONG_TIMEOUT,
+                )
+            return self._repo_name
         else:
-            self.logger.info("Trying to clone from non-mirror...")
-            clone_url = f"https://{token_prefix}github.com/{self.record['repo']}.git"
-        clone_method = keys_config.get("SWE_AGENT_CLONE_METHOD", default="shallow", choices=["shallow", "full"])
-        if len(self.data) > 1 or self.persistent:
-            msg = "Falling back to full cloning method due to multiple instances or persistent container"
-            clone_method = "full"
-            self.logger.debug(msg)
-        if clone_method == "full":
-            self.communicate_with_handling(
-                input=f"git clone {clone_url} {self._repo_name}",
-                error_msg="Failed to clone repository from conservative method",
-                timeout_duration=LONG_TIMEOUT,
-                redact_command_trace=True,
-            )
-        else:
-            base_commit = self.record["base_commit"]
-            self.communicate_with_handling(
-                input="&&".join(
-                    (
-                        f"mkdir {self._repo_name}",
-                        f"cd {self._repo_name}",
-                        "git init",
-                        f"git remote add origin {clone_url}",
-                        f"git fetch --depth 1 origin {base_commit}",
-                        "git checkout FETCH_HEAD",
-                        "cd ..",
-                    )
-                ),
-                error_msg="Failed to clone repository with fast method",
-                timeout_duration=LONG_TIMEOUT,
-            )
-        return self._repo_name
+            msg = f"Unsupported repository type: {self.record['repo_type']}"
+            raise ValueError(msg)
 
     def reset(self, index: int | None = None, apply_test_patch: bool = False) -> tuple[str | None, dict]:
         """
@@ -417,12 +466,21 @@ class SWEEnv(gym.Env):
             "export ROOT=$(pwd -P)",
         ]
         if self.challenge is None:
-            startup_commands += [
-                "git status",
-                "git restore .",
-                f"git reset --hard {self.base_commit}",
-                "git clean -fdxq",
-            ]
+            if self.record["repo_type"] in {"github", "gitlab"}:
+                startup_commands += [
+                    "git status",
+                    "git restore .",
+                    f"git reset --hard {self.base_commit}",
+                    "git clean -fdxq",
+                ]
+            elif self.record["repo_type"] == "local":
+                # For local repositories, additional local-specific reset logic if needed
+                startup_commands += [
+                    "git status",
+                    "git restore .",
+                    f"git reset --hard {self.base_commit}",
+                    "git clean -fdxq",
+                ]
         self.communicate_with_handling(
             input=" && ".join(startup_commands),
             error_msg="Failed to clean repository",
@@ -442,9 +500,7 @@ class SWEEnv(gym.Env):
             error_msg="Failed to reset environment variables",
         )
 
-    def reset_for_new_attempt(
-        self,
-    ) -> None:
+    def reset_for_new_attempt(self) -> None:
         """Compared to `reset`, which prepares the container for a new instance,
         this prepares the container for taking another shot at the same instance.
         """
@@ -490,7 +546,7 @@ class SWEEnv(gym.Env):
             self.communicate(self.interactive_session.config.exit_command)
         except Exception as e:
             msg = (
-                f"Failed to terminate interactive session {session_name}: {e}."
+                f"Failed to terminate interactive session {session_name!r}: {e}."
                 "\nHere's the full traceback\n" + traceback.format_exc()
             )
             self.logger.warning(msg)
@@ -913,7 +969,7 @@ class SWEEnv(gym.Env):
             # something new.
             # See https://github.com/princeton-nlp/SWE-agent/issues/630
             buffer = (
-                "Unkknown error occurred when running the command. Please double check syntax "
+                "Unknown error occurred when running the command. Please double check syntax "
                 "and that you're not running an interactive command."
             )
             self.logger.warning("Couldn't get real exit code. Setting it to 999")
@@ -938,6 +994,9 @@ class SWEEnv(gym.Env):
             input: command to run in container
             timeout_duration: duration to wait for output
             no_output_timeout_duration: duration to wait when the process stopped produce any output
+
+        Returns:
+            output: output from container
         """
         assert self.container is not None
         communicate_method = keys_config.get(
@@ -1168,12 +1227,11 @@ class SWEEnv(gym.Env):
         """Return config for environment setup"""
         assert self.record is not None  # mypy
         if (
-            self.record["problem_statement_source"] != "swe-bench" or self.record["repo_type"] == "local"
+            self.record["problem_statement_source"] not in {"swe-bench", "online", "local"}
+            or self.record["repo_type"] not in {"github", "gitlab", "local"}
         ) and self.args.environment_setup is None:
             self.logger.warning(
-                "install_environment is set to True, but the data path is a GitHub URL "
-                "without an environment config file (environment_config key/flag). "
-                "Skipping conda environment installation.",
+                "install_environment is set to True, but the data path is a GitHub/GitLab URL without an environment config file (environment_config key/flag). Skipping conda environment installation.",
             )
             return None
         if self.args.environment_setup is not None:
@@ -1415,9 +1473,15 @@ class SWEEnv(gym.Env):
         # Adding random string suffix to avoid name conflicts if we had a previously failed run
         issue_url = self.args.data_path
         try:
-            issue = get_gh_issue_data(issue_url, token=self._github_token)
-        except InvalidGithubURL as e:
-            msg = "Data path must be a github issue URL if --open_pr is set."
+            if self.record["repo_type"] == "github":
+                issue = get_gh_issue_data(issue_url, token=self._github_token)
+            elif self.record["repo_type"] == "gitlab":
+                issue = get_gitlab_issue_data(issue_url, token=self._gitlab_token)  # Added for GitLab support
+            else:
+                msg = "Data path must be a GitHub or GitLab issue URL if --open_pr is set."
+                raise ValueError(msg)
+        except (InvalidGithubURL, InvalidGitlabURL) as e:
+            msg = "Data path must be a GitHub or GitLab issue URL if --open_pr is set."
             raise ValueError(msg) from e
         branch_name = f"swe-agent-fix-#{issue.number}-" + str(random.random())[2:10]
 
@@ -1438,8 +1502,8 @@ class SWEEnv(gym.Env):
         )
         dry_run_flag = "--allow-empty" if _dry_run else ""
         commit_msg = [
-            shlex.quote("Fix: {issue.title}"),
-            shlex.quote("Closes #{issue.number}"),
+            shlex.quote(f"Fix: {issue.title}"),
+            shlex.quote(f"Closes #{issue.number}"),
         ]
         self.communicate_with_handling(
             input=f"git commit -m {commit_msg[0]} -m  {commit_msg[1]} {dry_run_flag}",
@@ -1447,24 +1511,41 @@ class SWEEnv(gym.Env):
             timeout_duration=10,
         )
 
-        owner, repo, _ = parse_gh_issue_url(issue_url)
-        # If `--repo_path` was specified with a different github URL, then the record will contain
+        if self.record["repo_type"] == "github":
+            owner, repo, _ = parse_gh_issue_url(issue_url)
+        elif self.record["repo_type"] == "gitlab":
+            owner, repo, _ = parse_gitlab_issue_url(issue_url)  # Added for GitLab support
+        else:
+            msg = "--repo_path must point to a GitHub or GitLab URL if --open_pr is set"
+            raise ValueError(msg)
+        # If `--repo_path` was specified with a different URL, then the record will contain
         # the forking user
         assert self.record is not None
-        if self.record["repo_type"] != "github":
-            # We already validated that `--data_path` is a github issue URL
-            # so this is the only case where we can reach here
-            msg = "--repo_path must point to a github URL if --open_pr is set"
+        if self.record["repo_type"] != self.record["repo_type"]:
+            # Adjust logic based on the repo type
+            msg = "--repo_path must point to the same platform as the issue URL if --open_pr is set"
             raise ValueError(msg)
-        forker, _ = self.record["repo"].split("/")
+        if self.record["repo_type"] == "github" and self.record["repo_type"] != "gitlab":
+            forker, _ = self.record["repo"].split("/")
+        elif self.record["repo_type"] == "gitlab":
+            forker, _ = self.record["repo"].split("/")
+        else:
+            forker = owner  # Default to owner if not specified
+
         head = branch_name
         remote = "origin"
         if forker != owner:
             head = f"{forker}:{branch_name}"
             token_prefix = ""
-            if self._github_token:
+            if self.record["repo_type"] == "github" and self._github_token:
                 token_prefix = f"{self._github_token}@"
-            fork_url = f"https://{token_prefix}github.com/{forker}/{repo}.git"
+                fork_url = f"https://{token_prefix}github.com/{forker}/{repo}.git"
+            elif self.record["repo_type"] == "gitlab" and self._gitlab_token:
+                token_prefix = f"{self._gitlab_token}@"
+                fork_url = f"https://{token_prefix}gitlab.com/{forker}/{repo}.git"
+            else:
+                msg = "GitHub/GitLab token must be provided for pushing to forked repository."
+                raise ValueError(msg)
             self.logger.debug(f"Using fork: {fork_url}")
             self.communicate_with_handling(
                 input=f"git remote add fork {fork_url}",
@@ -1486,22 +1567,45 @@ class SWEEnv(gym.Env):
             f"to close [#{issue.number}]({issue_url}) ({issue.title}).\n\nCloses #{issue.number}."
         )
         body += "\n\n" + format_trajectory_markdown(trajectory)
-        api = GhApi(token=self._github_token)
-        if not _dry_run:
-            pr_info = api.pulls.create(  # type: ignore
-                owner=owner,
-                repo=repo,
-                title=f"SWE-agent[bot] PR to fix: {issue.title}",
-                head=head,
-                base="main",
-                body=body,
-                draft=True,
-            )
-            self.logger.info(
-                f"🎉 PR created as a draft at {pr_info.html_url}. Please review it carefully, push "
-                "any required changes onto the branch and then click "
-                "'Ready for Review' to bring it to the attention of the maintainers.",
-            )
+        if self.record["repo_type"] == "github":
+            api = GhApi(token=self._github_token)
+            if not _dry_run:
+                pr_info = api.pulls.create(  # type: ignore
+                    owner=owner,
+                    repo=repo,
+                    title=f"SWE-agent[bot] PR to fix: {issue.title}",
+                    head=head,
+                    base="main",
+                    body=body,
+                    draft=True,
+                )
+                self.logger.info(
+                    f"🎉 PR created as a draft at {pr_info.html_url}. Please review it carefully, push "
+                    "any required changes onto the branch and then click "
+                    "'Ready for Review' to bring it to the attention of the maintainers.",
+                )
+        elif self.record["repo_type"] == "gitlab":
+            try:
+                gl = Gitlab("https://gitlab.ird.mu-sigma.com/", private_token=self._gitlab_token)
+                project = gl.projects.get(f"{owner}/{repo}")
+                if not _dry_run:
+                    pr_info = project.mergerequests.create(
+                        {
+                            "source_branch": branch_name,
+                            "target_branch": "main",
+                            "title": f"SWE-agent[bot] PR to fix: {issue.title}",
+                            "description": body,
+                            "state_event": "close",  # To create as a draft, GitLab uses 'draft!' in the title
+                        }
+                    )
+                    self.logger.info(
+                        f"🎉 Merge Request created as a draft at {pr_info.web_url}. Please review it carefully, push "
+                        "any required changes onto the branch and then mark it as ready to merge to bring it to the attention of the maintainers.",
+                    )
+            except GitlabGetError as e:
+                msg = f"Failed to create Merge Request on GitLab: {e}"
+                self.logger.error(msg)
+                raise RuntimeError(msg) from e
 
     def read_file(self, path: str | PurePath) -> str:
         """Read file contents from container
