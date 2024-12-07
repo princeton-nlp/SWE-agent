@@ -7,7 +7,7 @@ from swerex.runtime.dummy import DummyRuntime
 from sweagent import CONFIG_DIR
 from sweagent.agent.agents import Agent, AgentConfig
 from sweagent.agent.models import InstantEmptySubmitModelConfig, PredeterminedTestModel
-from sweagent.environment.config.problem_statement import EmptyProblemStatement, TextProblemStatement
+from sweagent.agent.problem_statement import EmptyProblemStatement, TextProblemStatement
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.tools.parsing import FunctionCallingParser, Identity, ThoughtActionParser
 from sweagent.tools.tools import ToolConfig

@@ -28,30 +28,30 @@ For example:
 See below for more details on the configuration options.
 
 
-All of these classes are defined in `sweagent.environment.config.problem_statement`.
+All of these classes are defined in `sweagent.agent.problem_statement`.
 
-::: sweagent.environment.config.problem_statement.problem_statement_from_simplified_input
+::: sweagent.agent.problem_statement.problem_statement_from_simplified_input
     options:
         show_root_full_path: false
         show_bases: false
 
-::: sweagent.environment.config.problem_statement.TextProblemStatement
+::: sweagent.agent.problem_statement.TextProblemStatement
     options:
         show_root_full_path: false
         show_bases: false
 
 
-::: sweagent.environment.config.problem_statement.FileProblemStatement
+::: sweagent.agent.problem_statement.FileProblemStatement
     options:
         show_root_full_path: false
         show_bases: false
 
-::: sweagent.environment.config.problem_statement.GithubIssue
+::: sweagent.agent.problem_statement.GithubIssue
     options:
         show_root_full_path: false
         show_bases: false
 
-::: sweagent.environment.config.problem_statement.EmptyProblemStatement
+::: sweagent.agent.problem_statement.EmptyProblemStatement
     options:
         show_root_full_path: false
         show_bases: false

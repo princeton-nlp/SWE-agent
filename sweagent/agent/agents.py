@@ -26,7 +26,7 @@ from sweagent.agent.models import (
     ModelConfig,
     get_model,
 )
-from sweagent.environment.config.problem_statement import ProblemStatement, ProblemStatementConfig
+from sweagent.agent.problem_statement import ProblemStatement, ProblemStatementConfig
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.exceptions import ContextWindowExceededError, CostLimitExceededError, FormatError
 from sweagent.tools.parsing import (

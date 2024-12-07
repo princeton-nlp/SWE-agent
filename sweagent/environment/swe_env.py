@@ -9,8 +9,8 @@ from swerex.deployment.abstract import AbstractDeployment
 from swerex.deployment.config import DeploymentConfig, DockerDeploymentConfig, get_deployment
 from swerex.runtime.abstract import BashAction, BashInterruptAction, CreateBashSessionRequest
 
-from sweagent.environment.config.repo import Repo, RepoConfig
 from sweagent.environment.hooks.abstract import CombinedEnvHooks, EnvHook
+from sweagent.environment.repo import Repo, RepoConfig
 from sweagent.utils.log import get_logger
 
 

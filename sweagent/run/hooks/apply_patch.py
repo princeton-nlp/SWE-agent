@@ -5,8 +5,8 @@ import rich
 import rich.markdown
 import rich.panel
 
-from sweagent.environment.config.problem_statement import ProblemStatementConfig
-from sweagent.environment.config.repo import LocalRepoConfig
+from sweagent.agent.problem_statement import ProblemStatementConfig
+from sweagent.environment.repo import LocalRepoConfig
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.run.common import _is_promising_patch
 from sweagent.run.hooks.abstract import RunHook

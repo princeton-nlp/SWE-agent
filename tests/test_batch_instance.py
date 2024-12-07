@@ -3,8 +3,8 @@ import json
 import pytest
 from swerex.deployment.config import DockerDeploymentConfig
 
-from sweagent.environment.config.problem_statement import TextProblemStatement
-from sweagent.environment.config.repo import PreExistingRepoConfig
+from sweagent.agent.problem_statement import TextProblemStatement
+from sweagent.environment.repo import PreExistingRepoConfig
 from sweagent.run.batch_instances import BatchInstance, SimpleBatchInstance, SWEBenchInstances, _slice_spec_to_slice
 
 

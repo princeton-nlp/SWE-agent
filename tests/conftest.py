@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 from swerex.deployment.config import DockerDeploymentConfig, DummyDeploymentConfig
 
-from sweagent.environment.config.repo import LocalRepoConfig
+from sweagent.environment.repo import LocalRepoConfig
 from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
 
 # this is a hack and should be removed when we have a better solution

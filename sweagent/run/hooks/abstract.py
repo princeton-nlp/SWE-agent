@@ -1,4 +1,4 @@
-from sweagent.environment.config.problem_statement import ProblemStatement, ProblemStatementConfig
+from sweagent.agent.problem_statement import ProblemStatement, ProblemStatementConfig
 from sweagent.environment.swe_env import SWEEnv
 from sweagent.types import AgentRunResult
 

@@ -1,4 +1,4 @@
-from sweagent.environment.config.repo import Repo, RepoConfig
+from sweagent.environment.repo import Repo, RepoConfig
 
 
 class EnvHook:

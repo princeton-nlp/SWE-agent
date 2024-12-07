@@ -1,7 +1,7 @@
 from collections.abc import Callable
 
-from sweagent.environment.config.repo import Repo, RepoConfig
 from sweagent.environment.hooks.abstract import EnvHook
+from sweagent.environment.repo import Repo, RepoConfig
 
 
 class SetStatusEnvironmentHook(EnvHook):

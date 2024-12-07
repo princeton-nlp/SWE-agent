@@ -154,9 +154,9 @@ problem_statement: TextProblemStatement | GithubIssue | FileProblemStatement  # 
 
 Each of these configuration objects has its own set of options:
 
-* [`GithubIssue`](../reference/problem_statements.md#sweagent.environment.config.problem_statement.GithubIssue)
-* [`TextProblemStatement`](../reference/problem_statements.md#sweagent.environment.config.problem_statement.TextProblemStatement)
-* [`FileProblemStatement`](../reference/problem_statements.md#sweagent.environment.config.problem_statement.FileProblemStatement)
+* [`GithubIssue`](../reference/problem_statements.md#sweagent.agent.problem_statement.GithubIssue)
+* [`TextProblemStatement`](../reference/problem_statements.md#sweagent.agent.problem_statement.TextProblemStatement)
+* [`FileProblemStatement`](../reference/problem_statements.md#sweagent.agent.problem_statement.FileProblemStatement)
 
 So how do we know which configuration object to initialize?
 It's simple: Each of these types has a different set of required options (e.g., `github_url` is required for `GithubIssue`, but not for `TextProblemStatement`).
@@ -182,9 +182,9 @@ The repository can be specified in a few different ways:
 
 Again, those are [union types](union-types). See here for all the options:
 
-* [`GithubRepoConfig`](../reference/repo.md#sweagent.environment.config.repo.GithubRepoConfig): Pull a repository from GitHub.
-* [`LocalRepoConfig`](../reference/repo.md#sweagent.environment.config.repo.LocalRepoConfig): Copies a repository from your local filesystem to the docker container.
-* [`PreExistingRepoConfig`](../reference/repo.md#sweagent.environment.config.repo.PreExistingRepoConfig): If you want to use a repository that already exists on the docker container.
+* [`GithubRepoConfig`](../reference/repo.md#sweagent.environment.repo.GithubRepoConfig): Pull a repository from GitHub.
+* [`LocalRepoConfig`](../reference/repo.md#sweagent.environment.repo.LocalRepoConfig): Copies a repository from your local filesystem to the docker container.
+* [`PreExistingRepoConfig`](../reference/repo.md#sweagent.environment.repo.PreExistingRepoConfig): If you want to use a repository that already exists on the docker container.
 
 ## Taking actions
 

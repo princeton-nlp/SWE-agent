@@ -21,24 +21,24 @@ For example:
 --env.repo.type=local
 ```
 
-All of these classes are defined in `sweagent.environment.config.repo`.
+All of these classes are defined in `sweagent.environment.repo`.
 
-::: sweagent.environment.config.repo.PreExistingRepoConfig
+::: sweagent.environment.repo.PreExistingRepoConfig
     options:
         show_root_full_path: false
         show_bases: false
 
-::: sweagent.environment.config.repo.LocalRepoConfig
+::: sweagent.environment.repo.LocalRepoConfig
     options:
         show_root_full_path: false
         show_bases: false
 
-::: sweagent.environment.config.repo.GithubRepoConfig
+::: sweagent.environment.repo.GithubRepoConfig
     options:
         show_root_full_path: false
         show_bases: false
 
-::: sweagent.environment.config.repo.repo_from_simplified_input
+::: sweagent.environment.repo.repo_from_simplified_input
     options:
         show_root_full_path: false
         show_bases: false

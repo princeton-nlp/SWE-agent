@@ -37,7 +37,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings
 
 from sweagent.agent.agents import Agent, AgentConfig
-from sweagent.environment.config.problem_statement import (
+from sweagent.agent.problem_statement import (
     EmptyProblemStatement,
     ProblemStatement,
     ProblemStatementConfig,

@@ -15,8 +15,8 @@ from swerex.deployment.config import (
 )
 from typing_extensions import Self
 
-from sweagent.environment.config.problem_statement import ProblemStatementConfig, TextProblemStatement
-from sweagent.environment.config.repo import GithubRepoConfig, LocalRepoConfig, PreExistingRepoConfig
+from sweagent.agent.problem_statement import ProblemStatementConfig, TextProblemStatement
+from sweagent.environment.repo import GithubRepoConfig, LocalRepoConfig, PreExistingRepoConfig
 from sweagent.environment.swe_env import EnvironmentConfig
 from sweagent.utils.log import get_logger
 

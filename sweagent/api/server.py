@@ -16,10 +16,10 @@ from flask_cors import CORS
 from flask_socketio import SocketIO
 
 from sweagent import CONFIG_DIR, PACKAGE_DIR
+from sweagent.agent.problem_statement import problem_statement_from_simplified_input
 from sweagent.api.hooks import AgentUpdateHook, EnvUpdateHook, MainUpdateHook, WebUpdate
 from sweagent.api.utils import AttrDict, ThreadWithExc
-from sweagent.environment.config.problem_statement import problem_statement_from_simplified_input
-from sweagent.environment.config.repo import repo_from_simplified_input
+from sweagent.environment.repo import repo_from_simplified_input
 
 # baaaaaaad
 sys.path.append(str(PACKAGE_DIR.parent))
