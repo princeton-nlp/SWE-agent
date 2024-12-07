@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.11'
       - name: Pull swe-agent docker container
         run: |
           docker pull sweagent/swe-agent:latest
@@ -57,7 +57,7 @@ jobs:
       - name: Run pytest
         uses: sjvrijn/pytest-last-failed@v2
         with:
-          pytest-args: '--cov'
+          pytest-args: '--cov -n auto'
       - name: Upload logs & trajectories
         uses: actions/upload-artifact@v4
         if: always()
