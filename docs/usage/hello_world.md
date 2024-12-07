@@ -73,3 +73,5 @@ Watching the output, you can notice several stages:
 5. **Submission**: The LM calls `submit` and we extract the patch (i.e., the changes to the source code that solve the problem).
 
 The complete details of the run are saved as a "trajectory" file (more about them [here](trajectories.md)). They can also be turned into new [demonstrations](../config/demonstrations.md) together with other log and output files.
+
+Wetted your appetite? Head over to the [command line basics tutorial](cl_tutorial.md) to learn more about the options.

@@ -84,14 +84,17 @@ nav:
       - "Changelog": "dev/changelog.md"
   - API Reference:
     - "reference/index.md"
-    - Configuration objects:
+    - Run config:
+      - "Run single": "reference/run_single_config.md"
+      - "Run batch": "reference/run_batch_config.md"
+    - Instance config:
       - "Problem statements": "reference/problem_statements.md"
       - "Repository": "reference/repo.md"
-      - "Model config": "reference/model_config.md"
-      - "Agent config": "reference/agent_config.md"
-      - "Environment config": "reference/env_config.md"
-      - "Run batch": "reference/run_batch_config.md"
       - "Batch instances": "reference/batch_instances.md"
+    - Agent config:
+      - "Agent config": "reference/agent_config.md"
+      - "Model config": "reference/model_config.md"
+    - "Environment config": "reference/env_config.md"
     - Classes:
       - "Agent class": "reference/agent.md"
       - "Environment class": "reference/env.md"

@@ -64,6 +64,7 @@ class LocalRepoConfig(BaseModel):
 
     @property
     def repo_name(self) -> str:
+        """Set automatically based on the repository name. Cannot be set."""
         return Path(self.path).resolve().name.replace(" ", "-").replace("'", "")
 
     @pydantic.model_validator(mode="after")

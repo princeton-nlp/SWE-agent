@@ -41,9 +41,9 @@ python run.py \
 
 
 For the next example, we will use a cloud-based execution environment instead of using local docker containers.
-For this, you first need to set up a modal account, following the instructions at XXX
+For this, you first need to set up a modal account, then run:
 
-```bash title="Deployment on modal (cloud-based execution)" hl_lines="4"
+```bash title="Deployment on modal (cloud-based execution)" hl_lines="3"
 python run.py \
   ...
   --env.deployment.type=modal \
@@ -53,7 +53,7 @@ python run.py \
 !!! tip "All options"
     Run `python run.py --help` to see all available options for `run.py`. This tutorial will only cover a subset of options.
 
-## Configuration basics
+## Configuration files
 
 All configuration options can be specified either in one or more `.yaml` files, or as command line arguments. For example, our first command can be written as
 
@@ -124,81 +124,76 @@ So to make sure that we get the default templates in the above examples with `--
 
 in addition to all the other `--config` options for the two examples above.
 
-## Specifying the repository
+## Problem statements and union types <a id="union-types"></a>
 
 !!! note "Operating in batch mode: Running on SWE-bench and other benchmark sets"
     If you want to run SWE-agent in batch mode on SWE-bench or another whole evaluation set, see
     [benchmarking](benchmarking.md). This tutorial focuses on using SWE-agent on
     individual issues.
 
-In the above example, the repository/codebase is inferred from the `--data_path`.
-This options is currently only available for GitHub issues.
-For all other use cases, you can specify `--repo_path`, which accepts either GitHub
-URLs or paths to local repositories.
-
-To try it out, let's clone the test repository from the previous section.
+We've already seen a few examples of how to specify the problem to solve, namely
 
 ```bash
-git clone git@github.com:SWE-agent/test-repo.git
+--problem_statement.data_path /path/to/problem.md
+--problem_statement.repo_path /path/to/repo
+--problem_statement.text="..."
 ```
 
-and then run
+Each of these types of problems can have specific configuration options.
 
-```bash hl_lines="2 3 5"
-python run.py \
-  --data_path /path/to/test-repo/problem_statements/1.md \
-  --repo_path /path/to/test-repo \
-  --config_file config/default_from_url.yaml \
-  --apply_patch_locally
+To understand how this works, we'll need to understand **union types**.
+Running `sweagent run` builds up a configuration object that essentially looks like this:
+
+```yaml
+agent: AgentConfig
+env: EnvironmentConfig
+problem_statement: TextProblemStatement | GithubIssue | FileProblemStatement  # (1)!
 ```
 
-where you replaced paths with the prefix `/path/to/.../` with the actual paths to the corresponding file/directory.
+1. This is a union type, meaning that the problem statement can be one of the three types.
 
-We have also added a new flag, `--apply_patch_locally`, which will make SWE-agent apply the changes to the local repository (if it believes that it has successfully solved the issue).
+Each of these configuration objects has its own set of options:
 
-You can mix and match the different ways of specifying problem statements and repositories. For example, any of the following combination of options also works
+* [`GithubIssue`](../reference/problem_statements.md#sweagent.environment.config.problem_statement.GithubIssue)
+* [`TextProblemStatement`](../reference/problem_statements.md#sweagent.environment.config.problem_statement.TextProblemStatement)
+* [`FileProblemStatement`](../reference/problem_statements.md#sweagent.environment.config.problem_statement.FileProblemStatement)
 
-* Local problem statement with GitHub repository (`--data_path /path/to/problem.md --repo_path https://github.com/...`): Let SWE-agent work on something that wasn't reported yet
-* GitHub issue with local repository (`--data_path https://github.com/.../issues/.. --repo_path /path/to/... --apply_patch_locally`): Let SWE-agent solve a GitHub issue locally (for example to edit the solution afterwards)
-* GitHub issue with different GitHub repository: Useful with the `--open_pr` flag (see [below](#taking-actions)) when working from a fork.
+So how do we know which configuration object to initialize?
+It's simple: Each of these types has a different set of required options (e.g., `github_url` is required for `GithubIssue`, but not for `TextProblemStatement`).
+SWE-agent will automatically select the correct configuration object based on the command line options you provide.
 
-In addition, if `--repo_path` points to a GitHub repository, you can use `--base_commit` to specify
+However, you can also explicitly specify the type of problem statement you want to use by adding a `--problem_statement.type` option.
 
-* A branch name (e.g., `dev`),
-* A tag (e.g., `v1.0.0`),
-* A commit hash (e.g., `a4464baca1f28d7733337df6e4daa6c1ed920336`).
+!!! tip "Union type errors"
+    If you ever ran a SWE-agent command and got a very long error message about various configuration options not working, it is because for union types.
+    If everything works correctly, we try to initialize every option until we find the one that works based on your inputs (for example stopping at `TextProblemStatement` if you provided a `--problem_statement.text`).
+    However, if none of them work, we throw an error which then tells you why we cannot initialize any of the types (so it will tell you that `github_url` is required for `GithubIssue`, even though you might not even have tried to work on a GitHub issue).
 
-SWE-agent will then start from this commit when trying to solve the problem.
+If you want to read more about how this works, check out the [pydantic docs](https://docs.pydantic.dev/latest/concepts/unions/).
 
-!!! warning "Uncommitted changes"
-    When running with a local `--repo_path`, SWE-agent will use the last commit, i.e., all local, uncommitted changes will not be seen by SWE-agent.
+## Specifying the repository
 
-## Installing dependencies and setting up the environment <a name="environment-setup"></a>
+The repository can be specified in a few different ways:
 
-Now let's move on to a slightly more complicated issue ([`swe-agent/test-repo #22`](https://github.com/SWE-agent/test-repo/issues/22)).
-
-What makes it more complicated? This time the problematic code is part of a library `testpkg`, so SWE-agent first has to install the package in order to reproduce the issue before searching for the problematic code.
-
-In most circumstances, GPT4 will attempt to install the package and requirements (usually with some form of `pip install .` or `pip install pkg`). However, this wastes valuable queries to the LM. In addition, you might need to run your software for a specific python version or have other specific environment settings. The `--environment_setup` flag is used to fix this problem.
-
-Let's try it:
-
-```bash hl_lines="4"
-python run.py \
-  --data_path https://github.com/SWE-agent/test-repo/issues/22 \
-  --config_file config/default_from_url.yaml \
-  --environment_setup config/environment_setup/py310_default.yaml
+```bash
+--env.repo.github_url=https://github.com/SWE-agent/test-repo
+--env.repo.path=/path/to/repo
 ```
 
-This time, `pip install -e .` is called before SWE-agent gets to work, installing the package defined in the repository.
+Again, those are [union types](union-types). See here for all the options:
 
-REMOVED OUTDATED
+* [`GithubRepoConfig`](../reference/repo.md#sweagent.environment.config.repo.GithubRepoConfig): Pull a repository from GitHub.
+* [`LocalRepoConfig`](../reference/repo.md#sweagent.environment.config.repo.LocalRepoConfig): Copies a repository from your local filesystem to the docker container.
+* [`PreExistingRepo`](../reference/repo.md#sweagent.environment.config.repo.PreExistingRepo): If you want to use a repository that already exists on the docker container.
 
 ## Taking actions
 
-* As mentioned [above](#specifying-the-repository), you can use `--apply_patch_locally` to have SWE-agent apply successful solution attempts to local files.
-* Alternatively, when running on a GitHub issue, you can have the agent automatically open a PR if the issue has been solved by supplying the `--open_pr` flag.
+* You can use `--actions.apply_patch_locally` to have SWE-agent apply successful solution attempts to local files.
+* Alternatively, when running on a GitHub issue, you can have the agent automatically open a PR if the issue has been solved by supplying the `--actions.open_pr` flag.
   Please use this feature responsibly (on your own repositories or after careful consideration).
+
+!!! tip "All action options"
+    See [`RunSingleActionConfig`](../reference/run_single_config.md#sweagent.run.run_single.RunSingleActionConfig) for all action options.
 
 Alternatively, you can always retrieve the patch that was generated by SWE-agent.
 Watch out for the following message in the log:
