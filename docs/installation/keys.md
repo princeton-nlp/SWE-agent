@@ -20,9 +20,6 @@ Here's an example
 
 See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/en/api/getting-started), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) tokens.
 
-!!! tip "Models"
-    Some more information about the available models in our [usage FAQ](../usage/usage_faq.md).
-
 ### Models for testing
 
 We also provide models for testing SWE-agent without spending any credits

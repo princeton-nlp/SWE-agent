@@ -1,6 +1,6 @@
 # Benchmarking
 
-!!! note "Scope"
+!!! abstract "Benchmarking on SWE-bench"
     This page talks about benchmarking on SWE-bench to measure the software engineering capabilities of SWE-agent.
     Benchmarking for the other modes (programming challenges, cybersecurity) are coming soon.
 

@@ -64,8 +64,9 @@ nav:
       - "Command line basics": "usage/cl_tutorial.md"
       - "Solving coding challenges": "usage/coding_challenges.md"
       - "Trajectory inspector": "usage/inspector.md"
+      - "Batch mode": "usage/batch_mode.md"
       - "Benchmarking": "usage/benchmarking.md"
-    - "FAQ": "usage/usage_faq.md"
+    - "FAQ": "faq.md"
   - User Guides:
     - "usage/index.md"
     - Project overview:
@@ -89,9 +90,12 @@ nav:
       - "Model config": "reference/model_config.md"
       - "Agent config": "reference/agent_config.md"
       - "Environment config": "reference/env_config.md"
-    - "Agent class": "reference/agent.md"
-    - "Environment class": "reference/env.md"
-    - "Exceptions": "reference/exceptions.md"
+      - "Run batch": "reference/run_batch_config.md"
+      - "Batch instances": "reference/batch_instances.md"
+    - Classes:
+      - "Agent class": "reference/agent.md"
+      - "Environment class": "reference/env.md"
+      - "Exceptions": "reference/exceptions.md"
 plugins:
    - glightbox
    - search

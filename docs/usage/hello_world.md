@@ -29,7 +29,7 @@ python run.py \
 1. This limits the inference cost per instance to $2. The default is $3.
 
 !!! tip "Annotations"
-    Notice the :material-chevron-right-circle: icon in the left margin in the code snippet? Click on it to display more information
+    Notice the :material-chevron-right-circle: icon in the right margin in the code snippet? Click on it to display more information
     about the line.
 
 The example above uses the `gpt4` model from OpenAI. In order to use it, you need to add your OpenAI API key to the environment:

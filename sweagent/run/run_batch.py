@@ -14,7 +14,7 @@ sweagent run-batch \\
     --instances.type swe_bench \\ # configure instances
     --instances.subset lite \\
     --instances.split dev  \\
-    --instances.split :50 \\     # first 50 instances
+    --instances.slice :50 \\     # first 50 instances
     --instances.shuffle=True \\  # shuffle instances (with fixed seed)
     --config config/default.yaml \\  # configure model
     --agent.model.name gpt-4o
