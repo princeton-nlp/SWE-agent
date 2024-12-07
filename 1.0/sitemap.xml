@@ -9,10 +9,6 @@
          <lastmod>2024-12-07</lastmod>
     </url>
     <url>
-         <loc>https://swe-agent.com/latest/about/</loc>
-         <lastmod>2024-12-07</lastmod>
-    </url>
-    <url>
          <loc>https://swe-agent.com/latest/faq/</loc>
          <lastmod>2024-12-07</lastmod>
     </url>
@@ -174,10 +170,6 @@
     </url>
     <url>
          <loc>https://swe-agent.com/latest/usage/trajectories/</loc>
-         <lastmod>2024-12-07</lastmod>
-    </url>
-    <url>
-         <loc>https://swe-agent.com/latest/usage/usage_faq/</loc>
          <lastmod>2024-12-07</lastmod>
     </url>
 </urlset>
