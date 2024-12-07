@@ -1,5 +1,5 @@
 ---
-title: SWE-agent
+title: "Getting Started"
 ---
 
 <div style="text-align: center;">

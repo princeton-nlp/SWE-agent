@@ -11,14 +11,14 @@ theme:
         icon: material/brightness-auto
         name: Switch to light mode
     - scheme: default
-      primary: black
+      # primary: black  # override in custom.css
       accent: deep orange
       media: "(prefers-color-scheme: light)"
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
     - scheme: slate
-      primary: black
+      # primary: black  # override in custom.css
       accent: deep orange
       media: "(prefers-color-scheme: dark)"
       toggle:
