@@ -1,23 +1,24 @@
-# Usage
+# User guides
 
-We currently provide two interfaces to SWE-agent:
+This part of the documentation covers more details about configuring and developing SWE-agent.
+Just want to run it? See [getting started](../index.md) instead!
 
 <div class="grid cards" markdown>
 
--   :material-keyboard:{ .lg .middle } __Command line interface (CLI)__
+-   :material-book:{ .lg .middle } __Background & goals__
 
     ---
 
-    The default way of running SWE-agent with maximum options.
+    Learn more about the project goals and academic research.
 
-    [:octicons-arrow-right-24: Get started](cl_tutorial.md)
+    [:octicons-arrow-right-24: Learn more](../background/index.md)
 
--   :material-mouse:{ .lg .middle } __Graphical user interface__
+-   :material-cog:{ .lg .middle } __Configuration__
 
     ---
 
-    We provide a browser-based graphical user interface particularly optimized for developers wanting to use SWE-agent as a tool.
+    How to configure SWE-agent.
 
-    [:octicons-arrow-right-24: Get started](web_ui.md)
+    [:octicons-arrow-right-24: Configuration](../config/config.md)
 
 </div>

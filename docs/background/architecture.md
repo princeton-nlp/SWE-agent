@@ -1,5 +1,8 @@
 # Architecture
 
+!!! warning "Out of date"
+    This page is a bit out of date for SWE-agent 1.0.0. We're working on it!
+
 This page walks you through the general architecture of the SWE-agent package. Want to just run it? Jump ahead to the [installation](../installation/index.md) or [usage](../usage/index.md) sections.
 
 ![architecture](../assets/architecture.png)

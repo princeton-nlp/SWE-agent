@@ -73,10 +73,12 @@ nav:
       - "index": "background/index.md"
       - "Architecture": "background/architecture.md"
       - "Agent tools": "background/aci.md"
-      - "Interactive agent tools": "background/iat.md"
+      # - "Interactive agent tools": "background/iat.md"
     - "Output files": "usage/trajectories.md"
-    - "Configuration":
+    - Configuration:
+      - "index": "config/index.md"
       - "Config files": "config/config.md"
+      - "Templates": "config/templates.md"
       - "Demonstrations": "config/demonstrations.md"
     - Development:
       - "Contribution guide": "dev/contribute.md"
