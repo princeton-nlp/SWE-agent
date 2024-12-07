@@ -2,7 +2,7 @@
 
 > What models are supported?
 
-Probably all of them! There's even a few for testing. See [models](../installation/keys.md).
+Probably all of them! There's even a few for testing. See [models](installation/keys.md).
 
 > What's up with all the output files?
 

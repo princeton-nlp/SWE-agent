@@ -86,7 +86,7 @@ If you are using VSCode, you might want to add the following two files:
 * It might be good to open an issue and discuss first before investing time on an experimental feature.
 * Don't know where to get started? Look for issues marked [👋 good first issue][gfi] or [🙏 help wanted][help_wanted]
 * When changing the behavior of the agent, we need to have some indication that it actually improves the success rate of SWE-agent.
-  However, if you make the behavior optional without complicating SWE-agent (for example by providing new [commands](../config/commands.md)),
+  However, if you make the behavior optional without complicating SWE-agent (for example by providing new [commands](../config/tools.md)),
   we might be less strict.
 * Please add simple unit tests or integration tests wherever possible. Take a look in the [tests directory](https://github.com/SWE-agent/SWE-agent/tree/main/tests)
   for inspiration. We emphasize simple easy-tow-rite tests that get a lot of coverage.

@@ -49,7 +49,7 @@ python -m swebench.harness.run_evaluation \
     --split dev
 ```
 
-Head over to [SWE-bench](https://github.com/princeton-nlp/SWE-bench/) for details.
+Head over to [SWE-bench](https://github.com/SWE-bench/SWE-bench/) for details.
 
 !!! note "Default split"
 

@@ -113,13 +113,13 @@ We also solve a bug where existing linter errors in a file left SWE-agent unable
 
 [All new commits](https://github.com/SWE-agent/SWE-agent/compare/v0.4.0...v0.5.0)
 
-✨ The big news is our [brand new documentation](https://princeton-nlp.github.io/SWE-agent/) ✨
+✨ The big news is our [brand new documentation](https://swe-agent.com/latest/) ✨
 
 Secondly, @ollmer added a new flag `--cache_task_images` that will significantly speed up SWE-agent when running on the same environment/repository multiple times (no more waiting for cloning and installation!)
 
 ### Breaking changes
 
-* We have reformatted our codebase. If you create a PR based on a previous commit, make sure you install our `pre-commit` hook to avoid merge-conflicts because of formatting. See [our docs](https://princeton-nlp.github.io/SWE-agent/dev/formatting_conflicts/) for more information.
+* We have reformatted our codebase. If you create a PR based on a previous commit, make sure you install our `pre-commit` hook to avoid merge-conflicts because of formatting. See [our docs](https://swe-agent.com/latest/dev/formatting_conflicts/) for more information.
 * Remove direct imports in `__init__.py` (you can no longer `from sweagent import Agent` by [@klieret](https://github.com/klieret) in [#436]([#436]([#436](https://github.com/SWE-agent/SWE-agent/pull/436)))
 
 ### Added

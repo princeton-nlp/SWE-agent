@@ -62,6 +62,7 @@ nav:
       - "In browser": "installation/codespaces.md"
       - "Models and keys": "installation/keys.md"
       - "Troubleshooting": "installation/tips.md"
+      - "Changelog": "installation/changelog.md"
     - "Tutorials":
       - "Hello world": "usage/hello_world.md"
       - "Command line basics": "usage/cl_tutorial.md"
@@ -76,7 +77,6 @@ nav:
       - "index": "background/index.md"
       - "Architecture": "background/architecture.md"
       - "Agent tools": "background/aci.md"
-      # - "Interactive agent tools": "background/iat.md"
     - "Output files": "usage/trajectories.md"
     - Configuration:
       - "index": "config/index.md"
@@ -86,7 +86,6 @@ nav:
     - Development:
       - "Contribution guide": "dev/contribute.md"
       - "Formatting conflicts": "dev/formatting_conflicts.md"
-      - "Changelog": "dev/changelog.md"
   - API Reference:
     - "reference/index.md"
     - Run config:
@@ -139,7 +138,7 @@ plugins:
               - "!^model_config"
               - "!^model_post_init"
 repo_url: https://github.com/SWE-agent/SWE-agent
-repo_name: princeton-nlp/SWE-agent
+repo_name: SWE-agent/SWE-agent
 edit_uri: edit/main/docs/
 extra_css:
   - assets/custom.css

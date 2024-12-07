@@ -29,7 +29,7 @@ def _get_commit(api: GhApi, owner: str, repo: str, ref: str | None = None):
 
     Args:
         api (GhApi):
-        owner (str): Repo owner, e.g., "princeton-nlp"
+        owner (str): Repo owner, e.g., "SWE-agent"
         repo (str): Repo, e.g., "SWE-agent"
         ref (str, optional): Branch, tag or commit hash
 

@@ -6,7 +6,7 @@ This section of the documentation talks about the architecture and research goal
 
 SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix issues in GitHub repositories.
 
-On [SWE-bench](https://github.com/princeton-nlp/SWE-bench), SWE-agent resolves **12.29%** of issues, achieving the state-of-the-art performance on the full test set.
+On [SWE-bench](https://github.com/SWE-bench/SWE-bench), SWE-agent resolves **12.29%** of issues, achieving the state-of-the-art performance on the full test set.
 
 We accomplish our results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, view, edit and execute code files. We call this an 🤖 **Agent-Computer Interface (ACI)**.
 Read more about the ACI [here](aci.md).
@@ -42,9 +42,9 @@ SWE-agent <span class="enigma">EnIGMA</span> adds advanced **offensive cybersecu
 
 On the [NYU CTF benchmark](https://github.com/NYU-LLM-CTF/LLM_CTF_Database), EnIGMA solves **13.5%** of the capture the flag (CTF) challenges, achieving the state-of-the-art performance on the full test set of 200 challenges, **surpassing previous agents by more than 3x** ([leaderboard](https://enigma-agent.com#results)).
 
-We accomplish our results by extending the [🤖 ACIs](../background/aci.md) concept first introduced in SWE-agent, to the cybersecurity domain. We establish the novel [**:gear: Interactive Agent Tools** (IATs)](iat.md) concept, which enables our agent to use interactive tools such as a debugger, in a multitasking way such that the agent still has access to the main shell while using the debugger.
+We accomplish our results by extending the [🤖 ACIs](../background/aci.md) concept first introduced in SWE-agent, to the cybersecurity domain. We establish the novel [**:gear: Interactive Agent Tools** (IATs)](https://swe-agent.com/0.7/background/iat/) concept, which enables our agent to use interactive tools such as a debugger, in a multitasking way such that the agent still has access to the main shell while using the debugger.
 
-We also use a new **Summarizer** concept integrated into the agent to deal with long context. Read more about our different summarizers [here](../config/summarizers.md).
+We also use a new **Summarizer** concept integrated into the agent to deal with long context. Read more about our different summarizers [here](https://swe-agent.com/0.7/config/summarizers/).
 
 Specific [demonstrations](../config/demonstrations.md) were built per each CTF category (cryptography, reverse-engineering, forensics, ...), to enhance the model ability to solve new tasks from the same category.
 
