@@ -11,76 +11,53 @@
 </p>
 
 
-SWE-agent is an open-source platform for deploying language model (LM) agents in isolated computer environments.
-It manages an LM of your choice (e.g. GPT-4o, Claude Sonnet 3.5, or a local LM) to autonomously perform tasks within these environments using customizable [agent-computer interfaces](https://arxiv.org/abs/2405.15793) (ACIs).
+SWE-agent lets your language model of choice (e.g. GPT-4o or Claude Sonnet 3.5) autonomously use tools to:
 
-You can use SWE-agent to:
-* [automatically resolve issues in your GitHub repository](background.md#swe-agent)
-* navigate the web
-* solve your own custom tasks!
+* [fix issues in real GitHub repositories](https://swe-agent.com/latest/usage/hello_world.md),
+* perform tasks on the web,
+* crack cybersecurity challenges, or
+* [any custom task](https://swe-agent.com/latest/usage/coding_challenges.md).
+
+It does so by using configurable [agent-computer interfaces](https://arxiv.org/abs/2405.15793) (ACIs) to interact with isolated computer environments.
 
 SWE-agent is built and maintained by researchers from Princeton University and Stanford University.
 
-## Getting started!
+## 🚀 Get started!
 
-### Installation
-SWE-agent now depends on our remote execution platform [SWE-ReX](https://github.com/swe-agent/SWE-ReX) for running agent commands in the container.
-To install SWE-ReX, you'll currently need to install it from source using pip:
+👉 Try SWE-agent in your browser: [![Open in GitHub Codespaces](https://img.shields.io/badge/Open_in_GitHub_Codespaces-gray?logo=github)](https://codespaces.new/princeton-nlp/SWE-agent) ([more information](https://swe-agent.com/latest/installation/codespaces/))
 
-```bash
-git clone https://github.com/swe-agent/SWE-ReX.git swe-rex
-cd swe-rex
-pip install -e .
-```
+Read our [documentation][docs] to learn more:
 
-Once SWE-ReX is installed, you can install SWE-agent using pip:
+* [Installation](https://swe-agent.com/latest/installation/)
+* [Command line usage](https://swe-agent.com/latest/usage/cl_tutorial/)
+* [Using the web UI](https://swe-agent.com/latest/usage/web_ui/)
+* [Benchmarking on SWE-bench](https://swe-agent.com/latest/usage/benchmarking/)
+* [Frequently Asked Questions](https://swe-agent.com/latest/faq/)
 
-```bash
-pip install swe-agent
-```
+[docs]: https://swe-agent.com
 
-Make sure to set your API keys with
-```bash
-export OPENAI_API_KEY="..."
-export ANTHROPIC_API_KEY="..."
-```
+## SWE-agent for offensive cybersecurity (EnIGMA) <a name="enigma"></a>
+<img src="https://github.com/user-attachments/assets/5128cc06-7a28-4a37-b950-e4e58bc00823" height="80px"></img>
 
-### Run on a GitHub issue
-```bash
-sweagent run --config config/default_from_url.yaml \
-    --agent.model.name "gpt-4o" \
-    --env.repo.github_url https://github.com/scikit-learn/scikit-learn \
-    --problem_statement.github_url https://github.com/scikit-learn/scikit-learn/issues/30353
-```
+[SWE-agent: EnIGMA][enigma] is a mode for solving offensive cybersecurity (capture the flag) challenges.
+EnIGMA achieves state-of-the-art results on multiple cybersecurity benchmarks (see [leaderboard](https://enigma-agent.com/#results)).
+The EnIGMA project introduced multiple features that are available in all modes of SWE-agent, such as the [debugger and server connection tools](https://swe-agent.com/0.7/background/iat/) and a [summarizer](https://swe-agent.com/0.7/config/summarizers/) to handle long outputs.
 
-### Run with a Human Agent (useful for debugging)
-```bash
-sweagent run --config config/default.yaml \
-    --agent.model.name "human" \
-    --env.repo.github_url https://github.com/scikit-learn/scikit-learn \
-    --problem_statement.github_url https://github.com/scikit-learn/scikit-learn/issues/30353
-```
-
-### Run on SWE-bench
-```bash
-sweagent run-batch \
-    --instances.type swe_bench \
-    --instances.subset verified \
-    --instances.split test \
-    --num_workers 10 \
-    --config config/default.yaml \
-    --agent.model.name gpt-4o
-```
+[enigma]: https://enigma-agent.com
+[SWE-bench]: https://github.com/princeton-nlp/SWE-bench
+[nyu-ctf]: https://arxiv.org/abs/2406.05590
 
 ## About
 SWE-agent is an academic project started at Princeton University by John Yang*, Carlos E. Jimenez*, Alexander Wettig, Kilian Lieret, Shunyu Yao, Karthik Narasimhan, and Ofir Press.
 Contact person: [John Yang](https://john-b-yang.github.io/), [Carlos E. Jimenez](http://www.carlosejimenez.com/), and [Kilian Lieret](https://www.lieret.net/) (Email: johnby@stanford.edu, carlosej@princeton.edu, kl5675@princeton.edu).
 
 ## Contributions <a name="contributions"></a>
+
 - If you'd like to ask questions, learn about upcoming features, and participate in future development, join our [Discord community](https://discord.gg/AVEFbBn2rH)!
 - If you'd like to contribute to the codebase, we welcome [issues](https://github.com/princeton-nlp/SWE-agent/issues) and [pull requests](https://github.com/princeton-nlp/SWE-agent/pulls)!
 
 ## Citation <a name="citation"></a>
+
 If you found this work helpful, please consider citing it using the following:
 ```bibtex
 @inproceedings{yang2024sweagent,
@@ -89,6 +66,19 @@ If you found this work helpful, please consider citing it using the following:
   booktitle={The Thirty-eighth Annual Conference on Neural Information Processing Systems},
   year={2024},
   url={https://arxiv.org/abs/2405.15793}
+}
+```
+
+If you used the summarizer, interactive commands or the offensive cybersecurity capabilities in SWE-agent, please also consider citing:
+```bibtex
+@misc{abramovich2024enigmaenhancedinteractivegenerative,
+      title={EnIGMA: Enhanced Interactive Generative Model Agent for CTF Challenges},
+      author={Talor Abramovich and Meet Udeshi and Minghao Shao and Kilian Lieret and Haoran Xi and Kimberly Milner and Sofija Jancheska and John Yang and Carlos E. Jimenez and Farshad Khorrami and Prashanth Krishnamurthy and Brendan Dolan-Gavitt and Muhammad Shafique and Karthik Narasimhan and Ramesh Karri and Ofir Press},
+      year={2024},
+      eprint={2409.16165},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2409.16165},
 }
 ```
 
