@@ -7,7 +7,7 @@ body:
   attributes:
     value: >
       #### Before submitting a bug, please make sure the issue hasn't been already
-      addressed by searching through [the past issues](https://github.com/princeton-nlp/SWE-agent/issues).
+      addressed by searching through [the past issues](https://github.com/SWE-agent/SWE-agent/issues).
 - type: textarea
   attributes:
     label: Describe the bug

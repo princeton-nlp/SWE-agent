@@ -7,7 +7,7 @@ To solve this, you need to apply the same formatting to your code. Here's how yo
 First let's add the official remote (if it exists, you've probably already added it and you can ignore the warning).
 
 ```bash
-git remote add upstream https://github.com/princeton-nlp/SWE-agent.git
+git remote add upstream https://github.com/SWE-agent/SWE-agent.git
 git fetch upstream
 ```
 

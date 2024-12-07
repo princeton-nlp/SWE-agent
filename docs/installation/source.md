@@ -4,7 +4,7 @@ Installation from source is the preferred way to set up SWE-agent on your machin
 
 1. Clone the repository, for example with
     ```bash
-    git clone https://github.com/princeton-nlp/SWE-agent.git
+    git clone https://github.com/SWE-agent/SWE-agent.git
     ```
 2. Run
     ```

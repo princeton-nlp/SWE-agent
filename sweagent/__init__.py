@@ -16,7 +16,7 @@ from sweagent.utils.log import get_logger
 # Monkey patch the logger to use our implementation
 log_swerex.get_logger = partial(get_logger, emoji="🦖")
 
-# See https://github.com/princeton-nlp/SWE-agent/issues/585
+# See https://github.com/SWE-agent/SWE-agent/issues/585
 getLogger("datasets").setLevel(WARNING)
 getLogger("numexpr.utils").setLevel(WARNING)
 getLogger("LiteLLM").setLevel(WARNING)

@@ -27,18 +27,18 @@ def test_remove_triple_backticks():
 
 
 def test_is_github_repo_url():
-    assert _is_github_repo_url("https://github.com/princeton-nlp/SWE-agent")
-    assert _is_github_repo_url("https://github.com/princeton-nlp/SWE-agent/anything")
+    assert _is_github_repo_url("https://github.com/SWE-agent/SWE-agent")
+    assert _is_github_repo_url("https://github.com/SWE-agent/SWE-agent/anything")
     assert _is_github_repo_url("github.com/princeton-nlp/SWE-agent/anything")
     assert not _is_github_repo_url("")
     assert not _is_github_repo_url("/path/to/file")
 
 
 def test_parse_gh_repo_url():
-    assert _parse_gh_repo_url("https://github.com/princeton-nlp/SWE-agent") == ("princeton-nlp", "SWE-agent")
-    assert _parse_gh_repo_url("github.com/princeton-nlp/SWE-agent") == ("princeton-nlp", "SWE-agent")
-    assert _parse_gh_repo_url("github.com/princeton-nlp/SWE-agent/asdfjsdfg") == ("princeton-nlp", "SWE-agent")
-    assert _parse_gh_repo_url("git@github.com/princeton-nlp/SWE-agent/asdfjsdfg") == ("princeton-nlp", "SWE-agent")
+    assert _parse_gh_repo_url("https://github.com/SWE-agent/SWE-agent") == ("SWE-agent", "SWE-agent")
+    assert _parse_gh_repo_url("github.com/SWE-agent/SWE-agent") == ("SWE-agent", "SWE-agent")
+    assert _parse_gh_repo_url("github.com/SWE-agent/SWE-agent/asdfjsdfg") == ("SWE-agent", "SWE-agent")
+    assert _parse_gh_repo_url("git@github.com/SWE-agent/SWE-agent/asdfjsdfg") == ("SWE-agent", "SWE-agent")
 
 
 def test_parse_gh_repo_url_fails():
@@ -51,9 +51,9 @@ def test_parse_gh_repo_url_fails():
 
 
 def test_parse_gh_issue_url():
-    url = "https://github.com/princeton-nlp/SWE-agent/issues/43"
+    url = "https://github.com/SWE-agent/SWE-agent/issues/43"
     owner, repo, no = _parse_gh_issue_url(url)
-    assert owner == "princeton-nlp"
+    assert owner == "SWE-agent"
     assert repo == "SWE-agent"
     assert no == "43"
 
@@ -67,7 +67,7 @@ def test_parse_gh_issue_url_fails():
 
 def test_is_from_github_url():
     assert not _is_github_issue_url("")
-    assert _is_github_issue_url("https://github.com/princeton-nlp/SWE-agent/issues/43")
+    assert _is_github_issue_url("https://github.com/SWE-agent/SWE-agent/issues/43")
 
 
 def test_get_associated_commit_urls():

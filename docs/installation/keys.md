@@ -33,5 +33,5 @@ We also provide models for testing SWE-agent without spending any credits
 * If you get `Error code: 404`, please check your configured keys, in particular
   whether you set `OPENAI_API_BASE_URL` correctly (if you're not using it, the
   line should be deleted or commented out).
-  Also see [this issue](https://github.com/princeton-nlp/SWE-agent/issues/467)
+  Also see [this issue](https://github.com/SWE-agent/SWE-agent/issues/467)
   for reference.

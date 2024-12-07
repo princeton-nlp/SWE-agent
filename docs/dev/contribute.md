@@ -88,11 +88,11 @@ If you are using VSCode, you might want to add the following two files:
 * When changing the behavior of the agent, we need to have some indication that it actually improves the success rate of SWE-agent.
   However, if you make the behavior optional without complicating SWE-agent (for example by providing new [commands](../config/commands.md)),
   we might be less strict.
-* Please add simple unit tests or integration tests wherever possible. Take a look in the [tests directory](https://github.com/princeton-nlp/SWE-agent/tree/main/tests)
+* Please add simple unit tests or integration tests wherever possible. Take a look in the [tests directory](https://github.com/SWE-agent/SWE-agent/tree/main/tests)
   for inspiration. We emphasize simple easy-tow-rite tests that get a lot of coverage.
 
-[gfi]: https://github.com/princeton-nlp/SWE-agent/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3A%22%F0%9F%91%8B+good+first+issue%22+
-[help_wanted]: https://github.com/princeton-nlp/SWE-agent/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3A%22%F0%9F%99%8F+help+wanted%22
+[gfi]: https://github.com/SWE-agent/SWE-agent/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3A%22%F0%9F%91%8B+good+first+issue%22+
+[help_wanted]: https://github.com/SWE-agent/SWE-agent/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3A%22%F0%9F%99%8F+help+wanted%22
 
 ## Building the documentation <a name="mkdocs"></a>
 

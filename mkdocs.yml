@@ -138,7 +138,7 @@ plugins:
               - "!^_"
               - "!^model_config"
               - "!^model_post_init"
-repo_url: https://github.com/princeton-nlp/SWE-agent
+repo_url: https://github.com/SWE-agent/SWE-agent
 repo_name: princeton-nlp/SWE-agent
 edit_uri: edit/main/docs/
 extra_css:

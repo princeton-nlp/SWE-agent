@@ -86,7 +86,7 @@ from sweagent.utils.log import get_logger
 #         timeout_duration=10,
 #     )
 #     body = (
-#         f"This is a PR opened by AI tool [SWE Agent](https://github.com/princeton-nlp/SWE-agent/) "
+#         f"This is a PR opened by AI tool [SWE Agent](https://github.com/SWE-agent/SWE-agent/) "
 #         f"to close [#{issue.number}]({issue_url}) ({issue.title}).\n\nCloses #{issue.number}."
 #     )
 #     body += "\n\n" + format_trajectory_markdown(trajectory)

@@ -3,7 +3,7 @@
 Running SWE-agent in your browser is the easiest way to try out our project.
 
 <video controls>
-<source src=" https://github.com/princeton-nlp/SWE-agent/assets/13602468/44d60674-59ca-4986-9b22-7052a45cbed9" type="video/mp4">
+<source src=" https://github.com/SWE-agent/SWE-agent/assets/13602468/44d60674-59ca-4986-9b22-7052a45cbed9" type="video/mp4">
 </video>
 
 1. Click [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/princeton-nlp/SWE-agent)

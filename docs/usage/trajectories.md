@@ -1,6 +1,6 @@
 # Output files
 
-The [`trajectories/`](https://github.com/princeton-nlp/SWE-agent/tree/main/trajectories) folder is the default location that experiment results (for example invocations of [`sweagent run`](cl_tutorial.md)) will be written to.
+The [`trajectories/`](https://github.com/SWE-agent/SWE-agent/tree/main/trajectories) folder is the default location that experiment results (for example invocations of [`sweagent run`](cl_tutorial.md)) will be written to.
 
 ## Trajectories
 

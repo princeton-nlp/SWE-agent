@@ -12,7 +12,7 @@ A configuration is represented in one or more `.yaml` files, specified by the `-
 * Control the **input/output interface** that sits between the agent and `SWEEnv`.
 
 !!! tip "Default config files"
-    Our default config files are in the [`config/`](https://github.com/princeton-nlp/SWE-agent/tree/main/config) directory.
+    Our default config files are in the [`config/`](https://github.com/SWE-agent/SWE-agent/tree/main/config) directory.
 
 ## Example configuration
 
