@@ -34,10 +34,10 @@ echo "  open your browser at http://localhost:3000"
 echo "* If you are running in github codespaces, please click the popup "
 echo "  that offers to forward port 3000 (not 8000!)."
 echo "  Missed it? Find more information at "
-echo "  https://princeton-nlp.github.io/SWE-agent/installation/codespaces#running-the-web-ui"
+echo "  https://swe-agent.com/latest/installation/codespaces#running-the-web-ui"
 echo "* Something went wrong? Please check "
 echo "  web_api.log for error messages!"
-echo "* See here for more information: https://princeton-nlp.github.io/SWE-agent/usage/web_ui/"
+echo "* See here for more information: https://swe-agent.com/latest/usage/web_ui/"
 
 cd ../../
 

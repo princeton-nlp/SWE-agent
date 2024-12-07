@@ -29,7 +29,7 @@ def test_remove_triple_backticks():
 def test_is_github_repo_url():
     assert _is_github_repo_url("https://github.com/SWE-agent/SWE-agent")
     assert _is_github_repo_url("https://github.com/SWE-agent/SWE-agent/anything")
-    assert _is_github_repo_url("github.com/princeton-nlp/SWE-agent/anything")
+    assert _is_github_repo_url("github.com/SWE-agent/SWE-agent/anything")
     assert not _is_github_repo_url("")
     assert not _is_github_repo_url("/path/to/file")
 
@@ -72,7 +72,7 @@ def test_is_from_github_url():
 
 def test_get_associated_commit_urls():
     assoc = _get_associated_commit_urls(
-        org="princeton-nlp",
+        org="SWE-agent",
         repo="SWE-agent",
         issue_number="41",
         token=os.environ.get("GITHUB_TOKEN", ""),
