@@ -1,11 +1,11 @@
 .dark-mode-only {
-    display: none !important;
+  display: none !important;
 }
 
 [data-md-color-scheme="slate"] .dark-mode-only {
-    display: inline-block !important;
+  display: inline-block !important;
 }
 
 [data-md-color-scheme="slate"] .light-mode-only {
-    display: none !important;
+  display: none !important;
 }
