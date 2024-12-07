@@ -40,7 +40,7 @@ Read our [documentation][docs] to learn more:
 
 [SWE-agent: EnIGMA][enigma] is a mode for solving offensive cybersecurity (capture the flag) challenges.
 EnIGMA achieves state-of-the-art results on multiple cybersecurity benchmarks (see [leaderboard](https://enigma-agent.com/#results)).
-The EnIGMA project introduced multiple features that are available in all modes of SWE-agent, such as the [debugger and server connection tools](https://swe-agent.com/0.7/background/iat/) and a [summarizer](https://swe-agent.com/0.7/config/summarizers/) to handle long outputs.
+The EnIGMA project introduced multiple features that are available in all modes of SWE-agent, such as the [debugger and server connection tools](https://swe-agent.com/0.7/background/iat/) and a [summarizer](https://swe-agent.com/0.7/config/summarizers/) to handle long outputs. Please use [SWE-agent 0.7](https://github.com/SWE-agent/SWE-agent/tree/v0.7) while we update EnIGMA for 1.0.
 
 [enigma]: https://enigma-agent.com
 [SWE-bench]: https://github.com/SWE-bench/SWE-bench
@@ -87,7 +87,6 @@ MIT. Check `LICENSE`.
 <div align="center">
 
 [![Pytest](https://github.com/SWE-agent/SWE-agent/actions/workflows/pytest.yaml/badge.svg)](https://github.com/SWE-agent/SWE-agent/actions/workflows/pytest.yaml)
-[![Test build containers](https://github.com/SWE-agent/SWE-agent/actions/workflows/test_build_containers.yaml/badge.svg)](https://github.com/SWE-agent/SWE-agent/actions/workflows/test_build_containers.yaml)
 [![Release to dockerhub (nightly)](https://github.com/SWE-agent/SWE-agent/actions/workflows/release-dockerhub-nightly.yaml/badge.svg)](https://github.com/SWE-agent/SWE-agent/actions/workflows/release-dockerhub-nightly.yaml)
 [![Release to dockerhub (release)](https://github.com/SWE-agent/SWE-agent/actions/workflows/release-dockerhub-release.yaml/badge.svg)](https://github.com/SWE-agent/SWE-agent/actions/workflows/release-dockerhub-release.yaml)
 [![build-docs](https://github.com/SWE-agent/SWE-agent/actions/workflows/build-docs.yaml/badge.svg)](https://github.com/SWE-agent/SWE-agent/actions/workflows/build-docs.yaml)
