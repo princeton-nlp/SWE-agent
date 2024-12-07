@@ -28,4 +28,6 @@ def test_run_cli_help():
         "run-replay",
         "--help",
     ]
-    subprocess.run(args, check=True)
+    output = subprocess.run(args, capture_output=True)
+    assert output.returncode == 0
+    assert "Replay a trajectory file" in output.stdout.decode()
