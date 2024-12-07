@@ -4,7 +4,7 @@ Run on a batch of instances/issues, e.g., SWE-bench.
 [cyan][bold]=== BASIC OPTIONS ===[/bold][/cyan]
 
   -h --help           Show help text and exit
-  --help_options      Print specific help text and exit
+  --help_option      Print specific help text and exit
 
 [cyan][bold]=== EXAMPLES ===[/bold][/cyan]
 

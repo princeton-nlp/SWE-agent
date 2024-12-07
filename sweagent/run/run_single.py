@@ -3,7 +3,7 @@
 [cyan][bold]=== BASIC OPTIONS ===[/bold][/cyan]
 
   -h --help           Show help text and exit
-  --help_options      Print specific help text and exit
+  --help_option      Print specific help text and exit
   --config CONFIG     Load additional config files. Use this option multiple times to load
                       multiple files, e.g., --config config1.yaml --config config2.yaml
 
