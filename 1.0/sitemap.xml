@@ -45,7 +45,7 @@
          <lastmod>2024-12-07</lastmod>
     </url>
     <url>
-         <loc>https://swe-agent.com/latest/dev/changelog/</loc>
+         <loc>https://swe-agent.com/latest/config/tools/</loc>
          <lastmod>2024-12-07</lastmod>
     </url>
     <url>
@@ -58,6 +58,10 @@
     </url>
     <url>
          <loc>https://swe-agent.com/latest/installation/</loc>
+         <lastmod>2024-12-07</lastmod>
+    </url>
+    <url>
+         <loc>https://swe-agent.com/latest/installation/changelog/</loc>
          <lastmod>2024-12-07</lastmod>
     </url>
     <url>
