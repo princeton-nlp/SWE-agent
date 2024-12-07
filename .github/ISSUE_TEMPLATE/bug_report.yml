@@ -58,7 +58,7 @@ body:
     label: Checklist
     description: We can only help you if you have done the following
     options:
-      - label: I'm running with the latest docker container/on the latest development version (this means running both `git pull` and `docker pull sweagent/swe-agent:latest`)
+      - label: I'm running with the latest docker container/on the latest development version (i.e., I ran `git pull`))
         required: true
       - label: I have copied the full command/code that I ran (as text, not as screenshot!)
         required: true

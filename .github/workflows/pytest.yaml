@@ -36,18 +36,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Pull swe-agent docker container
-        run: |
-          docker pull sweagent/swe-agent:latest
-      - name: Pull enigma docker container
-        run: |
-          docker pull sweagent/enigma:latest
-      - name: Set up network for CTF challenges
-        run: |
-          docker network create ctfnet
-      - name: Create keys.cfg
-        run: |
-          touch keys.cfg
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
