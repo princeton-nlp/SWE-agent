@@ -184,7 +184,7 @@ Again, those are [union types](union-types). See here for all the options:
 
 * [`GithubRepoConfig`](../reference/repo.md#sweagent.environment.config.repo.GithubRepoConfig): Pull a repository from GitHub.
 * [`LocalRepoConfig`](../reference/repo.md#sweagent.environment.config.repo.LocalRepoConfig): Copies a repository from your local filesystem to the docker container.
-* [`PreExistingRepo`](../reference/repo.md#sweagent.environment.config.repo.PreExistingRepo): If you want to use a repository that already exists on the docker container.
+* [`PreExistingRepoConfig`](../reference/repo.md#sweagent.environment.config.repo.PreExistingRepoConfig): If you want to use a repository that already exists on the docker container.
 
 ## Taking actions
 

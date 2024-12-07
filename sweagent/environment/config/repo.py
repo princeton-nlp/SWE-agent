@@ -26,7 +26,7 @@ class Repo(Protocol):
     def copy(self, deployment: AbstractDeployment): ...
 
 
-class PreExistingRepo(BaseModel):
+class PreExistingRepoConfig(BaseModel):
     """Use this to specify a repository that already exists on the deployment.
     This is important because we need to cd to the repo before running the agent.
 
@@ -151,7 +151,7 @@ class GithubRepoConfig(BaseModel):
         )
 
 
-RepoConfig = LocalRepoConfig | GithubRepoConfig | PreExistingRepo
+RepoConfig = LocalRepoConfig | GithubRepoConfig | PreExistingRepoConfig
 
 
 def repo_from_simplified_input(
@@ -169,7 +169,7 @@ def repo_from_simplified_input(
     if type == "github":
         return GithubRepoConfig(github_url=input, base_commit=base_commit)
     if type == "preexisting":
-        return PreExistingRepo(repo_name=input, base_commit=base_commit)
+        return PreExistingRepoConfig(repo_name=input, base_commit=base_commit)
     if type == "auto":
         if input.startswith("https://github.com/"):
             return GithubRepoConfig(github_url=input, base_commit=base_commit)

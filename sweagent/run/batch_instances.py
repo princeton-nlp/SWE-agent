@@ -16,7 +16,7 @@ from swerex.deployment.config import (
 from typing_extensions import Self
 
 from sweagent.environment.config.problem_statement import ProblemStatementConfig, TextProblemStatement
-from sweagent.environment.config.repo import GithubRepoConfig, LocalRepoConfig, PreExistingRepo
+from sweagent.environment.config.repo import GithubRepoConfig, LocalRepoConfig, PreExistingRepoConfig
 from sweagent.environment.swe_env import EnvironmentConfig
 from sweagent.utils.log import get_logger
 
@@ -134,7 +134,7 @@ class SimpleBatchInstance(BaseModel):
         elif "github" in self.repo_name:
             repo = GithubRepoConfig(github_url=self.repo_name, base_commit=self.base_commit)
         elif "/" not in self.repo_name:
-            repo = PreExistingRepo(repo_name=self.repo_name, base_commit=self.base_commit)
+            repo = PreExistingRepoConfig(repo_name=self.repo_name, base_commit=self.base_commit)
         else:
             repo = LocalRepoConfig(path=Path(self.repo_name), base_commit=self.base_commit)
         if isinstance(deployment, LocalDeploymentConfig):
