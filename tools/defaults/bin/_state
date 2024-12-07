@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 
-from default_utils import registry  # type: ignore
+from registry import registry  # type: ignore
 
 
 def main():

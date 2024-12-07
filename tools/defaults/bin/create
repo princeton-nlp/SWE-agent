@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 
-from default_utils import WindowedFile  # type: ignore
+from windowed_file import WindowedFile  # type: ignore
 
 
 def main():

@@ -2,48 +2,7 @@ import json
 import os
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
-
-
-class EnvRegistry:
-    """Read and write variables into a file. This is used to persist state between tool
-    calls without using environment variables (which are problematic because you cannot
-    set them in a subprocess).
-
-    The default file location is `/root/.swe-agent-env`, though this can be overridden
-    by the `env_file` argument or the `SWE_AGENT_ENV_FILE` environment variable.
-    """
-
-    def __init__(self, env_file: Optional[Path] = None):
-        self._env_file = env_file
-
-    @property
-    def env_file(self) -> Path:
-        if self._env_file is None:
-            env_file = Path(os.environ.get("SWE_AGENT_ENV_FILE", "/root/.swe-agent-env"))
-        else:
-            env_file = self._env_file
-        if not env_file.exists():
-            env_file.write_text("{}")
-        return env_file
-
-    def __getitem__(self, key: str) -> str:
-        return json.loads(self.env_file.read_text())[key]
-
-    def get(self, key: str, default_value: Any = None) -> Any:
-        return json.loads(self.env_file.read_text()).get(key, default_value)
-
-    def get_if_none(self, value: Any, key: str, default_value: Any = None) -> Any:
-        if value is not None:
-            return value
-        return self.get(key, default_value)
-
-    def __setitem__(self, key: str, value: Any):
-        env = json.loads(self.env_file.read_text())
-        env[key] = value
-        self.env_file.write_text(json.dumps(env))
-
-
-registry = EnvRegistry()
+from registry import registry
 
 
 class FileNotOpened(Exception):
@@ -205,16 +164,14 @@ class WindowedFile:
                 out_lines.append(f"({self.n_lines - end_line - 1} more lines below)")
         return "\n".join(out_lines)
 
-    def set_window_text(
-        self, new_text: str, *, line_range: Optional[Tuple[int, int]] = None
-    ) -> None:
+    def set_window_text(self, new_text: str, *, line_range: Optional[Tuple[int, int]] = None) -> None:
         """Replace the text in the current display window with a new string."""
         text = self.text.split("\n")
         if line_range is not None:
             start, stop = line_range
         else:
             start, stop = self.line_range
-        
+
         # Handle empty replacement text (deletion case)
         new_lines = new_text.split("\n") if new_text else []
         text[start : stop + 1] = new_lines
@@ -313,14 +270,11 @@ class WindowedFile:
     def insert(self, text: str, line: Optional[int] = None, *, reset_first_line: str = "top") -> "InsertInfo":
         # Standardize empty text handling
         if not text:
-            return InsertInfo(
-                first_inserted_line=(self.n_lines if line is None else line), 
-                n_lines_added=0
-            )
+            return InsertInfo(first_inserted_line=(self.n_lines if line is None else line), n_lines_added=0)
 
         # Remove single trailing newline if it exists
         text = text[:-1] if text.endswith("\n") else text
-        
+
         if line is None:
             # Append to end of file
             if not self.text:
@@ -347,8 +301,5 @@ class WindowedFile:
         self.text = new_text
         if reset_first_line != "keep":
             self.goto(insert_line, mode=reset_first_line)
-        
-        return InsertInfo(
-            first_inserted_line=insert_line,
-            n_lines_added=len(text.split("\n"))
-        )
+
+        return InsertInfo(first_inserted_line=insert_line, n_lines_added=len(text.split("\n")))

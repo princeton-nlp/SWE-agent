@@ -33,6 +33,7 @@ agent:
     put_demos_in_history: true
   tools:
     bundles:
+      - path: tools/registry
       - path: tools/edit_anthropic
       - path: tools/submit
     enable_bash_tool: true

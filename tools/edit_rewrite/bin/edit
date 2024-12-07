@@ -2,7 +2,7 @@
 
 import argparse
 
-from default_utils import FileNotOpened, WindowedFile  # type: ignore
+from windowed_file import FileNotOpened, WindowedFile  # type: ignore
 from flake8_utils import flake8, format_flake8_output  # type: ignore
 
 _LINT_ERROR_TEMPLATE = """

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from default_utils import WindowedFile  # type: ignore
+from windowed_file import WindowedFile  # type: ignore
 
 
 def main():

@@ -2,7 +2,7 @@
 import sys
 from typing import List
 
-from default_utils import WindowedFile  # type: ignore
+from windowed_file import WindowedFile  # type: ignore
 
 
 def main(args: List[str]) -> int:

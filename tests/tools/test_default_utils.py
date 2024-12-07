@@ -12,7 +12,7 @@ DEFAULT_TOOLS_BIN = DEFAULT_TOOLS_DIR / "bin"
 
 make_python_tool_importable(DEFAULT_TOOLS_DIR / "lib/default_utils.py", "default_utils")
 import default_utils  # type: ignore
-from default_utils import WindowedFile  # type: ignore
+from windowed_file import WindowedFile  # type: ignore
 
 
 def test_env_file_override(with_tmp_env_file):

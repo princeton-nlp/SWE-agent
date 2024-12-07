@@ -19,7 +19,7 @@ else:
     assert default_lib.is_dir()
     sys.path.append(str(default_lib))
 
-from default_utils import registry
+from registry import registry
 
 
 class Flake8Error:

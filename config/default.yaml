@@ -112,6 +112,7 @@ agent:
       WINDOW: 100
       OVERLAP: 2
     bundles:
+      - path: tools/registry
       - path: tools/defaults
       - path: tools/search
       # - path: tools/edit_linting

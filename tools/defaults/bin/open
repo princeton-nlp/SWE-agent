@@ -2,7 +2,7 @@
 import sys
 from typing import Optional
 
-from default_utils import FileNotOpened, WindowedFile  # type: ignore
+from windowed_file import FileNotOpened, WindowedFile  # type: ignore
 
 
 def main(path: Optional[str] = None, line_number: Optional[str] = None) -> None:

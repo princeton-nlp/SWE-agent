@@ -2,7 +2,7 @@
 
 import sys
 
-from default_utils import registry  # type: ignore
+from registry import registry  # type: ignore
 
 if __name__ == "__main__":
     var_name = sys.argv[1]
