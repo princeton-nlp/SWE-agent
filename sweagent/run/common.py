@@ -4,6 +4,7 @@ import json
 import sys
 from argparse import ArgumentParser
 from collections import defaultdict
+from collections.abc import Callable
 from pathlib import Path
 from types import UnionType
 from typing import Any
@@ -66,6 +67,35 @@ Run `sweagent <subcommand> --help` for usage examples.
 - You used dashes instead of underscores (wrong: `--num-workers`, correct: `--num_workers`).
 - You forgot about part of the hierarchy (wrong: `--model.name`, correct: `--agent.model.name`).
 """
+
+
+class AutoCorrectSuggestion:
+    def __init__(
+        self, original: str, alternative: str = "", *, condition: Callable | None = None, help: str | None = None
+    ):
+        self.original = original
+        self.alternative = alternative
+        self.condition = condition
+        self.help = help
+        if self.help and self.alternative:
+            msg = "Cannot set both help and alternative"
+            raise ValueError(msg)
+
+    def show(self, args: list[str]) -> bool:
+        no_equal = []
+        for arg in args:
+            if "=" in arg:
+                no_equal.extend(arg.split("="))
+            else:
+                no_equal.append(arg)
+        if self.condition is not None:
+            return self.condition(no_equal)
+        return f"--{self.original}" in no_equal
+
+    def format(self) -> str:
+        if self.help:
+            return self.help
+        return f"You wrote [red]--{self.original}[/red]. Did you mean [green]--{self.alternative}[/green]?"
 
 
 class ConfigHelper:
@@ -170,6 +200,20 @@ class BasicCLI:
         self.default_settings = default_settings
         self.logger = get_logger("swea-cli", emoji="🔧")
         self.help_text = help_text
+
+    def maybe_show_auto_correct(self, args: list[str]):
+        auto_correct = []
+        if hasattr(self.arg_type, "_get_auto_correct"):
+            for ac in self.arg_type._get_auto_correct():  # type: ignore
+                if ac.show(args):
+                    auto_correct.append(ac)
+        if auto_correct:
+            rich_print(
+                Panel.fit(
+                    "[red][bold]Auto-correct suggestions[/bold][/red]\n\n"
+                    + "\n".join(ac.format() for ac in auto_correct),
+                )
+            )
 
     def get_config(self, args: list[str] | None = None) -> BaseSettings:
         """Get the configuration object from defaults and command arguments."""
@@ -295,10 +339,12 @@ class BasicCLI:
                     "[red][bold]Validation error[/bold]\n" + _VALIDATION_ERROR_HELP_TEXT + "[/red]\n" + str(e),
                 )
             )
+            self.maybe_show_auto_correct(remaining_args)
             msg = "Invalid configuration. Please check the above output."
             raise RuntimeError(msg) from None
         except SettingsError as e:
             rich_print(Panel.fit("[red][bold]SettingsError[/bold][/red]\n\n" + str(e) + "\n\n" + _SETTING_ERROR_HINTS))
+            self.maybe_show_auto_correct(remaining_args)
             msg = "Invalid command line arguments. Please check the above output in the box."
             raise RuntimeError(msg) from None
 
