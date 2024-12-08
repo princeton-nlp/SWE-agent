@@ -100,6 +100,23 @@
     </div>
     <div data-md-component="announce">
       
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            
+            
+This is the pre-release of SWE-agent 1.0. <a href="https://swe-agent.com/latest/migration/">New features + migration guide.</a>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
+      
     </div>
     
       <div data-md-color-scheme="default" data-md-component="outdated" hidden>
@@ -1914,7 +1931,19 @@
   <h1>Migration</h1>
 
 <h2 id="swe-agent-100-migration-guide">SWE-agent 1.0.0 migration guide</h2>
-<p>Welcome to the new SWE-agent! Everything has changed -- hopefully for the better!</p>
+<div class="admonition warning">
+<p class="admonition-title">Work in progress</p>
+<p>We're currently in the process of updating this guide.</p>
+</div>
+<p>Welcome to SWE-agent 1.0! So much new stuff! Here's a quick rundown of the cool new things you can do:</p>
+<ul>
+<li><img alt="✨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2728.svg" title=":sparkles:" /> Fast, massively parallel code execution with <a href="https://github.com/swe-agent/SWE-ReX">SWE-ReX</a>.</li>
+<li><img alt="✨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2728.svg" title=":sparkles:" /> Run SWE-agent locally but execute code in the cloud (using modal, AWS, or anything else that runs <a href="https://github.com/swe-agent/SWE-ReX">SWE-ReX</a>).</li>
+<li><img alt="✨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2728.svg" title=":sparkles:" /> Flexible tool definitions with <a href="config/tools.md">tool bundles</a>.</li>
+<li><img alt="✨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2728.svg" title=":sparkles:" /> All language models supported using <code>litellm</code> (see <a href="installation/keys.md">models</a>).</li>
+<li><img alt="✨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2728.svg" title=":sparkles:" /> Override any configuration option from the command line (see <a href="../cl_tutorial/">command line basics</a>).</li>
+<li><img alt="✨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2728.svg" title=":sparkles:" /> Greatly simplified and cleaned up codebase. In particular, the <code>Agent</code> class is now much easier to modify.</li>
+</ul>
 <p>If you're familiar with the old SWE-agent, here are the main changes you need to be aware of</p>
 <h2 id="command-line-interface-and-basic-configuration">Command line interface and basic configuration</h2>
 <ul>
