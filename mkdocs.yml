@@ -99,8 +99,10 @@ nav:
       - "Agent config": "reference/agent_config.md"
       - "Model config": "reference/model_config.md"
       - "Templates": "reference/template_config.md"
+      - "Tools": "reference/tools_config.md"
       - "History processors": "reference/history_processor_config.md"
     - "Environment config": "reference/env_config.md"
+    - "Tool bundle config": "reference/bundle_config.md"
     - Classes:
       - "Agent class": "reference/agent.md"
       - "Environment class": "reference/env.md"
