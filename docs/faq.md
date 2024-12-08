@@ -22,7 +22,7 @@ But you can always execute SWE-agent in the cloud.
 > I got a very long error message about various configuration options not working. What's up?
 
 This is probably because of union types.
-See [this section](#union-types) for more information, but the short version is that some options (e.g., the repository or problem statement) can be specified in multiple ways, so we try every option until we find the one that works based on your inputs.
+See [this section](usage/cl_tutorial.md#union-types) for more information, but the short version is that some options (e.g., the repository or problem statement) can be specified in multiple ways, so we try every option until we find the one that works based on your inputs.
 If none of them work, we throw an error which then tells you why we cannot initialize any of the types, so this will get somewhat long and confusing.
 
 {% include-markdown "_footer.md" %}
