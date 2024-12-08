@@ -18,7 +18,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.47">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.48">
     
     
       
@@ -623,6 +623,15 @@ This is the pre-release of SWE-agent 1.0. <a href="https://swe-agent.com/latest/
   <a href="#command-line-interface-and-basic-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       Command line interface and basic configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#environment-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Environment setup
     </span>
   </a>
   
@@ -1984,6 +1993,15 @@ This is the pre-release of SWE-agent 1.0. <a href="https://swe-agent.com/latest/
 </li>
       
         <li class="md-nav__item">
+  <a href="#environment-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Environment setup
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#more-advanced-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       More advanced configuration
@@ -2038,7 +2056,7 @@ This is the pre-release of SWE-agent 1.0. <a href="https://swe-agent.com/latest/
 <li><img alt="✨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2728.svg" title=":sparkles:" /> Override any configuration option from the command line (see <a href="../../usage/cl_tutorial/">command line basics</a>).</li>
 <li><img alt="✨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2728.svg" title=":sparkles:" /> Greatly simplified and cleaned up codebase. In particular, the <code>Agent</code> class is now much easier to modify.</li>
 </ul>
-<p>If you're familiar with the old SWE-agent, here are the main changes you need to be aware of</p>
+<p>If you're familiar with the old SWE-agent, here are the main changes you need to be aware of.</p>
 <h2 id="command-line-interface-and-basic-configuration">Command line interface and basic configuration</h2>
 <ul>
 <li>Instead of the <code>run.py</code> script, we now have a central <code>sweagent</code> entry point that you can call after installing the package.
@@ -2047,6 +2065,11 @@ This is the pre-release of SWE-agent 1.0. <a href="https://swe-agent.com/latest/
 <li>We have switched to a hierarchical configuration system. This means that command line options look something like this: <code>--agent.model.name=gpt-4o</code>.
   The configuration files have also been updated to reflect this.</li>
 </ul>
+<h2 id="environment-setup">Environment setup</h2>
+<p>We removed the complicated mess of environment setup options (<code>conda</code> environments, <code>pip</code>, docker images, etc.).
+Instead, you now always start from a docker image of your choice and we recommend that this should ship with all the dependencies you need.
+However, you can also execute additional commands before starting the agent with <code>EnvironmentConfig.post_startup_commands</code>.
+Additionally, every <a href="../../config/tools/">tool bundle</a> can include a <code>setup.sh</code> script that will be executed, allowing to e.g., install <code>flake8</code> if needed by the tools.</p>
 <h2 id="more-advanced-configuration">More advanced configuration</h2>
 <ul>
 <li>Tools now live in tool bundles in the <code>tools/</code> directory. You can mix and match tools to your liking.</li>

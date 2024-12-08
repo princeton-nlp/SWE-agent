@@ -18,7 +18,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.47">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.48">
     
     
       
@@ -794,6 +794,15 @@ This is the pre-release of SWE-agent 1.0. <a href="https://swe-agent.com/latest/
   <a href="#specifying-the-repository" class="md-nav__link">
     <span class="md-ellipsis">
       Specifying the repository
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-the-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuring the environment
     </span>
   </a>
   
@@ -2029,6 +2038,15 @@ This is the pre-release of SWE-agent 1.0. <a href="https://swe-agent.com/latest/
 </li>
       
         <li class="md-nav__item">
+  <a href="#configuring-the-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuring the environment
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#taking-actions" class="md-nav__link">
     <span class="md-ellipsis">
       Taking actions
@@ -2372,6 +2390,18 @@ However, if none of them work, we throw an error which then tells you why we can
 <li><a href="../../reference/repo/#sweagent.environment.repo.LocalRepoConfig"><code>LocalRepoConfig</code></a>: Copies a repository from your local filesystem to the docker container.</li>
 <li><a href="../../reference/repo/#sweagent.environment.repo.PreExistingRepoConfig"><code>PreExistingRepoConfig</code></a>: If you want to use a repository that already exists on the docker container.</li>
 </ul>
+<h2 id="configuring-the-environment">Configuring the environment</h2>
+<p>We mainly recommend you to build a docker image with all the dependencies you need and then use that with <code>--env.deployment.image</code>.
+In addition, you can also execute additional commands before starting the agent with <code>env.post_startup_commands</code> (this
+takes a list of commands, e.g.,</p>
+<div class="highlight"><pre><span></span><code>sweagent<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--agent.model.name<span class="o">=</span>claude-3-5-sonnet-20241022<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--env.post_startup_commands<span class="o">=</span><span class="s1">&#39;[&quot;pip install flake8&quot;]&#39;</span><span class="w"> </span><span class="se">\ </span><span class="w"> </span><span class="c1"># (1)!</span>
+<span class="w">    </span>...
+</code></pre></div>
+<ol>
+<li>Note the list syntax that is passed as a string using single ticks <code>'</code>. This is particularly important for <code>zsh</code> where <code>[</code>, <code>]</code> have special meaning.</li>
+</ol>
 <h2 id="taking-actions">Taking actions</h2>
 <ul>
 <li>You can use <code>--actions.apply_patch_locally</code> to have SWE-agent apply successful solution attempts to local files.</li>
