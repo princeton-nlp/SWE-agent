@@ -43,6 +43,7 @@ from sweagent.agent.problem_statement import (
     ProblemStatementConfig,
 )
 from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
+from sweagent.run.common import AutoCorrectSuggestion as ACS
 from sweagent.run.common import BasicCLI, ConfigHelper, save_predictions
 from sweagent.run.hooks.abstract import CombinedRunHooks, RunHook
 from sweagent.run.hooks.apply_patch import SaveApplyPatchHook
@@ -88,6 +89,24 @@ class RunSingleConfig(BaseSettings, cli_implicit_flags=False):
             if isinstance(config_file, Path):
                 config_file = config_file.stem
             self.output_dir = Path.cwd() / "trajectories" / user_id / f"{config_file}__{model_id}___{problem_id}"
+
+    @classmethod
+    def _get_auto_correct(cls) -> list[ACS]:
+        return [
+            ACS("model", "agent.model.name"),
+            ACS("agent.model", "agent.model.name"),
+            ACS("per_instance_cost_limit", "agent.model.per_instance_cost_limit"),
+            ACS("model.per_instance_cost_limit", "agent.model.per_instance_cost_limit"),
+            ACS("config_file", "config"),
+            ACS(
+                "data_path",
+                help="--data_path is no longer support for SWE-A 1.0. Please check the tutorial and use one of the --problem_statement options, e.g., --problem_statement.github_url.",
+            ),
+            ACS(
+                "repo_path",
+                help="--repo_path is no longer support for SWE-A 1.0. Please check the tutorial and use one of the --env.repo options, e.g., --env.repo.github_url.",
+            ),
+        ]
 
 
 class RunSingle:
