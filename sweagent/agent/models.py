@@ -221,6 +221,7 @@ def _handle_raise_commands(action: str) -> None:
 class HumanModel(AbstractModel):
     def __init__(self, config: HumanModelConfig, tools: ToolConfig):
         """Model that allows for human-in-the-loop"""
+        self.logger = get_logger("swea-lm", emoji="🤖")
         self.config = config
         self.stats = InstanceStats()
 
@@ -230,7 +231,6 @@ class HumanModel(AbstractModel):
         }
         self._readline_histfile = REPO_ROOT / ".swe-agent-human-history"
         self._load_readline_history()
-        self.logger = get_logger("swea-lm", emoji="🤖")
 
     def _load_readline_history(self) -> None:
         """Load autocomplete history from file"""
