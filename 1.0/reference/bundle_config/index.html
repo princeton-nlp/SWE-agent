@@ -8,13 +8,13 @@
       
       
       
-        <link rel="canonical" href="https://swe-agent.com/latest/reference/env_config/">
+        <link rel="canonical" href="https://swe-agent.com/latest/reference/bundle_config/">
       
       
-        <link rel="prev" href="../history_processor_config/">
+        <link rel="prev" href="../env_config/">
       
       
-        <link rel="next" href="../bundle_config/">
+        <link rel="next" href="../agent/">
       
       
       <link rel="icon" href="../../assets/favicon.ico">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Environment config - SWE-agent documentation</title>
+        <title>Tool bundle config - SWE-agent documentation</title>
       
     
     
@@ -97,7 +97,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#environment-configuration" class="md-skip">
+        <a href="#tool-bundle-configuration" class="md-skip">
           Skip to content
         </a>
       
@@ -136,7 +136,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Environment config
+              Tool bundle config
             
           </span>
         </div>
@@ -1677,6 +1677,27 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../env_config/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Environment config
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1693,7 +1714,7 @@
           
   
   <span class="md-ellipsis">
-    Environment config
+    Tool bundle config
   </span>
   
 
@@ -1704,7 +1725,7 @@
         
   
   <span class="md-ellipsis">
-    Environment config
+    Tool bundle config
   </span>
   
 
@@ -1726,26 +1747,53 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#sweagent.environment.swe_env.EnvironmentConfig" class="md-nav__link">
+  <a href="#sweagent.tools.commands.Command" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;EnvironmentConfig
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Command
     </span>
   </a>
   
-    <nav class="md-nav" aria-label=" EnvironmentConfig">
+    <nav class="md-nav" aria-label=" Command">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#sweagent.environment.swe_env.EnvironmentConfig.deployment" class="md-nav__link">
+  <a href="#sweagent.tools.commands.Command.arguments" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;deployment
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;arguments
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#sweagent.environment.swe_env.EnvironmentConfig.name" class="md-nav__link">
+  <a href="#sweagent.tools.commands.Command.docstring" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;docstring
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Command.end_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;end_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Command.invoke_format" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;invoke_format
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Command.name" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;name
     </span>
@@ -1754,18 +1802,114 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sweagent.environment.swe_env.EnvironmentConfig.post_startup_commands" class="md-nav__link">
+  <a href="#sweagent.tools.commands.Command.signature" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;post_startup_commands
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;signature
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#sweagent.environment.swe_env.EnvironmentConfig.repo" class="md-nav__link">
+  <a href="#sweagent.tools.commands.Command.get_function_calling_tool" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;repo
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_function_calling_tool
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Command.validate_arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;validate_arguments
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Argument
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" Argument">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument.argument_format" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;argument_format
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument.description" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;description
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument.enum" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;enum
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument.items" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;items
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument.name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument.required" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;required
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument.type" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;type
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument.validate_argument_format" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;validate_argument_format
     </span>
   </a>
   
@@ -1780,27 +1924,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../bundle_config/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Tool bundle config
-  </span>
-  
-
-      </a>
     </li>
   
 
@@ -1957,26 +2080,53 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#sweagent.environment.swe_env.EnvironmentConfig" class="md-nav__link">
+  <a href="#sweagent.tools.commands.Command" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;EnvironmentConfig
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Command
     </span>
   </a>
   
-    <nav class="md-nav" aria-label=" EnvironmentConfig">
+    <nav class="md-nav" aria-label=" Command">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#sweagent.environment.swe_env.EnvironmentConfig.deployment" class="md-nav__link">
+  <a href="#sweagent.tools.commands.Command.arguments" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;deployment
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;arguments
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#sweagent.environment.swe_env.EnvironmentConfig.name" class="md-nav__link">
+  <a href="#sweagent.tools.commands.Command.docstring" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;docstring
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Command.end_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;end_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Command.invoke_format" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;invoke_format
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Command.name" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;name
     </span>
@@ -1985,18 +2135,114 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sweagent.environment.swe_env.EnvironmentConfig.post_startup_commands" class="md-nav__link">
+  <a href="#sweagent.tools.commands.Command.signature" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;post_startup_commands
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;signature
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#sweagent.environment.swe_env.EnvironmentConfig.repo" class="md-nav__link">
+  <a href="#sweagent.tools.commands.Command.get_function_calling_tool" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;repo
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_function_calling_tool
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Command.validate_arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;validate_arguments
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Argument
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" Argument">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument.argument_format" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;argument_format
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument.description" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;description
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument.enum" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;enum
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument.items" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;items
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument.name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument.required" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;required
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument.type" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;type
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.commands.Argument.validate_argument_format" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;validate_argument_format
     </span>
   </a>
   
@@ -2022,7 +2268,7 @@
                   
 
   
-    <a href="https://github.com/SWE-agent/SWE-agent/edit/main/docs/reference/env_config.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/SWE-agent/SWE-agent/edit/main/docs/reference/bundle_config.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -2030,17 +2276,15 @@
   
 
 
-<h1 id="environment-configuration">Environment configuration</h1>
-<p>This page documents the configuration objects used to specify the behavior of the environment.
-To learn about the environment class itself, see the <a href="../env/">environment class reference page</a>.</p>
+<h1 id="tool-bundle-configuration">Tool bundle configuration</h1>
 
 
 <div class="doc doc-object doc-class">
 
 
 
-<h2 id="sweagent.environment.swe_env.EnvironmentConfig" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">sweagent.environment.swe_env.EnvironmentConfig</span>
+<h2 id="sweagent.tools.commands.Command" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">sweagent.tools.commands.Command</span>
 
 
   <span class="doc doc-labels">
@@ -2054,34 +2298,119 @@ To learn about the environment class itself, see the <a href="../env/">environme
             <p class="doc doc-class-bases">
               Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
 
-        <p>Configure data sources and setup instructions for the environment in which we solve the tasks.</p>
+        <p>Represents an executable command with arguments and documentation.</p>
+<p>A command can be either a simple bash command or a multi-line command terminated by an end marker.</p>
 
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command.name" href="#sweagent.tools.commands.Command.name">name</a></code></td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The command name</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command.docstring" href="#sweagent.tools.commands.Command.docstring">docstring</a></code></td>
+            <td>
+                  <code>str | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Human readable description of what the command does</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command.signature" href="#sweagent.tools.commands.Command.signature">signature</a></code></td>
+            <td>
+                  <code>str | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional custom signature override</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command.end_name" href="#sweagent.tools.commands.Command.end_name">end_name</a></code></td>
+            <td>
+                  <code>str | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>For multi-line commands, the terminating marker</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command.arguments" href="#sweagent.tools.commands.Command.arguments">arguments</a></code></td>
+            <td>
+                  <code>list[<a class="autorefs autorefs-internal" title="sweagent.tools.commands.Argument" href="#sweagent.tools.commands.Argument">Argument</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of arguments accepted by the command</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="properties" open>
+  <summary>Properties</summary>
+  <p>invoke_format: Format string for constructing the full command invocation</p>
+</details>
     
-      <p>Config:</p>
-      <ul>
-          <li><code>extra</code>: <code class="highlight language-python"><span class="s1">&#39;forbid&#39;</span></code></li>
-      </ul>
 
         <p>Fields:</p>
         <ul>
             <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.environment.swe_env.EnvironmentConfig.deployment" href="#sweagent.environment.swe_env.EnvironmentConfig.deployment">deployment</a></code>
-                (<code><span title="swerex.deployment.config.DeploymentConfig">DeploymentConfig</span></code>)
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command.name" href="#sweagent.tools.commands.Command.name">name</a></code>
+                (<code>str</code>)
             </li>
             <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.environment.swe_env.EnvironmentConfig.repo" href="#sweagent.environment.swe_env.EnvironmentConfig.repo">repo</a></code>
-                (<code><span title="sweagent.environment.repo.RepoConfig">RepoConfig</span> | None</code>)
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command.docstring" href="#sweagent.tools.commands.Command.docstring">docstring</a></code>
+                (<code>str | None</code>)
             </li>
             <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.environment.swe_env.EnvironmentConfig.post_startup_commands" href="#sweagent.environment.swe_env.EnvironmentConfig.post_startup_commands">post_startup_commands</a></code>
-                (<code>list[str]</code>)
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command.signature" href="#sweagent.tools.commands.Command.signature">signature</a></code>
+                (<code>str | None</code>)
             </li>
             <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.environment.swe_env.EnvironmentConfig.name" href="#sweagent.environment.swe_env.EnvironmentConfig.name">name</a></code>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command.end_name" href="#sweagent.tools.commands.Command.end_name">end_name</a></code>
+                (<code>str | None</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command.arguments" href="#sweagent.tools.commands.Command.arguments">arguments</a></code>
+                (<code>list[<a class="autorefs autorefs-internal" title="sweagent.tools.commands.Argument" href="#sweagent.tools.commands.Argument">Argument</a>]</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command.invoke_format" href="#sweagent.tools.commands.Command.invoke_format">invoke_format</a></code>
                 (<code>str</code>)
             </li>
         </ul>
 
+        <p>Validators:</p>
+        <ul>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command.validate_arguments" href="#sweagent.tools.commands.Command.validate_arguments">validate_arguments</a></code>
+            </li>
+        </ul>
 
 
 
@@ -2097,8 +2426,8 @@ To learn about the environment class itself, see the <a href="../env/">environme
 
 
 
-<h3 id="sweagent.environment.swe_env.EnvironmentConfig.deployment" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">deployment</span>
+<h3 id="sweagent.tools.commands.Command.arguments" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">arguments</span>
 
 
   <span class="doc doc-labels">
@@ -2106,12 +2435,10 @@ To learn about the environment class itself, see the <a href="../env/">environme
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">deployment</span><span class="p">:</span> <span class="n"><span title="swerex.deployment.config.DeploymentConfig">DeploymentConfig</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">arguments</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Argument" href="#sweagent.tools.commands.Argument">Argument</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
-
-        <p>Deployment options.</p>
     </div>
 
 </div>
@@ -2120,7 +2447,74 @@ To learn about the environment class itself, see the <a href="../env/">environme
 
 
 
-<h3 id="sweagent.environment.swe_env.EnvironmentConfig.name" class="doc doc-heading">
+<h3 id="sweagent.tools.commands.Command.docstring" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">docstring</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">docstring</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.commands.Command.end_name" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">end_name</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">end_name</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.commands.Command.invoke_format" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">invoke_format</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">invoke_format</span><span class="p">:</span> <span class="n">str</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Gets the format string for invoking this command with arguments.</p>
+<p>Returns either the custom signature with argument placeholders replaced,
+or a default format of "command arg1 arg2 ...".</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.commands.Command.name" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">name</span>
 
 
@@ -2129,7 +2523,7 @@ To learn about the environment class itself, see the <a href="../env/">environme
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">name</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="s1">&#39;main&#39;</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">name</span><span class="p">:</span> <span class="n">str</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2141,8 +2535,8 @@ To learn about the environment class itself, see the <a href="../env/">environme
 
 
 
-<h3 id="sweagent.environment.swe_env.EnvironmentConfig.post_startup_commands" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">post_startup_commands</span>
+<h3 id="sweagent.tools.commands.Command.signature" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">signature</span>
 
 
   <span class="doc doc-labels">
@@ -2150,13 +2544,370 @@ To learn about the environment class itself, see the <a href="../env/">environme
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">post_startup_commands</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">signature</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="sweagent.tools.commands.Command.get_function_calling_tool" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_function_calling_tool</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_function_calling_tool</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">dict</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Execute these commands before starting to run the agent but after all other setup steps.
-They will be executed in the same shell as the agent.</p>
+        <p>Converts this command into an OpenAI function calling tool definition.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>dict</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dict containing the OpenAI function schema for this command</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>sweagent/tools/commands.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_function_calling_tool</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts this command into an OpenAI function calling tool definition.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict containing the OpenAI function schema for this command</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tool</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;function&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">docstring</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+    <span class="n">properties</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">required</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arguments</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">arguments</span><span class="p">:</span>
+            <span class="n">properties</span><span class="p">[</span><span class="n">arg</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">arg</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">arg</span><span class="o">.</span><span class="n">description</span><span class="p">}</span>
+
+            <span class="k">if</span> <span class="n">arg</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
+                <span class="n">properties</span><span class="p">[</span><span class="n">arg</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;items&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">items</span>
+
+            <span class="k">if</span> <span class="n">arg</span><span class="o">.</span><span class="n">required</span><span class="p">:</span>
+                <span class="n">required</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+            <span class="c1"># Handle enum if present</span>
+            <span class="k">if</span> <span class="n">arg</span><span class="o">.</span><span class="n">enum</span><span class="p">:</span>
+                <span class="n">properties</span><span class="p">[</span><span class="n">arg</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;enum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">enum</span>
+    <span class="n">tool</span><span class="p">[</span><span class="s2">&quot;function&quot;</span><span class="p">][</span><span class="s2">&quot;parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span> <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="n">properties</span><span class="p">,</span> <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="n">required</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">tool</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="sweagent.tools.commands.Command.validate_arguments" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">validate_arguments</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-validator"><code>pydantic-validator</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">validate_arguments</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command" href="#sweagent.tools.commands.Command">Command</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Validates command argument configuration.</p>
+<p>Checks:
+- Required arguments come before optional ones
+- Argument names are unique
+- Argument names match the pattern
+- Arguments match the signature</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command" href="#sweagent.tools.commands.Command">Command</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The validated Command instance</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>ValueError</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If validation fails</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+            <details class="quote">
+              <summary>Source code in <code>sweagent/tools/commands.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">validate_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Command</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validates command argument configuration.</span>
+
+<span class="sd">    Checks:</span>
+<span class="sd">    - Required arguments come before optional ones</span>
+<span class="sd">    - Argument names are unique</span>
+<span class="sd">    - Argument names match the pattern</span>
+<span class="sd">    - Arguments match the signature</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The validated Command instance</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If validation fails</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">arguments</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span>
+    <span class="n">found_optional</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">arguments</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">found_optional</span> <span class="ow">and</span> <span class="n">arg</span><span class="o">.</span><span class="n">required</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Command &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;: Required argument &#39;</span><span class="si">{</span><span class="n">arg</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; cannot come after optional arguments&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">arg</span><span class="o">.</span><span class="n">required</span><span class="p">:</span>
+            <span class="n">found_optional</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">duplicates</span> <span class="o">=</span> <span class="p">{</span><span class="n">arg</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">arguments</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arguments</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">duplicates</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Command &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;: Duplicate argument names: </span><span class="si">{</span><span class="n">duplicates</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">arguments</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">ARGUMENT_NAME_PATTERN</span><span class="p">,</span> <span class="n">arg</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Command &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;: Invalid argument name: &#39;</span><span class="si">{</span><span class="n">arg</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">_extract_keys</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">invoke_format</span><span class="p">)</span> <span class="o">!=</span> <span class="p">{</span><span class="n">arg</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">arguments</span><span class="p">}:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Command &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;: Argument names in signature / invoke_format do not match argument names&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="sweagent.tools.commands.Argument" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">sweagent.tools.commands.Argument</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-model"><code>pydantic-model</code></small>
+  </span>
+
+</h2>
+
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+    
+
+        <p>Fields:</p>
+        <ul>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Argument.name" href="#sweagent.tools.commands.Argument.name">name</a></code>
+                (<code>str</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Argument.type" href="#sweagent.tools.commands.Argument.type">type</a></code>
+                (<code>str</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Argument.items" href="#sweagent.tools.commands.Argument.items">items</a></code>
+                (<code>dict[str, str] | None</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Argument.description" href="#sweagent.tools.commands.Argument.description">description</a></code>
+                (<code>str</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Argument.required" href="#sweagent.tools.commands.Argument.required">required</a></code>
+                (<code>bool</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Argument.enum" href="#sweagent.tools.commands.Argument.enum">enum</a></code>
+                (<code>list[str] | None</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Argument.argument_format" href="#sweagent.tools.commands.Argument.argument_format">argument_format</a></code>
+                (<code>str</code>)
+            </li>
+        </ul>
+
+        <p>Validators:</p>
+        <ul>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Argument.validate_argument_format" href="#sweagent.tools.commands.Argument.validate_argument_format">validate_argument_format</a></code>
+                &rarr;
+                  <code><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Argument.argument_format" href="#sweagent.tools.commands.Argument.argument_format">argument_format</a></code>            </li>
+        </ul>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.commands.Argument.argument_format" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">argument_format</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">argument_format</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="s1">&#39;{{value}}&#39;</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>How to invoke the argument in the command. Make sure to use jinja syntax ({{value}}) instead of {value}).</p>
     </div>
 
 </div>
@@ -2165,8 +2916,8 @@ They will be executed in the same shell as the agent.</p>
 
 
 
-<h3 id="sweagent.environment.swe_env.EnvironmentConfig.repo" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">repo</span>
+<h3 id="sweagent.tools.commands.Argument.description" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">description</span>
 
 
   <span class="doc doc-labels">
@@ -2174,17 +2925,152 @@ They will be executed in the same shell as the agent.</p>
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">repo</span><span class="p">:</span> <span class="n"><span title="sweagent.environment.repo.RepoConfig">RepoConfig</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">description</span><span class="p">:</span> <span class="n">str</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
+    </div>
 
-        <p>Repository options.</p>
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.commands.Argument.enum" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">enum</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">enum</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.commands.Argument.items" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">items</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">items</span><span class="p">:</span> <span class="n">dict</span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.commands.Argument.name" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">name</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">name</span><span class="p">:</span> <span class="n">str</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.commands.Argument.required" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">required</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">required</span><span class="p">:</span> <span class="n">bool</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.commands.Argument.type" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">type</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nb">type</span><span class="p">:</span> <span class="n">str</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
     </div>
 
 </div>
 
 
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="sweagent.tools.commands.Argument.validate_argument_format" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">validate_argument_format</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-validator"><code>pydantic-validator</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">validate_argument_format</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">str</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+            <details class="quote">
+              <summary>Source code in <code>sweagent/tools/commands.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;argument_format&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">validate_argument_format</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">_warn_probably_wrong_jinja_syntax</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">value</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
 
 
 
@@ -2228,7 +3114,7 @@ They will be executed in the same shell as the agent.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../history_processor_config/" class="md-footer__link md-footer__link--prev" aria-label="Previous: History processors">
+          <a href="../env_config/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Environment config">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2238,20 +3124,20 @@ They will be executed in the same shell as the agent.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                History processors
+                Environment config
               </div>
             </div>
           </a>
         
         
           
-          <a href="../bundle_config/" class="md-footer__link md-footer__link--next" aria-label="Next: Tool bundle config">
+          <a href="../agent/" class="md-footer__link md-footer__link--next" aria-label="Next: Agent class">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Tool bundle config
+                Agent class
               </div>
             </div>
             <div class="md-footer__button md-icon">

@@ -97,6 +97,10 @@
          <lastmod>2024-12-08</lastmod>
     </url>
     <url>
+         <loc>https://swe-agent.com/latest/reference/bundle_config/</loc>
+         <lastmod>2024-12-08</lastmod>
+    </url>
+    <url>
          <loc>https://swe-agent.com/latest/reference/env/</loc>
          <lastmod>2024-12-08</lastmod>
     </url>
@@ -134,6 +138,10 @@
     </url>
     <url>
          <loc>https://swe-agent.com/latest/reference/template_config/</loc>
+         <lastmod>2024-12-08</lastmod>
+    </url>
+    <url>
+         <loc>https://swe-agent.com/latest/reference/tools_config/</loc>
          <lastmod>2024-12-08</lastmod>
     </url>
     <url>

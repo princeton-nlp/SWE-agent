@@ -8,13 +8,13 @@
       
       
       
-        <link rel="canonical" href="https://swe-agent.com/latest/reference/problem_statements/">
+        <link rel="canonical" href="https://swe-agent.com/latest/reference/tools_config/">
       
       
-        <link rel="prev" href="../run_batch_config/">
+        <link rel="prev" href="../template_config/">
       
       
-        <link rel="next" href="../repo/">
+        <link rel="next" href="../history_processor_config/">
       
       
       <link rel="icon" href="../../assets/favicon.ico">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Problem statements - SWE-agent documentation</title>
+        <title>Tools - SWE-agent documentation</title>
       
     
     
@@ -97,7 +97,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#specifying-problems" class="md-skip">
+        <a href="#tool-configuration" class="md-skip">
           Skip to content
         </a>
       
@@ -136,7 +136,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Problem statements
+              Tools
             
           </span>
         </div>
@@ -1397,10 +1397,8 @@
                 
   
   
-    
   
   
-  
     
     
       
@@ -1416,11 +1414,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" >
         
           
           <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
@@ -1434,7 +1432,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3_3">
             <span class="md-nav__icon md-icon"></span>
             Instance config
@@ -1445,30 +1443,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Problem statements
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../problem_statements/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1477,293 +1455,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.problem_statement_from_simplified_input" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;problem_statement_from_simplified_input
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.TextProblemStatement" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;TextProblemStatement
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" TextProblemStatement">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.TextProblemStatement.extra_fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;extra_fields
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.TextProblemStatement.id" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;id
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.TextProblemStatement.text" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;text
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.TextProblemStatement.type" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;type
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.TextProblemStatement.get_extra_fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_extra_fields
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.TextProblemStatement.get_problem_statement" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_problem_statement
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.FileProblemStatement" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;FileProblemStatement
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" FileProblemStatement">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.FileProblemStatement.extra_fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;extra_fields
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.FileProblemStatement.id" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;id
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.FileProblemStatement.path" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;path
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.FileProblemStatement.type" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;type
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.FileProblemStatement.get_extra_fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_extra_fields
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.FileProblemStatement.get_problem_statement" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_problem_statement
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.GithubIssue" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;GithubIssue
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" GithubIssue">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.GithubIssue.extra_fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;extra_fields
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.GithubIssue.github_url" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;github_url
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.GithubIssue.id" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;id
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.GithubIssue.type" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;type
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.GithubIssue.get_extra_fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_extra_fields
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.GithubIssue.get_problem_statement" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_problem_statement
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.EmptyProblemStatement" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;EmptyProblemStatement
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" EmptyProblemStatement">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.EmptyProblemStatement.id" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;id
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.EmptyProblemStatement.type" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;type
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.EmptyProblemStatement.get_extra_fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_extra_fields
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.EmptyProblemStatement.get_problem_statement" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_problem_statement
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1823,8 +1514,10 @@
                 
   
   
+    
   
   
+  
     
     
       
@@ -1844,11 +1537,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_4" checked>
         
           
           <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="0">
@@ -1862,7 +1555,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3_4">
             <span class="md-nav__icon md-icon"></span>
             Agent config
@@ -1936,10 +1629,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../tools_config/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Tools
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -1948,6 +1661,314 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;ToolConfig
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" ToolConfig">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.bundles" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;bundles
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.command_docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;command_docs
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;commands
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.enable_bash_tool" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;enable_bash_tool
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.env_variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;env_variables
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.execution_timeout" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;execution_timeout
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;filter
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.format_error_template" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;format_error_template
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.install_timeout" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;install_timeout
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.multi_line_command_endings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;multi_line_command_endings
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.parse_function" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;parse_function
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.reset_commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;reset_commands
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.state_commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;state_commands
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.submit_command" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;submit_command
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.submit_command_end_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;submit_command_end_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.use_function_calling" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;use_function_calling
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolFilterConfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;ToolFilterConfig
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" ToolFilterConfig">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolFilterConfig.block_unless_regex" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;block_unless_regex
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolFilterConfig.blocklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;blocklist
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolFilterConfig.blocklist_error_template" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;blocklist_error_template
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolFilterConfig.blocklist_standalone" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;blocklist_standalone
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sweagent.tools.bundle.Bundle" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Bundle
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" Bundle">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.bundle.Bundle.commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;commands
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.bundle.Bundle.config" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;config
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.bundle.Bundle.hidden_tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;hidden_tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.bundle.Bundle.path" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;path
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.bundle.Bundle.state_command" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;state_command
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.bundle.Bundle.validate_tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;validate_tools
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2175,73 +2196,163 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.problem_statement_from_simplified_input" class="md-nav__link">
+  <a href="#sweagent.tools.tools.ToolConfig" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;problem_statement_from_simplified_input
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;ToolConfig
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.TextProblemStatement" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;TextProblemStatement
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" TextProblemStatement">
+    <nav class="md-nav" aria-label=" ToolConfig">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.TextProblemStatement.extra_fields" class="md-nav__link">
+  <a href="#sweagent.tools.tools.ToolConfig.bundles" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;extra_fields
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;bundles
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.TextProblemStatement.id" class="md-nav__link">
+  <a href="#sweagent.tools.tools.ToolConfig.command_docs" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;id
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;command_docs
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.TextProblemStatement.text" class="md-nav__link">
+  <a href="#sweagent.tools.tools.ToolConfig.commands" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;text
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;commands
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.TextProblemStatement.type" class="md-nav__link">
+  <a href="#sweagent.tools.tools.ToolConfig.enable_bash_tool" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;type
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;enable_bash_tool
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.TextProblemStatement.get_extra_fields" class="md-nav__link">
+  <a href="#sweagent.tools.tools.ToolConfig.env_variables" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_extra_fields
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;env_variables
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.TextProblemStatement.get_problem_statement" class="md-nav__link">
+  <a href="#sweagent.tools.tools.ToolConfig.execution_timeout" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_problem_statement
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;execution_timeout
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;filter
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.format_error_template" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;format_error_template
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.install_timeout" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;install_timeout
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.multi_line_command_endings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;multi_line_command_endings
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.parse_function" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;parse_function
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.reset_commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;reset_commands
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.state_commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;state_commands
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.submit_command" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;submit_command
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.submit_command_end_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;submit_command_end_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolConfig.use_function_calling" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;use_function_calling
     </span>
   </a>
   
@@ -2253,35 +2364,95 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.FileProblemStatement" class="md-nav__link">
+  <a href="#sweagent.tools.tools.ToolFilterConfig" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;FileProblemStatement
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;ToolFilterConfig
     </span>
   </a>
   
-    <nav class="md-nav" aria-label=" FileProblemStatement">
+    <nav class="md-nav" aria-label=" ToolFilterConfig">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.FileProblemStatement.extra_fields" class="md-nav__link">
+  <a href="#sweagent.tools.tools.ToolFilterConfig.block_unless_regex" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;extra_fields
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;block_unless_regex
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.FileProblemStatement.id" class="md-nav__link">
+  <a href="#sweagent.tools.tools.ToolFilterConfig.blocklist" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;id
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;blocklist
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.FileProblemStatement.path" class="md-nav__link">
+  <a href="#sweagent.tools.tools.ToolFilterConfig.blocklist_error_template" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;blocklist_error_template
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.tools.ToolFilterConfig.blocklist_standalone" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;blocklist_standalone
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sweagent.tools.bundle.Bundle" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Bundle
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" Bundle">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.bundle.Bundle.commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;commands
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.bundle.Bundle.config" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;config
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.bundle.Bundle.hidden_tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;hidden_tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sweagent.tools.bundle.Bundle.path" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;path
     </span>
@@ -2290,147 +2461,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.FileProblemStatement.type" class="md-nav__link">
+  <a href="#sweagent.tools.bundle.Bundle.state_command" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;type
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;state_command
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.FileProblemStatement.get_extra_fields" class="md-nav__link">
+  <a href="#sweagent.tools.bundle.Bundle.validate_tools" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_extra_fields
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.FileProblemStatement.get_problem_statement" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_problem_statement
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.GithubIssue" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;GithubIssue
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" GithubIssue">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.GithubIssue.extra_fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;extra_fields
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.GithubIssue.github_url" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;github_url
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.GithubIssue.id" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;id
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.GithubIssue.type" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;type
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.GithubIssue.get_extra_fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_extra_fields
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.GithubIssue.get_problem_statement" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_problem_statement
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.EmptyProblemStatement" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;EmptyProblemStatement
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label=" EmptyProblemStatement">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.EmptyProblemStatement.id" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;id
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.EmptyProblemStatement.type" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;type
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.EmptyProblemStatement.get_extra_fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_extra_fields
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sweagent.agent.problem_statement.EmptyProblemStatement.get_problem_statement" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_problem_statement
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;validate_tools
     </span>
   </a>
   
@@ -2456,7 +2498,7 @@
                   
 
   
-    <a href="https://github.com/SWE-agent/SWE-agent/edit/main/docs/reference/problem_statements.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/SWE-agent/SWE-agent/edit/main/docs/reference/tools_config.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -2464,140 +2506,16 @@
   
 
 
-<h1 id="specifying-problems">Specifying problems</h1>
-<p>We currently support the following input types:</p>
-<ul>
-<li>A string of text (<code>TextProblemStatement</code>)</li>
-<li>A path to a file on the local filesystem (<code>FileProblemStatement</code>)</li>
-<li>A URL to a GitHub issue (<code>GithubIssue</code>)</li>
-<li>An empty problem statement (<code>EmptyProblemStatement</code>)</li>
-</ul>
-<p>With <code>sweagent run</code>, you can specify the problem statement type with the <code>--problem-statement</code> flag.
-For example:</p>
-<div class="highlight"><span class="filename">From text</span><pre><span></span><code>--problem-statement.text<span class="o">=</span><span class="s2">&quot;This is a problem statement&quot;</span>
---problem-statement.type<span class="o">=</span>text
-</code></pre></div>
-<div class="highlight"><span class="filename">From a file</span><pre><span></span><code>--problem-statement.path<span class="o">=</span>path/to/file.txt
---problem-statement.type<span class="o">=</span>text_file
-</code></pre></div>
-<div class="highlight"><span class="filename">From a GitHub issue</span><pre><span></span><code>--problem-statement.url<span class="o">=</span>https://github.com/org/repo/issues/123
---problem-statement.type<span class="o">=</span>github_issue
-</code></pre></div>
-<p>See below for more details on the configuration options.</p>
-<p>All of these classes are defined in <code>sweagent.agent.problem_statement</code>.</p>
+<h1 id="tool-configuration">Tool configuration</h1>
+<p>This shows how to configure tools for SWE-agent.</p>
 
-
-<div class="doc doc-object doc-function">
-
-
-<h2 id="sweagent.agent.problem_statement.problem_statement_from_simplified_input" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">problem_statement_from_simplified_input</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">problem_statement_from_simplified_input</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="s1">&#39;text_file&#39;</span><span class="p">,</span> <span class="s1">&#39;github_issue&#39;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><span title="sweagent.agent.problem_statement.ProblemStatementConfig">ProblemStatementConfig</span></span>
-</code></pre></div>
-
-    <div class="doc doc-contents first">
-
-        <p>Get a problem statement from an <code>input</code> string and a <code>type</code>.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>input</code>
-            </td>
-            <td>
-                  <code>str</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Url/path/text</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>type</code>
-            </td>
-            <td>
-                  <code><span title="typing.Literal">Literal</span>[&#39;text&#39;, &#39;text_file&#39;, &#39;github_issue&#39;]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The type of problem statement</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-            <details class="quote">
-              <summary>Source code in <code>sweagent/agent/problem_statement.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">131</span>
-<span class="normal">132</span>
-<span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">problem_statement_from_simplified_input</span><span class="p">(</span>
-    <span class="o">*</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;text_file&quot;</span><span class="p">,</span> <span class="s2">&quot;github_issue&quot;</span><span class="p">]</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProblemStatementConfig</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a problem statement from an `input` string and a `type`.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        input: Url/path/text</span>
-<span class="sd">        type: The type of problem statement</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">TextProblemStatement</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="nb">input</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="nb">type</span> <span class="o">==</span> <span class="s2">&quot;text_file&quot;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">FileProblemStatement</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="nb">input</span><span class="p">))</span>
-    <span class="k">elif</span> <span class="nb">type</span> <span class="o">==</span> <span class="s2">&quot;github_issue&quot;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">GithubIssue</span><span class="p">(</span><span class="n">github_url</span><span class="o">=</span><span class="nb">input</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Unknown problem statement type: </span><span class="si">{</span><span class="nb">type</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
 
 <div class="doc doc-object doc-class">
 
 
 
-<h2 id="sweagent.agent.problem_statement.TextProblemStatement" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">TextProblemStatement</span>
+<h2 id="sweagent.tools.tools.ToolConfig" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">sweagent.tools.tools.ToolConfig</span>
 
 
   <span class="doc doc-labels">
@@ -2608,30 +2526,80 @@ For example:</p>
 
 
     <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
 
     
-      <p>Config:</p>
-      <ul>
-          <li><code>extra</code>: <code class="highlight language-python"><span class="s1">&#39;forbid&#39;</span></code></li>
-      </ul>
 
         <p>Fields:</p>
         <ul>
             <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.agent.problem_statement.TextProblemStatement.text" href="#sweagent.agent.problem_statement.TextProblemStatement.text">text</a></code>
-                (<code>str</code>)
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolConfig.filter" href="#sweagent.tools.tools.ToolConfig.filter">filter</a></code>
+                (<code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolFilterConfig" href="#sweagent.tools.tools.ToolFilterConfig">ToolFilterConfig</a></code>)
             </li>
             <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.agent.problem_statement.TextProblemStatement.extra_fields" href="#sweagent.agent.problem_statement.TextProblemStatement.extra_fields">extra_fields</a></code>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolConfig.bundles" href="#sweagent.tools.tools.ToolConfig.bundles">bundles</a></code>
+                (<code>list[<a class="autorefs autorefs-internal" title="sweagent.tools.bundle.Bundle" href="#sweagent.tools.bundle.Bundle">Bundle</a>]</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolConfig.env_variables" href="#sweagent.tools.tools.ToolConfig.env_variables">env_variables</a></code>
                 (<code>dict[str, <span title="typing.Any">Any</span>]</code>)
             </li>
             <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.agent.problem_statement.TextProblemStatement.type" href="#sweagent.agent.problem_statement.TextProblemStatement.type">type</a></code>
-                (<code><span title="typing.Literal">Literal</span>[&#39;text&#39;]</code>)
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolConfig.submit_command" href="#sweagent.tools.tools.ToolConfig.submit_command">submit_command</a></code>
+                (<code>str</code>)
             </li>
             <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.agent.problem_statement.TextProblemStatement.id" href="#sweagent.agent.problem_statement.TextProblemStatement.id">id</a></code>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolConfig.parse_function" href="#sweagent.tools.tools.ToolConfig.parse_function">parse_function</a></code>
+                (<code><span title="sweagent.tools.parsing.ParseFunction">ParseFunction</span></code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolConfig.enable_bash_tool" href="#sweagent.tools.tools.ToolConfig.enable_bash_tool">enable_bash_tool</a></code>
+                (<code>bool</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolConfig.format_error_template" href="#sweagent.tools.tools.ToolConfig.format_error_template">format_error_template</a></code>
                 (<code>str</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolConfig.command_docs" href="#sweagent.tools.tools.ToolConfig.command_docs">command_docs</a></code>
+                (<code>str</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolConfig.multi_line_command_endings" href="#sweagent.tools.tools.ToolConfig.multi_line_command_endings">multi_line_command_endings</a></code>
+                (<code>dict[str, str]</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolConfig.submit_command_end_name" href="#sweagent.tools.tools.ToolConfig.submit_command_end_name">submit_command_end_name</a></code>
+                (<code>str | None</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolConfig.reset_commands" href="#sweagent.tools.tools.ToolConfig.reset_commands">reset_commands</a></code>
+                (<code>list[str | list[str]]</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolConfig.execution_timeout" href="#sweagent.tools.tools.ToolConfig.execution_timeout">execution_timeout</a></code>
+                (<code>int</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolConfig.install_timeout" href="#sweagent.tools.tools.ToolConfig.install_timeout">install_timeout</a></code>
+                (<code>int</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolConfig.use_function_calling" href="#sweagent.tools.tools.ToolConfig.use_function_calling">use_function_calling</a></code>
+                (<code>bool</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolConfig.state_commands" href="#sweagent.tools.tools.ToolConfig.state_commands">state_commands</a></code>
+                (<code>list[str]</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolConfig.commands" href="#sweagent.tools.tools.ToolConfig.commands">commands</a></code>
+                (<code>list[<a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command" href="../bundle_config/#sweagent.tools.commands.Command">Command</a>]</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolConfig.tools" href="#sweagent.tools.tools.ToolConfig.tools">tools</a></code>
+                (<code>list[dict]</code>)
             </li>
         </ul>
 
@@ -2650,8 +2618,8 @@ For example:</p>
 
 
 
-<h3 id="sweagent.agent.problem_statement.TextProblemStatement.extra_fields" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">extra_fields</span>
+<h3 id="sweagent.tools.tools.ToolConfig.bundles" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">bundles</span>
 
 
   <span class="doc doc-labels">
@@ -2659,31 +2627,7 @@ For example:</p>
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">extra_fields</span><span class="p">:</span> <span class="n">dict</span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Any additional data to be added to the instance.
-This data will be available when formatting prompt templates.</p>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="sweagent.agent.problem_statement.TextProblemStatement.id" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">id</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
-  </span>
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nb">id</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">bundles</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="sweagent.tools.bundle.Bundle" href="#sweagent.tools.bundle.Bundle">Bundle</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2695,8 +2639,8 @@ This data will be available when formatting prompt templates.</p>
 
 
 
-<h3 id="sweagent.agent.problem_statement.TextProblemStatement.text" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">text</span>
+<h3 id="sweagent.tools.tools.ToolConfig.command_docs" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">command_docs</span>
 
 
   <span class="doc doc-labels">
@@ -2704,7 +2648,7 @@ This data will be available when formatting prompt templates.</p>
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">text</span><span class="p">:</span> <span class="n">str</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">command_docs</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2716,8 +2660,8 @@ This data will be available when formatting prompt templates.</p>
 
 
 
-<h3 id="sweagent.agent.problem_statement.TextProblemStatement.type" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">type</span>
+<h3 id="sweagent.tools.tools.ToolConfig.commands" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">commands</span>
 
 
   <span class="doc doc-labels">
@@ -2725,65 +2669,326 @@ This data will be available when formatting prompt templates.</p>
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nb">type</span><span class="p">:</span> <span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;text&#39;</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">commands</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command" href="../bundle_config/#sweagent.tools.commands.Command">Command</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Discriminator for (de)serialization/CLI. Do not change.</p>
+        <p>Read command files and return parsed command objects</p>
     </div>
 
 </div>
 
+<div class="doc doc-object doc-attribute">
 
 
-<div class="doc doc-object doc-function">
+
+<h3 id="sweagent.tools.tools.ToolConfig.enable_bash_tool" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">enable_bash_tool</span>
 
 
-<h3 id="sweagent.agent.problem_statement.TextProblemStatement.get_extra_fields" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_extra_fields</span>
-
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_extra_fields</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">dict</span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">enable_bash_tool</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="kc">True</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
-
-            <details class="quote">
-              <summary>Source code in <code>sweagent/agent/problem_statement.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">62</span>
-<span class="normal">63</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_extra_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_fields</span>
-</code></pre></div></td></tr></table></div>
-            </details>
     </div>
 
 </div>
 
-<div class="doc doc-object doc-function">
+<div class="doc doc-object doc-attribute">
 
 
-<h3 id="sweagent.agent.problem_statement.TextProblemStatement.get_problem_statement" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_problem_statement</span>
 
+<h3 id="sweagent.tools.tools.ToolConfig.env_variables" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">env_variables</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_problem_statement</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">str</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">env_variables</span><span class="p">:</span> <span class="n">dict</span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-            <details class="quote">
-              <summary>Source code in <code>sweagent/agent/problem_statement.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">59</span>
-<span class="normal">60</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_problem_statement</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span>
-</code></pre></div></td></tr></table></div>
-            </details>
+        <p>Shorthand to set environment variables for the tools, effectively
+equivalent to adding <code>export VARNAME=value</code> to the <code>reset_commands</code>.</p>
     </div>
 
 </div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.tools.ToolConfig.execution_timeout" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">execution_timeout</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">execution_timeout</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">30</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Timeout for executing commands in the environment</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.tools.ToolConfig.filter" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">filter</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nb">filter</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolFilterConfig" href="#sweagent.tools.tools.ToolFilterConfig">ToolFilterConfig</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.tools.ToolConfig.format_error_template" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">format_error_template</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">format_error_template</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Defaults to format_error_template in ParseFunction</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.tools.ToolConfig.install_timeout" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">install_timeout</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">install_timeout</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">300</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Timeout used for each of the installation commands</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.tools.ToolConfig.multi_line_command_endings" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">multi_line_command_endings</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">multi_line_command_endings</span><span class="p">:</span> <span class="n">dict</span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.tools.ToolConfig.parse_function" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">parse_function</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_function</span><span class="p">:</span> <span class="n"><span title="sweagent.tools.parsing.ParseFunction">ParseFunction</span></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.tools.ToolConfig.reset_commands" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">reset_commands</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">reset_commands</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n">str</span> <span class="o">|</span> <span class="n">list</span><span class="p">[</span><span class="n">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Commands to reset the environment. They will also be called when we start the environment.
+Unlike <code>install_commands</code>, these commands are part of the environment state.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.tools.ToolConfig.state_commands" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">state_commands</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">state_commands</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n">str</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.tools.ToolConfig.submit_command" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">submit_command</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">submit_command</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="s1">&#39;submit&#39;</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.tools.ToolConfig.submit_command_end_name" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">submit_command_end_name</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">submit_command_end_name</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Commands to install dependencies and tools.
+These commands are executed in a subprocess and are not part of the environment state.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.tools.ToolConfig.tools" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">tools</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">tools</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n">dict</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.tools.ToolConfig.use_function_calling" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">use_function_calling</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">use_function_calling</span><span class="p">:</span> <span class="n">bool</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+
 
 
 
@@ -2797,8 +3002,8 @@ This data will be available when formatting prompt templates.</p>
 
 
 
-<h2 id="sweagent.agent.problem_statement.FileProblemStatement" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">FileProblemStatement</span>
+<h2 id="sweagent.tools.tools.ToolFilterConfig" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">sweagent.tools.tools.ToolFilterConfig</span>
 
 
   <span class="doc doc-labels">
@@ -2809,30 +3014,28 @@ This data will be available when formatting prompt templates.</p>
 
 
     <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
 
     
-      <p>Config:</p>
-      <ul>
-          <li><code>extra</code>: <code class="highlight language-python"><span class="s1">&#39;forbid&#39;</span></code></li>
-      </ul>
 
         <p>Fields:</p>
         <ul>
             <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.agent.problem_statement.FileProblemStatement.path" href="#sweagent.agent.problem_statement.FileProblemStatement.path">path</a></code>
-                (<code><span title="pathlib.Path">Path</span></code>)
-            </li>
-            <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.agent.problem_statement.FileProblemStatement.extra_fields" href="#sweagent.agent.problem_statement.FileProblemStatement.extra_fields">extra_fields</a></code>
-                (<code>dict[str, <span title="typing.Any">Any</span>]</code>)
-            </li>
-            <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.agent.problem_statement.FileProblemStatement.type" href="#sweagent.agent.problem_statement.FileProblemStatement.type">type</a></code>
-                (<code><span title="typing.Literal">Literal</span>[&#39;text_file&#39;]</code>)
-            </li>
-            <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.agent.problem_statement.FileProblemStatement.id" href="#sweagent.agent.problem_statement.FileProblemStatement.id">id</a></code>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolFilterConfig.blocklist_error_template" href="#sweagent.tools.tools.ToolFilterConfig.blocklist_error_template">blocklist_error_template</a></code>
                 (<code>str</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolFilterConfig.blocklist" href="#sweagent.tools.tools.ToolFilterConfig.blocklist">blocklist</a></code>
+                (<code>list[str]</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolFilterConfig.blocklist_standalone" href="#sweagent.tools.tools.ToolFilterConfig.blocklist_standalone">blocklist_standalone</a></code>
+                (<code>list[str]</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.tools.ToolFilterConfig.block_unless_regex" href="#sweagent.tools.tools.ToolFilterConfig.block_unless_regex">block_unless_regex</a></code>
+                (<code>dict[str, str]</code>)
             </li>
         </ul>
 
@@ -2851,8 +3054,8 @@ This data will be available when formatting prompt templates.</p>
 
 
 
-<h3 id="sweagent.agent.problem_statement.FileProblemStatement.extra_fields" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">extra_fields</span>
+<h3 id="sweagent.tools.tools.ToolFilterConfig.block_unless_regex" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">block_unless_regex</span>
 
 
   <span class="doc doc-labels">
@@ -2860,13 +3063,12 @@ This data will be available when formatting prompt templates.</p>
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">extra_fields</span><span class="p">:</span> <span class="n">dict</span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">block_unless_regex</span><span class="p">:</span> <span class="n">dict</span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;radare2&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">b(?:radare2)</span><span class="se">\\</span><span class="s1">b.*</span><span class="se">\\</span><span class="s1">s+-c</span><span class="se">\\</span><span class="s1">s+.*&#39;</span><span class="p">,</span> <span class="s1">&#39;r2&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">b(?:radare2)</span><span class="se">\\</span><span class="s1">b.*</span><span class="se">\\</span><span class="s1">s+-c</span><span class="se">\\</span><span class="s1">s+.*&#39;</span><span class="p">}</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Any additional data to be added to the instance.
-This data will be available when formatting prompt templates.</p>
+        <p>Block any command that matches one of these regexes unless it also matches the regex</p>
     </div>
 
 </div>
@@ -2875,8 +3077,8 @@ This data will be available when formatting prompt templates.</p>
 
 
 
-<h3 id="sweagent.agent.problem_statement.FileProblemStatement.id" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">id</span>
+<h3 id="sweagent.tools.tools.ToolFilterConfig.blocklist" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">blocklist</span>
 
 
   <span class="doc doc-labels">
@@ -2884,7 +3086,30 @@ This data will be available when formatting prompt templates.</p>
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nb">id</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">blocklist</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;vim&#39;</span><span class="p">,</span> <span class="s1">&#39;vi&#39;</span><span class="p">,</span> <span class="s1">&#39;emacs&#39;</span><span class="p">,</span> <span class="s1">&#39;nano&#39;</span><span class="p">,</span> <span class="s1">&#39;nohup&#39;</span><span class="p">,</span> <span class="s1">&#39;git&#39;</span><span class="p">,</span> <span class="s1">&#39;gdb&#39;</span><span class="p">,</span> <span class="s1">&#39;less&#39;</span><span class="p">,</span> <span class="s1">&#39;tail -f&#39;</span><span class="p">,</span> <span class="s1">&#39;python -m venv&#39;</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Block any command that starts with one of these</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.tools.ToolFilterConfig.blocklist_error_template" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">blocklist_error_template</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">blocklist_error_template</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="s2">&quot;Operation &#39;{{action}}&#39; is not supported by this environment.&quot;</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2896,7 +3121,169 @@ This data will be available when formatting prompt templates.</p>
 
 
 
-<h3 id="sweagent.agent.problem_statement.FileProblemStatement.path" class="doc doc-heading">
+<h3 id="sweagent.tools.tools.ToolFilterConfig.blocklist_standalone" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">blocklist_standalone</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">blocklist_standalone</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;python&#39;</span><span class="p">,</span> <span class="s1">&#39;python3&#39;</span><span class="p">,</span> <span class="s1">&#39;ipython&#39;</span><span class="p">,</span> <span class="s1">&#39;bash&#39;</span><span class="p">,</span> <span class="s1">&#39;sh&#39;</span><span class="p">,</span> <span class="s1">&#39;/bin/bash&#39;</span><span class="p">,</span> <span class="s1">&#39;/bin/sh&#39;</span><span class="p">,</span> <span class="s1">&#39;nohup&#39;</span><span class="p">,</span> <span class="s1">&#39;vi&#39;</span><span class="p">,</span> <span class="s1">&#39;vim&#39;</span><span class="p">,</span> <span class="s1">&#39;emacs&#39;</span><span class="p">,</span> <span class="s1">&#39;nano&#39;</span><span class="p">,</span> <span class="s1">&#39;su&#39;</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Block any command that matches one of these exactly</p>
+    </div>
+
+</div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="sweagent.tools.bundle.Bundle" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">sweagent.tools.bundle.Bundle</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-model"><code>pydantic-model</code></small>
+  </span>
+
+</h2>
+
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+    
+
+        <p>Fields:</p>
+        <ul>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.bundle.Bundle.path" href="#sweagent.tools.bundle.Bundle.path">path</a></code>
+                (<code><span title="pathlib.Path">Path</span></code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.bundle.Bundle.hidden_tools" href="#sweagent.tools.bundle.Bundle.hidden_tools">hidden_tools</a></code>
+                (<code>list[str]</code>)
+            </li>
+            <li>
+              <code><span title="sweagent.tools.bundle.Bundle._config">_config</span></code>
+                (<code><span title="sweagent.tools.bundle.BundleConfig">BundleConfig</span></code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.bundle.Bundle.state_command" href="#sweagent.tools.bundle.Bundle.state_command">state_command</a></code>
+                (<code>str | None</code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.bundle.Bundle.config" href="#sweagent.tools.bundle.Bundle.config">config</a></code>
+                (<code><span title="sweagent.tools.bundle.BundleConfig">BundleConfig</span></code>)
+            </li>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.bundle.Bundle.commands" href="#sweagent.tools.bundle.Bundle.commands">commands</a></code>
+                (<code>list[<a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command" href="../bundle_config/#sweagent.tools.commands.Command">Command</a>]</code>)
+            </li>
+        </ul>
+
+        <p>Validators:</p>
+        <ul>
+            <li>
+              <code><a class="autorefs autorefs-internal" title="sweagent.tools.bundle.Bundle.validate_tools" href="#sweagent.tools.bundle.Bundle.validate_tools">validate_tools</a></code>
+            </li>
+        </ul>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.bundle.Bundle.commands" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">commands</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">commands</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="sweagent.tools.commands.Command" href="../bundle_config/#sweagent.tools.commands.Command">Command</a></span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.bundle.Bundle.config" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">config</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">config</span><span class="p">:</span> <span class="n"><span title="sweagent.tools.bundle.BundleConfig">BundleConfig</span></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.bundle.Bundle.hidden_tools" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">hidden_tools</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">hidden_tools</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n">str</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="sweagent.tools.bundle.Bundle.path" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">path</span>
 
 
@@ -2917,8 +3304,8 @@ This data will be available when formatting prompt templates.</p>
 
 
 
-<h3 id="sweagent.agent.problem_statement.FileProblemStatement.type" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">type</span>
+<h3 id="sweagent.tools.bundle.Bundle.state_command" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">state_command</span>
 
 
   <span class="doc doc-labels">
@@ -2926,12 +3313,10 @@ This data will be available when formatting prompt templates.</p>
   </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nb">type</span><span class="p">:</span> <span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span><span class="s1">&#39;text_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;text_file&#39;</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">state_command</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
-
-        <p>Discriminator for (de)serialization/CLI. Do not change.</p>
     </div>
 
 </div>
@@ -2941,396 +3326,61 @@ This data will be available when formatting prompt templates.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="sweagent.agent.problem_statement.FileProblemStatement.get_extra_fields" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_extra_fields</span>
+<h3 id="sweagent.tools.bundle.Bundle.validate_tools" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">validate_tools</span>
 
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-pydantic-validator"><code>pydantic-validator</code></small>
+  </span>
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_extra_fields</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">dict</span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">validate_tools</span><span class="p">()</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
             <details class="quote">
-              <summary>Source code in <code>sweagent/agent/problem_statement.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">95</span>
-<span class="normal">96</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_extra_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_fields</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="sweagent.agent.problem_statement.FileProblemStatement.get_problem_statement" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_problem_statement</span>
-
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_problem_statement</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">str</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-            <details class="quote">
-              <summary>Source code in <code>sweagent/agent/problem_statement.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">92</span>
-<span class="normal">93</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_problem_statement</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="sweagent.agent.problem_statement.GithubIssue" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">GithubIssue</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-pydantic-model"><code>pydantic-model</code></small>
-  </span>
-
-</h2>
-
-
-    <div class="doc doc-contents first">
-
-    
-      <p>Config:</p>
-      <ul>
-          <li><code>extra</code>: <code class="highlight language-python"><span class="s1">&#39;forbid&#39;</span></code></li>
-      </ul>
-
-        <p>Fields:</p>
-        <ul>
-            <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.agent.problem_statement.GithubIssue.github_url" href="#sweagent.agent.problem_statement.GithubIssue.github_url">github_url</a></code>
-                (<code>str</code>)
-            </li>
-            <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.agent.problem_statement.GithubIssue.extra_fields" href="#sweagent.agent.problem_statement.GithubIssue.extra_fields">extra_fields</a></code>
-                (<code>dict[str, <span title="typing.Any">Any</span>]</code>)
-            </li>
-            <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.agent.problem_statement.GithubIssue.type" href="#sweagent.agent.problem_statement.GithubIssue.type">type</a></code>
-                (<code><span title="typing.Literal">Literal</span>[&#39;github&#39;]</code>)
-            </li>
-            <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.agent.problem_statement.GithubIssue.id" href="#sweagent.agent.problem_statement.GithubIssue.id">id</a></code>
-                (<code>str</code>)
-            </li>
-        </ul>
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="sweagent.agent.problem_statement.GithubIssue.extra_fields" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">extra_fields</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
-  </span>
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">extra_fields</span><span class="p">:</span> <span class="n">dict</span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Any additional data to be added to the instance.
-This data will be available when formatting prompt templates.</p>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="sweagent.agent.problem_statement.GithubIssue.github_url" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">github_url</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
-  </span>
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">github_url</span><span class="p">:</span> <span class="n">str</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="sweagent.agent.problem_statement.GithubIssue.id" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">id</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
-  </span>
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nb">id</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="kc">None</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="sweagent.agent.problem_statement.GithubIssue.type" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">type</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
-  </span>
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nb">type</span><span class="p">:</span> <span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span><span class="s1">&#39;github&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;github&#39;</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Discriminator for (de)serialization/CLI. Do not change.</p>
-    </div>
-
-</div>
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="sweagent.agent.problem_statement.GithubIssue.get_extra_fields" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_extra_fields</span>
-
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_extra_fields</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">dict</span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-            <details class="quote">
-              <summary>Source code in <code>sweagent/agent/problem_statement.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">124</span>
-<span class="normal">125</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_extra_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_fields</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="sweagent.agent.problem_statement.GithubIssue.get_problem_statement" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_problem_statement</span>
-
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_problem_statement</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">str</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-            <details class="quote">
-              <summary>Source code in <code>sweagent/agent/problem_statement.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_problem_statement</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="n">owner</span><span class="p">,</span> <span class="n">repo</span><span class="p">,</span> <span class="n">issue_number</span> <span class="o">=</span> <span class="n">_parse_gh_issue_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">github_url</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_get_problem_statement_from_github_issue</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">repo</span><span class="p">,</span> <span class="n">issue_number</span><span class="p">,</span> <span class="n">token</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;GITHUB_TOKEN&quot;</span><span class="p">))</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="sweagent.agent.problem_statement.EmptyProblemStatement" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">EmptyProblemStatement</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-pydantic-model"><code>pydantic-model</code></small>
-  </span>
-
-</h2>
-
-
-    <div class="doc doc-contents first">
-
-    
-      <p>Config:</p>
-      <ul>
-          <li><code>extra</code>: <code class="highlight language-python"><span class="s1">&#39;forbid&#39;</span></code></li>
-      </ul>
-
-        <p>Fields:</p>
-        <ul>
-            <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.agent.problem_statement.EmptyProblemStatement.id" href="#sweagent.agent.problem_statement.EmptyProblemStatement.id">id</a></code>
-                (<code>str</code>)
-            </li>
-            <li>
-              <code><a class="autorefs autorefs-internal" title="sweagent.agent.problem_statement.EmptyProblemStatement.type" href="#sweagent.agent.problem_statement.EmptyProblemStatement.type">type</a></code>
-                (<code><span title="typing.Literal">Literal</span>[&#39;empty&#39;]</code>)
-            </li>
-        </ul>
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="sweagent.agent.problem_statement.EmptyProblemStatement.id" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">id</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
-  </span>
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nb">id</span><span class="p">:</span> <span class="n">str</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="sweagent.agent.problem_statement.EmptyProblemStatement.type" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">type</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-pydantic-field"><code>pydantic-field</code></small>
-  </span>
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nb">type</span><span class="p">:</span> <span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span><span class="s1">&#39;empty&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;empty&#39;</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Discriminator for (de)serialization/CLI. Do not change.</p>
-    </div>
-
-</div>
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="sweagent.agent.problem_statement.EmptyProblemStatement.get_extra_fields" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_extra_fields</span>
-
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_extra_fields</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">dict</span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-            <details class="quote">
-              <summary>Source code in <code>sweagent/agent/problem_statement.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">35</span>
-<span class="normal">36</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_extra_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-    <span class="k">return</span> <span class="p">{}</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="sweagent.agent.problem_statement.EmptyProblemStatement.get_problem_statement" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_problem_statement</span>
-
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_problem_statement</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">str</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-            <details class="quote">
-              <summary>Source code in <code>sweagent/agent/problem_statement.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">32</span>
-<span class="normal">33</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_problem_statement</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+              <summary>Source code in <code>sweagent/tools/bundle.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">validate_tools</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">_convert_path_to_abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Bundle path &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&#39; does not exist.&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="n">config_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">/</span> <span class="s2">&quot;config.yaml&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">config_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Bundle config file &#39;</span><span class="si">{</span><span class="n">config_path</span><span class="si">}</span><span class="s2">&#39; does not exist.&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="n">config_data</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">config_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_config</span> <span class="o">=</span> <span class="n">BundleConfig</span><span class="p">(</span><span class="o">**</span><span class="n">config_data</span><span class="p">)</span>
+
+    <span class="n">invalid_hidden_tools</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_tools</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">invalid_hidden_tools</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Hidden tools </span><span class="si">{</span><span class="n">invalid_hidden_tools</span><span class="si">}</span><span class="s2"> do not exist in available tools&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3379,7 +3429,7 @@ This data will be available when formatting prompt templates.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../run_batch_config/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Run batch">
+          <a href="../template_config/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Templates">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3389,20 +3439,20 @@ This data will be available when formatting prompt templates.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Run batch
+                Templates
               </div>
             </div>
           </a>
         
         
           
-          <a href="../repo/" class="md-footer__link md-footer__link--next" aria-label="Next: Repository">
+          <a href="../history_processor_config/" class="md-footer__link md-footer__link--next" aria-label="Next: History processors">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Repository
+                History processors
               </div>
             </div>
             <div class="md-footer__button md-icon">
