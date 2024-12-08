@@ -1,5 +1,7 @@
 # Models and API keys
 
+## Setting API keys
+
 In order to access the LM of your choice (and to access private GitHub repositories), you need to supply the corresponding keys.
 
 There are two options to do this:
@@ -19,6 +21,22 @@ Here's an example
 ```
 
 See the following links for tutorials on obtaining [Anthropic](https://docs.anthropic.com/en/api/getting-started), [OpenAI](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key), and [Github](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) tokens.
+
+## Supported models
+
+We support all models supported by [litellm](https://github.com/BerriAI/litellm), see their list [here](https://docs.litellm.ai/docs/providers).
+
+Here are a few options for `--agent.model.name`:
+
+| Model | API key | Comment |
+| ----- | ------- | ------- |
+| `claude-3-5-sonnet-20241022` | `ANTHROPIC_API_KEY` | Our recommended model |
+| `gpt-4o` | `OPENAI_API_KEY` | |
+| `o1-preview` | `OPENAI_API_KEY` | You might need to set temperature and sampling to the supported values. |
+
+## Model options
+
+See [our API docs](../reference/model_config.md) for more details.
 
 ### Models for testing
 
