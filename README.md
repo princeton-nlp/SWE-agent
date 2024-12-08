@@ -15,7 +15,7 @@ SWE-agent lets your language model of choice (e.g. GPT-4o or Claude Sonnet 3.5) 
 
 * [fix issues in real GitHub repositories](https://swe-agent.com/latest/usage/hello_world),
 * perform tasks on the web,
-* crack cybersecurity challenges, or
+* find cybersecurity vulnerabilities (by solving Capture The Flag challenges), or
 * [any custom task](https://swe-agent.com/latest/usage/coding_challenges).
 
 It does so by using configurable [agent-computer interfaces](https://arxiv.org/abs/2405.15793) (ACIs) to interact with isolated computer environments.
