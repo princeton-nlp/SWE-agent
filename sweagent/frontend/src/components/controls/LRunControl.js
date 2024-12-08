@@ -358,7 +358,7 @@ function LRunControl({
         <div className="extraButtons">
           <div className="btn-group" role="group" aria-label="Basic example">
             <Link
-              to="https://github.com/princeton-nlp/SWE-agent"
+              to="https://github.com/swe-agent/SWE-agent"
               target="_blank"
               rel="noopener noreferrer"
             >

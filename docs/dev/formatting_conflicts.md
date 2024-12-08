@@ -1,5 +1,5 @@
 On May 28th, 2024, we introduced automated formatting with `ruff-format` and `pre-commit`. This changed almost every file in the project.
-If you forked or branched off before these changes and now try to synchronize your fork/branch with `princeton-nlp/SWE-agent:main`, you will
+If you forked or branched off before these changes and now try to synchronize your fork/branch with `SWE-agent/SWE-agent:main`, you will
 see a lot of merge conflicts.
 
 To solve this, you need to apply the same formatting to your code. Here's how you can do it.
@@ -7,12 +7,12 @@ To solve this, you need to apply the same formatting to your code. Here's how yo
 First let's add the official remote (if it exists, you've probably already added it and you can ignore the warning).
 
 ```bash
-git remote add upstream https://github.com/princeton-nlp/SWE-agent.git
+git remote add upstream https://github.com/swe-agent/SWE-agent.git
 git fetch upstream
 ```
 
 Now, you need the updated `pyproject.toml` and `.pre-commit-config.yaml` files.
-We can get them from `princeton-nlp/SWE-agent:main`:
+We can get them from `SWE-agent/SWE-agent:main`:
 
 ```bash
 git checkout upstream/main -- .pre-commit-config.yaml pyproject.toml

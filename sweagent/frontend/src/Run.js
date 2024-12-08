@@ -297,7 +297,7 @@ function Run() {
           <br />
           If you think this was a bug, please head over to{" "}
           <a
-            href="https://github.com/princeton-nlp/swe-agent/issues"
+            href="https://github.com/swe-agent/swe-agent/issues"
             target="blank"
           >
             our GitHub issue tracker

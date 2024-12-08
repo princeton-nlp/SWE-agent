@@ -9,8 +9,8 @@ There are two reasons to build your own Docker image
 
 There are three steps involved:
 
-1. Modify the [`swe.Dockerfile` Dockerfile](https://github.com/princeton-nlp/SWE-agent/blob/main/docker/swe.Dockerfile) (also shown below).
-   We provide some extended explanation of the Dockerfile [here](https://github.com/princeton-nlp/SWE-agent/blob/main/docker/README.md).
+1. Modify the [`swe.Dockerfile` Dockerfile](https://github.com/swe-agent/SWE-agent/blob/main/docker/swe.Dockerfile) (also shown below).
+   We provide some extended explanation of the Dockerfile [here](https://github.com/swe-agent/SWE-agent/blob/main/docker/README.md).
 2. Build the image. One way is to simply run `./setup.sh`. Alternatively, especially if you want to change the default tag (`sweagent/swe-agent:latest`), run
    ```bash
    docker build -t "YOUR TAG HERE" -f docker/swe.Dockerfile \

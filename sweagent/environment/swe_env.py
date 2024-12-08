@@ -712,7 +712,7 @@ class SWEEnv(gym.Env):
         elif self.persistent:
             # stopping is Podman specific, but doesn't hurt to include
             # https://stackoverflow.com/a/32428199/
-            # Want to avoid https://github.com/princeton-nlp/SWE-agent/issues/496
+            # Want to avoid https://github.com/swe-agent/SWE-agent/issues/496
             # Note that container_obj.status might not be updated throughout the container
             # lifecycle, so let's get the container_obj again
             assert self.container_name
@@ -819,7 +819,7 @@ class SWEEnv(gym.Env):
             assert self.container_name is not None
         else:
             # Make sure that we get a new container name just in case removing didn't work.
-            # Might be a fix for https://github.com/princeton-nlp/SWE-agent/issues/451
+            # Might be a fix for https://github.com/swe-agent/SWE-agent/issues/451
             self.container_name = self._get_container_name(image_name)
         self.container, self.parent_pids = get_container(
             self.container_name, image_name, persistent=self.persistent, container_mounts=self.container_mounts
@@ -881,7 +881,7 @@ class SWEEnv(gym.Env):
         """Experimental version of `_communicate`"""
         assert self.container is not None
         # Sleep to ensure that the exit code is in the last line
-        # See https://github.com/princeton-nlp/SWE-agent/issues/595
+        # See https://github.com/swe-agent/SWE-agent/issues/595
         command_suffix = (
             f'EXITSTATUS="$?"; sleep 0.01; echo {PROCESS_DONE_MARKER_START}$EXITSTATUS{PROCESS_DONE_MARKER_END}\n'
         )
@@ -911,7 +911,7 @@ class SWEEnv(gym.Env):
             # for example if you just try to run python with no arguments
             # in this case, the error message is usually also garbage, so let's set
             # something new.
-            # See https://github.com/princeton-nlp/SWE-agent/issues/630
+            # See https://github.com/swe-agent/SWE-agent/issues/630
             buffer = (
                 "Unkknown error occurred when running the command. Please double check syntax "
                 "and that you're not running an interactive command."
@@ -1482,7 +1482,7 @@ class SWEEnv(gym.Env):
             timeout_duration=10,
         )
         body = (
-            f"This is a PR opened by AI tool [SWE Agent](https://github.com/princeton-nlp/SWE-agent/) "
+            f"This is a PR opened by AI tool [SWE Agent](https://github.com/swe-agent/SWE-agent/) "
             f"to close [#{issue.number}]({issue_url}) ({issue.title}).\n\nCloses #{issue.number}."
         )
         body += "\n\n" + format_trajectory_markdown(trajectory)

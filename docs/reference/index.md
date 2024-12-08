@@ -13,13 +13,13 @@ The core:
 
 * The `sweagent/agent/` []() submodule implements the agent.
     * [Read about the `Agent` class](agent.md)
-    * [Explore the code](https://github.com/princeton-nlp/SWE-agent/tree/main/sweagent/agent/)
+    * [Explore the code](https://github.com/swe-agent/SWE-agent/tree/main/sweagent/agent/)
 * The `sweagent/environment/` submodule handles the communication with the docker container where we execute code.
     * [Read about the `SWEEnv` class](agent.md)
-    * [Explore the code](https://github.com/princeton-nlp/SWE-agent/tree/main/sweagent/environment/)
+    * [Explore the code](https://github.com/swe-agent/SWE-agent/tree/main/sweagent/environment/)
 
 More subfolders
 
-* See the [`scripts/`](https://github.com/princeton-nlp/SWE-agent/tree/main/scripts/) folder for other useful scripts and details.
-* See the [`config/`](https://github.com/princeton-nlp/SWE-agent/tree/main/config/) folder for details about how you can define your own configuration!
-* See the [`trajectories/`](https://github.com/princeton-nlp/SWE-agent/tree/main/trajectories) folder for details about the output of `run.py`.
+* See the [`scripts/`](https://github.com/swe-agent/SWE-agent/tree/main/scripts/) folder for other useful scripts and details.
+* See the [`config/`](https://github.com/swe-agent/SWE-agent/tree/main/config/) folder for details about how you can define your own configuration!
+* See the [`trajectories/`](https://github.com/swe-agent/SWE-agent/tree/main/trajectories) folder for details about the output of `run.py`.

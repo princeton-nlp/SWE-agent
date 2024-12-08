@@ -739,7 +739,7 @@ class OllamaModel(BaseModel):
             logger.warning(
                 "Prompt eval count not found in response. Using 0. "
                 "This might be because the prompt has been cached. "
-                "See https://github.com/princeton-nlp/SWE-agent/issues/44 "
+                "See https://github.com/swe-agent/SWE-agent/issues/44 "
                 "and https://github.com/ollama/ollama/issues/3427.",
             )
             input_tokens = 0

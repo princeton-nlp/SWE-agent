@@ -8,7 +8,7 @@ const Header = () => {
     <>
       <header>
         <Link
-          to="https://github.com/princeton-nlp/swe-agent"
+          to="https://github.com/swe-agent/swe-agent"
           target="_blank"
           rel="noopener noreferrer"
         >

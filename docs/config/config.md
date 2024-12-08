@@ -9,7 +9,7 @@ A configuration is represented as a single `.yaml` file, specified by the `--con
 * Control the **input/output interface** that sits between the agent and `SWEEnv`.
 
 !!! tip "Default config files"
-    Our default config files are in the [`config/`](https://github.com/princeton-nlp/SWE-agent/tree/main/config) directory.
+    Our default config files are in the [`config/`](https://github.com/swe-agent/SWE-agent/tree/main/config) directory.
 
 ## Configuration File Fields
 
@@ -66,10 +66,10 @@ history_processor: Reference to functionality for controlling agent's message hi
 parse_function: Parser run on agent output
 ```
 
-In the [`config/`](https://github.com/princeton-nlp/SWE-agent/tree/main/config) directory, we recommend looking at...
+In the [`config/`](https://github.com/swe-agent/SWE-agent/tree/main/config) directory, we recommend looking at...
 
-* [`configs/`](https://github.com/princeton-nlp/SWE-agent/tree/main/config/) for examples of properly formatted configuration files. Each configuration differs in its set of commands, input/output format, demonstrations, etc.
-* [`commands/`](https://github.com/princeton-nlp/SWE-agent/tree/main/config/commands) for the bash implementations of the custom commands that SWE-agent uses to navigate + edit the codebase. More information [here](commands.md).
+* [`configs/`](https://github.com/swe-agent/SWE-agent/tree/main/config/) for examples of properly formatted configuration files. Each configuration differs in its set of commands, input/output format, demonstrations, etc.
+* [`commands/`](https://github.com/swe-agent/SWE-agent/tree/main/config/commands) for the bash implementations of the custom commands that SWE-agent uses to navigate + edit the codebase. More information [here](commands.md).
 
 !!! hint "Relative paths"
     Relative paths in config files are resolved to the `SWE_AGENT_CONFIG_ROOT` environment variable (if set)

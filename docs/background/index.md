@@ -8,7 +8,7 @@ Just want to run SWE-agent or EnIGMA? Skip ahead to our [installation notes](../
 
 SWE-agent turns LMs (e.g. GPT-4) into software engineering agents that can fix issues in GitHub repositories.
 
-On [SWE-bench](https://github.com/princeton-nlp/SWE-bench), SWE-agent resolves **12.29%** of issues, achieving the state-of-the-art performance on the full test set.
+On [SWE-bench](https://github.com/swe-agent/SWE-bench), SWE-agent resolves **12.29%** of issues, achieving the state-of-the-art performance on the full test set.
 
 We accomplish our results by designing simple LM-centric commands and feedback formats to make it easier for the LM to browse the repository, view, edit and execute code files. We call this an 🤖 **Agent-Computer Interface (ACI)**.
 Read more about the ACI [here](aci.md).

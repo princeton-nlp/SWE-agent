@@ -5,7 +5,7 @@
 !!! note "Model support"
     Note that SWE-agent is currently unlikely to perform well with small or local models.
 
-Models are configured in [`models.py`](https://github.com/princeton-nlp/SWE-agent/blob/main/sweagent/agent/models.py) (we're working on giving a complete list of model settings).
+Models are configured in [`models.py`](https://github.com/swe-agent/SWE-agent/blob/main/sweagent/agent/models.py) (we're working on giving a complete list of model settings).
 
 Here are some few examples:
 
@@ -46,7 +46,7 @@ We also provide models for testing SWE-agent without spending any credits
 * If you get `Error code: 404`, please check your configured keys, in particular
   whether you set `OPENAI_API_BASE_URL` correctly (if you're not using it, the
   line should be deleted or commented out).
-  Also see [this issue](https://github.com/princeton-nlp/SWE-agent/issues/467)
+  Also see [this issue](https://github.com/swe-agent/SWE-agent/issues/467)
   for reference.
 
 {% include-markdown "../_footer.md" %}

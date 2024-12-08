@@ -5,7 +5,7 @@ __version__ = "0.7.0"
 from logging import WARNING, getLogger
 from pathlib import Path
 
-# See https://github.com/princeton-nlp/SWE-agent/issues/585
+# See https://github.com/swe-agent/SWE-agent/issues/585
 getLogger("datasets").setLevel(WARNING)
 getLogger("numexpr.utils").setLevel(WARNING)
 

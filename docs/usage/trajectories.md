@@ -1,6 +1,6 @@
 # Trajectories
 
-The [`trajectories/`](https://github.com/princeton-nlp/SWE-agent/tree/main/trajectories) folder is the default location that experiment results (invocations of [`run.py`](cl_tutorial.md)) will be written to.
+The [`trajectories/`](https://github.com/swe-agent/SWE-agent/tree/main/trajectories) folder is the default location that experiment results (invocations of [`run.py`](cl_tutorial.md)) will be written to.
 
 <details>
 <summary>Example trajectory</summary>

@@ -26,7 +26,7 @@ If you would like to run `human_thought` mode without having to type in a though
 Here's how you can make a demo from an existing trajectory file (like the one created from the previous step):
 
 1. Find a basic trajectory that you already like and want to use as the basis for your demo.
-   For instance, consider the `.traj` files in the [`trajectories/demonstrations/` folder](https://github.com/princeton-nlp/SWE-agent/tree/main/trajectories/demonstrations)
+   For instance, consider the `.traj` files in the [`trajectories/demonstrations/` folder](https://github.com/swe-agent/SWE-agent/tree/main/trajectories/demonstrations)
    or find the trajectory from the previous step (the path will be printed at the bottom).
 2. Run `python convert_traj_to_demo.py <path to trajectory file.traj>` to convert the trajectory to a demo.
    This demo will be saved as a readable yaml file in the `make_demos/demos` directory.
