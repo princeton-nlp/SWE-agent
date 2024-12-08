@@ -12,7 +12,7 @@ Welcome to SWE-agent 1.0! So much new stuff! Here's a quick rundown of the cool 
 * :sparkles: Override any configuration option from the command line (see [command line basics](../usage/cl_tutorial.md)).
 * :sparkles: Greatly simplified and cleaned up codebase. In particular, the `Agent` class is now much easier to modify.
 
-If you're familiar with the old SWE-agent, here are the main changes you need to be aware of
+If you're familiar with the old SWE-agent, here are the main changes you need to be aware of.
 
 ## Command line interface and basic configuration
 
@@ -21,6 +21,13 @@ If you're familiar with the old SWE-agent, here are the main changes you need to
 * Instead of one `run.py` command, we now have several subcommands: `sweagent run` to run over single issues, `sweagent run-batch` to run over a whole batch of issues, and various utility commands. Run `sweagent --help` to see all options. Splitting up both commands made it easier to make both use cases more convenient and flexible.
 * We have switched to a hierarchical configuration system. This means that command line options look something like this: `--agent.model.name=gpt-4o`.
   The configuration files have also been updated to reflect this.
+
+## Environment setup
+
+We removed the complicated mess of environment setup options (`conda` environments, `pip`, docker images, etc.).
+Instead, you now always start from a docker image of your choice and we recommend that this should ship with all the dependencies you need.
+However, you can also execute additional commands before starting the agent with `EnvironmentConfig.post_startup_commands`.
+Additionally, every [tool bundle](../config/tools.md) can include a `setup.sh` script that will be executed, allowing to e.g., install `flake8` if needed by the tools.
 
 ## More advanced configuration
 

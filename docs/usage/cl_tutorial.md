@@ -200,6 +200,22 @@ Again, those are [union types](#union-types). See here for all the options:
 * [`LocalRepoConfig`](../reference/repo.md#sweagent.environment.repo.LocalRepoConfig): Copies a repository from your local filesystem to the docker container.
 * [`PreExistingRepoConfig`](../reference/repo.md#sweagent.environment.repo.PreExistingRepoConfig): If you want to use a repository that already exists on the docker container.
 
+## Configuring the environment
+
+We mainly recommend you to build a docker image with all the dependencies you need and then use that with `--env.deployment.image`.
+In addition, you can also execute additional commands before starting the agent with `env.post_startup_commands` (this
+takes a list of commands, e.g.,
+
+```bash
+sweagent run \
+    --agent.model.name=claude-3-5-sonnet-20241022 \
+    --env.post_startup_commands='["pip install flake8"]' \  # (1)!
+    ...
+```
+
+1. Note the list syntax that is passed as a string using single ticks `'`. This is particularly important for `zsh` where `[`, `]` have special meaning.
+
+
 ## Taking actions
 
 * You can use `--actions.apply_patch_locally` to have SWE-agent apply successful solution attempts to local files.
