@@ -3219,6 +3219,7 @@ This can also be very useful to create your first <a href="../../config/demonstr
 <span class="normal">232</span>
 <span class="normal">233</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">HumanModelConfig</span><span class="p">,</span> <span class="n">tools</span><span class="p">:</span> <span class="n">ToolConfig</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Model that allows for human-in-the-loop&quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="s2">&quot;swea-lm&quot;</span><span class="p">,</span> <span class="n">emoji</span><span class="o">=</span><span class="s2">&quot;🤖&quot;</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">stats</span> <span class="o">=</span> <span class="n">InstanceStats</span><span class="p">()</span>
 
@@ -3228,7 +3229,6 @@ This can also be very useful to create your first <a href="../../config/demonstr
     <span class="p">}</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_readline_histfile</span> <span class="o">=</span> <span class="n">REPO_ROOT</span> <span class="o">/</span> <span class="s2">&quot;.swe-agent-human-history&quot;</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_load_readline_history</span><span class="p">()</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="s2">&quot;swea-lm&quot;</span><span class="p">,</span> <span class="n">emoji</span><span class="o">=</span><span class="s2">&quot;🤖&quot;</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -3297,7 +3297,7 @@ This can also be very useful to create your first <a href="../../config/demonstr
   </span>
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">multi_line_command_endings</span> <span class="o">=</span> <span class="p">{</span><span class="n"><span title="command.name">name</span></span><span class="p">:</span> <span class="n">_g63PWKSfor</span> <span class="n">command</span> <span class="ow">in</span> <span class="n"><span title="sweagent.tools.commands">commands</span></span> <span class="k">if</span> <span class="n"><span title="command.end_name">end_name</span></span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">multi_line_command_endings</span> <span class="o">=</span> <span class="p">{</span><span class="n"><span title="command.name">name</span></span><span class="p">:</span> <span class="n">_1u8BM3kfor</span> <span class="n">command</span> <span class="ow">in</span> <span class="n"><span title="sweagent.tools.commands">commands</span></span> <span class="k">if</span> <span class="n"><span title="command.end_name">end_name</span></span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3403,6 +3403,7 @@ This can also be very useful to create your first <a href="../../config/demonstr
 <span class="normal">232</span>
 <span class="normal">233</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">HumanModelConfig</span><span class="p">,</span> <span class="n">tools</span><span class="p">:</span> <span class="n">ToolConfig</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Model that allows for human-in-the-loop&quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="s2">&quot;swea-lm&quot;</span><span class="p">,</span> <span class="n">emoji</span><span class="o">=</span><span class="s2">&quot;🤖&quot;</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">stats</span> <span class="o">=</span> <span class="n">InstanceStats</span><span class="p">()</span>
 
@@ -3412,7 +3413,6 @@ This can also be very useful to create your first <a href="../../config/demonstr
     <span class="p">}</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_readline_histfile</span> <span class="o">=</span> <span class="n">REPO_ROOT</span> <span class="o">/</span> <span class="s2">&quot;.swe-agent-human-history&quot;</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_load_readline_history</span><span class="p">()</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="s2">&quot;swea-lm&quot;</span><span class="p">,</span> <span class="n">emoji</span><span class="o">=</span><span class="s2">&quot;🤖&quot;</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
