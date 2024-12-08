@@ -62,6 +62,7 @@ nav:
       - "From source": "installation/source.md"
       - "In browser": "installation/codespaces.md"
       - "Models and keys": "installation/keys.md"
+      - "1.0 migration": "installation/migration.md"
       - "Troubleshooting": "installation/tips.md"
       - "Changelog": "installation/changelog.md"
     - "Tutorials":
