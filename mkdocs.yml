@@ -5,6 +5,7 @@ theme:
   icon:
     repo: fontawesome/brands/github
     annotation: material/chevron-right-circle
+  custom_dir: docs/overrides
   logo: assets/swe-agent.svg
   favicon: assets/favicon.ico
   palette:

@@ -1,6 +1,16 @@
 ## SWE-agent 1.0.0 migration guide
 
-Welcome to the new SWE-agent! Everything has changed -- hopefully for the better!
+!!! warning "Work in progress"
+    We're currently in the process of updating this guide.
+
+Welcome to SWE-agent 1.0! So much new stuff! Here's a quick rundown of the cool new things you can do:
+
+* :sparkles: Fast, massively parallel code execution with [SWE-ReX](https://github.com/swe-agent/SWE-ReX).
+* :sparkles: Run SWE-agent locally but execute code in the cloud (using modal, AWS, or anything else that runs [SWE-ReX](https://github.com/swe-agent/SWE-ReX)).
+* :sparkles: Flexible tool definitions with [tool bundles](config/tools.md).
+* :sparkles: All language models supported using `litellm` (see [models](installation/keys.md)).
+* :sparkles: Override any configuration option from the command line (see [command line basics](cl_tutorial.md)).
+* :sparkles: Greatly simplified and cleaned up codebase. In particular, the `Agent` class is now much easier to modify.
 
 If you're familiar with the old SWE-agent, here are the main changes you need to be aware of
 
