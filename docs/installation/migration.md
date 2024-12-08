@@ -14,6 +14,11 @@ Welcome to SWE-agent 1.0! So much new stuff! Here's a quick rundown of the cool 
 
 If you're familiar with the old SWE-agent, here are the main changes you need to be aware of.
 
+!!! tip "SWE-agent 0.7"
+    The old SWE-agent before the major overhaul is still preserved on the `v0.7` branch.
+    In particular, this is still the version to use for the SWE-agent EnIGMA configuration.
+    You can also switch to the old documentation using the dropdown in the top menu bar.
+
 ## Command line interface and basic configuration
 
 * Instead of the `run.py` script, we now have a central `sweagent` entry point that you can call after installing the package.
