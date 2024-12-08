@@ -536,7 +536,7 @@ class Agent:
         except Exception as e:
             self.logger.debug("Failed to interrupt session before autosubmit: %s. Ignoring.", e)
         try:
-            observation = self._env.communicate(input="submit")
+            observation = self._env.communicate(input=self.tools.config.submit_command)
         except Exception as e:
             self.logger.debug("Failed to submit after error, got %s", e)
             return step
