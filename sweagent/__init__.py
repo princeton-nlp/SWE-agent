@@ -4,7 +4,7 @@ from functools import partial
 
 from git import Repo
 
-__version__ = "0.7.0"
+__version__ = "1.0.0"
 
 from logging import WARNING, getLogger
 from pathlib import Path
