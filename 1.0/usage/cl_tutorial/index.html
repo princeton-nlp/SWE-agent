@@ -2227,6 +2227,52 @@ SWE-agent will automatically select the correct configuration object based on th
 <p>If you ever ran a SWE-agent command and got a very long error message about various configuration options not working, it is because for union types.
 If everything works correctly, we try to initialize every option until we find the one that works based on your inputs (for example stopping at <code>TextProblemStatement</code> if you provided a <code>--problem_statement.text</code>).
 However, if none of them work, we throw an error which then tells you why we cannot initialize any of the types (so it will tell you that <code>github_url</code> is required for <code>GithubIssue</code>, even though you might not even have tried to work on a GitHub issue).</p>
+<p><details>Example union type errors
+  <summary>Example union type errors</summary></p>
+<p>This is the output of running</p>
+<div class="highlight"><pre><span></span><code>sweagent<span class="w"> </span>run<span class="w"> </span>--problem_statement.path<span class="o">=</span><span class="s2">&quot;test&quot;</span><span class="w"> </span>--problem_statement.github_url<span class="o">=</span><span class="s2">&quot;asdf&quot;</span>
+</code></pre></div>
+<p><div class="highlight"><pre><span></span><code>╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Validation error                                                                                                  │
+│                                                                                                                   │
+│ The following errors are raised by Pydantic, trying to instantiate the configuration based on                     │
+│ the merged configuration dictionary (see above).                                                                  │
+│                                                                                                                   │
+│ Every new indented block corresponds to a different error from Pydantic.                                          │
+│ The first line of each block is the attribute that failed validation, the following lines are the error messages. │
+│                                                                                                                   │
+│ If you see many lines of errors, there are probably different ways to instantiate the same object (a union type). │
+│ For example, there are different deployments with different options each. Pydantic is then trying                 │
+│ one after the other and reporting the failures for each of them.                                                  │
+│                                                                                                                   │
+│ 8 validation errors for RunSingleConfig                                                                           │
+│ agent.model                                                                                                       │
+│   Field required }, input_type=dict]                                                                              │
+│     For further information visit https://errors.pydantic.dev/2.9/v/missing                                       │
+│ problem_statement.TextProblemStatement.text                                                                       │
+│   Field required                                                                                                  │
+│     For further information visit https://errors.pydantic.dev/2.9/v/missing                                       │
+│ problem_statement.TextProblemStatement.path                                                                       │
+│   Extra inputs are not permitted                                                                                  │
+│     For further information visit https://errors.pydantic.dev/2.9/v/extra_forbidden                               │
+│ problem_statement.TextProblemStatement.github_url                                                                 │
+│   Extra inputs are not permitted                                                                                  │
+│     For further information visit https://errors.pydantic.dev/2.9/v/extra_forbidden                               │
+│ problem_statement.GithubIssue.path                                                                                │
+│   Extra inputs are not permitted                                                                                  │
+│     For further information visit https://errors.pydantic.dev/2.9/v/extra_forbidden                               │
+│ problem_statement.EmptyProblemStatement.path                                                                      │
+│   Extra inputs are not permitted                                                                                  │
+│     For further information visit https://errors.pydantic.dev/2.9/v/extra_forbidden                               │
+│ problem_statement.EmptyProblemStatement.github_url                                                                │
+│   Extra inputs are not permitted                                                                                  │
+│     For further information visit https://errors.pydantic.dev/2.9/v/extra_forbidden                               │
+│ problem_statement.FileProblemStatement.github_url                                                                 │
+│   Extra inputs are not permitted                                                                                  │
+│     For further information visit https://errors.pydantic.dev/2.9/v/extra_forbidden                               │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+</code></pre></div>
+  </details></p>
 </div>
 <p>If you want to read more about how this works, check out the <a href="https://docs.pydantic.dev/latest/concepts/unions/">pydantic docs</a>.</p>
 <h2 id="specifying-the-repository">Specifying the repository</h2>
