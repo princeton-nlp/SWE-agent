@@ -3,6 +3,7 @@
 import json
 import sys
 from argparse import ArgumentParser
+from collections import defaultdict
 from pathlib import Path
 from types import UnionType
 from typing import Any
@@ -54,6 +55,7 @@ The first line of each block is the attribute that failed validation, the follow
 If you see many lines of errors, there are probably different ways to instantiate the same object (a union type).
 For example, there are different deployments with different options each. Pydantic is then trying
 one after the other and reporting the failures for each of them.
+More on union types: [link=https://swe-agent.com/latest/usage/cl_tutorial/#union-types]https://swe-agent.com/latest/usage/cl_tutorial/#union-types[/link]
 """
 
 _SETTING_ERROR_HINTS = """
@@ -106,6 +108,48 @@ class ConfigHelper:
             line += self._get_value_help_string(field_info.annotation, field_info.description)
             lines.append(line)
         return "\n\n".join(lines)
+
+
+def _nested_dict():
+    """Helper function to create nested dictionaries."""
+    return defaultdict(_nested_dict)
+
+
+def _parse_args_to_nested_dict(args):
+    """Parse the command-line arguments into a nested dictionary."""
+    result = _nested_dict()
+
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if not arg.startswith("--"):
+            i += 1
+            continue
+
+        # Handle --key=value format
+        if "=" in arg:
+            key, value = arg[2:].split("=", 1)
+        # Handle --key value format
+        else:
+            key = arg[2:]
+            i += 1
+            if i >= len(args):
+                break
+            value = args[i]
+
+        # Convert value to int if possible
+        value = int(value) if value.isdigit() else value
+
+        # Build nested dict structure
+        keys = key.split(".")
+        current = result
+        for k in keys[:-1]:
+            current = current[k]
+        current[keys[-1]] = value
+
+        i += 1
+
+    return result
 
 
 # todo: Parameterize type hints
@@ -216,6 +260,9 @@ class BasicCLI:
         else:
             config_merged = {}
 
+        # For informational purposes, we also merge in the command line options
+        cl_options_dict = _parse_args_to_nested_dict(remaining_args)
+
         # >>> Step 4: Bring together remaining arguments and the merged config to initialize the config object
         # This is done by CliApp.run from pydantic-settings
 
@@ -224,9 +271,23 @@ class BasicCLI:
         except ValidationError as e:
             rich_print(
                 Panel.fit(
-                    "[red][bold]Merged configuration dictionary\n[/bold]"
+                    "[red][bold]Configuration from config files\n[/bold]"
                     "This is all the configuration that was provided from defaults, --config, and CLI arguments[/red]\n\n"
                     + yaml.dump(_shorten_strings(config_merged))
+                )
+            )
+            rich_print(
+                Panel.fit(
+                    "[red][bold]Configuration from CLI arguments\n[/bold]"
+                    "This is all the configuration that was provided from the command line arguments[/red]\n\n"
+                    + yaml.dump(_shorten_strings(cl_options_dict))
+                )
+            )
+            rich_print(
+                Panel.fit(
+                    "[red][bold]Merged configuration\n[/bold]"
+                    "This is the merged configuration that was used to instantiate the config object[/red]\n\n"
+                    + yaml.dump(_shorten_strings(config_merged | cl_options_dict))
                 )
             )
             rich_print(

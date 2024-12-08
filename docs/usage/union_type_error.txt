@@ -1,0 +1,40 @@
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Validation error                                                                                                  │
+│                                                                                                                   │
+│ The following errors are raised by Pydantic, trying to instantiate the configuration based on                     │
+│ the merged configuration dictionary (see above).                                                                  │
+│                                                                                                                   │
+│ Every new indented block corresponds to a different error from Pydantic.                                          │
+│ The first line of each block is the attribute that failed validation, the following lines are the error messages. │
+│                                                                                                                   │
+│ If you see many lines of errors, there are probably different ways to instantiate the same object (a union type). │
+│ For example, there are different deployments with different options each. Pydantic is then trying                 │
+│ one after the other and reporting the failures for each of them.                                                  │
+│                                                                                                                   │
+│ 8 validation errors for RunSingleConfig                                                                           │
+│ agent.model                                                                                                       │
+│   Field required }, input_type=dict]                                                                              │
+│     For further information visit https://errors.pydantic.dev/2.9/v/missing                                       │
+│ problem_statement.TextProblemStatement.text                                                                       │
+│   Field required                                                                                                  │
+│     For further information visit https://errors.pydantic.dev/2.9/v/missing                                       │
+│ problem_statement.TextProblemStatement.path                                                                       │
+│   Extra inputs are not permitted                                                                                  │
+│     For further information visit https://errors.pydantic.dev/2.9/v/extra_forbidden                               │
+│ problem_statement.TextProblemStatement.github_url                                                                 │
+│   Extra inputs are not permitted                                                                                  │
+│     For further information visit https://errors.pydantic.dev/2.9/v/extra_forbidden                               │
+│ problem_statement.GithubIssue.path                                                                                │
+│   Extra inputs are not permitted                                                                                  │
+│     For further information visit https://errors.pydantic.dev/2.9/v/extra_forbidden                               │
+│ problem_statement.EmptyProblemStatement.path                                                                      │
+│   Extra inputs are not permitted                                                                                  │
+│     For further information visit https://errors.pydantic.dev/2.9/v/extra_forbidden                               │
+│ problem_statement.EmptyProblemStatement.github_url                                                                │
+│   Extra inputs are not permitted                                                                                  │
+│     For further information visit https://errors.pydantic.dev/2.9/v/extra_forbidden                               │
+│ problem_statement.FileProblemStatement.github_url                                                                 │
+│   Extra inputs are not permitted                                                                                  │
+│     For further information visit https://errors.pydantic.dev/2.9/v/extra_forbidden                               │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+

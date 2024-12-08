@@ -169,6 +169,20 @@ However, you can also explicitly specify the type of problem statement you want 
     If everything works correctly, we try to initialize every option until we find the one that works based on your inputs (for example stopping at `TextProblemStatement` if you provided a `--problem_statement.text`).
     However, if none of them work, we throw an error which then tells you why we cannot initialize any of the types (so it will tell you that `github_url` is required for `GithubIssue`, even though you might not even have tried to work on a GitHub issue).
 
+      <details>Example union type errors
+      <summary>Example union type errors</summary>
+
+      This is the output of running
+
+      ```bash
+      sweagent run --problem_statement.path="test" --problem_statement.github_url="asdf"
+      ```
+
+      ```
+      --8<-- "docs/usage/union_type_error.txt"
+      ```
+      </details>
+
 If you want to read more about how this works, check out the [pydantic docs](https://docs.pydantic.dev/latest/concepts/unions/).
 
 ## Specifying the repository
