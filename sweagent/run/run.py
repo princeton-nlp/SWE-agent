@@ -18,6 +18,7 @@ Display usage instructions for a specific command:
 [bold][green]merge-preds[/green][/bold]: Merge multiple prediction files into a single file. In most cases
     [green]run-batch[/green] will already do this, but you can use this to merge predictions
     from multiple directories.
+[bold][green]inspect[/green][/bold]: Open a single trajectory file in a terminal-based viewer.
 [bold][green]inspector[/green][/bold]: Open trajectories in a web-based viewer.
 [bold][green]run-replay[/green][/bold]: Replay a trajectory file or a demo file.
     This can be useful to fill in environment output when creating demonstrations.
@@ -35,7 +36,7 @@ def get_cli():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument(
         "command",
-        choices=["run", "run-batch", "run-replay", "traj-to-demo", "run-api", "merge-preds", "inspector"],
+        choices=["run", "run-batch", "run-replay", "traj-to-demo", "run-api", "merge-preds", "inspect", "inspector"],
         nargs="?",
     )
     parser.add_argument("-h", "--help", action="store_true", help="Show this help message and exit")
@@ -89,6 +90,10 @@ def main(args: list[str] | None = None):
         from sweagent.inspector.server import run_from_cli as inspector_main
 
         inspector_main(remaining_args)
+    elif command == "inspect":
+        from sweagent.run.inspector_cli import main as inspect_main
+
+        inspect_main(remaining_args)
     else:
         msg = f"Unknown command: {command}"
         raise ValueError(msg)
