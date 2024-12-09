@@ -19,11 +19,16 @@ class TrajectoryViewer(Static):
         Binding("v", "toggle_view", "Toggle view"),
     ]
 
-    def __init__(self, trajectory: list[dict]):
+    def __init__(self, path):
         super().__init__()
-        self.trajectory = trajectory
         self.current_index = -1
+        self.trajectory = json.loads(path.read_text())
         self.show_full = False
+
+    def load_trajectory(self, path):
+        print("Loading", path)
+        self.trajectory = json.loads(path.read_text())
+        self.update_content()
 
     def compose(self) -> ComposeResult:
         with VerticalScroll():
@@ -96,7 +101,11 @@ class TrajectoryViewer(Static):
 
 
 class TrajectoryInspectorApp(App):
-    BINDINGS = [Binding("q", "quit", "Quit")]
+    BINDINGS = [
+        Binding("q", "quit", "Quit"),
+        Binding("L", "next_traj", "Traj++"),
+        Binding("H", "previous_traj", "Traj--"),
+    ]
 
     CSS = """
     Screen {
@@ -116,23 +125,47 @@ class TrajectoryInspectorApp(App):
     }
     """
 
-    def __init__(self, trajectory_path: str):
+    def __init__(self, input_path: str | Path):
         super().__init__()
-        self.trajectory_path = Path(trajectory_path)
+        self.input_path = Path(input_path)
+        if not self.input_path.exists():
+            msg = f"{self.input_path} doesn't exist"
+            raise FileNotFoundError(msg)
+        self.available_traj_paths = self._get_available_trajs()
+        if not self.available_traj_paths:
+            msg = "No trajectory *.traj files available"
+            raise ValueError(msg)
+        self.trajectory_index = 0
+
+    def _load_traj(self):
+        traj_viewer = self.query_one(TrajectoryViewer)
+        traj_viewer.load_trajectory(self.available_traj_paths[self.trajectory_index])
+
+    def _get_available_trajs(self) -> list[Path]:
+        if self.input_path.is_file():
+            return [self.input_path]
+        elif self.input_path.is_dir():
+            return list(self.input_path.rglob("*.traj"))
+        raise ValueError
 
     def compose(self) -> ComposeResult:
         yield Header()
         with Container():
-            yield TrajectoryViewer(self.load_trajectory())
+            yield TrajectoryViewer(self.available_traj_paths[self.trajectory_index])
         yield Footer()
 
-    def load_trajectory(self) -> list[dict]:
-        return json.loads(self.trajectory_path.read_text())
+    def action_next_traj(self):
+        self.trajectory_index = (self.trajectory_index + 1) % len(self.available_traj_paths)
+        self._load_traj()
+
+    def action_previous_traj(self):
+        self.trajectory_index = (self.trajectory_index - 1) % len(self.available_traj_paths)
+        self._load_traj()
 
 
 def main(args: list[str] | None = None):
     parser = argparse.ArgumentParser(description="Inspect trajectory JSON files")
-    parser.add_argument("trajectory_path", help="Path to the trajectory JSON file")
+    parser.add_argument("trajectory_path", help="Path to the trajectory JSON file or directory containing trajectories")
     parsed_args = parser.parse_args(args)
 
     app = TrajectoryInspectorApp(parsed_args.trajectory_path)
