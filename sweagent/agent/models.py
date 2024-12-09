@@ -286,6 +286,9 @@ class HumanModel(AbstractModel):
         except KeyboardInterrupt:
             print("^C (exit with ^D)")
             return self.query(history, action_prompt)
+        except EOFError:
+            print("\nGoodbye!")
+            return {"message": "exit"}
 
 
 class HumanThoughtModel(HumanModel):
