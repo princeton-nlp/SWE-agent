@@ -1,4 +1,8 @@
-import shutil
+"""SweBench evaluation hook.
+
+Will be automatically added to `run_batch` if `SWEBenchInstances.evaluate` is set to true
+"""
+
 import subprocess
 import sys
 from pathlib import Path
@@ -24,6 +28,7 @@ class SweBenchEvaluate(RunHook):
         self.merge_lock = Lock()
         self.last_evaluation_time = time()
         self.evaluation_interval = continuous_submission_every
+        self._running_calls = []
 
     def _get_sb_call(self, preds_path: Path, submit_only: bool = False) -> list[str]:
         args = [
@@ -42,6 +47,14 @@ class SweBenchEvaluate(RunHook):
             args.extend(["--wait_for_evaluation", "0", "--gen_report", "0", "--verify_submission", "0"])
         return args
 
+    def check_running_calls(self) -> None:
+        """Warn if one of the running calls failed."""
+        for call in self._running_calls:
+            if call.poll() is not None:
+                if call.returncode != 0:
+                    self.logger.error("Failed to submit results to SweBench eval: %s", call.stderr.read())
+                self._running_calls.remove(call)
+
     def on_instance_completed(self, *, result: AgentRunResult):
         if self.evaluation_interval == 0:
             return
@@ -54,10 +67,12 @@ class SweBenchEvaluate(RunHook):
             merge_predictions([self.output_dir], self.output_dir / "tmppreds.json")
             self.last_evaluation_time = current_time
 
-        subprocess.Popen(
-            self._get_sb_call(preds_path=self.output_dir / "tmppreds.json", submit_only=True),
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+        self._running_calls.append(
+            subprocess.Popen(
+                self._get_sb_call(preds_path=self.output_dir / "tmppreds.json", submit_only=True),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
         )
 
     def on_end(self) -> None:
@@ -75,5 +90,3 @@ class SweBenchEvaluate(RunHook):
             # remove temporary predictions if they exist
             if (self.output_dir / "tmppreds.json").exists():
                 (self.output_dir / "tmppreds.json").unlink()
-            if (self.output_dir / "tmp-sb-cli-reports").exists():
-                shutil.rmtree(self.output_dir / "tmp-sb-cli-reports")
