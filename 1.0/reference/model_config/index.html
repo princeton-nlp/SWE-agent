@@ -3297,7 +3297,7 @@ This can also be very useful to create your first <a href="../../config/demonstr
   </span>
 
 </h4>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">multi_line_command_endings</span> <span class="o">=</span> <span class="p">{</span><span class="n"><span title="command.name">name</span></span><span class="p">:</span> <span class="n">_BFBVw6Nfor</span> <span class="n">command</span> <span class="ow">in</span> <span class="n"><span title="sweagent.tools.commands">commands</span></span> <span class="k">if</span> <span class="n"><span title="command.end_name">end_name</span></span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">multi_line_command_endings</span> <span class="o">=</span> <span class="p">{</span><span class="n"><span title="command.name">name</span></span><span class="p">:</span> <span class="n">_PjTTbYZfor</span> <span class="n">command</span> <span class="ow">in</span> <span class="n"><span title="sweagent.tools.commands">commands</span></span> <span class="k">if</span> <span class="n"><span title="command.end_name">end_name</span></span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3345,11 +3345,25 @@ This can also be very useful to create your first <a href="../../config/demonstr
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">292</span>
-<span class="normal">293</span>
-<span class="normal">294</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="n">History</span><span class="p">,</span> <span class="n">action_prompt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&gt; &quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="n">History</span><span class="p">,</span> <span class="n">action_prompt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&gt; &quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper to separate action prompt from formatting&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">(</span><span class="n">history</span><span class="p">,</span> <span class="n">action_prompt</span><span class="p">)}</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">(</span><span class="n">history</span><span class="p">,</span> <span class="n">action_prompt</span><span class="p">)}</span>
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;^C (exit with ^D)&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">history</span><span class="p">,</span> <span class="n">action_prompt</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">EOFError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Goodbye!&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;exit&quot;</span><span class="p">}</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3445,7 +3459,10 @@ This can also be very useful to create your first <a href="../../config/demonstr
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">298</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
 <span class="normal">299</span>
 <span class="normal">300</span>
 <span class="normal">301</span>
@@ -3456,10 +3473,7 @@ This can also be very useful to create your first <a href="../../config/demonstr
 <span class="normal">306</span>
 <span class="normal">307</span>
 <span class="normal">308</span>
-<span class="normal">309</span>
-<span class="normal">310</span>
-<span class="normal">311</span>
-<span class="normal">312</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="n">History</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="normal">309</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="n">History</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Logic for handling user input (both thought + action) to pass to SWEEnv&quot;&quot;&quot;</span>
     <span class="n">thought_all</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
     <span class="n">thought</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Thought (end w/ END_THOUGHT): &quot;</span><span class="p">)</span>
@@ -3516,7 +3530,10 @@ and re-issuing them.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">316</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
 <span class="normal">317</span>
 <span class="normal">318</span>
 <span class="normal">319</span>
@@ -3531,10 +3548,7 @@ and re-issuing them.</p>
 <span class="normal">328</span>
 <span class="normal">329</span>
 <span class="normal">330</span>
-<span class="normal">331</span>
-<span class="normal">332</span>
-<span class="normal">333</span>
-<span class="normal">334</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">ReplayModelConfig</span><span class="p">,</span> <span class="n">tools</span><span class="p">:</span> <span class="n">ToolConfig</span><span class="p">):</span>
+<span class="normal">331</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">ReplayModelConfig</span><span class="p">,</span> <span class="n">tools</span><span class="p">:</span> <span class="n">ToolConfig</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Model used for replaying a trajectory (i.e., taking all the actions for the `.traj` file</span>
 <span class="sd">    and re-issuing them.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3690,7 +3704,10 @@ and re-issuing them.</p>
 
             <details class="quote">
               <summary>Source code in <code>sweagent/agent/models.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">341</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
 <span class="normal">342</span>
 <span class="normal">343</span>
 <span class="normal">344</span>
@@ -3723,10 +3740,7 @@ and re-issuing them.</p>
 <span class="normal">371</span>
 <span class="normal">372</span>
 <span class="normal">373</span>
-<span class="normal">374</span>
-<span class="normal">375</span>
-<span class="normal">376</span>
-<span class="normal">377</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="n">History</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="normal">374</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="n">History</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Logic for tracking which replay action to pass to SWEEnv&quot;&quot;&quot;</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">api_calls</span> <span class="o">+=</span> <span class="mi">1</span>
     <span class="n">actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_replays</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_replay_idx</span><span class="p">]</span>
