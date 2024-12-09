@@ -2,12 +2,13 @@ import argparse
 import json
 from pathlib import Path
 
-import yaml
 from rich.syntax import Syntax
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, VerticalScroll
 from textual.widgets import Footer, Header, Static
+
+from sweagent.utils.serialization import _yaml_serialization_with_linebreaks
 
 
 class TrajectoryViewer(Static):
@@ -41,7 +42,7 @@ class TrajectoryViewer(Static):
 
     def _show_full(self, item: dict) -> None:
         """Show full yaml of trajectory item"""
-        content_str = yaml.dump(item, indent=2)
+        content_str = _yaml_serialization_with_linebreaks(item)
         syntax = Syntax(content_str, "yaml", theme="monokai", word_wrap=True)
         content = self.query_one("#content")
         content.update(syntax)  # type: ignore
@@ -61,7 +62,7 @@ class TrajectoryViewer(Static):
 
     def _show_info(self):
         info = self.trajectory["info"]
-        syntax = Syntax(yaml.dump(info, indent=2), "yaml", theme="monokai", word_wrap=True)
+        syntax = Syntax(_yaml_serialization_with_linebreaks(info), "yaml", theme="monokai", word_wrap=True)
         content = self.query_one("#content")
         content.update(syntax)  # type: ignore
         next_help = "Press l to see step 1" if self.current_index < 0 else f"Press h to see step {len(self.trajectory)}"

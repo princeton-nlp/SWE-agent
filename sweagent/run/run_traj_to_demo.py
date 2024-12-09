@@ -5,17 +5,12 @@ environment output.
 
 from __future__ import annotations
 
-import io
 import json
 from argparse import ArgumentParser
-from copy import deepcopy
 from pathlib import Path
-from typing import Any
-
-from ruamel.yaml import YAML
-from ruamel.yaml.scalarstring import LiteralScalarString as LSS
 
 from sweagent.utils.log import get_logger
+from sweagent.utils.serialization import _yaml_serialization_with_linebreaks
 
 logger = get_logger("traj2demo")
 
@@ -29,32 +24,9 @@ DEMO_COMMENT = """# This is a demo file generated from trajectory file:
 #         You can add or remove actions to modify the replay behavior."""
 
 
-def _convert_to_literal_string(d: Any) -> Any:
-    """Convert any multi-line strings in nested data object to LiteralScalarString.
-    This will then use the `|-` syntax of yaml.
-    """
-    d = deepcopy(d)
-    if isinstance(d, dict):
-        for key, value in d.items():
-            d[key] = _convert_to_literal_string(value)
-    elif isinstance(d, list):
-        for i, item in enumerate(d):
-            d[i] = _convert_to_literal_string(item)
-    elif isinstance(d, str) and "\n" in d:
-        d = LSS(d.replace("\r\n", "\n").replace("\r", "\n"))
-    return d
-
-
 def save_demo(data: str | dict | list, file: Path, traj_path: Path) -> None:
     """Save demo data as a yaml file. Takes care of multi-line strings and adds a header."""
-    data = _convert_to_literal_string(data)
-    yaml = YAML()
-    yaml.indent(mapping=2, sequence=4, offset=2)
-    yaml.width = float("inf")
-    yaml.default_flow_style = False
-    buffer = io.StringIO()
-    yaml.dump(data, buffer)
-    content = buffer.getvalue()
+    content = _yaml_serialization_with_linebreaks(data)
     header = DEMO_COMMENT.format(traj_path=str(traj_path))
     with open(file, "w") as f:
         f.write(f"{header}\n{content}")
