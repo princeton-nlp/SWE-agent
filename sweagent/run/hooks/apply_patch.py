@@ -75,9 +75,9 @@ class SaveApplyPatchHook(RunHook):
         Returns:
             The path to the patch file, if it was saved. Otherwise, returns None.
         """
-        patch_output_dir = self._output_dir
+        patch_output_dir = self._output_dir / instance_id
         patch_output_dir.mkdir(exist_ok=True, parents=True)
-        patch_output_file = patch_output_dir / instance_id / f"{instance_id}.patch"
+        patch_output_file = patch_output_dir / f"{instance_id}.patch"
         if info.get("submission") is None:
             self.logger.info("No patch to save.")
             return None

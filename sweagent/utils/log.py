@@ -5,7 +5,7 @@ import os
 import threading
 import uuid
 from collections.abc import Callable
-from pathlib import PurePath
+from pathlib import Path, PurePath
 
 from rich.logging import RichHandler
 from rich.text import Text
@@ -107,6 +107,7 @@ def add_file_handler(
     Returns:
         The id of the handler. This can be used to remove the handler later.
     """
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
     handler = logging.FileHandler(path)
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
     handler.setFormatter(formatter)
