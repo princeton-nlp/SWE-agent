@@ -1,5 +1,6 @@
 import argparse
 import json
+from pathlib import Path
 
 import yaml
 from rich.syntax import Syntax
@@ -13,8 +14,8 @@ class TrajectoryViewer(Static):
     def __init__(self, trajectory: list[dict]):
         super().__init__()
         self.trajectory = trajectory
-        self.current_index = 0
-        self.show_full = False  # Toggle for view mode
+        self.current_index = -1
+        self.show_full = False
 
     def compose(self) -> ComposeResult:
         with VerticalScroll():
@@ -23,39 +24,57 @@ class TrajectoryViewer(Static):
     def on_mount(self) -> None:
         self.update_content()
 
+    def _show_full(self, item: dict) -> None:
+        """Show full yaml of trajectory item"""
+        content_str = yaml.dump(item, indent=2)
+        syntax = Syntax(content_str, "yaml", theme="monokai", word_wrap=True)
+        content = self.query_one("#content")
+        content.update(syntax)  # type: ignore
+        self.app.sub_title = f"Item {self.current_index + 1}/{len(self.trajectory)} - Full View"
+
+    def _show_overview(self, item: dict) -> None:
+        # Simplified view - show action and observation as plain text
+        thought = item.get("thought", "")
+        action = item.get("action", "")
+        observation = item.get("observation", "")
+
+        content_str = f"THOUGHT:\n{thought}\n\nACTION:\n{action}\n\nOBSERVATION:\n{observation}"
+        content = self.query_one("#content")
+        content.update(content_str)  # type: ignore
+
+        self.app.sub_title = f"Item {self.current_index + 1}/{len(self.trajectory)} - Simple View"
+
+    def _show_info(self):
+        info = self.trajectory["info"]
+        syntax = Syntax(yaml.dump(info, indent=2), "yaml", theme="monokai", word_wrap=True)
+        content = self.query_one("#content")
+        content.update(syntax)  # type: ignore
+        next_help = "Press l to see step 1" if self.current_index < 0 else f"Press h to see step {len(self.trajectory)}"
+        self.app.sub_title = f"Info ({next_help})"
+
     def update_content(self) -> None:
-        item = self.trajectory[self.current_index]
+        print(self.current_index)
+        if self.current_index < 0 or self.current_index >= len(self.trajectory):
+            return self._show_info()
+
+        item = self.trajectory["trajectory"][self.current_index]
 
         if self.show_full:
-            # Full view - show all data
-            content_str = yaml.dump(item, indent=2)
-            syntax = Syntax(content_str, "yaml", theme="monokai", word_wrap=True)
-            content = self.query_one("#content")
-            content.update(syntax)
-        else:
-            # Simplified view - show action and observation as plain text
-            thought = item.get("thought", "")
-            action = item.get("action", "")
-            observation = item.get("observation", "")
+            return self._show_full(item)
 
-            content_str = f"THOUGHT:\n{thought}\n\nACTION:\n{action}\n\nOBSERVATION:\n{observation}"
-            content = self.query_one("#content")
-            content.update(content_str)
-
-        view_mode = "Full" if self.show_full else "Simple"
-        self.app.sub_title = f"Item {self.current_index + 1}/{len(self.trajectory)} - {view_mode} View"
+        return self._show_overview(item)
 
     def toggle_view(self) -> None:
         self.show_full = not self.show_full
         self.update_content()
 
     def next_item(self) -> None:
-        if self.current_index < len(self.trajectory) - 1:
+        if self.current_index < len(self.trajectory):
             self.current_index += 1
             self.update_content()
 
     def previous_item(self) -> None:
-        if self.current_index > 0:
+        if self.current_index > -1:
             self.current_index -= 1
             self.update_content()
 
@@ -81,14 +100,14 @@ class TrajectoryInspectorApp(App):
 
     BINDINGS = [
         Binding("q", "quit", "Quit"),
-        Binding("right,l", "next_item", "Next item"),
-        Binding("left,h", "previous_item", "Previous item"),
+        Binding("right,l", "next_item", "Step+"),
+        Binding("left,h", "previous_item", "Step-"),
         Binding("v", "toggle_view", "Toggle view"),
     ]
 
     def __init__(self, trajectory_path: str):
         super().__init__()
-        self.trajectory_path = trajectory_path
+        self.trajectory_path = Path(trajectory_path)
         print("Initializing app with bindings:", self.BINDINGS)  # Debug print
 
     def compose(self) -> ComposeResult:
@@ -98,9 +117,7 @@ class TrajectoryInspectorApp(App):
         yield Footer()
 
     def load_trajectory(self) -> list[dict]:
-        with open(self.trajectory_path) as f:
-            data = json.load(f)
-        return data.get("trajectory", [])
+        return json.loads(self.trajectory_path.read_text())
 
     def action_next_item(self) -> None:
         self.query_one(TrajectoryViewer).next_item()
