@@ -62,11 +62,11 @@ def main(args: list[str] | None = None):
         cli.print_help()
         sys.exit(2)
     # Defer imports to avoid unnecessary long loading times
-    if command == "run":
+    if command in ["run", "r"]:
         from sweagent.run.run_single import run_from_cli as run_single_main
 
         run_single_main(remaining_args)
-    elif command == "run-batch":
+    elif command in ["run-batch", "b"]:
         from sweagent.run.run_batch import run_from_cli as run_batch_main
 
         run_batch_main(remaining_args)
@@ -86,11 +86,11 @@ def main(args: list[str] | None = None):
         from sweagent.run.merge_predictions import run_from_cli as merge_predictions_main
 
         merge_predictions_main(remaining_args)
-    elif command == "inspector":
+    elif command in ["inspector", "I"]:
         from sweagent.inspector.server import run_from_cli as inspector_main
 
         inspector_main(remaining_args)
-    elif command == "inspect":
+    elif command in ["inspect", "i"]:
         from sweagent.run.inspector_cli import main as inspect_main
 
         inspect_main(remaining_args)
