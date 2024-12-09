@@ -248,11 +248,7 @@ class HumanModel(AbstractModel):
 
     def _query(self, history: History, action_prompt: str = "> ") -> dict:
         """Logic for handling user input to pass to SWEEnv"""
-        try:
-            action = input(action_prompt)
-        except KeyboardInterrupt:
-            print("^C (exit with ^D)")
-            return self._query(history, action_prompt)
+        action = input(action_prompt)
         self._save_readline_history()
         command_name = action.split()[0] if action.strip() else ""
 
@@ -261,11 +257,7 @@ class HumanModel(AbstractModel):
             buffer = [action]
             end_keyword = self.multi_line_command_endings[command_name]
             while True:
-                try:
-                    action = input("... ")
-                except KeyboardInterrupt:
-                    print("^C (exit with ^D)")
-                    return self._query(history, action_prompt)
+                action = input("... ")
                 buffer.append(action)
                 if action.rstrip() == end_keyword:
                     # Continue reading input until terminating keyword inputted
@@ -274,10 +266,8 @@ class HumanModel(AbstractModel):
         elif action.strip() == "start_multiline_command":  # do arbitrary multi-line input
             buffer = []
             while True:
-                try:
-                    action = input("... ")
-                except KeyboardInterrupt:
-                    print("^C (exit with ^D)")
+                action = input("... ")
+                if action.rstrip() == "end_multiline_command":
                     return self._query(history, action_prompt)
                 if action.rstrip() == "end_multiline_command":
                     break
@@ -287,11 +277,15 @@ class HumanModel(AbstractModel):
             # Input has escaped things like \n, so we need to unescape it
             action = action.encode("utf8").decode("unicode_escape")
         _handle_raise_commands(action)
-        return action
+        return action  # type: ignore
 
     def query(self, history: History, action_prompt: str = "> ") -> dict:
         """Wrapper to separate action prompt from formatting"""
-        return {"message": self._query(history, action_prompt)}
+        try:
+            return {"message": self._query(history, action_prompt)}
+        except KeyboardInterrupt:
+            print("^C (exit with ^D)")
+            return self.query(history, action_prompt)
 
 
 class HumanThoughtModel(HumanModel):
