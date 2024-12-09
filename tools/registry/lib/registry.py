@@ -29,7 +29,17 @@ class EnvRegistry:
     def __getitem__(self, key: str) -> str:
         return json.loads(self.env_file.read_text())[key]
 
-    def get(self, key: str, default_value: Any = None) -> Any:
+    def get(self, key: str, default_value: Any = None, fallback_to_env: bool = True) -> Any:
+        """Get a value from registry:
+
+        Args:
+            key: The key to get the value for.
+            default_value: The default value to return if the key is not found in the registry.
+            fallback_to_env: If True, fallback to environment variables if the key is not found in the registry.
+                If there's no environment variable, return the default value.
+        """
+        if fallback_to_env and key in os.environ:
+            default_value = os.environ[key]
         return json.loads(self.env_file.read_text()).get(key, default_value)
 
     def get_if_none(self, value: Any, key: str, default_value: Any = None) -> Any:
