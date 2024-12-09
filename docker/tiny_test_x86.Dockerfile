@@ -5,9 +5,11 @@ ENV TZ=Etc/UTC
 
 WORKDIR /
 
-RUN mkdir -p /root/tools/defaults/lib
-COPY tools/defaults/ /root/tools/defaults/
-RUN touch /root/tools/defaults/lib/utils.sh
-
 RUN pip install pipx
+RUN pipx install swe-rex
+RUN pip install flake8
 RUN pipx ensurepath
+
+SHELL ["/bin/bash", "-c"]
+# This is where pipx installs things
+ENV PATH="$PATH:/root/.local/bin/"

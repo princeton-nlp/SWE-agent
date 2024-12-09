@@ -6,7 +6,7 @@ ENV TZ=Etc/UTC
 WORKDIR /
 
 RUN pip install pipx
-RUN pipx install 0fdb5604
+RUN pipx install swe-rex
 RUN pip install flake8
 RUN pipx ensurepath
 
