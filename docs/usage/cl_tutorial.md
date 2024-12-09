@@ -203,8 +203,7 @@ Again, those are [union types](#union-types). See here for all the options:
 ## Configuring the environment
 
 We mainly recommend you to build a docker image with all the dependencies you need and then use that with `--env.deployment.image`.
-In addition, you can also execute additional commands before starting the agent with `env.post_startup_commands` (this
-takes a list of commands, e.g.,
+In addition, you can also execute additional commands before starting the agent with `env.post_startup_commands`, which takes a list of commands, e.g.,
 
 ```bash
 sweagent run \
@@ -214,6 +213,41 @@ sweagent run \
 ```
 
 1. Note the list syntax that is passed as a string using single ticks `'`. This is particularly important for `zsh` where `[`, `]` have special meaning.
+
+Here's an example of a custom docker environment (it's also available in the repo as `docker/tiny_test.Dockerfile`):
+
+<!-- There's a dockerfile annotation, but it somehow breaks annotations -->
+```bash title="tiny_test.Dockerfile"
+FROM python:3.11.10-bullseye  # (1)!
+
+ARG DEBIAN_FRONTEND=noninteractive  # (2)!
+ENV TZ=Etc/UTC  # (3)!
+
+WORKDIR /
+
+# SWE-ReX will always attempt to install its server into your docker container
+# however, this takes a couple of seconds. If we already provide it in the image,
+# this is much faster.
+RUN pip install pipx
+RUN pipx install swe-rex  # (4)!
+RUN pipx ensurepath  # (5)!
+
+RUN pip install flake8  # (6)!
+
+SHELL ["/bin/bash", "-c"]
+# This is where pipx installs things
+ENV PATH="$PATH:/root/.local/bin/"  # (7)!
+```
+
+1. This is the base image.
+2. This is to avoid any interactive prompts from the package manager.
+3. Again, this avoids interactive prompts
+4. SWE-ReX is our execution backend. We start a small server within the container, which receives
+   commands from the agent and executes them.
+5. This ensures that the path where pipx installs things is in the `$PATH` variable.
+6. This is to install flake8, which is used by some of our edit tools.
+7. Unfortunately, step 5 sometimes still doesn't properly add the SWE-ReX server to the `$PATH` variable.
+   So we do it here again.
 
 
 ## Taking actions
