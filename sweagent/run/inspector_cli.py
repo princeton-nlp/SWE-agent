@@ -5,8 +5,7 @@ import yaml
 from rich.syntax import Syntax
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container
-from textual.scroll_view import ScrollView
+from textual.containers import Container, VerticalScroll
 from textual.widgets import Footer, Header, Static
 
 
@@ -18,7 +17,7 @@ class TrajectoryViewer(Static):
         self.show_full = False  # Toggle for view mode
 
     def compose(self) -> ComposeResult:
-        with ScrollView():
+        with VerticalScroll():
             yield Static(id="content")
 
     def on_mount(self) -> None:
@@ -60,14 +59,6 @@ class TrajectoryViewer(Static):
             self.current_index -= 1
             self.update_content()
 
-    def scroll_down(self) -> None:
-        scroll_view = self.query_one(ScrollView)
-        scroll_view.scroll_down(animate=False)
-
-    def scroll_up(self) -> None:
-        scroll_view = self.query_one(ScrollView)
-        scroll_view.scroll_up(animate=False)
-
 
 class TrajectoryInspectorApp(App):
     CSS = """
@@ -93,8 +84,6 @@ class TrajectoryInspectorApp(App):
         Binding("right,l", "next_item", "Next item"),
         Binding("left,h", "previous_item", "Previous item"),
         Binding("v", "toggle_view", "Toggle view"),
-        Binding("j,down", "scroll_d", "Scroll down"),
-        Binding("k,up", "scroll_u", "Scroll up"),
     ]
 
     def __init__(self, trajectory_path: str):
@@ -121,14 +110,6 @@ class TrajectoryInspectorApp(App):
 
     def action_toggle_view(self) -> None:
         self.query_one(TrajectoryViewer).toggle_view()
-
-    def action_scroll_d(self) -> None:
-        viewer = self.query_one(TrajectoryViewer)
-        viewer.scroll_down()
-
-    def action_scroll_u(self) -> None:
-        viewer = self.query_one(TrajectoryViewer)
-        viewer.scroll_up()
 
 
 def main(args: list[str] | None = None):
