@@ -338,7 +338,7 @@ class RunBatch:
             return False
 
         # Check if there's an existing trajectory for this instance
-        log_path = self.output_dir / (instance.problem_statement.id + ".traj")
+        log_path = self.output_dir / instance.problem_statement.id / (instance.problem_statement.id + ".traj")
         if not log_path.exists():
             return False
 
@@ -364,7 +364,7 @@ class RunBatch:
         for level in ["trace", "debug", "info"]:
             filter = instance_id if multi_worker else ""
             add_file_handler(
-                self.output_dir / filename_template.format(level=level),
+                self.output_dir / instance_id / filename_template.format(level=level),
                 filter=filter,
                 level=level,
                 id_=f"{instance_id}-{level}",

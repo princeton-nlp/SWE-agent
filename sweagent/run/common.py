@@ -360,7 +360,7 @@ class BasicCLI:
 
 def save_predictions(traj_dir: Path, instance_id: str, result: AgentRunResult):
     """Save predictions in a file readable by SWE-bench"""
-    output_file = traj_dir / (instance_id + ".pred")
+    output_file = traj_dir / instance_id / (instance_id + ".pred")
     datum = {
         "model_name_or_path": traj_dir.name,
         "instance_id": instance_id,
