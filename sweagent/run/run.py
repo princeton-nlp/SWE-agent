@@ -10,16 +10,16 @@ Display usage instructions for a specific command:
 
 [cyan][bold]=== SUBCOMMANDS TO RUN SWE-AGENT ===[/bold][/cyan]
 
-[bold][green]run[/green][/bold]: Run swe-agent on a single problem statement, for example a github issue.
-[bold][green]run-batch[/green][/bold]: Run swe-agent on a batch of problem statements, e.g., on SWE-Bench.
+[bold][green]run[/green][/bold] or [bold][green]r[/green][/bold]: Run swe-agent on a single problem statement, for example a github issue.
+[bold][green]run-batch[/green][/bold] or [bold][green]b[/green][/bold]: Run swe-agent on a batch of problem statements, e.g., on SWE-Bench.
 
 [cyan][bold]=== MISC SUBCOMMANDS ===[/bold][/cyan]
 
 [bold][green]merge-preds[/green][/bold]: Merge multiple prediction files into a single file. In most cases
     [green]run-batch[/green] will already do this, but you can use this to merge predictions
     from multiple directories.
-[bold][green]inspect[/green][/bold]: Open a single trajectory file in a terminal-based viewer.
-[bold][green]inspector[/green][/bold]: Open trajectories in a web-based viewer.
+[bold][green]inspect[/green][/bold] or [bold][green]i[/green][/bold]: Open a single trajectory file in a terminal-based viewer.
+[bold][green]inspector[/green][/bold] or [bold][green]I[/green][/bold]: Open trajectories in a web-based viewer.
 [bold][green]run-replay[/green][/bold]: Replay a trajectory file or a demo file.
     This can be useful to fill in environment output when creating demonstrations.
 [bold][green]traj-to-demo[/green][/bold]: Convert a trajectory file to an easy to edit demo file.
@@ -36,7 +36,20 @@ def get_cli():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument(
         "command",
-        choices=["run", "run-batch", "run-replay", "traj-to-demo", "run-api", "merge-preds", "inspect", "inspector"],
+        choices=[
+            "run",
+            "run-batch",
+            "run-replay",
+            "traj-to-demo",
+            "run-api",
+            "merge-preds",
+            "inspect",
+            "inspector",
+            "r",
+            "b",
+            "i",
+            "I",
+        ],
         nargs="?",
     )
     parser.add_argument("-h", "--help", action="store_true", help="Show this help message and exit")
