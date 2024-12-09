@@ -100,12 +100,13 @@ class RunSingleConfig(BaseSettings, cli_implicit_flags=False):
             ACS("config_file", "config"),
             ACS(
                 "data_path",
-                help="--data_path is no longer support for SWE-A 1.0. Please check the tutorial and use one of the --problem_statement options, e.g., --problem_statement.github_url.",
+                help="--data_path is no longer support for SWE-A 1.0. Please check the tutorial and use one of the --problem_statement options, e.g., --problem_statement.github_url or --problem_statement.path",
             ),
             ACS(
                 "repo_path",
-                help="--repo_path is no longer support for SWE-A 1.0. Please check the tutorial and use one of the --env.repo options, e.g., --env.repo.github_url.",
+                help="--repo_path is no longer support for SWE-A 1.0. Please check the tutorial and use one of the --env.repo options, e.g., --env.repo.github_url or --env.repo.path",
             ),
+            ACS("repo.path", "env.repo.path"),
         ]
 
 
