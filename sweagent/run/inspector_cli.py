@@ -17,6 +17,8 @@ class TrajectoryViewer(Static):
         Binding("0", "first_item", "Step=0"),
         Binding("$", "last_item", "Step=-1"),
         Binding("v", "toggle_view", "Toggle view"),
+        Binding("j,down", "scroll_down", "Scroll down"),
+        Binding("k,up", "scroll_up", "Scroll up"),
     ]
 
     def __init__(self, path):
@@ -98,6 +100,12 @@ class TrajectoryViewer(Static):
     def action_last_item(self) -> None:
         self.current_index = len(self.trajectory) - 1
         self.update_content()
+
+    def action_scroll_down(self) -> None:
+        self.query_one(VerticalScroll).scroll_down()
+
+    def action_scroll_up(self) -> None:
+        self.query_one(VerticalScroll).scroll_up()
 
 
 class TrajectoryInspectorApp(App):
