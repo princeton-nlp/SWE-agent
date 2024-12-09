@@ -97,7 +97,7 @@ class TemplateConfig(BaseModel):
     @model_validator(mode="after")
     def warn_models_in_history(self) -> Self:
         if self.put_demos_in_history and self.demonstration_template is not None:
-            logger = get_logger("swea-config", emoji="⚙️")
+            logger = get_logger("swea-config", emoji="🔧")
             logger.warning("demonstration_template is ignored when put_demos_in_history is True")
         return self
 

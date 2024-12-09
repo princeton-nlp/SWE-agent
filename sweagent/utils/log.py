@@ -50,7 +50,7 @@ class _RichHandlerWithEmoji(RichHandler):
         self.emoji = emoji
 
     def get_level_text(self, record: logging.LogRecord) -> Text:
-        level_name = record.levelname
+        level_name = record.levelname.replace("WARNING", "WARN")
         return Text.styled((self.emoji + level_name).ljust(10), f"logging.level.{level_name.lower()}")
 
 

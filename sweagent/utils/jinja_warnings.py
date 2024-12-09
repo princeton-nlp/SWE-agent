@@ -10,5 +10,5 @@ def _warn_probably_wrong_jinja_syntax(template: str | None) -> None:
     for s in ["{%", "{ %", "{{"]:
         if s in template:
             return
-    logger = get_logger("swea-config", emoji="⚙️")
+    logger = get_logger("swea-config", emoji="🔧")
     logger.warning("Probably wrong Jinja syntax in template: %s. Make sure to use {{var}} instead of {var}.", template)
