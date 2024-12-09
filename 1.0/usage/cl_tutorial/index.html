@@ -2392,8 +2392,7 @@ However, if none of them work, we throw an error which then tells you why we can
 </ul>
 <h2 id="configuring-the-environment">Configuring the environment</h2>
 <p>We mainly recommend you to build a docker image with all the dependencies you need and then use that with <code>--env.deployment.image</code>.
-In addition, you can also execute additional commands before starting the agent with <code>env.post_startup_commands</code> (this
-takes a list of commands, e.g.,</p>
+In addition, you can also execute additional commands before starting the agent with <code>env.post_startup_commands</code>, which takes a list of commands, e.g.,</p>
 <div class="highlight"><pre><span></span><code>sweagent<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--agent.model.name<span class="o">=</span>claude-3-5-sonnet-20241022<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--env.post_startup_commands<span class="o">=</span><span class="s1">&#39;[&quot;pip install flake8&quot;]&#39;</span><span class="w"> </span><span class="se">\ </span><span class="w"> </span><span class="c1"># (1)!</span>
@@ -2401,6 +2400,39 @@ takes a list of commands, e.g.,</p>
 </code></pre></div>
 <ol>
 <li>Note the list syntax that is passed as a string using single ticks <code>'</code>. This is particularly important for <code>zsh</code> where <code>[</code>, <code>]</code> have special meaning.</li>
+</ol>
+<p>Here's an example of a custom docker environment (it's also available in the repo as <code>docker/tiny_test.Dockerfile</code>):</p>
+<!-- There's a dockerfile annotation, but it somehow breaks annotations -->
+<div class="highlight"><span class="filename">tiny_test.Dockerfile</span><pre><span></span><code>FROM<span class="w"> </span>python:3.11.10-bullseye<span class="w">  </span><span class="c1"># (1)!</span>
+
+ARG<span class="w"> </span><span class="nv">DEBIAN_FRONTEND</span><span class="o">=</span>noninteractive<span class="w">  </span><span class="c1"># (2)!</span>
+ENV<span class="w"> </span><span class="nv">TZ</span><span class="o">=</span>Etc/UTC<span class="w">  </span><span class="c1"># (3)!</span>
+
+WORKDIR<span class="w"> </span>/
+
+<span class="c1"># SWE-ReX will always attempt to install its server into your docker container</span>
+<span class="c1"># however, this takes a couple of seconds. If we already provide it in the image,</span>
+<span class="c1"># this is much faster.</span>
+RUN<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pipx
+RUN<span class="w"> </span>pipx<span class="w"> </span>install<span class="w"> </span>swe-rex<span class="w">  </span><span class="c1"># (4)!</span>
+RUN<span class="w"> </span>pipx<span class="w"> </span>ensurepath<span class="w">  </span><span class="c1"># (5)!</span>
+
+RUN<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>flake8<span class="w">  </span><span class="c1"># (6)!</span>
+
+SHELL<span class="w"> </span><span class="o">[</span><span class="s2">&quot;/bin/bash&quot;</span>,<span class="w"> </span><span class="s2">&quot;-c&quot;</span><span class="o">]</span>
+<span class="c1"># This is where pipx installs things</span>
+ENV<span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$PATH</span><span class="s2">:/root/.local/bin/&quot;</span><span class="w">  </span><span class="c1"># (7)!</span>
+</code></pre></div>
+<ol>
+<li>This is the base image.</li>
+<li>This is to avoid any interactive prompts from the package manager.</li>
+<li>Again, this avoids interactive prompts</li>
+<li>SWE-ReX is our execution backend. We start a small server within the container, which receives
+   commands from the agent and executes them.</li>
+<li>This ensures that the path where pipx installs things is in the <code>$PATH</code> variable.</li>
+<li>This is to install flake8, which is used by some of our edit tools.</li>
+<li>Unfortunately, step 5 sometimes still doesn't properly add the SWE-ReX server to the <code>$PATH</code> variable.
+   So we do it here again.</li>
 </ol>
 <h2 id="taking-actions">Taking actions</h2>
 <ul>
