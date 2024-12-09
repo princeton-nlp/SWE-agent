@@ -1,5 +1,3 @@
-source /root/tools/defaults/lib/utils.sh
-
 main() {
     # Check if the first argument is provided
     local search_term="${1:-}"
