@@ -11,6 +11,14 @@ from textual.widgets import Footer, Header, Static
 
 
 class TrajectoryViewer(Static):
+    BINDINGS = [
+        Binding("right,l", "next_item", "Step++"),
+        Binding("left,h", "previous_item", "Step--"),
+        Binding("0", "first_item", "Step=0"),
+        Binding("$", "last_item", "Step=-1"),
+        Binding("v", "toggle_view", "Toggle view"),
+    ]
+
     def __init__(self, trajectory: list[dict]):
         super().__init__()
         self.trajectory = trajectory
@@ -64,22 +72,32 @@ class TrajectoryViewer(Static):
 
         return self._show_overview(item)
 
-    def toggle_view(self) -> None:
-        self.show_full = not self.show_full
-        self.update_content()
-
-    def next_item(self) -> None:
+    def action_next_item(self) -> None:
         if self.current_index < len(self.trajectory):
             self.current_index += 1
             self.update_content()
 
-    def previous_item(self) -> None:
+    def action_previous_item(self) -> None:
         if self.current_index > -1:
             self.current_index -= 1
             self.update_content()
 
+    def action_toggle_view(self) -> None:
+        self.show_full = not self.show_full
+        self.update_content()
+
+    def action_first_item(self) -> None:
+        self.current_index = 0
+        self.update_content()
+
+    def action_last_item(self) -> None:
+        self.current_index = len(self.trajectory) - 1
+        self.update_content()
+
 
 class TrajectoryInspectorApp(App):
+    BINDINGS = [Binding("q", "quit", "Quit")]
+
     CSS = """
     Screen {
         layout: grid;
@@ -98,17 +116,9 @@ class TrajectoryInspectorApp(App):
     }
     """
 
-    BINDINGS = [
-        Binding("q", "quit", "Quit"),
-        Binding("right,l", "next_item", "Step+"),
-        Binding("left,h", "previous_item", "Step-"),
-        Binding("v", "toggle_view", "Toggle view"),
-    ]
-
     def __init__(self, trajectory_path: str):
         super().__init__()
         self.trajectory_path = Path(trajectory_path)
-        print("Initializing app with bindings:", self.BINDINGS)  # Debug print
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -118,15 +128,6 @@ class TrajectoryInspectorApp(App):
 
     def load_trajectory(self) -> list[dict]:
         return json.loads(self.trajectory_path.read_text())
-
-    def action_next_item(self) -> None:
-        self.query_one(TrajectoryViewer).next_item()
-
-    def action_previous_item(self) -> None:
-        self.query_one(TrajectoryViewer).previous_item()
-
-    def action_toggle_view(self) -> None:
-        self.query_one(TrajectoryViewer).toggle_view()
 
 
 def main(args: list[str] | None = None):
