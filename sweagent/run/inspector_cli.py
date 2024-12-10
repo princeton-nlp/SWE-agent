@@ -6,8 +6,9 @@ from pathlib import Path
 from rich.syntax import Syntax
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, VerticalScroll
-from textual.widgets import Footer, Header, Static
+from textual.containers import Container, Vertical, VerticalScroll
+from textual.screen import ModalScreen
+from textual.widgets import Footer, Header, Label, ListItem, ListView, Static
 
 from sweagent.utils.serialization import _yaml_serialization_with_linebreaks
 
@@ -131,11 +132,60 @@ class TrajectoryViewer(Static):
         vs.scroll_to(y=vs.scroll_target_y - 15)
 
 
+class TrajectorySelectorScreen(ModalScreen[int]):
+    def __init__(self, paths: list[Path], current_index: int):
+        super().__init__()
+        self.paths = paths
+        self.current_index = current_index
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="dialog"):
+            yield Label("Select Trajectory", id="title")
+            yield ListView(
+                *[ListItem(Static(str(p))) for p in self.paths],
+                id="trajectory-list",
+                initial_index=self.current_index,
+            )
+
+    def on_list_view_selected(self, event: ListView.Selected) -> None:
+        print(f"Selected index: {event.list_view.index}")
+        self.dismiss(event.list_view.index)
+
+    CSS = """
+    #dialog {
+        background: $surface;
+        padding: 1;
+        border: thick $primary;
+        width: 80%;
+        height: 30;
+    }
+
+    #title {
+        text-align: center;
+        padding: 1;
+    }
+
+    ListView {
+        height: 100%;
+        border: solid $primary;
+    }
+
+    ListItem {
+        padding: 0 1;
+    }
+
+    ListItem:hover {
+        background: $accent;
+    }
+    """
+
+
 class TrajectoryInspectorApp(App):
     BINDINGS = [
         Binding("q", "quit", "Quit"),
         Binding("L", "next_traj", "Traj++"),
         Binding("H", "previous_traj", "Traj--"),
+        Binding("t", "show_traj_selector", "Select Traj"),
     ]
 
     CSS = """
@@ -169,7 +219,7 @@ class TrajectoryInspectorApp(App):
         self.trajectory_index = 0
 
     def _get_viewer_title(self, index: int) -> str:
-        instance_id = self.available_traj_paths[index].parent.name
+        instance_id = self.available_traj_paths[index].stem
         if len(instance_id) > 20:
             instance_id = "..." + instance_id[-17:]
         return f"Traj {index + 1}/{len(self.available_traj_paths)} - {instance_id}"
@@ -202,6 +252,15 @@ class TrajectoryInspectorApp(App):
     def action_previous_traj(self):
         self.trajectory_index = (self.trajectory_index - 1) % len(self.available_traj_paths)
         self._load_traj()
+
+    async def action_show_traj_selector(self) -> None:
+        selector = TrajectorySelectorScreen(self.available_traj_paths, self.trajectory_index)
+
+        def handler(index: int | None):
+            self.trajectory_index = index
+            self._load_traj()
+
+        await self.push_screen(selector, handler)  # This returns when the modal is dismissed
 
 
 def main(args: list[str] | None = None):
