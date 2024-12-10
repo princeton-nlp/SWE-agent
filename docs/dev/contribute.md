@@ -79,6 +79,23 @@ If you are using VSCode, you might want to add the following two files:
 ```
 </details>
 
+## Debugging
+
+We recommend to install `pdbpp` for some improved debugger features:
+
+```bash
+pip install pdbpp
+```
+
+Set breakpoints with `breakpoint()` and then run `sweagent` with `pdb`:
+
+```bash
+pdb -m sweagent <command> -- <more command line arguments> # (1)!
+```
+
+1. Note the `--` before the options passed to sweagent. This is to separate
+  options passed to `pdb` from those that are passed to `sweagent`.
+
 ## Tips for pull requests
 
 * If you see a lot of formatting-related merge conflicts, please see [here](formatting_conflicts.md).
