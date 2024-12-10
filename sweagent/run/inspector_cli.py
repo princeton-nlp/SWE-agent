@@ -52,6 +52,10 @@ class TrajectoryViewer(Static):
     def on_mount(self) -> None:
         self.update_content()
 
+    @property
+    def n_steps(self) -> int:
+        return len(self.trajectory["trajectory"])
+
     def _show_full(self, item: dict) -> None:
         """Show full yaml of trajectory item"""
         content_str = _yaml_serialization_with_linebreaks(
@@ -60,7 +64,7 @@ class TrajectoryViewer(Static):
         syntax = Syntax(content_str, "yaml", theme="monokai", word_wrap=True)
         content = self.query_one("#content")
         content.update(syntax)  # type: ignore
-        self.app.sub_title = f"Item {self.current_index + 1}/{len(self.trajectory)} - Full View"
+        self.app.sub_title = f"Item {self.current_index + 1}/{self.n_steps} - Full View"
 
     def _show_overview(self, item: dict) -> None:
         # Simplified view - show action and observation as plain text
@@ -72,19 +76,19 @@ class TrajectoryViewer(Static):
         content = self.query_one("#content")
         content.update(content_str)  # type: ignore
 
-        self.app.sub_title = f"Item {self.current_index + 1}/{len(self.trajectory)} - Simple View"
+        self.app.sub_title = f"Item {self.current_index + 1}/{self.n_steps} - Simple View"
 
     def _show_info(self):
         info = _move_items_top(self.trajectory["info"], ["exit_status", "model_stats", "submission"])
         syntax = Syntax(_yaml_serialization_with_linebreaks(info), "yaml", theme="monokai", word_wrap=True)
         content = self.query_one("#content")
         content.update(syntax)  # type: ignore
-        next_help = "Press l to see step 1" if self.current_index < 0 else f"Press h to see step {len(self.trajectory)}"
+        next_help = "Press l to see step 1" if self.current_index < 0 else f"Press h to see step {self.n_steps}"
         self.app.sub_title = f"Info ({next_help})"
 
     def update_content(self) -> None:
         print(self.current_index)
-        if self.current_index < 0 or self.current_index >= len(self.trajectory):
+        if self.current_index < 0 or self.current_index >= self.n_steps:
             return self._show_info()
 
         item = self.trajectory["trajectory"][self.current_index]
@@ -95,7 +99,7 @@ class TrajectoryViewer(Static):
         return self._show_overview(item)
 
     def action_next_item(self) -> None:
-        if self.current_index < len(self.trajectory):
+        if self.current_index < self.n_steps:
             self.current_index += 1
             self.update_content()
 
@@ -113,7 +117,7 @@ class TrajectoryViewer(Static):
         self.update_content()
 
     def action_last_item(self) -> None:
-        self.current_index = len(self.trajectory) - 1
+        self.current_index = self.n_steps - 1
         self.update_content()
 
     def action_scroll_down(self) -> None:
