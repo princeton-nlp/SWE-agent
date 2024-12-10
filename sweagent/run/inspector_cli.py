@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 from pathlib import Path
 
 from rich.syntax import Syntax
@@ -189,7 +190,12 @@ class TrajectoryInspectorApp(App):
 
 def main(args: list[str] | None = None):
     parser = argparse.ArgumentParser(description="Inspect trajectory JSON files")
-    parser.add_argument("trajectory_path", help="Path to the trajectory JSON file or directory containing trajectories")
+    parser.add_argument(
+        "trajectory_path",
+        help="Path to the trajectory JSON file or directory containing trajectories",
+        default=os.getcwd(),
+        nargs="?",
+    )
     parsed_args = parser.parse_args(args)
 
     app = TrajectoryInspectorApp(parsed_args.trajectory_path)
