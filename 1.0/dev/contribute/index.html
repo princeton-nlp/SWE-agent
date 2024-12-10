@@ -1289,6 +1289,15 @@ This is the pre-release of SWE-agent 1.0. <a href="https://swe-agent.com/latest/
 </li>
       
         <li class="md-nav__item">
+  <a href="#debugging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Debugging
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#tips-for-pull-requests" class="md-nav__link">
     <span class="md-ellipsis">
       Tips for pull requests
@@ -2011,6 +2020,15 @@ This is the pre-release of SWE-agent 1.0. <a href="https://swe-agent.com/latest/
 </li>
       
         <li class="md-nav__item">
+  <a href="#debugging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Debugging
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#tips-for-pull-requests" class="md-nav__link">
     <span class="md-ellipsis">
       Tips for pull requests
@@ -2146,6 +2164,17 @@ Run them with</p>
 </code></pre></div>
 </details>
 
+<h2 id="debugging">Debugging</h2>
+<p>We recommend to install <code>pdbpp</code> for some improved debugger features:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pdbpp
+</code></pre></div>
+<p>Set breakpoints with <code>breakpoint()</code> and then run <code>sweagent</code> with <code>pdb</code>:</p>
+<div class="highlight"><pre><span></span><code>pdb<span class="w"> </span>-m<span class="w"> </span>sweagent<span class="w"> </span>&lt;command&gt;<span class="w"> </span>--<span class="w"> </span>&lt;more<span class="w"> </span><span class="nb">command</span><span class="w"> </span>line<span class="w"> </span>arguments&gt;<span class="w"> </span><span class="c1"># (1)!</span>
+</code></pre></div>
+<ol>
+<li>Note the <code>--</code> before the options passed to sweagent. This is to separate
+  options passed to <code>pdb</code> from those that are passed to <code>sweagent</code>.</li>
+</ol>
 <h2 id="tips-for-pull-requests">Tips for pull requests</h2>
 <ul>
 <li>If you see a lot of formatting-related merge conflicts, please see <a href="../formatting_conflicts/">here</a>.</li>
