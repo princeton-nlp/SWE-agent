@@ -11,6 +11,17 @@ from textual.widgets import Footer, Header, Static
 from sweagent.utils.serialization import _yaml_serialization_with_linebreaks
 
 
+def _move_items_top(d: dict, keys: list[str]) -> dict:
+    new_d = {}
+    for key in keys:
+        if key in d:
+            new_d[key] = d[key]
+    for key in d.keys():
+        if key not in keys:
+            new_d[key] = d[key]
+    return new_d
+
+
 class TrajectoryViewer(Static):
     BINDINGS = [
         Binding("right,l", "next_item", "Step++"),
@@ -42,7 +53,9 @@ class TrajectoryViewer(Static):
 
     def _show_full(self, item: dict) -> None:
         """Show full yaml of trajectory item"""
-        content_str = _yaml_serialization_with_linebreaks(item)
+        content_str = _yaml_serialization_with_linebreaks(
+            _move_items_top(item, ["thought", "action", "observation", "response", "execution_time"])
+        )
         syntax = Syntax(content_str, "yaml", theme="monokai", word_wrap=True)
         content = self.query_one("#content")
         content.update(syntax)  # type: ignore
@@ -61,7 +74,7 @@ class TrajectoryViewer(Static):
         self.app.sub_title = f"Item {self.current_index + 1}/{len(self.trajectory)} - Simple View"
 
     def _show_info(self):
-        info = self.trajectory["info"]
+        info = _move_items_top(self.trajectory["info"], ["exit_status", "model_stats", "submission"])
         syntax = Syntax(_yaml_serialization_with_linebreaks(info), "yaml", theme="monokai", word_wrap=True)
         content = self.query_one("#content")
         content.update(syntax)  # type: ignore
@@ -103,10 +116,12 @@ class TrajectoryViewer(Static):
         self.update_content()
 
     def action_scroll_down(self) -> None:
-        self.query_one(VerticalScroll).scroll_down()
+        vs = self.query_one(VerticalScroll)
+        vs.scroll_to(y=vs.scroll_target_y + 15)
 
     def action_scroll_up(self) -> None:
-        self.query_one(VerticalScroll).scroll_up()
+        vs = self.query_one(VerticalScroll)
+        vs.scroll_to(y=vs.scroll_target_y - 15)
 
 
 class TrajectoryInspectorApp(App):
