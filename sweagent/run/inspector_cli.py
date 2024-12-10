@@ -1,6 +1,9 @@
 import argparse
+import collections
+import copy
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from rich.syntax import Syntax
@@ -35,14 +38,15 @@ class TrajectoryViewer(Static):
         Binding("k,up", "scroll_up", "Scroll up"),
     ]
 
-    def __init__(self, path: Path, title: str):
+    def __init__(self, path: Path, title: str, overview_stats: dict):
         super().__init__()
         self.current_index = -1
         self.trajectory = json.loads(path.read_text())
         self.show_full = False
         self.title = title
+        self.overview_stats = overview_stats
 
-    def load_trajectory(self, path: Path, title: str):
+    def load_trajectory(self, path: Path, title: str, overview_stats: dict):
         print("Loading", path)
         self.trajectory = json.loads(path.read_text())
         self.title = title
@@ -82,7 +86,9 @@ class TrajectoryViewer(Static):
         self.app.sub_title = f"{self.title} - Step {self.current_index + 1}/{self.n_steps} - Simple View"
 
     def _show_info(self):
-        info = _move_items_top(self.trajectory["info"], ["exit_status", "model_stats", "submission"])
+        info = copy.deepcopy(self.trajectory["info"])
+        info["result"] = self.overview_stats["result"]
+        info = _move_items_top(info, ["result", "exit_status", "model_stats", "submission"])
         syntax = Syntax(_yaml_serialization_with_linebreaks(info), "yaml", theme="monokai", word_wrap=True)
         content = self.query_one("#content")
         content.update(syntax)  # type: ignore
@@ -133,18 +139,26 @@ class TrajectoryViewer(Static):
 
 
 class TrajectorySelectorScreen(ModalScreen[int]):
-    def __init__(self, paths: list[Path], current_index: int):
+    def __init__(self, paths: list[Path], current_index: int, overview_stats: dict):
         super().__init__()
         self.paths = paths
         self.current_index = current_index
+        self.overview_stats = overview_stats
 
     def _get_list_item_texts(self, paths: list[Path]) -> list[str]:
         """Remove the common prefix from a list of paths."""
-        # Convert to strings for easier comparison
-        str_paths = [str(p) for p in paths]
-        # Find the common prefix
-        prefix = os.path.commonpath(str_paths)
-        return [p[len(prefix) :].lstrip("/\\") for p in str_paths]
+        prefix = os.path.commonpath([str(p) for p in paths])
+        labels = []
+        for p in paths:
+            ostat = self.overview_stats[p.stem]
+            ostat_str = f"{ostat['exit_status']} {ostat['result']} ${ostat['cost']:.2f} {ostat['n_steps']} steps"
+            shortened_path = str(p)[len(prefix) :].lstrip("/\\")
+            if Path(shortened_path).stem == Path(shortened_path).parent.name:
+                # We have the instance ID twice (in the folder and the traj)
+                shortened_path = Path(shortened_path).stem
+            labels.append(f"{shortened_path} - {ostat_str}")
+
+        return labels
 
     def compose(self) -> ComposeResult:
         with Vertical(id="dialog"):
@@ -225,6 +239,37 @@ class TrajectoryInspectorApp(App):
             msg = "No trajectory *.traj files available"
             raise ValueError(msg)
         self.trajectory_index = 0
+        self.overview_stats = collections.defaultdict(dict)
+        self._build_overview_stats()
+
+    def _build_overview_stats(self):
+        results_path = self.input_path / "results.json"
+        results = None
+        if results_path.exists():
+            results = json.loads(results_path.read_text())
+        for traj in self.available_traj_paths:
+            instance_id = traj.stem
+            if results is None:
+                result = "❓"
+            elif instance_id in results["resolved_ids"]:
+                result = "✅"
+            else:
+                result = "❌"
+            self.overview_stats[instance_id]["result"] = result
+
+        def _get_info(traj: Path) -> tuple[str, dict]:
+            traj_info = json.loads(traj.read_text()).get("info", {})
+            return traj.stem, traj_info
+
+        with ThreadPoolExecutor() as executor:
+            # Map returns results in the same order as inputs
+            all_infos = executor.map(_get_info, self.available_traj_paths)
+
+        for instance_id, info in all_infos:
+            self.overview_stats[instance_id]["info"] = info
+            self.overview_stats[instance_id]["exit_status"] = info.get("exit_status", "?")
+            self.overview_stats[instance_id]["n_steps"] = info.get("model_stats", {}).get("api_calls", 0)
+            self.overview_stats[instance_id]["cost"] = info.get("model_stats", {}).get("instance_cost", 0)
 
     def _get_viewer_title(self, index: int) -> str:
         instance_id = self.available_traj_paths[index].stem
@@ -233,9 +278,12 @@ class TrajectoryInspectorApp(App):
         return f"Traj {index + 1}/{len(self.available_traj_paths)} - {instance_id}"
 
     def _load_traj(self):
+        instance_id = self.available_traj_paths[self.trajectory_index].stem
         traj_viewer = self.query_one(TrajectoryViewer)
         traj_viewer.load_trajectory(
-            self.available_traj_paths[self.trajectory_index], self._get_viewer_title(self.trajectory_index)
+            self.available_traj_paths[self.trajectory_index],
+            self._get_viewer_title(self.trajectory_index),
+            self.overview_stats[instance_id],
         )
 
     def _get_available_trajs(self) -> list[Path]:
@@ -249,7 +297,9 @@ class TrajectoryInspectorApp(App):
         yield Header()
         with Container():
             yield TrajectoryViewer(
-                self.available_traj_paths[self.trajectory_index], self._get_viewer_title(self.trajectory_index)
+                self.available_traj_paths[self.trajectory_index],
+                self._get_viewer_title(self.trajectory_index),
+                self.overview_stats[self.available_traj_paths[self.trajectory_index].stem],
             )
         yield Footer()
 
@@ -262,7 +312,7 @@ class TrajectoryInspectorApp(App):
         self._load_traj()
 
     async def action_show_traj_selector(self) -> None:
-        selector = TrajectorySelectorScreen(self.available_traj_paths, self.trajectory_index)
+        selector = TrajectorySelectorScreen(self.available_traj_paths, self.trajectory_index, self.overview_stats)
 
         def handler(index: int | None):
             self.trajectory_index = index
