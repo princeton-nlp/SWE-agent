@@ -13,7 +13,23 @@ Installation from source is the preferred way to set up SWE-agent on your machin
     at the repository root (as with any python setup, it's recommended to use [conda][] or [virtual environments][] to manage dependencies).
 3. Set up your language model of choice as explained [here](keys.md).
 
-**Optional:**
+Let's run a quick check:
+
+```bash
+sweagent --help
+```
+
+should show an overview over the available top-level commands.
+
+<details>
+<summary>Command not found?</summary>
+
+You might also try `python -m sweagent`. If this also doesn't work,
+please check with `which python` that you're using the same `python` as
+when you installed SWE-agent.
+</details>
+
+**Optional installation steps:**
 
 1. The default backend for SWE-agent is docker, so we recommend to install Docker
    ([follow the docs](https://github.com/docker/docker-install) or use the [get-docker.sh script for linux](https://github.com/docker/docker-install)),
