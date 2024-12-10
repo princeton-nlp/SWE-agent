@@ -29,7 +29,7 @@ tools:
         required: true
   scroll_up:
     signature: "scroll_up"
-    docstring: "moves the window down {WINDOW} lines"
+    docstring: "moves the window up {WINDOW} lines"
     arguments: []
   scroll_down:
     signature: "scroll_down"
