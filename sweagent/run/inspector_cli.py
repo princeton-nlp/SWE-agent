@@ -34,15 +34,17 @@ class TrajectoryViewer(Static):
         Binding("k,up", "scroll_up", "Scroll up"),
     ]
 
-    def __init__(self, path):
+    def __init__(self, path: Path, title: str):
         super().__init__()
         self.current_index = -1
         self.trajectory = json.loads(path.read_text())
         self.show_full = False
+        self.title = title
 
-    def load_trajectory(self, path):
+    def load_trajectory(self, path: Path, title: str):
         print("Loading", path)
         self.trajectory = json.loads(path.read_text())
+        self.title = title
         self.update_content()
 
     def compose(self) -> ComposeResult:
@@ -64,7 +66,7 @@ class TrajectoryViewer(Static):
         syntax = Syntax(content_str, "yaml", theme="monokai", word_wrap=True)
         content = self.query_one("#content")
         content.update(syntax)  # type: ignore
-        self.app.sub_title = f"Item {self.current_index + 1}/{self.n_steps} - Full View"
+        self.app.sub_title = f"{self.title} - Step {self.current_index + 1}/{self.n_steps} - Full View"
 
     def _show_overview(self, item: dict) -> None:
         # Simplified view - show action and observation as plain text
@@ -76,7 +78,7 @@ class TrajectoryViewer(Static):
         content = self.query_one("#content")
         content.update(content_str)  # type: ignore
 
-        self.app.sub_title = f"Item {self.current_index + 1}/{self.n_steps} - Simple View"
+        self.app.sub_title = f"{self.title} - Step {self.current_index + 1}/{self.n_steps} - Simple View"
 
     def _show_info(self):
         info = _move_items_top(self.trajectory["info"], ["exit_status", "model_stats", "submission"])
@@ -84,7 +86,7 @@ class TrajectoryViewer(Static):
         content = self.query_one("#content")
         content.update(syntax)  # type: ignore
         next_help = "Press l to see step 1" if self.current_index < 0 else f"Press h to see step {self.n_steps}"
-        self.app.sub_title = f"Info ({next_help})"
+        self.app.sub_title = f"{self.title} - Info ({next_help})"
 
     def update_content(self) -> None:
         print(self.current_index)
@@ -166,9 +168,17 @@ class TrajectoryInspectorApp(App):
             raise ValueError(msg)
         self.trajectory_index = 0
 
+    def _get_viewer_title(self, index: int) -> str:
+        instance_id = self.available_traj_paths[index].parent.name
+        if len(instance_id) > 20:
+            instance_id = "..." + instance_id[-17:]
+        return f"Traj {index + 1}/{len(self.available_traj_paths)} - {instance_id}"
+
     def _load_traj(self):
         traj_viewer = self.query_one(TrajectoryViewer)
-        traj_viewer.load_trajectory(self.available_traj_paths[self.trajectory_index])
+        traj_viewer.load_trajectory(
+            self.available_traj_paths[self.trajectory_index], self._get_viewer_title(self.trajectory_index)
+        )
 
     def _get_available_trajs(self) -> list[Path]:
         if self.input_path.is_file():
@@ -180,7 +190,9 @@ class TrajectoryInspectorApp(App):
     def compose(self) -> ComposeResult:
         yield Header()
         with Container():
-            yield TrajectoryViewer(self.available_traj_paths[self.trajectory_index])
+            yield TrajectoryViewer(
+                self.available_traj_paths[self.trajectory_index], self._get_viewer_title(self.trajectory_index)
+            )
         yield Footer()
 
     def action_next_traj(self):
