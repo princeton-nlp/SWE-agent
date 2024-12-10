@@ -138,11 +138,19 @@ class TrajectorySelectorScreen(ModalScreen[int]):
         self.paths = paths
         self.current_index = current_index
 
+    def _get_list_item_texts(self, paths: list[Path]) -> list[str]:
+        """Remove the common prefix from a list of paths."""
+        # Convert to strings for easier comparison
+        str_paths = [str(p) for p in paths]
+        # Find the common prefix
+        prefix = os.path.commonpath(str_paths)
+        return [p[len(prefix) :].lstrip("/\\") for p in str_paths]
+
     def compose(self) -> ComposeResult:
         with Vertical(id="dialog"):
             yield Label("Select Trajectory", id="title")
             yield ListView(
-                *[ListItem(Static(str(p))) for p in self.paths],
+                *[ListItem(Static(p)) for p in self._get_list_item_texts(self.paths)],
                 id="trajectory-list",
                 initial_index=self.current_index,
             )
@@ -156,8 +164,8 @@ class TrajectorySelectorScreen(ModalScreen[int]):
         background: $surface;
         padding: 1;
         border: thick $primary;
-        width: 80%;
-        height: 30;
+        width: 100%;
+        height: 100%;
     }
 
     #title {
