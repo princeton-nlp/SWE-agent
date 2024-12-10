@@ -129,7 +129,7 @@ class RunSingle:
         _log_filename_template = f"{instance_id}.{{level}}.log"
         for level in ["trace", "debug", "info"]:
             add_file_handler(
-                output_dir / _log_filename_template.format(level=level),
+                output_dir / instance_id / _log_filename_template.format(level=level),
                 level=level,
                 id_=f"{instance_id}-{level}",
             )
