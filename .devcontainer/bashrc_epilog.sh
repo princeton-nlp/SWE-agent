@@ -4,6 +4,10 @@ if [ -z "$(docker images -q sweagent/swe-agent 2> /dev/null)" ]; then
 fi
 
 echo "Here's an example SWE-agent command to try out:"
-echo "python run.py --model_name gpt4 --data_path https://github.com/pvlib/pvlib-python/issues/1603 --config_file config/default_from_url.yaml"
-echo "Alternatively, start the web UI with "
-echo "./start_web_ui.sh"
+
+echo "sweagent run \\
+  --agent.model.name=claude-3-5-sonnet-20241022 \\
+  --agent.model.per_instance_cost_limit=2.00 \\
+  --env.repo.github_url=https://github.com/SWE-agent/test-repo \\
+  --problem_statement.github_url=https://github.com/SWE-agent/test-repo/issues/1 \\
+"
