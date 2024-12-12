@@ -5,6 +5,11 @@
     * We provide a web interface for visualizing [`.traj` files](trajectories.md) from the `trajectories` folder more easily.
     * Please complete the [hello world](hello_world.md) tutorial before proceeding.
 
+!!! tip "New inspector"
+    We now also have a new command line trajectory viewer!
+
+    Try it out with `sweagent inspect` or `sweagent i`.
+
 You should see a folder called `trajectories` in your working directory. Let's go to one of the *experiment directories*:
 
 ```bash
@@ -17,6 +22,8 @@ Run the inspector in this directory (this is where your `*.traj` files are):
 
 ```bash
 sweagent inspector
+# or
+sweagent I
 ```
 The inspector will then be launched in the browser:
 
