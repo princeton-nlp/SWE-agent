@@ -1997,6 +1997,11 @@ This is the pre-release of SWE-agent 1.0. <a href="https://swe-agent.com/latest/
 <li>Please complete the <a href="../hello_world/">hello world</a> tutorial before proceeding.</li>
 </ul>
 </div>
+<div class="admonition tip">
+<p class="admonition-title">New inspector</p>
+<p>We now also have a new command line trajectory viewer!</p>
+<p>Try it out with <code>sweagent inspect</code> or <code>sweagent i</code>.</p>
+</div>
 <p>You should see a folder called <code>trajectories</code> in your working directory. Let's go to one of the <em>experiment directories</em>:</p>
 <div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>trajectories/<span class="nv">$USER</span>/&lt;some<span class="w"> </span>directory&gt;<span class="w">  </span><span class="c1"># (1)!</span>
 </code></pre></div>
@@ -2005,6 +2010,8 @@ This is the pre-release of SWE-agent 1.0. <a href="https://swe-agent.com/latest/
 </ol>
 <p>Run the inspector in this directory (this is where your <code>*.traj</code> files are):</p>
 <p><div class="highlight"><pre><span></span><code>sweagent<span class="w"> </span>inspector
+<span class="c1"># or</span>
+sweagent<span class="w"> </span>I
 </code></pre></div>
 The inspector will then be launched in the browser:</p>
 <p><a class="glightbox" href="../../assets/inspector_1.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="trajectory inspector" src="../../assets/inspector_1.png" style="width: 49%;" /></a>
