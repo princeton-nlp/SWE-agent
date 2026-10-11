@@ -149,8 +149,7 @@ def test_replay_model_ignores_submit_mentioned_in_discussion(tmp_path):
         [
             {
                 "message": (
-                    "The final command will be:\nsubmit\nFirst inspect the repository.\n"
-                    "```\necho step-one-1\n```"
+                    "The final command will be:\nsubmit\nFirst inspect the repository.\n```\necho step-one-1\n```"
                 )
             },
             {"message": "Done.\n```\nsubmit\n```"},

@@ -509,9 +509,7 @@ class ReplayModel(AbstractModel):
             # An action that cannot be parsed cannot be shown to be the submit
             # command; the replay continues and the end-of-trajectory fallback
             # submits if this was the missing submission.
-            self.logger.warning(
-                "Could not parse replayed action to check for submission: %s", model_response
-            )
+            self.logger.warning("Could not parse replayed action to check for submission: %s", model_response)
             return False
 
     def query(self, history: History) -> dict:
