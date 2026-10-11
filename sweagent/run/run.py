@@ -23,7 +23,6 @@ Display usage instructions for a specific command:
 [bold][green]run-replay[/green][/bold]: Replay a trajectory file or a demo file.
     This can be useful to fill in environment output when creating demonstrations.
 [bold][green]traj-to-demo[/green][/bold]: Convert a trajectory file to an easy to edit demo file.
-[bold][green]run-api[/green][/bold]: Run swe-agent as a backend for a GUI
 [bold][green]remove-unfinished[/green][/bold] or [bold][green]ru[/green][/bold]: Remove unfinished trajectories
 [bold][green]quick-stats[/green][/bold] or [bold][green]qs[/green][/bold]: Calculate quick stats from a directory of trajectories
 """
@@ -43,7 +42,6 @@ def get_cli():
             "run-batch",
             "run-replay",
             "traj-to-demo",
-            "run-api",
             "merge-preds",
             "inspect",
             "inspector",
@@ -102,10 +100,6 @@ def main(args: list[str] | None = None):
         from sweagent.run.run_traj_to_demo import run_from_cli as convert_traj_to_demo_main
 
         convert_traj_to_demo_main(remaining_args)
-    elif command == "run-api":
-        from sweagent.api.server import run_from_cli as run_api_main
-
-        run_api_main(remaining_args)
     elif command == "merge-preds":
         from sweagent.run.merge_predictions import run_from_cli as merge_predictions_main
 
