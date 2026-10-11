@@ -480,6 +480,8 @@ class ReplayModel(AbstractModel):
         self._action_idx = 0
         self.use_function_calling = tools.use_function_calling
         self.submit_command = tools.submit_command
+        self.parse_function = tools.parse_function
+        self.commands = tools.commands
         self.logger = get_logger("swea-lm", emoji="🤖")
 
     def _next_replay(self) -> None:
@@ -487,12 +489,35 @@ class ReplayModel(AbstractModel):
         self._replay_idx += 1
         self._action_idx = 0
 
+    def _is_submit_action(self, action: str | dict) -> bool:
+        """Check if the replayed action is the submit command. Handles legacy string
+        actions as well as the dict actions written by `run-replay`, where the submit
+        command is either part of the message or a tool call. The executable action
+        is extracted with the configured parser, so a `submit` mentioned in the
+        discussion outside the action does not advance the replay.
+        """
+        if isinstance(action, dict):
+            if tool_calls := action.get("tool_calls"):
+                return any(tool_call["function"]["name"] == self.submit_command for tool_call in tool_calls)
+            model_response = action
+        else:
+            model_response = {"message": action}
+        try:
+            _, executable_action = self.parse_function(model_response, self.commands)
+            return executable_action.strip() == self.submit_command
+        except Exception:
+            # An action that cannot be parsed cannot be shown to be the submit
+            # command; the replay continues and the end-of-trajectory fallback
+            # submits if this was the missing submission.
+            self.logger.warning("Could not parse replayed action to check for submission: %s", model_response)
+            return False
+
     def query(self, history: History) -> dict:
         """Logic for tracking which replay action to pass to SWEEnv"""
         self.stats.api_calls += 1
-        actions = self._replays[self._replay_idx]
         try:
-            action = actions[self._action_idx]
+            action = self._replays[self._replay_idx][self._action_idx]
+            replayed = True
         except IndexError:
             # log error
             self.logger.error("Reached end of replay trajectory without submitting. Submitting now.")
@@ -512,13 +537,15 @@ class ReplayModel(AbstractModel):
                 }
             else:
                 action = f"```\n{self.submit_command}\n```"
+            replayed = False
 
         self._action_idx += 1
 
         # Assuming `submit` is always last action of replay trajectory
-        if isinstance(action, str) and action == "submit":
+        # (the auto-generated submission ends the instance even when the
+        # configured parser would not extract it as the submit command)
+        if not replayed or self._is_submit_action(action):
             self._next_replay()
-            return {"message": action}
 
         # Handle both dict and string actions
         if isinstance(action, dict):
