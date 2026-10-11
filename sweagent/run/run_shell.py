@@ -122,6 +122,8 @@ def run_from_cli(args: list[str] | None = None):
         load_environment_variables(Path(".env"))
     except FileNotFoundError:
         print("Env file .env not found, please set API key as env variables.")
+    if cli_args.repo is None:
+        cli_args.repo = Path(Prompt.ask("[cyan]Repository path[/cyan]", default="", show_default=False))
     env_config = EnvironmentConfig(
         repo=PreExistingRepoConfig(repo_name="repo", reset=False),
         deployment=DockerDeploymentConfig(
@@ -136,8 +138,6 @@ def run_from_cli(args: list[str] | None = None):
     agent_config = ShellAgentConfig.model_validate(yaml.safe_load(cli_args.config.read_text())["agent"])
     agent = ShellAgent.from_config(agent_config)
     env = SWEEnv.from_config(env_config)
-    if cli_args.repo is None:
-        cli_args.repo = Path(Prompt.ask("[cyan]Repository path[/cyan]", default="", show_default=False))
     problem_input = cli_args.p
     if not problem_input:
         problem_input = Prompt.ask("[cyan]Problem statement or GitHub issue URL[/cyan]", default="", show_default=False)
