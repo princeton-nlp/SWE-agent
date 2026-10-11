@@ -1,5 +1,8 @@
+import json
+import logging
 import os
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import MagicMock
 
@@ -163,3 +166,138 @@ def test_swe_bench_evaluate_unsupported_subset_raises_value_error(tmp_path, subs
     hook = SweBenchEvaluate(output_dir=tmp_path, subset=subset, split="dev")
     with pytest.raises(ValueError, match=subset):
         hook._get_sb_call(tmp_path / "preds.json")
+
+
+class _LogCapture(logging.Handler):
+    """Capture log records of a single logger (repo loggers do not propagate to the root logger)."""
+
+    def __init__(self) -> None:
+        super().__init__(level=logging.ERROR)
+        self.records: list[logging.LogRecord] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.records.append(record)
+
+
+def _install_fake_sb_cli(monkeypatch, tmp_path, script: str) -> None:
+    """Install a fake ``sb-cli`` executable that shadows the real one on ``PATH``."""
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    sb_cli = bin_dir / "sb-cli"
+    sb_cli.write_text(script)
+    sb_cli.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
+
+
+def _make_evaluate_hook_with_prediction(tmp_path) -> SweBenchEvaluate:
+    (tmp_path / "inst-1").mkdir()
+    (tmp_path / "inst-1" / "inst-1.pred").write_text(
+        json.dumps({"instance_id": "inst-1", "model_patch": "diff --git a/f b/f"})
+    )
+    hook = SweBenchEvaluate(output_dir=tmp_path, subset="lite", split="dev", continuous_submission_every=30)
+    hook.last_evaluation_time = time.time() - 60
+    return hook
+
+
+def test_swe_bench_evaluate_reports_failed_background_submission(tmp_path, monkeypatch, agent_run_result):
+    """Regression test: ``check_running_calls`` was never called from anywhere, so a
+    continuous ``sb-cli submit`` call that failed was never reported.
+    """
+    _install_fake_sb_cli(
+        monkeypatch,
+        tmp_path,
+        "#!/bin/bash\necho 'submission failed badly' >&2\nexit 1\n",
+    )
+    hook = _make_evaluate_hook_with_prediction(tmp_path)
+    capture = _LogCapture()
+    hook.logger.addHandler(capture)
+    try:
+        hook.on_instance_completed(result=agent_run_result)
+
+        failed_logs = []
+        for _ in range(50):
+            # The next instance completion must report the failed submission
+            hook.on_instance_completed(result=agent_run_result)
+            failed_logs = [
+                r
+                for r in capture.records
+                if r.levelno >= logging.ERROR and "Failed to submit results to SweBench eval" in r.getMessage()
+            ]
+            if failed_logs:
+                break
+            time.sleep(0.1)
+    finally:
+        hook.logger.removeHandler(capture)
+
+    assert failed_logs, "failed sb-cli submission was never reported"
+    assert "submission failed badly" in failed_logs[0].getMessage()
+    assert not hook._running_calls, "finished call was never removed from the running calls"
+
+
+def test_swe_bench_evaluate_background_submission_cannot_block_on_full_pipe(tmp_path, monkeypatch, agent_run_result):
+    """Regression test: the pipes of the background ``sb-cli submit`` calls were never
+    drained, so a verbose sb-cli writing more than the pipe buffer blocked forever and
+    its predictions were silently never submitted.
+    """
+    marker = tmp_path / "sb-cli-finished"
+    padding = "sb-cli progress line with a lot of padding so that the output exceeds the pipe buffer"
+    _install_fake_sb_cli(
+        monkeypatch,
+        tmp_path,
+        f'#!/bin/bash\nfor i in $(seq 1 5000); do echo "{padding} $i" >&2; done\necho done > "{marker}"\nexit 0\n',
+    )
+    hook = _make_evaluate_hook_with_prediction(tmp_path)
+    hook.on_instance_completed(result=agent_run_result)
+
+    deadline = time.time() + 10
+    while not marker.exists() and time.time() < deadline:
+        time.sleep(0.1)
+    assert marker.exists(), "sb-cli never finished writing its output (blocked on a full pipe?)"
+
+    for _ in range(50):
+        # The next instance completion must reap the finished submission
+        hook.on_instance_completed(result=agent_run_result)
+        if not hook._running_calls:
+            break
+        time.sleep(0.1)
+    assert not hook._running_calls, "finished call was never removed from the running calls"
+
+
+def test_swe_bench_evaluate_on_end_reports_failed_background_submission(tmp_path, monkeypatch, agent_run_result):
+    """Regression test: a continuous submission that fails right before the run ends
+    must be reported by ``on_end``, the last lifecycle hook that runs.
+    """
+    _install_fake_sb_cli(
+        monkeypatch,
+        tmp_path,
+        "#!/bin/bash\n"
+        'if [[ "$*" == *"--wait_for_evaluation"* ]]; then\n'
+        "  echo 'submission failed badly' >&2\n"
+        "  exit 1\n"
+        "fi\n"
+        "exit 0\n",
+    )
+    hook = _make_evaluate_hook_with_prediction(tmp_path)
+    capture = _LogCapture()
+    hook.logger.addHandler(capture)
+    try:
+        hook.on_instance_completed(result=agent_run_result)
+
+        failed_logs = []
+        for _ in range(50):
+            # on_end must report the failed background submission before the final one
+            hook.on_end()
+            failed_logs = [
+                r
+                for r in capture.records
+                if r.levelno >= logging.ERROR and "Failed to submit results to SweBench eval" in r.getMessage()
+            ]
+            if failed_logs:
+                break
+            time.sleep(0.1)
+    finally:
+        hook.logger.removeHandler(capture)
+
+    assert failed_logs, "failed sb-cli submission was never reported"
+    assert "submission failed badly" in failed_logs[0].getMessage()
+    assert not hook._running_calls, "finished call was never removed from the running calls"

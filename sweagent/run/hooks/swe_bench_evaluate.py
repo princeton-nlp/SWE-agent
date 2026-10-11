@@ -7,7 +7,7 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
-from threading import Lock
+from threading import Lock, Thread
 from time import time
 
 from sweagent.run.hooks.abstract import RunHook
@@ -65,13 +65,38 @@ class SweBenchEvaluate(RunHook):
 
     def check_running_calls(self) -> None:
         """Warn if one of the running calls failed."""
-        for call in self._running_calls:
-            if call.poll() is not None:
-                if call.returncode != 0:
-                    self.logger.error("Failed to submit results to SweBench eval: %s", call.stderr.read())
+        with self.merge_lock:
+            for call in self._running_calls[:]:
+                if call["returncode"] is None:
+                    continue
+                if call["returncode"] != 0:
+                    self.logger.error("Failed to submit results to SweBench eval: %s", call["stderr"])
                 self._running_calls.remove(call)
 
+    def _submit_async(self, preds_path: Path) -> None:
+        """Submit predictions in the background and record the call's outcome.
+
+        The pipes are drained in a background thread so that a verbose sb-cli call
+        cannot block on a full pipe. The recorded outcome is reported and removed by
+        `check_running_calls` once the call has finished.
+        """
+        call = subprocess.Popen(
+            self._get_sb_call(preds_path=preds_path, submit_only=True),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        outcome = {"returncode": None, "stderr": b""}
+
+        def drain() -> None:
+            outcome["stderr"] = call.communicate()[1]
+            outcome["returncode"] = call.returncode
+
+        Thread(target=drain, daemon=True).start()
+        self._running_calls.append(outcome)
+
     def on_instance_completed(self, *, result: AgentRunResult):
+        self.check_running_calls()
+
         if self.evaluation_interval == 0:
             return
 
@@ -83,13 +108,7 @@ class SweBenchEvaluate(RunHook):
             merge_predictions([self.output_dir], self.output_dir / "tmppreds.json")
             self.last_evaluation_time = current_time
 
-        self._running_calls.append(
-            subprocess.Popen(
-                self._get_sb_call(preds_path=self.output_dir / "tmppreds.json", submit_only=True),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-        )
+        self._submit_async(preds_path=self.output_dir / "tmppreds.json")
 
     def move_sb_cli_report(self) -> None:
         """Move report from `sb-cli-reports` to `results.json`."""
@@ -105,6 +124,7 @@ class SweBenchEvaluate(RunHook):
         reports[0].rename(self.output_dir / "results.json")
 
     def on_end(self) -> None:
+        self.check_running_calls()
         self.logger.info("Submitting results to SWE-Bench")
         try:
             subprocess.run(
