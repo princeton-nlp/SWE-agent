@@ -7,7 +7,7 @@ from pydantic import SecretStr
 
 from sweagent import __version__
 from sweagent.agent.models import GenericAPIModelConfig, ReplayModel, ReplayModelConfig, get_model
-from sweagent.tools.parsing import FunctionCallingParser, Identity
+from sweagent.tools.parsing import FunctionCallingParser, Identity, ThoughtActionParser
 from sweagent.tools.tools import ToolConfig
 from sweagent.types import History
 
@@ -132,11 +132,39 @@ def test_replay_model_advances_after_dict_submit_action(tmp_path):
         ],
         [{"message": "```\necho step-two-1\n```"}],
     )
-    model = _make_replay_model(replay_file)
+    model = _make_replay_model(replay_file, parse_function=ThoughtActionParser())
     history = History([])
     assert model.query(history) == {"message": "Let's start.\n```\necho step-one-1\n```"}
     assert model.query(history) == {"message": "Done, submitting.\n```\nsubmit\n```"}
     # The submit action ended instance 1, so the next query replays instance 2
+    assert model.query(history) == {"message": "```\necho step-two-1\n```"}
+
+
+def test_replay_model_ignores_submit_mentioned_in_discussion(tmp_path):
+    """A standalone `submit` line in the discussion must not advance the replay
+    when the configured parser extracts a different executable action."""
+    replay_file = tmp_path / "replay.json"
+    _write_replay_file(
+        replay_file,
+        [
+            {
+                "message": (
+                    "The final command will be:\nsubmit\nFirst inspect the repository.\n"
+                    "```\necho step-one-1\n```"
+                )
+            },
+            {"message": "Done.\n```\nsubmit\n```"},
+        ],
+        [{"message": "```\necho step-two-1\n```"}],
+    )
+    model = _make_replay_model(replay_file, parse_function=ThoughtActionParser())
+    history = History([])
+    assert model.query(history) == {
+        "message": "The final command will be:\nsubmit\nFirst inspect the repository.\n```\necho step-one-1\n```"
+    }
+    # The submit mention was not the executable action, so instance 1 continues
+    assert model.query(history) == {"message": "Done.\n```\nsubmit\n```"}
+    # The actual submit action ended instance 1, so the next query replays instance 2
     assert model.query(history) == {"message": "```\necho step-two-1\n```"}
 
 
@@ -214,7 +242,7 @@ def test_replay_model_auto_submits_when_file_exhausted(tmp_path):
             {"message": "```\nsubmit\n```"},
         ],
     )
-    model = _make_replay_model(replay_file)
+    model = _make_replay_model(replay_file, parse_function=ThoughtActionParser())
     history = History([])
     assert model.query(history) == {"message": "```\necho step-one-1\n```"}
     assert model.query(history) == {"message": "```\nsubmit\n```"}
