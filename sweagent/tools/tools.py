@@ -46,7 +46,11 @@ class ToolFilterConfig(BaseModel):
         "python -m venv",
         "make",
     ]
-    """Block any command that starts with one of these"""
+    """Block a command that equals one of these or continues after whitespace.
+
+    The match is on a command boundary, not a raw prefix. ``vi`` blocks ``vi file``
+    but not ``view_image``, which is a different command.
+    """
 
     blocklist_standalone: list[str] = [
         "python",
@@ -224,6 +228,19 @@ class ToolConfig(BaseModel):
                 break
 
 
+def _matches_blocklist_entry(action: str, entry: str) -> bool:
+    """True when ``entry`` is the command, not just a prefix of a longer name.
+
+    ``vi`` must block ``vi file`` and must not block ``view_image``.
+    Multi-word entries such as ``tail -f`` still match ``tail -f log``.
+    """
+    if not entry:
+        return False
+    if action == entry:
+        return True
+    return any(action.startswith(entry + separator) for separator in (" ", "\t", "\n"))
+
+
 class ToolHandler:
     def __init__(self, tools: ToolConfig):
         """This class handles most of the tool usage. It has the following responsibilities:
@@ -355,7 +372,7 @@ class ToolHandler:
         action = action.strip()
         if not action:
             return False
-        if any(action.startswith(f) for f in self.config.filter.blocklist):
+        if any(_matches_blocklist_entry(action, entry) for entry in self.config.filter.blocklist):
             return True
         if action in self.config.filter.blocklist_standalone:
             return True
