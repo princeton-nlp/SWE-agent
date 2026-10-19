@@ -10,6 +10,41 @@ import io
 from registry import registry
 
 
+def write_submission_patch(repo_root: Path, model_patch: Path, test_patch: Path) -> str:
+    """Write ``git diff --cached`` after dropping an applied test patch.
+
+    ``tools/submit`` reverse-applies ``/root/test.patch`` before staging so gold
+    test edits are not part of the submission. This submit path is what the
+    default configs use, and it was skipping that step.
+    """
+    if test_patch.is_file() and test_patch.stat().st_size > 0:
+        subprocess.run(
+            ["git", "apply", "-R", str(test_patch)],
+            cwd=repo_root,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    subprocess.run(
+        ["git", "add", "-A"],
+        cwd=repo_root,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    result = subprocess.run(
+        ["git", "diff", "--cached"],
+        cwd=repo_root,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+        check=False,
+    )
+    model_patch.parent.mkdir(parents=True, exist_ok=True)
+    model_patch.write_text(result.stdout)
+    return result.stdout
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Submit changes for review")
     parser.add_argument("-f", "--force", action="store_true", help="Force submit without review")
@@ -19,16 +54,7 @@ def main() -> None:
     assert repo_root
 
     patch_path = Path("/root/model.patch")
-
-    subprocess.run(
-        f"git add -A && git diff --cached > {patch_path}",
-        shell=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        cwd=repo_root,
-    )
-
-    patch = patch_path.read_text(errors="backslashreplace")
+    patch = write_submission_patch(Path(repo_root), patch_path, Path("/root/test.patch"))
 
     submit_review_messages = registry.get("SUBMIT_REVIEW_MESSAGES", [])
     n_stages = len(submit_review_messages)
