@@ -10,7 +10,6 @@ import json
 import re
 import subprocess
 import sys
-from collections import defaultdict
 from pathlib import Path
 from typing import List, Optional, Tuple
 import io
@@ -353,13 +352,40 @@ class EditTool:
         super().__init__()
         self._encoding = None
 
-    @property
-    def _file_history(self):
-        return defaultdict(list, json.loads(REGISTRY.get("file_history", "{}")))
+    def _read_file_history(self):
+        """Load persisted edit history.
 
-    @_file_history.setter
-    def _file_history(self, value: dict):
-        REGISTRY["file_history"] = json.dumps(value)
+        Each tool invocation is a new process, so history has to live in the registry.
+        Keys are path strings: ``Path`` objects are not JSON-serializable and would not
+        match the keys written by a previous process.
+        """
+        loaded = json.loads(REGISTRY.get("file_history", "{}"))
+        if not isinstance(loaded, dict):
+            return {}
+        history = {}
+        for key, value in loaded.items():
+            if isinstance(value, list):
+                history[str(key)] = list(value)
+        return history
+
+    def _write_file_history(self, history):
+        REGISTRY["file_history"] = json.dumps(history)
+
+    def _append_file_history(self, path, content):
+        history = self._read_file_history()
+        history.setdefault(str(path), []).append(content)
+        self._write_file_history(history)
+
+    def _pop_file_history(self, path):
+        history = self._read_file_history()
+        key = str(path)
+        entries = history.get(key) or []
+        if not entries:
+            return None
+        content = entries.pop()
+        history[key] = entries
+        self._write_file_history(history)
+        return content
 
     def __call__(
         self,
@@ -432,7 +458,7 @@ class EditTool:
             print("The parent directory {} does not exist. Please create it first.".format(path.parent))
             sys.exit(21)
         self.write_file(path, file_text)
-        self._file_history[path].append(file_text)
+        self._append_file_history(path, file_text)
         print("File created successfully at: {}".format(path))
 
     def view(self, path: Path, view_range: Optional[List[int]] = None):
@@ -574,7 +600,7 @@ class EditTool:
                 epilogue = LINT_WARNING_TEMPLATE.format(errors=errors)
 
         # Save the content to history
-        self._file_history[path].append(file_content)
+        self._append_file_history(path, file_content)
 
         # Create a snippet of the edited section
         replacement_line = file_content.split(old_str)[0].count("\n")
@@ -618,7 +644,7 @@ class EditTool:
         snippet = "\n".join(snippet_lines)
 
         self.write_file(path, new_file_text)
-        self._file_history[path].append(file_text)
+        self._append_file_history(path, file_text)
 
         # todo: Also expand these windows
 
@@ -633,11 +659,11 @@ class EditTool:
 
     def undo_edit(self, path: Path):
         """Implement the undo_edit command."""
-        if not self._file_history[path]:
+        old_text = self._pop_file_history(path)
+        if old_text is None:
             print("No edit history found for {}.".format(path))
             sys.exit(18)
 
-        old_text = self._file_history[path].pop()
         self.write_file(path, old_text)
 
         print("Last edit to {} undone successfully. {}".format(path, self._make_output(old_text, str(path))))
