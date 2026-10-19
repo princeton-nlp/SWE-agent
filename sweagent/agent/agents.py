@@ -4,6 +4,7 @@ import asyncio
 import copy
 import json
 import logging
+import shlex
 import time
 from pathlib import Path, PurePosixPath
 from typing import Annotated, Any, Literal
@@ -440,6 +441,25 @@ class RetryAgent(AbstractAgent):
         return AgentRunResult(info=data["info"], trajectory=data["trajectory"])
 
 
+def autosubmission_diff_command(
+    test_patch: str = "/root/test.patch",
+    model_patch: str = "/root/model.patch",
+) -> str:
+    """Shell command that writes the submission diff.
+
+    ``tools/submit`` drops an applied ``/root/test.patch`` before ``git diff`` so the
+    gold tests are not part of the model patch. Autosubmission has to do the same,
+    otherwise a run that dies after the tests were applied submits those hunks.
+    A failed reverse-apply must not skip the diff.
+    """
+    quoted_test_patch = shlex.quote(test_patch)
+    quoted_model_patch = shlex.quote(model_patch)
+    return (
+        f"if [ -s {quoted_test_patch} ]; then git apply -R {quoted_test_patch} || true; fi; "
+        f"git add -A && git diff --cached > {quoted_model_patch}"
+    )
+
+
 class DefaultAgent(AbstractAgent):
     def __init__(
         self,
@@ -853,7 +873,7 @@ class DefaultAgent(AbstractAgent):
         repo_name = "/"
         if self._env.repo is not None:
             repo_name = f"/{self._env.repo.repo_name}"
-        submission_command = "git add -A && git diff --cached > /root/model.patch"
+        submission_command = autosubmission_diff_command()
         self.logger.info("Executing submission command %s in %s", submission_command, repo_name)
         try:
             self._env.execute_command(submission_command, check=True, cwd=repo_name)
