@@ -76,11 +76,26 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
 """
 
 
+def parse_replace_all(value: str) -> bool:
+    """Parse the optional replace-all flag.
+
+    ``argparse``'s ``type=bool`` is wrong here: ``bool("false")`` is ``True`` because
+    any non-empty string is true. An explicit ``false`` from the model would then
+    replace every occurrence.
+    """
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes", "y"}:
+        return True
+    if normalized in {"", "0", "false", "no", "n"}:
+        return False
+    raise argparse.ArgumentTypeError(f"expected a boolean, got {value!r}")
+
+
 def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("search", type=str)
     parser.add_argument("replace", type=str)
-    parser.add_argument("replace_all", type=bool, nargs="?", default=False)
+    parser.add_argument("replace_all", type=parse_replace_all, nargs="?", default=False)
     return parser
 
 
