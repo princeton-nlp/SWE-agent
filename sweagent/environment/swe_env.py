@@ -216,7 +216,10 @@ class SWEEnv:
             output: output from container
         """
         self.logger.log(logging.TRACE, "Input:\n%s", input)  # type: ignore
-        rex_check = "silent" if check else "ignore"
+        # ``check`` is "ignore" | "warn" | "raise", all truthy, so the old
+        # ``"silent" if check else "ignore"`` always asked SWE-ReX to extract an
+        # exit code. "ignore" is supposed to skip that extraction.
+        rex_check = "ignore" if check == "ignore" else "silent"
         r = asyncio.run(
             self.deployment.runtime.run_in_session(BashAction(command=input, timeout=timeout, check=rex_check))
         )
