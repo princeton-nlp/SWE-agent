@@ -201,7 +201,9 @@ def test_hostile_traj_replays_on_default_deployment_without_host_writes(tmp_path
     out_trajs = list(output_dir.rglob("*.traj"))
     assert len(out_trajs) == 1
     replayed = json.loads(out_trajs[0].read_text())
-    assert any(marker in json.dumps(step) for step in replayed["history"]), "actions must still replay (in the container)"
+    assert any(marker in json.dumps(step) for step in replayed["history"]), (
+        "actions must still replay (in the container)"
+    )
 
 
 def test_run_cli_help():
