@@ -19,6 +19,19 @@ Replay a trajectory file:
 Replay a demo file:
 
 [green]sweagent run replay --traj_path mydemo.demo.yaml[/green]
+
+[cyan][bold]=== DEPLOYMENT HANDLING ===[/bold][/cyan]
+
+Trajectory files embed the deployment configuration of the run that recorded them.
+Because trajectories are shared as data files, the embedded deployment is only
+honored if it is identical to the local default deployment, or if you explicitly
+opt in with [green]--deployment_from_traj true[/green] (or override it with [green]--deployment[/green]).
+Otherwise, replay runs on the local default deployment and prints a warning.
+
+Honoring a deployment received with a trajectory (e.g. to reproduce a run on
+another machine):
+
+[green]sweagent run replay --traj_path their.traj --deployment_from_traj true[/green]
 """
 
 import json
@@ -36,17 +49,35 @@ from typing_extensions import Self
 
 from sweagent.agent.agents import DefaultAgent
 from sweagent.agent.models import ReplayModelConfig
-from sweagent.environment.swe_env import SWEEnv
+from sweagent.environment.swe_env import EnvironmentConfig, SWEEnv
 from sweagent.run.common import BasicCLI, ConfigHelper
 from sweagent.run.run_single import RunSingle, RunSingleConfig
 from sweagent.utils.config import load_environment_variables
 from sweagent.utils.log import get_logger
 
 
+def _describe_deployment(deployment: DeploymentConfig) -> str:
+    """Human-readable summary of a deployment config for warnings and prompts."""
+    parts = [f"type={deployment.type!r}"]
+    image = getattr(deployment, "image", None)
+    if image is not None:
+        parts.append(f"image={image!r}")
+    docker_args = getattr(deployment, "docker_args", None)
+    if docker_args:
+        parts.append(f"docker_args={docker_args!r}")
+    return ", ".join(parts)
+
+
 class RunReplayConfig(BaseSettings, cli_implicit_flags=False):
     traj_path: Path
     deployment: DeploymentConfig | None = None
     """Override the deployment in the trajectory."""
+    deployment_from_traj: bool = False
+    """Honor the deployment configuration embedded in the trajectory file instead of
+    the local default deployment. Off by default: trajectory files are shared as data
+    files, and their embedded deployment selects where the recorded actions run
+    (host-local execution for type 'local', arbitrary `docker run` arguments via
+    `docker_args`). Has no effect if --deployment is given."""
     output_dir: Path = Path("DEFAULT")
     env_var_path: Path | None = None
     """Path to a .env file to load environment variables from."""
@@ -71,6 +102,7 @@ class RunReplay:
         deployment: AbstractDeployment | None,
         output_dir: Path,
         update_config: list[Path] | None = None,
+        deployment_from_traj: bool = False,
         _catch_errors: bool = False,
         _require_zero_exit_code: bool = False,
     ):
@@ -88,10 +120,49 @@ class RunReplay:
             self._traj_data = json.loads(traj_path.read_text())
         self.config = self._get_config_from_agent(self._traj_data)
 
-        if deployment is None:
-            self.deployment = get_deployment(self.config.env.deployment)
-        else:
+        if deployment is not None:
+            # Explicitly chosen by the user (--deployment or programmatic use): no gating.
             self.deployment = deployment
+        else:
+            self.deployment = get_deployment(self._resolve_deployment_config(deployment_from_traj=deployment_from_traj))
+
+    def _resolve_deployment_config(self, *, deployment_from_traj: bool) -> DeploymentConfig:
+        """Decide which deployment config a replay may use.
+
+        The deployment embedded in the trajectory's replay_config is untrusted
+        input: trajectory files are exchanged as data (debugging, demonstrations),
+        but their embedded deployment selects where the recorded actions execute,
+        e.g. host-local subprocesses for type 'local' or arbitrary `docker run`
+        arguments via `docker_args`. It is therefore only honored if it is
+        identical to the local default deployment, if the user opted in via
+        `deployment_from_traj`, or after interactive confirmation. In all other
+        cases the local default deployment is used and a warning is logged.
+        """
+        embedded = self.config.env.deployment
+        default = EnvironmentConfig().deployment
+        if embedded == default:
+            return default
+        if deployment_from_traj:
+            return embedded
+        if sys.stdin.isatty():
+            answer = input(
+                f"Trajectory {self.traj_path.name!r} embeds a non-default deployment "
+                f"({_describe_deployment(embedded)}).\n"
+                "Replaying executes the recorded actions there. Honor it? [y/N] "
+            )
+            if answer.strip().lower() in {"y", "yes"}:
+                return embedded
+        self.logger.warning(
+            "Ignoring deployment embedded in %s (%s): a trajectory is a data file, but "
+            "its embedded deployment selects where replayed actions execute (host-local "
+            "execution, container image, or docker arguments). Replaying with the local "
+            "default deployment (%s) instead. Pass --deployment_from_traj true to honor "
+            "the embedded deployment, or --deployment to choose one explicitly.",
+            self.traj_path,
+            _describe_deployment(embedded),
+            _describe_deployment(default),
+        )
+        return default
 
     def _get_config_from_agent(self, traj_data):
         try:
@@ -132,6 +203,7 @@ class RunReplay:
             deployment=get_deployment(config.deployment) if config.deployment else None,
             output_dir=config.output_dir,
             update_config=config.update_config,
+            deployment_from_traj=config.deployment_from_traj,
             **kwargs,
         )
 
