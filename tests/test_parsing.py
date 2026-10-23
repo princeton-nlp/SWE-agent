@@ -4,7 +4,7 @@ import pytest
 from jinja2 import Template
 
 from sweagent.exceptions import FormatError, FunctionCallingFormatError
-from sweagent.tools.commands import Command
+from sweagent.tools.commands import Argument, Command
 from sweagent.tools.parsing import (
     ActionParser,
     EditFormat,
@@ -12,6 +12,7 @@ from sweagent.tools.parsing import (
     Identity,
     JsonParser,
     ThoughtActionParser,
+    XMLFunctionCallingParser,
     XMLThoughtActionParser,
 )
 
@@ -44,6 +45,35 @@ def test_xml_thought_action_parser():
     assert action == "ls -l"
     with pytest.raises(FormatError):
         parser({"message": "No command tags"}, [])
+    with pytest.raises(FormatError):
+        parser({"message": "mention </command> before <command>\nls"}, [])
+
+
+def test_xml_function_view_range_rejects_trailing_text():
+    parser = XMLFunctionCallingParser()
+    command = Command(
+        name="open",
+        docstring="",
+        arguments=[
+            Argument(name="path", type="string", description="", required=True),
+            Argument(name="view_range", type="array", description="", required=False),
+        ],
+    )
+    message = (
+        "<function=open>\n<parameter=path>a.py</parameter>\n<parameter=view_range>[1, -1]</parameter>\n</function>"
+    )
+    _, action = parser({"message": message}, [command])
+    assert "-1" in action
+    with pytest.raises(FormatError):
+        parser(
+            {
+                "message": (
+                    "<function=open>\n<parameter=path>a.py</parameter>\n"
+                    "<parameter=view_range>[1, 2] trailing</parameter>\n</function>"
+                )
+            },
+            [command],
+        )
 
 
 def test_edit_format_parser():

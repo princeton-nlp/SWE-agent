@@ -212,6 +212,9 @@ class XMLThoughtActionParser(AbstractParseFunction, BaseModel):
             "</command>"
         )  # start after the last </command> tag
         # `thought` is everything not in between <command> and </command> tags (includes after the last </command> tag)
+        if end_action < start_action:
+            msg = "No action found in model response."
+            raise FormatError(msg)
         action = model_response["message"][start_action:end_action]
         thought = model_response["message"][:end_thought] + model_response["message"][restart_thought:]
 
@@ -285,10 +288,14 @@ class XMLFunctionCallingParser(AbstractParseFunction, BaseModel):
             # Check that value is format as [x, y]
             v = params_dict["view_range"]
             if isinstance(v, str):
-                if not re.match(r"\[\d+,\s*\d+\]", v):
+                if re.fullmatch(r"\[\s*\d+\s*,\s*-?\d+\s*\]", v) is None:
                     msg = f"view_range must be in the format [<start>, <end>], got {v}."
                     raise FormatError(msg)
-                params_dict["view_range"] = json.loads(v)
+                try:
+                    params_dict["view_range"] = json.loads(v)
+                except json.JSONDecodeError as err:
+                    msg = f"view_range must be in the format [<start>, <end>], got {v}."
+                    raise FormatError(msg) from err
 
         # Check if all required arguments are there
         required_args = {arg.name for arg in command.arguments if arg.required}
