@@ -60,8 +60,7 @@ def test_xml_function_view_range_rejects_trailing_text():
         ],
     )
     message = (
-        "<function=open>\n<parameter=path>a.py</parameter>\n"
-        "<parameter=view_range>[1, -1]</parameter>\n</function>"
+        "<function=open>\n<parameter=path>a.py</parameter>\n<parameter=view_range>[1, -1]</parameter>\n</function>"
     )
     _, action = parser({"message": message}, [command])
     assert "-1" in action
