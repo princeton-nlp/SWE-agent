@@ -238,13 +238,18 @@ class ClosedWindowHistoryProcessor(BaseModel):
             if data.get("is_demo", False):
                 new_history.append(entry)
                 continue
-            matches = list(self._pattern.finditer(entry["content"]))
+            content = entry.get("content")
+            if not isinstance(content, str):
+                new_history.append(entry)
+                continue
+            matches = list(self._pattern.finditer(content))
             if len(matches) >= 1:
-                file_match = self._file_pattern.search(entry["content"])
-                if file_match:
-                    file = file_match.group(1)
-                else:
+                file_match = self._file_pattern.search(content)
+                if not file_match:
+                    # A numbered line that is not a file window is still a message.
+                    new_history.append(data)
                     continue
+                file = file_match.group(1)
                 if file in windows:
                     start = matches[0].start()
                     end = matches[-1].end()
@@ -376,9 +381,10 @@ class ImageParsingHistoryProcessor(BaseModel):
             add_text(content[last_end : match.start()])
             mime_type = "image/jpeg" if mime_type == "image/jpg" else mime_type
             if mime_type in self.allowed_mime_types:
-                add_text(markdown_prefix)
+                # The markdown wrapper is the image. Keep the alt text, not `![...](data:`.
+                if alt_text:
+                    add_text(alt_text)
                 segments.append({"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{base64_data}"}})
-                add_text(markdown_suffix)
                 has_images = True
             else:
                 add_text(match.group(0))

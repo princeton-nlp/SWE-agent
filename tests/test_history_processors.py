@@ -3,7 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from sweagent.agent.history_processors import LastNObservations, TagToolCallObservations
+from sweagent.agent.history_processors import (
+    ClosedWindowHistoryProcessor,
+    ImageParsingHistoryProcessor,
+    LastNObservations,
+    TagToolCallObservations,
+)
 from sweagent.types import History
 
 
@@ -30,6 +35,27 @@ def test_last_n_observations(test_history: History):
     # extra -1 because instance template is kept
     expected_elided_observations = total_observations - 3 - 1
     assert count_elided_observations(new_history) == expected_elided_observations
+
+
+def test_closed_window_keeps_numbered_observations_that_are_not_file_windows():
+    processor = ClosedWindowHistoryProcessor()
+    history = [
+        {
+            "role": "user",
+            "content": "1: the build failed\n2: rerun the tests",
+            "message_type": "observation",
+        }
+    ]
+    assert processor(history) == history
+
+
+def test_image_parsing_drops_the_markdown_wrapper():
+    processor = ImageParsingHistoryProcessor()
+    history = [{"role": "user", "content": "see ![diagram](data:image/png;base64,aaaa) end"}]
+    content = processor(history)[0]["content"]
+    texts = [part["text"] for part in content if part["type"] == "text"]
+    assert texts == ["see diagram", " end"]
+    assert content[1]["image_url"]["url"] == "data:image/png;base64,aaaa"
 
 
 def test_add_tag_to_edits(test_history: History):
