@@ -61,6 +61,8 @@ def test_parse_gh_issue_url():
     assert owner == "SWE-agent"
     assert repo == "SWE-agent"
     assert no == "43"
+    owner, repo, no = _parse_gh_issue_url("https://github.com/SWE-agent/SWE-agent/pull/43")
+    assert (owner, repo, no) == ("SWE-agent", "SWE-agent", "43")
 
 
 def test_parse_gh_issue_url_fails():
