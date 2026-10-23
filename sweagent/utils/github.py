@@ -11,7 +11,7 @@ _logger = get_logger("swea-github", emoji="🔧")
 
 _repo_privacy_cache: dict[str, bool] = {}
 
-GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com\/(.*?)\/(.*?)\/issues\/(\d+)")
+GITHUB_ISSUE_URL_PATTERN = re.compile(r"github\.com/([^/]+)/([^/]+)/(?:issues|pull)/(\d+)")
 
 
 class InvalidGithubURL(Exception):
